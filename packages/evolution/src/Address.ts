@@ -135,7 +135,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Addre
         default:
           return yield* ParseResult.fail(new ParseResult.Type(ast, fromA, `Unknown address type: ${addressType}`))
       }
-    }) as Effect.Effect<Address, ParseResult.ParseIssue, never>
+    })
 })
 
 /**

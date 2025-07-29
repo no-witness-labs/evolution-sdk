@@ -27,8 +27,8 @@ parent: Modules
   - [isSingleHostAddr](#issinglehostaddr)
   - [isSingleHostName](#issinglehostname)
 - [schemas](#schemas)
-  - [CBORBytesSchema](#cborbytesschema)
-  - [CBORHexSchema](#cborhexschema)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
   - [Relay](#relay)
 - [transformation](#transformation)
   - [match](#match)
@@ -174,16 +174,16 @@ Added in v2.0.0
 
 # schemas
 
-## CBORBytesSchema
+## FromBytes
 
 CBOR bytes transformation schema for Relay.
-For union types, we create a union of the child CBORBytesSchemas
+For union types, we create a union of the child FromBytess
 rather than trying to create a complex three-layer transformation.
 
 **Signature**
 
 ```ts
-export declare const CBORBytesSchema: (
+export declare const FromBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.Union<
   [
@@ -236,14 +236,14 @@ export declare const CBORBytesSchema: (
 
 Added in v2.0.0
 
-## CBORHexSchema
+## FromHex
 
 CBOR hex transformation schema for Relay.
 
 **Signature**
 
 ```ts
-export declare const CBORHexSchema: (
+export declare const FromHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,

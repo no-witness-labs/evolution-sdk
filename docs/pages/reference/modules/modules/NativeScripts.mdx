@@ -24,8 +24,8 @@ parent: Modules
   - [NativeScriptCDDL](#nativescriptcddl)
   - [SlotNumber](#slotnumber)
 - [utils](#utils)
-  - [CBORBytesSchema](#cborbytesschema)
-  - [CBORHexSchema](#cborhexschema)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
   - [Codec](#codec)
   - [InvalidBefore (class)](#invalidbefore-class)
     - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
@@ -232,12 +232,12 @@ Added in v2.0.0
 
 # utils
 
-## CBORBytesSchema
+## FromBytes
 
 **Signature**
 
 ```ts
-export declare const CBORBytesSchema: (
+export declare const FromBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -272,12 +272,12 @@ export declare const CBORBytesSchema: (
 >
 ```
 
-## CBORHexSchema
+## FromHex
 
 **Signature**
 
 ```ts
-export declare const CBORHexSchema: (
+export declare const FromHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,

@@ -25,7 +25,7 @@ export class WithdrawalsError extends Data.TaggedError("WithdrawalsError")<{
 
 /**
  * Schema for Withdrawals representing a map of reward accounts to coin amounts.
- * 
+ *
  * ```
  * withdrawals = {+ reward_account => coin}
  * ```
@@ -58,7 +58,7 @@ export const isWithdrawals = Schema.is(Withdrawals)
 
 /**
  * CDDL schema for Withdrawals.
- * 
+ *
  * ```
  * withdrawals = {+ reward_account => coin}
  * ```
@@ -105,7 +105,7 @@ export const WithdrawalsCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     WithdrawalsCDDLSchema // CBOR → Withdrawals
@@ -117,10 +117,10 @@ export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTION
  * @since 2.0.0
  * @category schemas
  */
-export const CBORHexSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    CBORBytesSchema(options) // Uint8Array → Withdrawals
+    FromBytes(options) // Uint8Array → Withdrawals
   )
 
 /**
@@ -250,27 +250,27 @@ export const entries = (withdrawals: Withdrawals): Array<[RewardAccount.RewardAc
 
 export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) => ({
   Encode: {
-    cborBytes: Schema.encodeSync(CBORBytesSchema(options)),
-    cborHex: Schema.encodeSync(CBORHexSchema(options))
+    cborBytes: Schema.encodeSync(FromBytes(options)),
+    cborHex: Schema.encodeSync(FromHex(options))
   },
   Decode: {
-    cborBytes: Schema.decodeUnknownSync(CBORBytesSchema(options)),
-    cborHex: Schema.decodeUnknownSync(CBORHexSchema(options))
+    cborBytes: Schema.decodeUnknownSync(FromBytes(options)),
+    cborHex: Schema.decodeUnknownSync(FromHex(options))
   },
   EncodeEither: {
-    cborBytes: Schema.encodeEither(CBORBytesSchema(options)),
-    cborHex: Schema.encodeEither(CBORHexSchema(options))
+    cborBytes: Schema.encodeEither(FromBytes(options)),
+    cborHex: Schema.encodeEither(FromHex(options))
   },
   DecodeEither: {
-    cborBytes: Schema.decodeUnknownEither(CBORBytesSchema(options)),
-    cborHex: Schema.decodeUnknownEither(CBORHexSchema(options))
+    cborBytes: Schema.decodeUnknownEither(FromBytes(options)),
+    cborHex: Schema.decodeUnknownEither(FromHex(options))
   },
   EncodeEffect: {
-    cborBytes: Schema.encode(CBORBytesSchema(options)),
-    cborHex: Schema.encode(CBORHexSchema(options))
+    cborBytes: Schema.encode(FromBytes(options)),
+    cborHex: Schema.encode(FromHex(options))
   },
   DecodeEffect: {
-    cborBytes: Schema.decodeUnknown(CBORBytesSchema(options)),
-    cborHex: Schema.decodeUnknown(CBORHexSchema(options))
+    cborBytes: Schema.decodeUnknown(FromBytes(options)),
+    cborHex: Schema.decodeUnknown(FromHex(options))
   }
 })

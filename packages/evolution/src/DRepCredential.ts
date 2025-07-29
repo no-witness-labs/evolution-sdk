@@ -50,5 +50,5 @@ export const Codec = Credential.Codec
  * @since 2.0.0
  * @category schemas
  */
-export const CBORBytesSchema = Credential.FromCBORBytes
-export const CBORHexSchema = Credential.FromCBORHex
+export const FromBytes = Credential.FromCBORBytes
+export const FromHex = Credential.FromCBORHex

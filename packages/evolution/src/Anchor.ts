@@ -62,7 +62,7 @@ export const FromCDDL = Schema.transformOrFail(Schema.Tuple(CBOR.Text, CBOR.Byte
  * @since 2.0.0
  * @category schemas
  */
-export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → Anchor
@@ -74,10 +74,10 @@ export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTION
  * @since 2.0.0
  * @category schemas
  */
-export const CBORHexSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    CBORBytesSchema(options) // Uint8Array → Anchor
+    FromBytes(options) // Uint8Array → Anchor
   )
 
 /**
@@ -127,8 +127,8 @@ export const generator = FastCheck.record({
 export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   createEncoders(
     {
-      cborBytes: CBORBytesSchema(options),
-      cborHex: CBORHexSchema(options)
+      cborBytes: FromBytes(options),
+      cborHex: FromHex(options)
     },
     AnchorError
   )

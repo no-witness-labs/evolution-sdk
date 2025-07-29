@@ -30,7 +30,7 @@ parent: Modules
 - [utils](#utils)
   - [ArraySchema](#arrayschema)
   - [ByteArray](#bytearray)
-  - [CBORHexSchema](#cborhexschema)
+  - [FromHex](#FromHex)
   - [Codec](#codec)
   - [Float](#float)
   - [MapSchema](#mapschema)
@@ -274,12 +274,12 @@ export declare const ArraySchema: Schema.Array$<Schema.suspend<CBOR, CBOR, never
 export declare const ByteArray: typeof Schema.Uint8ArrayFromSelf
 ```
 
-## CBORHexSchema
+## FromHex
 
 **Signature**
 
 ```ts
-export declare const CBORHexSchema: (
+export declare const FromHex: (
   options: CodecOptions
 ) => Schema.transform<
   Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,

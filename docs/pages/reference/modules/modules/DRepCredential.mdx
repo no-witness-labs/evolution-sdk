@@ -22,10 +22,10 @@ Added in v2.0.0
 - [model](#model)
   - [DRepCredential (type alias)](#drepcredential-type-alias)
 - [schemas](#schemas)
-  - [CBORBytesSchema](#cborbytesschema)
+  - [FromBytes](#FromBytes)
   - [DRepCredential](#drepcredential)
 - [utils](#utils)
-  - [CBORHexSchema](#cborhexschema)
+  - [FromHex](#FromHex)
   - [Codec](#codec)
   - [equals](#equals)
   - [generator](#generator)
@@ -63,14 +63,14 @@ Added in v2.0.0
 
 # schemas
 
-## CBORBytesSchema
+## FromBytes
 
 CBOR encoding/decoding schemas.
 
 **Signature**
 
 ```ts
-export declare const CBORBytesSchema: (
+export declare const FromBytes: (
   options?: CodecOptions
 ) => transform<
   transformOrFail<typeof Uint8ArrayFromSelf, declare<CBOR, CBOR, readonly [], never>, never>,
@@ -110,12 +110,12 @@ Added in v2.0.0
 
 # utils
 
-## CBORHexSchema
+## FromHex
 
 **Signature**
 
 ```ts
-export declare const CBORHexSchema: (
+export declare const FromHex: (
   options?: CodecOptions
 ) => transform<
   transform<refine<string, typeof String>, typeof Uint8ArrayFromSelf>,

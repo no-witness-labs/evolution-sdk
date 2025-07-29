@@ -62,7 +62,7 @@ export const FromHex = Schema.compose(
 
 /**
  * CDDL schema for ScriptRef following the Conway specification.
- * 
+ *
  * ```
  * script_ref = #6.24(bytes .cbor script)
  * ```

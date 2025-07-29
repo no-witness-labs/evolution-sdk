@@ -99,7 +99,7 @@ export const FromCDDL = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → OperationalCert
@@ -111,17 +111,17 @@ export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTION
  * @since 2.0.0
  * @category schemas
  */
-export const CBORHexSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    CBORBytesSchema(options) // Uint8Array → OperationalCert
+    FromBytes(options) // Uint8Array → OperationalCert
   )
 
 export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   _Codec.createEncoders(
     {
-      cborBytes: CBORBytesSchema(options),
-      cborHex: CBORHexSchema(options)
+      cborBytes: FromBytes(options),
+      cborHex: FromHex(options)
     },
     OperationalCertError
   )

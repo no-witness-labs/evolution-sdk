@@ -68,4 +68,4 @@ export class TransactionBody extends Schema.TaggedClass<TransactionBody>()("Tran
   donation: Schema.optional(PositiveCoin.PositiveCoinSchema) // 22
 }) {}
 
-//TODO: Implement CBORHexSchema when BytesSchema is complete
+//TODO: Implement FromHex when BytesSchema is complete

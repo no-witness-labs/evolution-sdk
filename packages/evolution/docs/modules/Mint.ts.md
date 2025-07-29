@@ -26,8 +26,8 @@ parent: Modules
   - [isEmpty](#isempty)
 - [schemas](#schemas)
   - [AssetMap](#assetmap)
-  - [CBORBytesSchema](#cborbytesschema)
-  - [CBORHexSchema](#cborhexschema)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
   - [Mint](#mint)
   - [MintCDDLSchema](#mintcddlschema)
 - [transformation](#transformation)
@@ -186,7 +186,7 @@ export declare const AssetMap: Schema.refine<
 
 Added in v2.0.0
 
-## CBORBytesSchema
+## FromBytes
 
 CBOR bytes transformation schema for Mint.
 Transforms between Uint8Array and Mint using CBOR encoding.
@@ -194,7 +194,7 @@ Transforms between Uint8Array and Mint using CBOR encoding.
 **Signature**
 
 ```ts
-export declare const CBORBytesSchema: (
+export declare const FromBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -219,7 +219,7 @@ export declare const CBORBytesSchema: (
 
 Added in v2.0.0
 
-## CBORHexSchema
+## FromHex
 
 CBOR hex transformation schema for Mint.
 Transforms between hex string and Mint using CBOR encoding.
@@ -227,7 +227,7 @@ Transforms between hex string and Mint using CBOR encoding.
 **Signature**
 
 ```ts
-export declare const CBORHexSchema: (
+export declare const FromHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,

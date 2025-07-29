@@ -44,7 +44,7 @@ export type AssetMap = typeof AssetMapSchema.Type
 
 /**
  * Schema for MultiAsset representing native assets.
- * 
+ *
  * ```
  * multiasset<a0> = {+ policy_id => {+ asset_name => a0}}
  * case: multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
@@ -230,7 +230,7 @@ export const generator = FastCheck.array(
 
 /**
  * CDDL schema for MultiAsset.
- * 
+ *
  * ```
  * multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
  * ```
@@ -297,7 +297,7 @@ export const MultiAssetCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     MultiAssetCDDLSchema // CBOR → MultiAsset
@@ -309,17 +309,17 @@ export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTION
  * @since 2.0.0
  * @category schemas
  */
-export const CBORHexSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    CBORBytesSchema(options) // Uint8Array → MultiAsset
+    FromBytes(options) // Uint8Array → MultiAsset
   )
 
 export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   _Codec.createEncoders(
     {
-      cborBytes: CBORBytesSchema(options),
-      cborHex: CBORHexSchema(options)
+      cborBytes: FromBytes(options),
+      cborHex: FromHex(options)
     },
     MultiAssetError
   )

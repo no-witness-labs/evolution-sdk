@@ -27,8 +27,8 @@ parent: Modules
   - [is](#is)
 - [schemas](#schemas)
   - [AssetMapSchema](#assetmapschema)
-  - [CBORBytesSchema](#cborbytesschema)
-  - [CBORHexSchema](#cborhexschema)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
   - [MultiAssetCDDLSchema](#multiassetcddlschema)
   - [MultiAssetSchema](#multiassetschema)
 - [transformation](#transformation)
@@ -196,14 +196,14 @@ export declare const AssetMapSchema: Schema.refine<
 
 Added in v2.0.0
 
-## CBORBytesSchema
+## FromBytes
 
 CBOR bytes transformation schema for MultiAsset.
 
 **Signature**
 
 ```ts
-export declare const CBORBytesSchema: (
+export declare const FromBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -228,14 +228,14 @@ export declare const CBORBytesSchema: (
 
 Added in v2.0.0
 
-## CBORHexSchema
+## FromHex
 
 CBOR hex transformation schema for MultiAsset.
 
 **Signature**
 
 ```ts
-export declare const CBORHexSchema: (
+export declare const FromHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,

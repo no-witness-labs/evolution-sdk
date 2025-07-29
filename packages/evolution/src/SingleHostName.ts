@@ -155,7 +155,7 @@ export const SingleHostNameCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     SingleHostNameCDDLSchema // CBOR → SingleHostName
@@ -167,35 +167,35 @@ export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTION
  * @since 2.0.0
  * @category schemas
  */
-export const CBORHexSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    CBORBytesSchema(options) // Uint8Array → SingleHostName
+    FromBytes(options) // Uint8Array → SingleHostName
   )
 
 export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) => ({
   Encode: {
-    cborBytes: Schema.encodeSync(CBORBytesSchema(options)),
-    cborHex: Schema.encodeSync(CBORHexSchema(options))
+    cborBytes: Schema.encodeSync(FromBytes(options)),
+    cborHex: Schema.encodeSync(FromHex(options))
   },
   Decode: {
-    cborBytes: Schema.decodeUnknownSync(CBORBytesSchema(options)),
-    cborHex: Schema.decodeUnknownSync(CBORHexSchema(options))
+    cborBytes: Schema.decodeUnknownSync(FromBytes(options)),
+    cborHex: Schema.decodeUnknownSync(FromHex(options))
   },
   EncodeEither: {
-    cborBytes: Schema.encodeEither(CBORBytesSchema(options)),
-    cborHex: Schema.encodeEither(CBORHexSchema(options))
+    cborBytes: Schema.encodeEither(FromBytes(options)),
+    cborHex: Schema.encodeEither(FromHex(options))
   },
   DecodeEither: {
-    cborBytes: Schema.decodeEither(CBORBytesSchema(options)),
-    cborHex: Schema.decodeEither(CBORHexSchema(options))
+    cborBytes: Schema.decodeEither(FromBytes(options)),
+    cborHex: Schema.decodeEither(FromHex(options))
   },
   EncodeEffect: {
-    cborBytes: Schema.encode(CBORBytesSchema(options)),
-    cborHex: Schema.encode(CBORHexSchema(options))
+    cborBytes: Schema.encode(FromBytes(options)),
+    cborHex: Schema.encode(FromHex(options))
   },
   DecodeEffect: {
-    cborBytes: Schema.decode(CBORBytesSchema(options)),
-    cborHex: Schema.decode(CBORHexSchema(options))
+    cborBytes: Schema.decode(FromBytes(options)),
+    cborHex: Schema.decode(FromHex(options))
   }
 })

@@ -63,7 +63,7 @@ export type UnitInterval = typeof UnitInterval.Type
 
 /**
  * CDDL schema for UnitInterval following the Conway specification.
- * 
+ *
  * ```
  * unit_interval = #6.30([uint, uint])
  * ```

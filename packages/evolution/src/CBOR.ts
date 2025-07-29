@@ -1655,13 +1655,13 @@ export const FromBytes = (options: CodecOptions) =>
       )
   })
 
-export const CBORHexSchema = (options: CodecOptions) => Schema.compose(Bytes.FromHex, FromBytes(options))
+export const FromHex = (options: CodecOptions) => Schema.compose(Bytes.FromHex, FromBytes(options))
 
 export const Codec = (options: CodecOptions = DEFAULT_OPTIONS) =>
   _Codec.createEncoders(
     {
       cborBytes: FromBytes(options),
-      cborHex: CBORHexSchema(options)
+      cborHex: FromHex(options)
     },
     CBORError
   )

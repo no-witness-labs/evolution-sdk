@@ -47,18 +47,14 @@ export type Relay = typeof Relay.Type
 
 /**
  * CBOR bytes transformation schema for Relay.
- * For union types, we create a union of the child CBORBytesSchemas
+ * For union types, we create a union of the child FromBytess
  * rather than trying to create a complex three-layer transformation.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  Schema.Union(
-    SingleHostAddr.CBORBytesSchema(options),
-    SingleHostName.CBORBytesSchema(options),
-    MultiHostName.CBORBytesSchema(options)
-  )
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+  Schema.Union(SingleHostAddr.FromBytes(options), SingleHostName.FromBytes(options), MultiHostName.FromBytes(options))
 
 /**
  * CBOR hex transformation schema for Relay.
@@ -66,17 +62,17 @@ export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTION
  * @since 2.0.0
  * @category schemas
  */
-export const CBORHexSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    CBORBytesSchema(options) // Uint8Array → Relay
+    FromBytes(options) // Uint8Array → Relay
   )
 
 export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   _Codec.createEncoders(
     {
-      cborBytes: CBORBytesSchema(options),
-      cborHex: CBORHexSchema(options)
+      cborBytes: FromBytes(options),
+      cborHex: FromHex(options)
     },
     RelayError
   )

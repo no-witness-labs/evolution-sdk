@@ -700,13 +700,13 @@ export function Codec<A, B extends Data>(params?: { schema?: Schema.Schema<A, B>
   const schema = params?.schema
   const codecOptions = params?.options || CBOR.DEFAULT_OPTIONS
 
-  const cborHexSchema = FromCBORHex(codecOptions)
-  const cborBytesSchema = FromCBORBytes(codecOptions)
+  const FromHex = FromCBORHex(codecOptions)
+  const FromBytes = FromCBORBytes(codecOptions)
 
   if (schema) {
     // With schema: type A -> Data B -> CBOR
-    const schemaToHex = Schema.compose(cborHexSchema, schema)
-    const schemaToBytes = Schema.compose(cborBytesSchema, schema)
+    const schemaToHex = Schema.compose(FromHex, schema)
+    const schemaToBytes = Schema.compose(FromBytes, schema)
 
     return _Codec.createEncoders(
       {
@@ -721,8 +721,8 @@ export function Codec<A, B extends Data>(params?: { schema?: Schema.Schema<A, B>
   // Without schema: Data -> CBOR directly
   return _Codec.createEncoders(
     {
-      cborHex: cborHexSchema,
-      cborBytes: cborBytesSchema
+      cborHex: FromHex,
+      cborBytes: FromBytes
     },
     DataError
   )

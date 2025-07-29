@@ -26,7 +26,7 @@ export class PoolParamsError extends Data.TaggedError("PoolParamsError")<{
 
 /**
  * Schema for PoolParams representing stake pool registration parameters.
- * 
+ *
  * ```
  * pool_params =
  *   ( operator       : pool_keyhash
@@ -75,7 +75,7 @@ export class PoolParams extends Schema.TaggedClass<PoolParams>()("PoolParams", {
 
 /**
  * CDDL schema for PoolParams.
- * 
+ *
  * ```
  * pool_params = [
  *   operator       : pool_keyhash,
@@ -189,7 +189,7 @@ export const PoolParamsCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     PoolParamsCDDLSchema // CBOR → PoolParams
@@ -201,10 +201,10 @@ export const CBORBytesSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTION
  * @since 2.0.0
  * @category schemas
  */
-export const CBORHexSchema = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    CBORBytesSchema(options) // Uint8Array → PoolParams
+    FromBytes(options) // Uint8Array → PoolParams
   )
 
 /**
@@ -338,8 +338,8 @@ export const generator = FastCheck.record({
 export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
   _Codec.createEncoders(
     {
-      cborBytes: CBORBytesSchema(options),
-      cborHex: CBORHexSchema(options)
+      cborBytes: FromBytes(options),
+      cborHex: FromHex(options)
     },
     PoolParamsError
   )

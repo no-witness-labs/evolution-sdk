@@ -19,8 +19,8 @@ parent: Modules
 - [predicates](#predicates)
   - [isHeaderBody](#isheaderbody)
 - [schemas](#schemas)
-  - [CBORBytesSchema](#cborbytesschema)
-  - [CBORHexSchema](#cborhexschema)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
   - [FromCDDL](#fromcddl)
 - [utils](#utils)
   - [Codec](#codec)
@@ -97,14 +97,14 @@ Added in v2.0.0
 
 # schemas
 
-## CBORBytesSchema
+## FromBytes
 
 CBOR bytes transformation schema for HeaderBody.
 
 **Signature**
 
 ```ts
-export declare const CBORBytesSchema: (
+export declare const FromBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -135,14 +135,14 @@ export declare const CBORBytesSchema: (
 
 Added in v2.0.0
 
-## CBORHexSchema
+## FromHex
 
 CBOR hex transformation schema for HeaderBody.
 
 **Signature**
 
 ```ts
-export declare const CBORHexSchema: (
+export declare const FromHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,

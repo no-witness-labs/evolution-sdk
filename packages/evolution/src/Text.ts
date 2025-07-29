@@ -31,7 +31,7 @@ export const FromBytes = Schema.transform(Schema.Uint8ArrayFromSelf, Schema.Stri
 
 /**
  * Schema for converting between strings and hex representation of UTF-8 bytes.
- * 
+ *
  * ```
  * text <-> hex
  * ```

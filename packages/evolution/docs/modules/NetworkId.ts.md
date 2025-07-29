@@ -1,0 +1,53 @@
+---
+title: NetworkId.ts
+nav_order: 59
+parent: Modules
+---
+
+## NetworkId overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [utils](#utils)
+  - [NetworkId](#networkid)
+  - [NetworkId (type alias)](#networkid-type-alias)
+  - [generator](#generator)
+  - [make](#make)
+
+---
+
+# utils
+
+## NetworkId
+
+**Signature**
+
+```ts
+export declare const NetworkId: Schema.brand<Schema.refine<number, typeof Schema.NonNegative>, "NetworkId">
+```
+
+## NetworkId (type alias)
+
+**Signature**
+
+```ts
+export type NetworkId = typeof NetworkId.Type
+```
+
+## generator
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<number & Brand<"NetworkId">>
+```
+
+## make
+
+**Signature**
+
+```ts
+export declare const make: (a: number, options?: Schema.MakeOptions) => number & Brand<"NetworkId">
+```

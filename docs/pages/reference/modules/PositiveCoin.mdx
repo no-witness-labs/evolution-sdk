@@ -1,0 +1,281 @@
+---
+title: PositiveCoin.ts
+nav_order: 71
+parent: Modules
+---
+
+## PositiveCoin overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [constants](#constants)
+  - [MAX_POSITIVE_COIN_VALUE](#max_positive_coin_value)
+  - [MIN_POSITIVE_COIN_VALUE](#min_positive_coin_value)
+- [constructors](#constructors)
+  - [fromCoin](#fromcoin)
+  - [make](#make)
+- [encoding/decoding](#encodingdecoding)
+  - [Encode](#encode)
+  - [EncodeEither](#encodeeither)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [PositiveCoinError (class)](#positivecoinerror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [PositiveCoin (type alias)](#positivecoin-type-alias)
+- [ordering](#ordering)
+  - [compare](#compare)
+- [predicates](#predicates)
+  - [is](#is)
+- [schemas](#schemas)
+  - [PositiveCoinSchema](#positivecoinschema)
+- [transformation](#transformation)
+  - [add](#add)
+  - [subtract](#subtract)
+  - [toCoin](#tocoin)
+- [utils](#utils)
+  - [Decode](#decode)
+  - [DecodeEither](#decodeeither)
+
+---
+
+# constants
+
+## MAX_POSITIVE_COIN_VALUE
+
+Maximum value for a positive coin amount (maxWord64).
+
+**Signature**
+
+```ts
+export declare const MAX_POSITIVE_COIN_VALUE: 18446744073709551615n
+```
+
+Added in v2.0.0
+
+## MIN_POSITIVE_COIN_VALUE
+
+Minimum value for a positive coin amount.
+
+**Signature**
+
+```ts
+export declare const MIN_POSITIVE_COIN_VALUE: 1n
+```
+
+Added in v2.0.0
+
+# constructors
+
+## fromCoin
+
+Create a PositiveCoin from a regular Coin, throwing if the value is zero.
+
+**Signature**
+
+```ts
+export declare const fromCoin: (coin: Coin.Coin) => PositiveCoin
+```
+
+Added in v2.0.0
+
+## make
+
+Smart constructor for creating PositiveCoin values.
+
+**Signature**
+
+```ts
+export declare const make: (value: bigint) => PositiveCoin
+```
+
+Added in v2.0.0
+
+# encoding/decoding
+
+## Encode
+
+Synchronous encoding/decoding utilities.
+
+**Signature**
+
+```ts
+export declare const Encode: { sync: (a: bigint, overrideOptions?: ParseOptions) => bigint }
+```
+
+Added in v2.0.0
+
+## EncodeEither
+
+Either encoding/decoding utilities.
+
+**Signature**
+
+```ts
+export declare const EncodeEither: { either: (a: bigint, overrideOptions?: ParseOptions) => Either<bigint, ParseError> }
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two positive coin amounts are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: PositiveCoin, b: PositiveCoin) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## PositiveCoinError (class)
+
+Error class for PositiveCoin related operations.
+
+**Signature**
+
+```ts
+export declare class PositiveCoinError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random PositiveCoin value.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<bigint>
+```
+
+Added in v2.0.0
+
+# model
+
+## PositiveCoin (type alias)
+
+Type alias for PositiveCoin representing positive amounts of native assets.
+Used in multiasset maps where zero amounts are not allowed.
+
+**Signature**
+
+```ts
+export type PositiveCoin = typeof PositiveCoinSchema.Type
+```
+
+Added in v2.0.0
+
+# ordering
+
+## compare
+
+Compare two positive coin amounts.
+
+**Signature**
+
+```ts
+export declare const compare: (a: PositiveCoin, b: PositiveCoin) => -1 | 0 | 1
+```
+
+Added in v2.0.0
+
+# predicates
+
+## is
+
+Check if a value is a valid PositiveCoin.
+
+**Signature**
+
+```ts
+export declare const is: (value: unknown) => value is PositiveCoin
+```
+
+Added in v2.0.0
+
+# schemas
+
+## PositiveCoinSchema
+
+Schema for validating positive coin amounts.
+positive_coin = 1 .. maxWord64
+
+**Signature**
+
+```ts
+export declare const PositiveCoinSchema: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+```
+
+Added in v2.0.0
+
+# transformation
+
+## add
+
+Add two positive coin amounts safely.
+
+**Signature**
+
+```ts
+export declare const add: (a: PositiveCoin, b: PositiveCoin) => PositiveCoin
+```
+
+Added in v2.0.0
+
+## subtract
+
+Subtract two positive coin amounts safely.
+Note: Result must still be positive.
+
+**Signature**
+
+```ts
+export declare const subtract: (a: PositiveCoin, b: PositiveCoin) => PositiveCoin
+```
+
+Added in v2.0.0
+
+## toCoin
+
+Convert a PositiveCoin to a regular Coin.
+
+**Signature**
+
+```ts
+export declare const toCoin: (positiveCoin: PositiveCoin) => Coin.Coin
+```
+
+Added in v2.0.0
+
+# utils
+
+## Decode
+
+**Signature**
+
+```ts
+export declare const Decode: { sync: (u: unknown, overrideOptions?: ParseOptions) => bigint }
+```
+
+## DecodeEither
+
+**Signature**
+
+```ts
+export declare const DecodeEither: {
+  either: (u: unknown, overrideOptions?: ParseOptions) => Either<bigint, ParseError>
+}
+```

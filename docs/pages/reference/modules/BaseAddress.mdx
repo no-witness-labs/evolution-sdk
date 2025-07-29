@@ -1,0 +1,136 @@
+---
+title: BaseAddress.ts
+nav_order: 7
+parent: Modules
+---
+
+## BaseAddress overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [equality](#equality)
+  - [equals](#equals)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [BaseAddress (class)](#baseaddress-class)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
+- [utils](#utils)
+  - [BaseAddressError (class)](#baseaddresserror-class)
+  - [Codec](#codec)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+
+---
+
+# equality
+
+## equals
+
+Check if two BaseAddress instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: BaseAddress, b: BaseAddress) => boolean
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random BaseAddress.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<BaseAddress>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## BaseAddress (class)
+
+Base address with both payment and staking credentials
+
+**Signature**
+
+```ts
+export declare class BaseAddress
+```
+
+Added in v2.0.0
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+;[Symbol.for("nodejs.util.inspect.custom")]()
+```
+
+# utils
+
+## BaseAddressError (class)
+
+**Signature**
+
+```ts
+export declare class BaseAddressError
+```
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { hex: (input: BaseAddress) => string; bytes: (input: BaseAddress) => any }
+  Decode: { hex: (input: string) => BaseAddress; bytes: (input: any) => BaseAddress }
+  EncodeEffect: {
+    hex: (input: BaseAddress) => Effect.Effect<string, InstanceType<typeof BaseAddressError>>
+    bytes: (input: BaseAddress) => Effect.Effect<any, InstanceType<typeof BaseAddressError>>
+  }
+  DecodeEffect: {
+    hex: (input: string) => Effect.Effect<BaseAddress, InstanceType<typeof BaseAddressError>>
+    bytes: (input: any) => Effect.Effect<BaseAddress, InstanceType<typeof BaseAddressError>>
+  }
+  EncodeEither: {
+    hex: (input: BaseAddress) => Either<string, InstanceType<typeof BaseAddressError>>
+    bytes: (input: BaseAddress) => Either<any, InstanceType<typeof BaseAddressError>>
+  }
+  DecodeEither: {
+    hex: (input: string) => Either<BaseAddress, InstanceType<typeof BaseAddressError>>
+    bytes: (input: any) => Either<BaseAddress, InstanceType<typeof BaseAddressError>>
+  }
+}
+```
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transformOrFail<
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  typeof BaseAddress,
+  never
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transformOrFail<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof BaseAddress, never>
+>
+```

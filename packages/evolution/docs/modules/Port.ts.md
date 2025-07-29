@@ -1,0 +1,244 @@
+---
+title: Port.ts
+nav_order: 70
+parent: Modules
+---
+
+## Port overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [constants](#constants)
+  - [PORT_MIN_VALUE](#port_min_value)
+- [constructors](#constructors)
+  - [make](#make)
+- [encoding/decoding](#encodingdecoding)
+  - [Encode](#encode)
+  - [EncodeEither](#encodeeither)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [PortError (class)](#porterror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [Port (type alias)](#port-type-alias)
+- [predicates](#predicates)
+  - [is](#is)
+  - [isDynamic](#isdynamic)
+  - [isRegistered](#isregistered)
+  - [isWellKnown](#iswellknown)
+- [schemas](#schemas)
+  - [PortSchema](#portschema)
+- [utils](#utils)
+  - [Decode](#decode)
+  - [DecodeEither](#decodeeither)
+  - [PORT_MAX_VALUE](#port_max_value)
+
+---
+
+# constants
+
+## PORT_MIN_VALUE
+
+CDDL specification:
+port = uint .le 65535
+
+**Signature**
+
+```ts
+export declare const PORT_MIN_VALUE: 0
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for creating Port values.
+
+**Signature**
+
+```ts
+export declare const make: (value: number) => Port
+```
+
+Added in v2.0.0
+
+# encoding/decoding
+
+## Encode
+
+Synchronous encoding/decoding utilities.
+
+**Signature**
+
+```ts
+export declare const Encode: { sync: (a: number, overrideOptions?: ParseOptions) => number }
+```
+
+Added in v2.0.0
+
+## EncodeEither
+
+Either encoding/decoding utilities.
+
+**Signature**
+
+```ts
+export declare const EncodeEither: { either: (a: number, overrideOptions?: ParseOptions) => Either<number, ParseError> }
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two Port instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: Port, b: Port) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## PortError (class)
+
+Error class for Port related operations.
+
+**Signature**
+
+```ts
+export declare class PortError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random Port.
+
+**Signature**
+
+```ts
+export declare const generator: Arbitrary<number>
+```
+
+Added in v2.0.0
+
+# model
+
+## Port (type alias)
+
+Type alias for Port representing network port numbers.
+Valid range is 0-65535 as per standard TCP/UDP port specification.
+
+**Signature**
+
+```ts
+export type Port = typeof PortSchema.Type
+```
+
+Added in v2.0.0
+
+# predicates
+
+## is
+
+Check if a value is a valid Port.
+
+**Signature**
+
+```ts
+export declare const is: (value: unknown) => value is Port
+```
+
+Added in v2.0.0
+
+## isDynamic
+
+Check if a port is a dynamic/private port (49152-65535).
+
+**Signature**
+
+```ts
+export declare const isDynamic: (port: Port) => boolean
+```
+
+Added in v2.0.0
+
+## isRegistered
+
+Check if a port is a registered port (1024-49151).
+
+**Signature**
+
+```ts
+export declare const isRegistered: (port: Port) => boolean
+```
+
+Added in v2.0.0
+
+## isWellKnown
+
+Check if a port is a well-known port (0-1023).
+
+**Signature**
+
+```ts
+export declare const isWellKnown: (port: Port) => boolean
+```
+
+Added in v2.0.0
+
+# schemas
+
+## PortSchema
+
+Schema for validating port numbers (0-65535).
+
+**Signature**
+
+```ts
+export declare const PortSchema: Schema.refine<number, typeof Schema.Number>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Decode
+
+**Signature**
+
+```ts
+export declare const Decode: { sync: (u: unknown, overrideOptions?: ParseOptions) => number }
+```
+
+## DecodeEither
+
+**Signature**
+
+```ts
+export declare const DecodeEither: {
+  either: (u: unknown, overrideOptions?: ParseOptions) => Either<number, ParseError>
+}
+```
+
+## PORT_MAX_VALUE
+
+**Signature**
+
+```ts
+export declare const PORT_MAX_VALUE: 65535
+```

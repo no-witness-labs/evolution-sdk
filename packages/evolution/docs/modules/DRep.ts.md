@@ -1,0 +1,561 @@
+---
+title: DRep.ts
+nav_order: 38
+parent: Modules
+---
+
+## DRep overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [constructors](#constructors)
+  - [alwaysAbstain](#alwaysabstain)
+  - [alwaysNoConfidence](#alwaysnoconfidence)
+  - [fromKeyHash](#fromkeyhash)
+  - [fromScriptHash](#fromscripthash)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [DRepError (class)](#dreperror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [AlwaysAbstainDRep (type alias)](#alwaysabstaindrep-type-alias)
+  - [AlwaysNoConfidenceDRep (type alias)](#alwaysnoconfidencedrep-type-alias)
+  - [DRep (type alias)](#drep-type-alias)
+  - [KeyHashDRep (type alias)](#keyhashdrep-type-alias)
+  - [ScriptHashDRep (type alias)](#scripthashdrep-type-alias)
+- [predicates](#predicates)
+  - [isAlwaysAbstainDRep](#isalwaysabstaindrep)
+  - [isAlwaysNoConfidenceDRep](#isalwaysnoconfidencedrep)
+  - [isDRep](#isdrep)
+  - [isKeyHashDRep](#iskeyhashdrep)
+  - [isScriptHashDRep](#isscripthashdrep)
+- [schemas](#schemas)
+  - [CBORBytesSchema](#cborbytesschema)
+  - [CBORHexSchema](#cborhexschema)
+  - [DRep](#drep)
+  - [DRepCDDLSchema](#drepcddlschema)
+- [transformation](#transformation)
+  - [match](#match)
+- [utils](#utils)
+  - [Codec](#codec)
+
+---
+
+# constructors
+
+## alwaysAbstain
+
+Create an AlwaysAbstainDRep.
+
+**Signature**
+
+```ts
+export declare const alwaysAbstain: () => AlwaysAbstainDRep
+```
+
+Added in v2.0.0
+
+## alwaysNoConfidence
+
+Create an AlwaysNoConfidenceDRep.
+
+**Signature**
+
+```ts
+export declare const alwaysNoConfidence: () => AlwaysNoConfidenceDRep
+```
+
+Added in v2.0.0
+
+## fromKeyHash
+
+Create a KeyHashDRep from a KeyHash.
+
+**Signature**
+
+```ts
+export declare const fromKeyHash: (keyHash: KeyHash.KeyHash) => KeyHashDRep
+```
+
+Added in v2.0.0
+
+## fromScriptHash
+
+Create a ScriptHashDRep from a ScriptHash.
+
+**Signature**
+
+```ts
+export declare const fromScriptHash: (scriptHash: ScriptHash.ScriptHash) => ScriptHashDRep
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two DRep instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (self: DRep, that: DRep) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## DRepError (class)
+
+Error class for DRep related operations.
+
+**Signature**
+
+```ts
+export declare class DRepError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+FastCheck generator for DRep instances.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<
+  | { keyHash: string & Brand<"KeyHash">; _tag: "KeyHashDRep" }
+  | { scriptHash: string & Brand<"ScriptHash">; _tag: "ScriptHashDRep" }
+  | { _tag: "AlwaysAbstainDRep" }
+  | { _tag: "AlwaysNoConfidenceDRep" }
+>
+```
+
+Added in v2.0.0
+
+# model
+
+## AlwaysAbstainDRep (type alias)
+
+Type alias for AlwaysAbstainDRep.
+
+**Signature**
+
+```ts
+export type AlwaysAbstainDRep = Extract<DRep, { _tag: "AlwaysAbstainDRep" }>
+```
+
+Added in v2.0.0
+
+## AlwaysNoConfidenceDRep (type alias)
+
+Type alias for AlwaysNoConfidenceDRep.
+
+**Signature**
+
+```ts
+export type AlwaysNoConfidenceDRep = Extract<DRep, { _tag: "AlwaysNoConfidenceDRep" }>
+```
+
+Added in v2.0.0
+
+## DRep (type alias)
+
+Type alias for DRep.
+
+**Signature**
+
+```ts
+export type DRep = typeof DRep.Type
+```
+
+Added in v2.0.0
+
+## KeyHashDRep (type alias)
+
+Type alias for KeyHashDRep.
+
+**Signature**
+
+```ts
+export type KeyHashDRep = Extract<DRep, { _tag: "KeyHashDRep" }>
+```
+
+Added in v2.0.0
+
+## ScriptHashDRep (type alias)
+
+Type alias for ScriptHashDRep.
+
+**Signature**
+
+```ts
+export type ScriptHashDRep = Extract<DRep, { _tag: "ScriptHashDRep" }>
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isAlwaysAbstainDRep
+
+Check if a DRep is an AlwaysAbstainDRep.
+
+**Signature**
+
+```ts
+export declare const isAlwaysAbstainDRep: (drep: DRep) => drep is AlwaysAbstainDRep
+```
+
+Added in v2.0.0
+
+## isAlwaysNoConfidenceDRep
+
+Check if a DRep is an AlwaysNoConfidenceDRep.
+
+**Signature**
+
+```ts
+export declare const isAlwaysNoConfidenceDRep: (drep: DRep) => drep is AlwaysNoConfidenceDRep
+```
+
+Added in v2.0.0
+
+## isDRep
+
+Check if the given value is a valid DRep
+
+**Signature**
+
+```ts
+export declare const isDRep: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is
+  | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+  | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+  | { readonly _tag: "AlwaysAbstainDRep" }
+  | { readonly _tag: "AlwaysNoConfidenceDRep" }
+```
+
+Added in v2.0.0
+
+## isKeyHashDRep
+
+Check if a DRep is a KeyHashDRep.
+
+**Signature**
+
+```ts
+export declare const isKeyHashDRep: (drep: DRep) => drep is KeyHashDRep
+```
+
+Added in v2.0.0
+
+## isScriptHashDRep
+
+Check if a DRep is a ScriptHashDRep.
+
+**Signature**
+
+```ts
+export declare const isScriptHashDRep: (drep: DRep) => drep is ScriptHashDRep
+```
+
+Added in v2.0.0
+
+# schemas
+
+## CBORBytesSchema
+
+CBOR bytes transformation schema for DRep.
+
+**Signature**
+
+```ts
+export declare const CBORBytesSchema: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.Union<
+      [
+        Schema.Tuple2<Schema.Literal<[0]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple2<Schema.Literal<[1]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple<[Schema.Literal<[2]>]>,
+        Schema.Tuple<[Schema.Literal<[3]>]>
+      ]
+    >,
+    Schema.SchemaClass<
+      | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+      | { readonly _tag: "AlwaysAbstainDRep" }
+      | { readonly _tag: "AlwaysNoConfidenceDRep" },
+      | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+      | { readonly _tag: "AlwaysAbstainDRep" }
+      | { readonly _tag: "AlwaysNoConfidenceDRep" },
+      never
+    >,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## CBORHexSchema
+
+CBOR hex transformation schema for DRep.
+
+**Signature**
+
+```ts
+export declare const CBORHexSchema: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Union<
+        [
+          Schema.Tuple2<Schema.Literal<[0]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple2<Schema.Literal<[1]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple<[Schema.Literal<[2]>]>,
+          Schema.Tuple<[Schema.Literal<[3]>]>
+        ]
+      >,
+      Schema.SchemaClass<
+        | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+        | { readonly _tag: "AlwaysAbstainDRep" }
+        | { readonly _tag: "AlwaysNoConfidenceDRep" },
+        | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+        | { readonly _tag: "AlwaysAbstainDRep" }
+        | { readonly _tag: "AlwaysNoConfidenceDRep" },
+        never
+      >,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## DRep
+
+Union schema for DRep representing different DRep types.
+
+drep = [0, addr_keyhash] / [1, script_hash] / [2] / [3]
+
+**Signature**
+
+```ts
+export declare const DRep: Schema.Union<
+  [
+    Schema.TaggedStruct<
+      "KeyHashDRep",
+      { keyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+    >,
+    Schema.TaggedStruct<
+      "ScriptHashDRep",
+      { scriptHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+    >,
+    Schema.TaggedStruct<"AlwaysAbstainDRep", {}>,
+    Schema.TaggedStruct<"AlwaysNoConfidenceDRep", {}>
+  ]
+>
+```
+
+Added in v2.0.0
+
+## DRepCDDLSchema
+
+CDDL schema for DRep with proper transformation.
+drep = [0, addr_keyhash] / [1, script_hash] / [2] / [3]
+
+**Signature**
+
+```ts
+export declare const DRepCDDLSchema: Schema.transformOrFail<
+  Schema.Union<
+    [
+      Schema.Tuple2<Schema.Literal<[0]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[1]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple<[Schema.Literal<[2]>]>,
+      Schema.Tuple<[Schema.Literal<[3]>]>
+    ]
+  >,
+  Schema.SchemaClass<
+    | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+    | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+    | { readonly _tag: "AlwaysAbstainDRep" }
+    | { readonly _tag: "AlwaysNoConfidenceDRep" },
+    | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+    | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+    | { readonly _tag: "AlwaysAbstainDRep" }
+    | { readonly _tag: "AlwaysNoConfidenceDRep" },
+    never
+  >,
+  never
+>
+```
+
+Added in v2.0.0
+
+# transformation
+
+## match
+
+Pattern match on a DRep to handle different DRep types.
+
+**Signature**
+
+```ts
+export declare const match: <A, B, C, D>(
+  drep: DRep,
+  cases: {
+    KeyHashDRep: (drep: KeyHashDRep) => A
+    ScriptHashDRep: (drep: ScriptHashDRep) => B
+    AlwaysAbstainDRep: (drep: AlwaysAbstainDRep) => C
+    AlwaysNoConfidenceDRep: (drep: AlwaysNoConfidenceDRep) => D
+  }
+) => A | B | C | D
+```
+
+Added in v2.0.0
+
+# utils
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: (options?: CBOR.CodecOptions) => {
+  Encode: {
+    cborBytes: (
+      input:
+        | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+        | { readonly _tag: "AlwaysAbstainDRep" }
+        | { readonly _tag: "AlwaysNoConfidenceDRep" }
+    ) => any
+    cborHex: (
+      input:
+        | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+        | { readonly _tag: "AlwaysAbstainDRep" }
+        | { readonly _tag: "AlwaysNoConfidenceDRep" }
+    ) => string
+  }
+  Decode: {
+    cborBytes: (
+      input: any
+    ) =>
+      | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+      | { readonly _tag: "AlwaysAbstainDRep" }
+      | { readonly _tag: "AlwaysNoConfidenceDRep" }
+    cborHex: (
+      input: string
+    ) =>
+      | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+      | { readonly _tag: "AlwaysAbstainDRep" }
+      | { readonly _tag: "AlwaysNoConfidenceDRep" }
+  }
+  EncodeEffect: {
+    cborBytes: (
+      input:
+        | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+        | { readonly _tag: "AlwaysAbstainDRep" }
+        | { readonly _tag: "AlwaysNoConfidenceDRep" }
+    ) => Effect.Effect<any, InstanceType<typeof DRepError>>
+    cborHex: (
+      input:
+        | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+        | { readonly _tag: "AlwaysAbstainDRep" }
+        | { readonly _tag: "AlwaysNoConfidenceDRep" }
+    ) => Effect.Effect<string, InstanceType<typeof DRepError>>
+  }
+  DecodeEffect: {
+    cborBytes: (
+      input: any
+    ) => Effect.Effect<
+      | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+      | { readonly _tag: "AlwaysAbstainDRep" }
+      | { readonly _tag: "AlwaysNoConfidenceDRep" },
+      InstanceType<typeof DRepError>
+    >
+    cborHex: (
+      input: string
+    ) => Effect.Effect<
+      | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+      | { readonly _tag: "AlwaysAbstainDRep" }
+      | { readonly _tag: "AlwaysNoConfidenceDRep" },
+      InstanceType<typeof DRepError>
+    >
+  }
+  EncodeEither: {
+    cborBytes: (
+      input:
+        | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+        | { readonly _tag: "AlwaysAbstainDRep" }
+        | { readonly _tag: "AlwaysNoConfidenceDRep" }
+    ) => Either<any, InstanceType<typeof DRepError>>
+    cborHex: (
+      input:
+        | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+        | { readonly _tag: "AlwaysAbstainDRep" }
+        | { readonly _tag: "AlwaysNoConfidenceDRep" }
+    ) => Either<string, InstanceType<typeof DRepError>>
+  }
+  DecodeEither: {
+    cborBytes: (
+      input: any
+    ) => Either<
+      | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+      | { readonly _tag: "AlwaysAbstainDRep" }
+      | { readonly _tag: "AlwaysNoConfidenceDRep" },
+      InstanceType<typeof DRepError>
+    >
+    cborHex: (
+      input: string
+    ) => Either<
+      | { readonly _tag: "KeyHashDRep"; readonly keyHash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: string & Brand<"ScriptHash"> }
+      | { readonly _tag: "AlwaysAbstainDRep" }
+      | { readonly _tag: "AlwaysNoConfidenceDRep" },
+      InstanceType<typeof DRepError>
+    >
+  }
+}
+```

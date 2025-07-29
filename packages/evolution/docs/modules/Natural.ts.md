@@ -1,0 +1,56 @@
+---
+title: Natural.ts
+nav_order: 57
+parent: Modules
+---
+
+## Natural overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [predicates](#predicates)
+  - [generator](#generator)
+- [utils](#utils)
+  - [Natural](#natural)
+  - [Natural (type alias)](#natural-type-alias)
+
+---
+
+# predicates
+
+## generator
+
+Check if the given value is a valid PositiveNumber
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<number & Brand<"Natural">>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Natural
+
+Natural number constructors
+Used for validating non negative integers
+
+**Signature**
+
+```ts
+export declare const Natural: Schema.brand<typeof Schema.Positive, "Natural">
+```
+
+Added in v2.0.0
+
+## Natural (type alias)
+
+**Signature**
+
+```ts
+export type Natural = typeof Natural.Type
+```

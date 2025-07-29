@@ -1,0 +1,62 @@
+---
+title: Combinator.ts
+nav_order: 28
+parent: Modules
+---
+
+## Combinator overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [utils](#utils)
+  - [HEX_REGEX](#hex_regex)
+  - [HexStringFilter](#hexstringfilter)
+  - [HexStringSchema](#hexstringschema)
+  - [Uint8ArraySchema](#uint8arrayschema)
+
+---
+
+# utils
+
+## HEX_REGEX
+
+Regular expression that matches valid hexadecimal strings.
+Validates that a string:
+
+- Contains only hexadecimal characters (0-9, a-f)
+- Has an even number of characters (bytes are represented as pairs of hex digits)
+- Can be empty (matches zero or more pairs)
+
+**Signature**
+
+```ts
+export declare const HEX_REGEX: RegExp
+```
+
+## HexStringFilter
+
+**Signature**
+
+```ts
+export declare const HexStringFilter: <Source extends string, Target>(
+  self: Schema.Schema<Source, Target>
+) => Schema.refine<Source, Schema.Schema<Source, Target, never>>
+```
+
+## HexStringSchema
+
+**Signature**
+
+```ts
+export declare const HexStringSchema: Schema.refine<string, typeof Schema.String>
+```
+
+## Uint8ArraySchema
+
+**Signature**
+
+```ts
+export declare const Uint8ArraySchema: Schema.declare<Uint8Array, Uint8Array, readonly [], never>
+```

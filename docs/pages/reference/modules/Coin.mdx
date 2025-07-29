@@ -1,0 +1,189 @@
+---
+title: Coin.ts
+nav_order: 27
+parent: Modules
+---
+
+## Coin overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [constants](#constants)
+  - [MAX_COIN_VALUE](#max_coin_value)
+- [constructors](#constructors)
+  - [make](#make)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [CoinError (class)](#coinerror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [Coin (type alias)](#coin-type-alias)
+- [ordering](#ordering)
+  - [compare](#compare)
+- [predicates](#predicates)
+  - [is](#is)
+- [schemas](#schemas)
+  - [CoinSchema](#coinschema)
+- [transformation](#transformation)
+  - [add](#add)
+  - [subtract](#subtract)
+
+---
+
+# constants
+
+## MAX_COIN_VALUE
+
+Maximum value for a coin amount (maxWord64).
+
+**Signature**
+
+```ts
+export declare const MAX_COIN_VALUE: 18446744073709551615n
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for creating Coin values.
+
+**Signature**
+
+```ts
+export declare const make: (a: bigint, options?: Schema.MakeOptions) => bigint
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two coin amounts are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: Coin, b: Coin) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## CoinError (class)
+
+Error class for Coin related operations.
+
+**Signature**
+
+```ts
+export declare class CoinError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random Coin value.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<bigint>
+```
+
+Added in v2.0.0
+
+# model
+
+## Coin (type alias)
+
+Type alias for Coin representing ADA amounts in lovelace.
+1 ADA = 1,000,000 lovelace
+
+**Signature**
+
+```ts
+export type Coin = typeof CoinSchema.Type
+```
+
+Added in v2.0.0
+
+# ordering
+
+## compare
+
+Compare two coin amounts.
+
+**Signature**
+
+```ts
+export declare const compare: (a: Coin, b: Coin) => -1 | 0 | 1
+```
+
+Added in v2.0.0
+
+# predicates
+
+## is
+
+Check if a value is a valid Coin.
+
+**Signature**
+
+```ts
+export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is bigint
+```
+
+Added in v2.0.0
+
+# schemas
+
+## CoinSchema
+
+Schema for validating coin amounts as unsigned 64-bit integers.
+coin = uint
+
+**Signature**
+
+```ts
+export declare const CoinSchema: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+```
+
+Added in v2.0.0
+
+# transformation
+
+## add
+
+Add two coin amounts safely.
+
+**Signature**
+
+```ts
+export declare const add: (a: Coin, b: Coin) => Coin
+```
+
+Added in v2.0.0
+
+## subtract
+
+Subtract two coin amounts safely.
+
+**Signature**
+
+```ts
+export declare const subtract: (a: Coin, b: Coin) => Coin
+```
+
+Added in v2.0.0

@@ -1,0 +1,60 @@
+---
+title: Bech32.ts
+nav_order: 8
+parent: Modules
+---
+
+## Bech32 overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [model](#model)
+  - [Bech32Error (class)](#bech32error-class)
+- [utils](#utils)
+  - [Bech32 (type alias)](#bech32-type-alias)
+  - [Bech32Schema](#bech32schema)
+  - [FromBytes](#frombytes)
+
+---
+
+# model
+
+## Bech32Error (class)
+
+**Signature**
+
+```ts
+export declare class Bech32Error
+```
+
+Added in v2.0.0
+
+# utils
+
+## Bech32 (type alias)
+
+**Signature**
+
+```ts
+export type Bech32 = typeof Bech32Schema.Type
+```
+
+## Bech32Schema
+
+**Signature**
+
+```ts
+export declare const Bech32Schema: Schema.brand<typeof Schema.String, "Bech32">
+```
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: (
+  prefix?: string
+) => Schema.transformOrFail<typeof Schema.Uint8ArrayFromSelf, Schema.brand<typeof Schema.String, "Bech32">, never>
+```

@@ -1,0 +1,206 @@
+---
+title: Url.ts
+nav_order: 94
+parent: Modules
+---
+
+## Url overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [constants](#constants)
+  - [URL_MAX_LENGTH](#url_max_length)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [UrlError (class)](#urlerror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [Url](#url)
+  - [Url (type alias)](#url-type-alias)
+- [utils](#utils)
+  - [Codec](#codec)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+  - [make](#make)
+
+---
+
+# constants
+
+## URL_MAX_LENGTH
+
+CDDL specification:
+url = text .size (0..128)
+
+**Signature**
+
+```ts
+export declare const URL_MAX_LENGTH: 128
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two Url instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: Url, b: Url) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## UrlError (class)
+
+Error class for Url related operations.
+
+**Signature**
+
+```ts
+export declare class UrlError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random Url.
+
+**Signature**
+
+```ts
+export declare const generator: Arbitrary<string & Brand<"Url">>
+```
+
+Added in v2.0.0
+
+# model
+
+## Url
+
+Schema for Url representing URLs as branded text.
+url = text .size (0..128)
+
+**Signature**
+
+```ts
+export declare const Url: Schema.brand<
+  Schema.refine<
+    string,
+    Schema.transform<
+      Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
+    >
+  >,
+  "Url"
+>
+```
+
+Added in v2.0.0
+
+## Url (type alias)
+
+Type alias for Url.
+
+**Signature**
+
+```ts
+export type Url = typeof Url.Type
+```
+
+Added in v2.0.0
+
+# utils
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string & Brand<"Url">) => any; hex: (input: string & Brand<"Url">) => string }
+  Decode: { bytes: (input: any) => string & Brand<"Url">; hex: (input: string) => string & Brand<"Url"> }
+  EncodeEffect: {
+    bytes: (input: string & Brand<"Url">) => Effect<any, InstanceType<typeof UrlError>>
+    hex: (input: string & Brand<"Url">) => Effect<string, InstanceType<typeof UrlError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string & Brand<"Url">, InstanceType<typeof UrlError>>
+    hex: (input: string) => Effect<string & Brand<"Url">, InstanceType<typeof UrlError>>
+  }
+  EncodeEither: {
+    bytes: (input: string & Brand<"Url">) => Either<any, InstanceType<typeof UrlError>>
+    hex: (input: string & Brand<"Url">) => Either<string, InstanceType<typeof UrlError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string & Brand<"Url">, InstanceType<typeof UrlError>>
+    hex: (input: string) => Either<string & Brand<"Url">, InstanceType<typeof UrlError>>
+  }
+}
+```
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.filter<Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>>,
+  Schema.brand<
+    Schema.refine<
+      string,
+      Schema.transform<
+        Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
+      >
+    >,
+    "Url"
+  >
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.refine<
+    string,
+    Schema.transform<
+      Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
+    >
+  >,
+  Schema.brand<
+    Schema.refine<
+      string,
+      Schema.transform<
+        Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
+      >
+    >,
+    "Url"
+  >
+>
+```
+
+## make
+
+**Signature**
+
+```ts
+export declare const make: (a: string, options?: Schema.MakeOptions) => string & Brand<"Url">
+```

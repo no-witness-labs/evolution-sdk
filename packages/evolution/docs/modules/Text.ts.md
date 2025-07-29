@@ -1,0 +1,99 @@
+---
+title: Text.ts
+nav_order: 83
+parent: Modules
+---
+
+## Text overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [errors](#errors)
+  - [TextError (class)](#texterror-class)
+- [schemas](#schemas)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec utilities for Text encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string) => any; hex: (input: string) => string }
+  Decode: { bytes: (input: any) => string; hex: (input: string) => string }
+  EncodeEffect: {
+    bytes: (input: string) => Effect<any, InstanceType<typeof TextError>>
+    hex: (input: string) => Effect<string, InstanceType<typeof TextError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string, InstanceType<typeof TextError>>
+    hex: (input: string) => Effect<string, InstanceType<typeof TextError>>
+  }
+  EncodeEither: {
+    bytes: (input: string) => Either<any, InstanceType<typeof TextError>>
+    hex: (input: string) => Either<string, InstanceType<typeof TextError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string, InstanceType<typeof TextError>>
+    hex: (input: string) => Either<string, InstanceType<typeof TextError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# errors
+
+## TextError (class)
+
+Error class for Text related operations.
+
+**Signature**
+
+```ts
+export declare class TextError
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromBytes
+
+Schema for converting between strings and UTF-8 byte arrays.
+text -> bytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+Schema for converting between strings and hex representation of UTF-8 bytes.
+text <-> hex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
+>
+```
+
+Added in v2.0.0

@@ -1,0 +1,142 @@
+---
+title: EpochNo.ts
+nav_order: 42
+parent: Modules
+---
+
+## EpochNo overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [constructors](#constructors)
+  - [make](#make)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [EpochNoError (class)](#epochnoerror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [EpochNo (type alias)](#epochno-type-alias)
+- [ordering](#ordering)
+  - [compare](#compare)
+- [predicates](#predicates)
+  - [is](#is)
+- [schemas](#schemas)
+  - [EpochNoSchema](#epochnoschema)
+
+---
+
+# constructors
+
+## make
+
+Smart constructor for creating EpochNo values.
+
+**Signature**
+
+```ts
+export declare const make: (a: number, options?: Schema.MakeOptions) => number & Brand<"EpochNo">
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two EpochNo instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: EpochNo, b: EpochNo) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## EpochNoError (class)
+
+Error class for EpochNo related operations.
+
+**Signature**
+
+```ts
+export declare class EpochNoError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random EpochNo.
+
+**Signature**
+
+```ts
+export declare const generator: Arbitrary<number>
+```
+
+Added in v2.0.0
+
+# model
+
+## EpochNo (type alias)
+
+Type alias for EpochNo representing blockchain epoch numbers.
+
+**Signature**
+
+```ts
+export type EpochNo = typeof EpochNoSchema.Type
+```
+
+Added in v2.0.0
+
+# ordering
+
+## compare
+
+Compare two EpochNo values.
+
+**Signature**
+
+```ts
+export declare const compare: (a: EpochNo, b: EpochNo) => -1 | 0 | 1
+```
+
+Added in v2.0.0
+
+# predicates
+
+## is
+
+Check if a value is a valid EpochNo.
+
+**Signature**
+
+```ts
+export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is number & Brand<"EpochNo">
+```
+
+Added in v2.0.0
+
+# schemas
+
+## EpochNoSchema
+
+Schema for validating epoch numbers (0-255).
+
+**Signature**
+
+```ts
+export declare const EpochNoSchema: Schema.brand<Schema.refine<number, typeof Schema.Number>, "EpochNo">
+```
+
+Added in v2.0.0

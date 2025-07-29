@@ -1,0 +1,298 @@
+---
+title: UnitInterval.ts
+nav_order: 93
+parent: Modules
+---
+
+## UnitInterval overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [codecs](#codecs)
+  - [CBORCodec](#cborcodec)
+- [constructors](#constructors)
+  - [fromBigDecimal](#frombigdecimal)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [UnitIntervalError (class)](#unitintervalerror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [FromCBORBytes](#fromcborbytes)
+  - [FromCBORHex](#fromcborhex)
+  - [FromCDDL](#fromcddl)
+  - [UnitInterval](#unitinterval)
+- [transformation](#transformation)
+  - [toBigDecimal](#tobigdecimal)
+- [utils](#utils)
+  - [UnitInterval (type alias)](#unitinterval-type-alias)
+
+---
+
+# codecs
+
+## CBORCodec
+
+CBOR codec utilities for UnitInterval.
+
+**Signature**
+
+```ts
+export declare const CBORCodec: (options?: CBOR.CodecOptions) => {
+  Encode: {
+    cborBytes: (input: { readonly numerator: bigint; readonly denominator: bigint }) => any
+    cborHex: (input: { readonly numerator: bigint; readonly denominator: bigint }) => string
+  }
+  Decode: {
+    cborBytes: (input: any) => { readonly numerator: bigint; readonly denominator: bigint }
+    cborHex: (input: string) => { readonly numerator: bigint; readonly denominator: bigint }
+  }
+  EncodeEffect: {
+    cborBytes: (input: {
+      readonly numerator: bigint
+      readonly denominator: bigint
+    }) => Effect.Effect<any, InstanceType<typeof UnitIntervalError>>
+    cborHex: (input: {
+      readonly numerator: bigint
+      readonly denominator: bigint
+    }) => Effect.Effect<string, InstanceType<typeof UnitIntervalError>>
+  }
+  DecodeEffect: {
+    cborBytes: (
+      input: any
+    ) => Effect.Effect<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      InstanceType<typeof UnitIntervalError>
+    >
+    cborHex: (
+      input: string
+    ) => Effect.Effect<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      InstanceType<typeof UnitIntervalError>
+    >
+  }
+  EncodeEither: {
+    cborBytes: (input: {
+      readonly numerator: bigint
+      readonly denominator: bigint
+    }) => Either<any, InstanceType<typeof UnitIntervalError>>
+    cborHex: (input: {
+      readonly numerator: bigint
+      readonly denominator: bigint
+    }) => Either<string, InstanceType<typeof UnitIntervalError>>
+  }
+  DecodeEither: {
+    cborBytes: (
+      input: any
+    ) => Either<{ readonly numerator: bigint; readonly denominator: bigint }, InstanceType<typeof UnitIntervalError>>
+    cborHex: (
+      input: string
+    ) => Either<{ readonly numerator: bigint; readonly denominator: bigint }, InstanceType<typeof UnitIntervalError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# constructors
+
+## fromBigDecimal
+
+Create UnitInterval from BigDecimal value.
+
+**Signature**
+
+```ts
+export declare const fromBigDecimal: (value: BigDecimal.BigDecimal) => UnitInterval
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two UnitInterval instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: UnitInterval, b: UnitInterval) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## UnitIntervalError (class)
+
+Error class for UnitInterval related operations.
+
+**Signature**
+
+```ts
+export declare class UnitIntervalError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random UnitInterval.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<{ readonly numerator: bigint; readonly denominator: bigint }>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromCBORBytes
+
+CBOR bytes transformation schema for UnitInterval.
+Transforms between Uint8Array and UnitInterval using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromCBORBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    typeof CBOR.Tag,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCBORHex
+
+CBOR hex transformation schema for UnitInterval.
+Transforms between hex string and UnitInterval using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromCBORHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      typeof CBOR.Tag,
+      Schema.refine<
+        { readonly numerator: bigint; readonly denominator: bigint },
+        Schema.Struct<{
+          numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+          denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        }>
+      >,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+CDDL schema for UnitInterval following the Conway specification.
+unit_interval = #6.30([uint, uint])
+
+Transforms between CBOR tag 30 structure and UnitInterval model.
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  typeof CBOR.Tag,
+  Schema.refine<
+    { readonly numerator: bigint; readonly denominator: bigint },
+    Schema.Struct<{
+      numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+    }>
+  >,
+  never
+>
+```
+
+Added in v2.0.0
+
+## UnitInterval
+
+Schema for UnitInterval representing a fractional value between 0 and 1.
+
+CDDL: unit_interval = #6.30([uint, uint])
+
+A unit interval is a number in the range between 0 and 1, which
+means there are two extra constraints:
+
+1. numerator <= denominator
+2. denominator > 0
+
+**Signature**
+
+```ts
+export declare const UnitInterval: Schema.refine<
+  { readonly numerator: bigint; readonly denominator: bigint },
+  Schema.Struct<{
+    numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+    denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+  }>
+>
+```
+
+Added in v2.0.0
+
+# transformation
+
+## toBigDecimal
+
+Convert UnitInterval to BigDecimal value.
+
+**Signature**
+
+```ts
+export declare const toBigDecimal: (interval: UnitInterval) => BigDecimal.BigDecimal
+```
+
+Added in v2.0.0
+
+# utils
+
+## UnitInterval (type alias)
+
+**Signature**
+
+```ts
+export type UnitInterval = typeof UnitInterval.Type
+```

@@ -1,0 +1,157 @@
+---
+title: KeyHash.ts
+nav_order: 51
+parent: Modules
+---
+
+## KeyHash overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [KeyHashError (class)](#keyhasherror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [KeyHash](#keyhash)
+- [utils](#utils)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+  - [KeyHash (type alias)](#keyhash-type-alias)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec utilities for KeyHash encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string & Brand<"KeyHash">) => any; string: (input: string & Brand<"KeyHash">) => string }
+  Decode: { bytes: (input: any) => string & Brand<"KeyHash">; string: (input: string) => string & Brand<"KeyHash"> }
+  EncodeEffect: {
+    bytes: (input: string & Brand<"KeyHash">) => Effect<any, InstanceType<typeof KeyHashError>>
+    string: (input: string & Brand<"KeyHash">) => Effect<string, InstanceType<typeof KeyHashError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string & Brand<"KeyHash">, InstanceType<typeof KeyHashError>>
+    string: (input: string) => Effect<string & Brand<"KeyHash">, InstanceType<typeof KeyHashError>>
+  }
+  EncodeEither: {
+    bytes: (input: string & Brand<"KeyHash">) => Either<any, InstanceType<typeof KeyHashError>>
+    string: (input: string & Brand<"KeyHash">) => Either<string, InstanceType<typeof KeyHashError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string & Brand<"KeyHash">, InstanceType<typeof KeyHashError>>
+    string: (input: string) => Either<string & Brand<"KeyHash">, InstanceType<typeof KeyHashError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two KeyHash instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: KeyHash, b: KeyHash) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## KeyHashError (class)
+
+Error class for KeyHash related operations.
+
+**Signature**
+
+```ts
+export declare class KeyHashError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random KeyHash.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<string & Brand<"KeyHash">>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## KeyHash
+
+Schema for KeyHash representing a verification key hash.
+addr_keyhash = hash28
+Follows CIP-0019 binary representation.
+
+**Signature**
+
+```ts
+export declare const KeyHash: Schema.brand<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  "KeyHash"
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.transform<
+    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+  >,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash">
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash">
+>
+```
+
+## KeyHash (type alias)
+
+**Signature**
+
+```ts
+export type KeyHash = typeof KeyHash.Type
+```

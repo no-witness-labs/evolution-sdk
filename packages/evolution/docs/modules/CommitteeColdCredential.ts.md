@@ -1,0 +1,261 @@
+---
+title: CommitteeColdCredential.ts
+nav_order: 29
+parent: Modules
+---
+
+## CommitteeColdCredential overview
+
+Committee Cold Credential module - provides an alias for Credential specialized for committee cold key usage.
+
+In Cardano, committee_cold_credential = credential, representing the same credential structure
+but used specifically for committee cold keys in governance.
+
+Added in v2.0.0
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [errors](#errors)
+  - [CommitteeColdCredentialError](#committeecoldcredentialerror)
+- [model](#model)
+  - [CommitteeColdCredential (type alias)](#committeecoldcredential-type-alias)
+- [schemas](#schemas)
+  - [CommitteeColdCredential](#committeecoldcredential)
+  - [FromCBORBytes](#fromcborbytes)
+- [utils](#utils)
+  - [Codec](#codec)
+  - [FromCBORHex](#fromcborhex)
+  - [equals](#equals)
+  - [generator](#generator)
+  - [is](#is)
+
+---
+
+# errors
+
+## CommitteeColdCredentialError
+
+Error class for CommitteeColdCredential operations - re-exports CredentialError.
+
+**Signature**
+
+```ts
+export declare const CommitteeColdCredentialError: typeof Credential.CredentialError
+```
+
+Added in v2.0.0
+
+# model
+
+## CommitteeColdCredential (type alias)
+
+Type representing a committee cold credential - alias for Credential type.
+
+**Signature**
+
+```ts
+export type CommitteeColdCredential = Credential.Credential
+```
+
+Added in v2.0.0
+
+# schemas
+
+## CommitteeColdCredential
+
+CommitteeColdCredential schema - alias for the Credential schema.
+committee_cold_credential = credential
+
+**Signature**
+
+```ts
+export declare const CommitteeColdCredential: Union<
+  [
+    TaggedStruct<"KeyHash", { hash: brand<refine<string, refine<string, typeof String>>, "KeyHash"> }>,
+    TaggedStruct<"ScriptHash", { hash: brand<refine<string, refine<string, typeof String>>, "ScriptHash"> }>
+  ]
+>
+```
+
+Added in v2.0.0
+
+## FromCBORBytes
+
+CBOR encoding/decoding schemas.
+
+**Signature**
+
+```ts
+export declare const FromCBORBytes: (
+  options?: CBOR.CodecOptions
+) => transform<
+  transformOrFail<typeof Uint8ArrayFromSelf, declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>, never>,
+  transformOrFail<
+    Tuple2<Literal<[0n, 1n]>, typeof Uint8ArrayFromSelf>,
+    SchemaClass<
+      | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> },
+      | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> },
+      never
+    >,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: (options?: CBOR.CodecOptions) => {
+  Encode: {
+    cborBytes: (
+      input:
+        | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+    ) => any
+    cborHex: (
+      input:
+        | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+    ) => string
+  }
+  Decode: {
+    cborBytes: (
+      input: any
+    ) =>
+      | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+    cborHex: (
+      input: string
+    ) =>
+      | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+  }
+  EncodeEffect: {
+    cborBytes: (
+      input:
+        | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+    ) => Effect<any, InstanceType<typeof Credential.CredentialError>>
+    cborHex: (
+      input:
+        | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+    ) => Effect<string, InstanceType<typeof Credential.CredentialError>>
+  }
+  DecodeEffect: {
+    cborBytes: (
+      input: any
+    ) => Effect<
+      | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> },
+      InstanceType<typeof Credential.CredentialError>
+    >
+    cborHex: (
+      input: string
+    ) => Effect<
+      | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> },
+      InstanceType<typeof Credential.CredentialError>
+    >
+  }
+  EncodeEither: {
+    cborBytes: (
+      input:
+        | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+    ) => Either<any, InstanceType<typeof Credential.CredentialError>>
+    cborHex: (
+      input:
+        | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+    ) => Either<string, InstanceType<typeof Credential.CredentialError>>
+  }
+  DecodeEither: {
+    cborBytes: (
+      input: any
+    ) => Either<
+      | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> },
+      InstanceType<typeof Credential.CredentialError>
+    >
+    cborHex: (
+      input: string
+    ) => Either<
+      | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+      | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> },
+      InstanceType<typeof Credential.CredentialError>
+    >
+  }
+}
+```
+
+## FromCBORHex
+
+**Signature**
+
+```ts
+export declare const FromCBORHex: (
+  options?: CBOR.CodecOptions
+) => transform<
+  transform<refine<string, typeof String>, typeof Uint8ArrayFromSelf>,
+  transform<
+    transformOrFail<typeof Uint8ArrayFromSelf, declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>, never>,
+    transformOrFail<
+      Tuple2<Literal<[0n, 1n]>, typeof Uint8ArrayFromSelf>,
+      SchemaClass<
+        | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> },
+        | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+        | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> },
+        never
+      >,
+      never
+    >
+  >
+>
+```
+
+## equals
+
+**Signature**
+
+```ts
+export declare const equals: (a: Credential.Credential, b: Credential.Credential) => boolean
+```
+
+## generator
+
+**Signature**
+
+```ts
+export declare const generator: Arbitrary<
+  { _tag: "KeyHash"; hash: string & Brand<"KeyHash"> } | { _tag: "ScriptHash"; hash: string & Brand<"ScriptHash"> }
+>
+```
+
+## is
+
+Re-exported utilities from Credential module.
+
+**Signature**
+
+```ts
+export declare const is: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is
+  | { readonly _tag: "KeyHash"; readonly hash: string & Brand<"KeyHash"> }
+  | { readonly _tag: "ScriptHash"; readonly hash: string & Brand<"ScriptHash"> }
+```
+
+Added in v2.0.0

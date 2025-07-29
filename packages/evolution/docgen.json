@@ -1,0 +1,19 @@
+{
+  "theme": "mikearnaldi/docgen-template",
+  "srcDir": "src",
+  "outDir": "docs",
+  "examplesDir": "examples",
+  "parseReadme": true,
+  "enableSearch": true,
+  "enforceDescriptions": false,
+  "enforceExamples": false,
+  "enforceVersion": false,
+  "enforceExports": false,
+  "skipExamplesValidation": true,
+  "skipModulesValidation": true,
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/test/**", "**/tests/**", "**/internal/**", "**/index.ts"],
+  "projectHomepage": "https://github.com/no-witness-labs/evolution-sdk",
+  "docsHomepage": "TBD",
+  "projectName": "Evolution SDK",
+  "packageName": "@evolution-sdk/evolution"
+}

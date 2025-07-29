@@ -1,0 +1,169 @@
+---
+title: AuxiliaryDataHash.ts
+nav_order: 6
+parent: Modules
+---
+
+## AuxiliaryDataHash overview
+
+Auxiliary Data Hash module - provides an alias for Bytes32 specialized for auxiliary data hashing.
+
+In Cardano, auxiliary_data_hash = Bytes32, representing a 32-byte hash
+used for auxiliary data (metadata) attached to transactions.
+
+Added in v2.0.0
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [AuxiliaryDataHashError (class)](#auxiliarydatahasherror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [AuxiliaryDataHash](#auxiliarydatahash)
+- [utils](#utils)
+  - [AuxiliaryDataHash (type alias)](#auxiliarydatahash-type-alias)
+  - [BytesSchema](#bytesschema)
+  - [HexSchema](#hexschema)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec utilities for AuxiliaryDataHash encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: {
+    bytes: (input: string & Brand<"AuxiliaryDataHash">) => any
+    hex: (input: string & Brand<"AuxiliaryDataHash">) => string
+  }
+  Decode: {
+    bytes: (input: any) => string & Brand<"AuxiliaryDataHash">
+    hex: (input: string) => string & Brand<"AuxiliaryDataHash">
+  }
+  EncodeEffect: {
+    bytes: (input: string & Brand<"AuxiliaryDataHash">) => Effect<any, InstanceType<typeof AuxiliaryDataHashError>>
+    hex: (input: string & Brand<"AuxiliaryDataHash">) => Effect<string, InstanceType<typeof AuxiliaryDataHashError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string & Brand<"AuxiliaryDataHash">, InstanceType<typeof AuxiliaryDataHashError>>
+    hex: (input: string) => Effect<string & Brand<"AuxiliaryDataHash">, InstanceType<typeof AuxiliaryDataHashError>>
+  }
+  EncodeEither: {
+    bytes: (input: string & Brand<"AuxiliaryDataHash">) => Either<any, InstanceType<typeof AuxiliaryDataHashError>>
+    hex: (input: string & Brand<"AuxiliaryDataHash">) => Either<string, InstanceType<typeof AuxiliaryDataHashError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string & Brand<"AuxiliaryDataHash">, InstanceType<typeof AuxiliaryDataHashError>>
+    hex: (input: string) => Either<string & Brand<"AuxiliaryDataHash">, InstanceType<typeof AuxiliaryDataHashError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two AuxiliaryDataHash instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: AuxiliaryDataHash, b: AuxiliaryDataHash) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## AuxiliaryDataHashError (class)
+
+Error class for AuxiliaryDataHash related operations.
+
+**Signature**
+
+```ts
+export declare class AuxiliaryDataHashError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random AuxiliaryDataHash.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<string & Brand<"AuxiliaryDataHash">>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## AuxiliaryDataHash
+
+Schema for AuxiliaryDataHash representing auxiliary data hashes.
+auxiliary_data_hash = Bytes32
+
+**Signature**
+
+```ts
+export declare const AuxiliaryDataHash: Schema.brand<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  "AuxiliaryDataHash"
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## AuxiliaryDataHash (type alias)
+
+**Signature**
+
+```ts
+export type AuxiliaryDataHash = typeof AuxiliaryDataHash.Type
+```
+
+## BytesSchema
+
+**Signature**
+
+```ts
+export declare const BytesSchema: Schema.transform<
+  Schema.transform<
+    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+  >,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AuxiliaryDataHash">
+>
+```
+
+## HexSchema
+
+**Signature**
+
+```ts
+export declare const HexSchema: Schema.transform<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AuxiliaryDataHash">
+>
+```

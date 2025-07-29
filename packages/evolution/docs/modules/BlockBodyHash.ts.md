@@ -1,0 +1,163 @@
+---
+title: BlockBodyHash.ts
+nav_order: 11
+parent: Modules
+---
+
+## BlockBodyHash overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [BlockBodyHashError (class)](#blockbodyhasherror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [BlockBodyHash](#blockbodyhash)
+- [utils](#utils)
+  - [BlockBodyHash (type alias)](#blockbodyhash-type-alias)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec utilities for BlockBodyHash encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: {
+    bytes: (input: string & Brand<"BlockBodyHash">) => any
+    hex: (input: string & Brand<"BlockBodyHash">) => string
+  }
+  Decode: {
+    bytes: (input: any) => string & Brand<"BlockBodyHash">
+    hex: (input: string) => string & Brand<"BlockBodyHash">
+  }
+  EncodeEffect: {
+    bytes: (input: string & Brand<"BlockBodyHash">) => Effect<any, InstanceType<typeof BlockBodyHashError>>
+    hex: (input: string & Brand<"BlockBodyHash">) => Effect<string, InstanceType<typeof BlockBodyHashError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string & Brand<"BlockBodyHash">, InstanceType<typeof BlockBodyHashError>>
+    hex: (input: string) => Effect<string & Brand<"BlockBodyHash">, InstanceType<typeof BlockBodyHashError>>
+  }
+  EncodeEither: {
+    bytes: (input: string & Brand<"BlockBodyHash">) => Either<any, InstanceType<typeof BlockBodyHashError>>
+    hex: (input: string & Brand<"BlockBodyHash">) => Either<string, InstanceType<typeof BlockBodyHashError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string & Brand<"BlockBodyHash">, InstanceType<typeof BlockBodyHashError>>
+    hex: (input: string) => Either<string & Brand<"BlockBodyHash">, InstanceType<typeof BlockBodyHashError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two BlockBodyHash instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: BlockBodyHash, b: BlockBodyHash) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## BlockBodyHashError (class)
+
+Error class for BlockBodyHash related operations.
+
+**Signature**
+
+```ts
+export declare class BlockBodyHashError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random BlockBodyHash.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<string & Brand<"BlockBodyHash">>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## BlockBodyHash
+
+Schema for BlockBodyHash representing a block body hash.
+block_body_hash = Bytes32
+Follows the Conway-era CDDL specification.
+
+**Signature**
+
+```ts
+export declare const BlockBodyHash: Schema.brand<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  "BlockBodyHash"
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## BlockBodyHash (type alias)
+
+**Signature**
+
+```ts
+export type BlockBodyHash = typeof BlockBodyHash.Type
+```
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.transform<
+    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+  >,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "BlockBodyHash">
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "BlockBodyHash">
+>
+```

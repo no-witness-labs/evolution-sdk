@@ -85,7 +85,10 @@ Added in v2.0.0
 ## FromHex
 
 Schema for converting between strings and hex representation of UTF-8 bytes.
+
+```
 text <-> hex
+```
 
 **Signature**
 

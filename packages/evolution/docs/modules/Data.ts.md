@@ -231,22 +231,24 @@ Added in v2.0.0
 
 PlutusData type definition based on Conway CDDL specification
 
+```
 CDDL: plutus_data =
-constr<plutus_data>
-/ {_ plutus_data => plutus_data}
-/ [_ plutus_data]
-/ big_int
-/ bounded_bytes
+  constr<plutus_data>
+  / {* plutus_data => plutus_data}
+  / [* plutus_data]
+  / big_int
+  / bounded_bytes
 
 constr<a0> =
-#6.121([* a0])
-/ #6.122([* a0])
-/ #6.123([* a0])
-/ #6.124([* a0])
-/ #6.125([* a0])
-/ #6.126([* a0])
-/ #6.127([* a0])
-/ #6.102([uint, [* a0]])
+  #6.121([* a0])
+  / #6.122([* a0])
+  / #6.123([* a0])
+  / #6.124([* a0])
+  / #6.125([* a0])
+  / #6.126([* a0])
+  / #6.127([* a0])
+  / #6.102([uint, [* a0]])
+```
 
 Constructor Index Limits:
 
@@ -294,15 +296,17 @@ Added in v2.0.0
 
 Constr type for constructor alternatives based on Conway CDDL specification
 
+```
 CDDL: constr<a0> =
-#6.121([* a0]) // index 0
-/ #6.122([* a0]) // index 1
-/ #6.123([* a0]) // index 2
-/ #6.124([* a0]) // index 3
-/ #6.125([* a0]) // index 4
-/ #6.126([* a0]) // index 5
-/ #6.127([* a0]) // index 6
-/ #6.102([uint, [* a0]]) // general constructor with custom index
+  #6.121([* a0])    // index 0
+  / #6.122([* a0])  // index 1
+  / #6.123([* a0])  // index 2
+  / #6.124([* a0])  // index 3
+  / #6.125([* a0])  // index 4
+  / #6.126([* a0])  // index 5
+  / #6.127([* a0])  // index 6
+  / #6.102([uint, [* a0]])  // general constructor with custom index
+```
 
 Constructor Index Range:
 

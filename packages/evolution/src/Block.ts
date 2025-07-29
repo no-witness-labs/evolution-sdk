@@ -9,6 +9,7 @@ import * as TransactionIndex from "./TransactionIndex.js"
 /**
  * Block based on Conway CDDL specification
  *
+ * ```
  * CDDL: block =
  *   [ header
  *   , transaction_bodies       : [* transaction_body]
@@ -16,6 +17,7 @@ import * as TransactionIndex from "./TransactionIndex.js"
  *   , auxiliary_data_set       : {* transaction_index => auxiliary_data}
  *   , invalid_transactions     : [* transaction_index]
  *   ]
+ * ```
  *
  * Valid blocks must also satisfy the following two constraints:
  * 1. the length of transaction_bodies and transaction_witness_sets

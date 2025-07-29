@@ -107,17 +107,20 @@ Added in v2.0.0
 ## PoolParams (class)
 
 Schema for PoolParams representing stake pool registration parameters.
+
+```
 pool_params =
-( operator : pool_keyhash
-, vrf_keyhash : vrf_keyhash
-, pledge : coin
-, cost : coin
-, margin : unit_interval
-, reward_account : reward_account
-, pool_owners : set<addr_keyhash>
-, relays : [* relay]
-, pool_metadata : pool_metadata/ nil
-)
+  ( operator       : pool_keyhash
+  , vrf_keyhash    : vrf_keyhash
+  , pledge         : coin
+  , cost           : coin
+  , margin         : unit_interval
+  , reward_account : reward_account
+  , pool_owners    : set<addr_keyhash>
+  , relays         : [* relay]
+  , pool_metadata  : pool_metadata/ nil
+  )
+```
 
 **Signature**
 
@@ -263,17 +266,20 @@ Added in v2.0.0
 ## PoolParamsCDDLSchema
 
 CDDL schema for PoolParams.
+
+```
 pool_params = [
-operator : pool_keyhash,
-vrf_keyhash : vrf_keyhash,
-pledge : coin,
-cost : coin,
-margin : unit_interval,
-reward_account : reward_account,
-pool_owners : set<addr_keyhash>,
-relays : [* relay],
-pool_metadata : pool_metadata / nil
+  operator       : pool_keyhash,
+  vrf_keyhash    : vrf_keyhash,
+  pledge         : coin,
+  cost           : coin,
+  margin         : unit_interval,
+  reward_account : reward_account,
+  pool_owners    : set<addr_keyhash>,
+  relays         : [* relay],
+  pool_metadata  : pool_metadata / nil
 ]
+```
 
 **Signature**
 

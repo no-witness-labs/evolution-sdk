@@ -266,7 +266,10 @@ Added in v2.0.0
 ## MultiAssetCDDLSchema
 
 CDDL schema for MultiAsset.
+
+```
 multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
+```
 
 **Signature**
 
@@ -290,8 +293,11 @@ Added in v2.0.0
 ## MultiAssetSchema
 
 Schema for MultiAsset representing native assets.
+
+```
 multiasset<a0> = {+ policy_id => {+ asset_name => a0}}
 case: multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
+```
 
 **Signature**
 

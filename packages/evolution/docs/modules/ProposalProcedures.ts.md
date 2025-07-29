@@ -23,7 +23,9 @@ parent: Modules
 
 ProposalProcedures based on Conway CDDL specification
 
+```
 CDDL: proposal_procedures = nonempty_set<proposal_procedure>
+```
 
 This is a non-empty set of proposal procedures.
 

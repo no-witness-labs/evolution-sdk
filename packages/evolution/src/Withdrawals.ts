@@ -6,8 +6,10 @@ import * as Coin from "./Coin.js"
 import * as RewardAccount from "./RewardAccount.js"
 
 /**
+ * ```
  * CDDL specs
  * withdrawals = {+ reward_account => coin}
+ * ```
  */
 
 /**
@@ -23,7 +25,10 @@ export class WithdrawalsError extends Data.TaggedError("WithdrawalsError")<{
 
 /**
  * Schema for Withdrawals representing a map of reward accounts to coin amounts.
+ * 
+ * ```
  * withdrawals = {+ reward_account => coin}
+ * ```
  *
  * @since 2.0.0
  * @since 2.0.0
@@ -53,7 +58,10 @@ export const isWithdrawals = Schema.is(Withdrawals)
 
 /**
  * CDDL schema for Withdrawals.
+ * 
+ * ```
  * withdrawals = {+ reward_account => coin}
+ * ```
  *
  * @since 2.0.0
  * @category schemas

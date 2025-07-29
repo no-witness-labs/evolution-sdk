@@ -22,7 +22,10 @@ export class ValueError extends Data.TaggedError("ValueError")<{
 
 /**
  * Schema for Value representing both ADA and native assets.
+ * 
+ * ```
  * value = coin / [coin, multiasset<positive_coin>]
+ * ```
  *
  * This can be either:
  * 1. Just a coin amount (lovelace only)
@@ -234,7 +237,10 @@ export const generator = FastCheck.oneof(
 
 /**
  * CDDL schema for Value as union structure.
+ * 
+ * ```
  * value = coin / [coin, multiasset<positive_coin>]
+ * ```
  *
  * This represents either:
  * - A single coin amount (for ADA-only values)

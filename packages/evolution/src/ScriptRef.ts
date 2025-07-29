@@ -18,7 +18,9 @@ export class ScriptRefError extends Data.TaggedError("ScriptRefError")<{
 /**
  * Schema for ScriptRef representing a reference to a script in a transaction output.
  *
+ * ```
  * CDDL: script_ref = #6.24(bytes .cbor script)
+ * ```
  *
  * This is a branded hex string that represents the CBOR-encoded script bytes.
  * The script_ref uses CBOR tag 24 to indicate it contains CBOR-encoded script data.
@@ -60,7 +62,10 @@ export const FromHex = Schema.compose(
 
 /**
  * CDDL schema for ScriptRef following the Conway specification.
+ * 
+ * ```
  * script_ref = #6.24(bytes .cbor script)
+ * ```
  *
  * This transforms between CBOR tag 24 structure and ScriptRef model.
  *

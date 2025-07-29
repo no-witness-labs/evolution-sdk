@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    name: 🚀 Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
+          fetch-depth: 0
+
+      - name: ⎔ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: 📦 Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 🏗 Build packages
+        run: pnpm turbo run build
+
+      - name: 🧪 Run tests
+        run: pnpm turbo run test
+
+      - name: 📄 Generate docs
+        run: pnpm turbo run docgen || echo "No docgen script found, skipping"
+
+      - name: 🦋 Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # This uses our custom publish script that builds before publishing
+          publish: pnpm changeset-publish
+          title: "ci(changesets): version packages"
+          commit: "ci(changesets): version packages"
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: 📢 Send a Slack notification if a publish happened
+        if: steps.changesets.outputs.published == 'true'
+        # You can do something when a publish happens.
+        run: echo "A new version of Evolution SDK was published!"

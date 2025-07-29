@@ -24,7 +24,7 @@ parent: Modules
 Represents a cardano-cli JSON script syntax
 
 Native type follows the standard described in the
-{@link https://github.com/IntersectMBO/cardano-node/blob/1.26.1-with-cardano-cli/doc/reference/simple-scripts.md#json-script-syntax JSON script syntax documentation}.
+https://github.com/IntersectMBO/cardano-node/blob/1.26.1-with-cardano-cli/doc/reference/simple-scripts.md#json-script-syntax
 
 **Signature**
 

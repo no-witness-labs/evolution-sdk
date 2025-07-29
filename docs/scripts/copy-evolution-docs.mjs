@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 const sourceDir = path.resolve(process.cwd(), '../packages/evolution/docs');
 const targetDir = path.resolve(process.cwd(), './pages/reference/modules');
@@ -19,54 +19,7 @@ function convertMdToMdx(content) {
   // Convert HTML class attributes to className for React/MDX compatibility
   content = content.replace(/class="/g, 'className="');
   
-  // Fix MDX parsing issues by putting problematic content in proper code blocks
-  // This handles CDDL specifications and other patterns that confuse MDX
-  
-  // First, protect existing code blocks and inline code from modification
-  const codeBlocks = [];
-  const inlineCode = [];
-  
-  // Extract and protect code blocks (```)
-  content = content.replace(/```[\s\S]*?```/g, (match, index) => {
-    codeBlocks.push(match);
-    return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
-  });
-  
-  // Extract and protect inline code (`)
-  content = content.replace(/`[^`\n]+`/g, (match, index) => {
-    inlineCode.push(match);
-    return `__INLINE_CODE_${inlineCode.length - 1}__`;
-  });
-  
-  // Now fix problematic patterns outside of code blocks
-  
-  // Handle CDDL lines that start with known patterns and put them in code blocks
-  content = content.replace(/^(CDDL:.*)$/gm, '```\n$1\n```');
-  
-  // Handle angle bracket patterns that MDX interprets as HTML tags
-  content = content.replace(/(<[a-z_][a-z0-9_]*>)/gi, '`$1`');
-  
-  // Handle curly brace patterns
-  content = content.replace(/(\{[^}]*=>[^}]*\})/g, '`$1`');
-  content = content.replace(/(\{[^}]*_[^}]*\})/g, '`$1`');
-  
-  // Handle square bracket patterns with underscores
-  content = content.replace(/(\[\s*\*[^]]*\])/g, '`$1`');
-  content = content.replace(/(\[\s*_[^]]*\])/g, '`$1`');
-  
-  // Handle arrow functions and other patterns
-  content = content.replace(/(\w+\s*=>\s*\w+)(?![^`]*`)/g, '`$1`');
-  
-  // Restore inline code
-  inlineCode.forEach((code, index) => {
-    content = content.replace(`__INLINE_CODE_${index}__`, code);
-  });
-  
-  // Restore code blocks
-  codeBlocks.forEach((block, index) => {
-    content = content.replace(`__CODE_BLOCK_${index}__`, block);
-  });
-  
+  // Just copy the files and rename them - no complex processing
   return content;
 }
 
@@ -124,22 +77,10 @@ async function createMetaJson(directory) {
     // Sort alphabetically
     mdxFiles.sort();
     
-    // Create meta entries for each file using simple string format like working examples
+    // Create meta entries for each file using simple string format
     for (const file of mdxFiles) {
-      const routeName = file.replace(/\.mdx$/, '');
-      // Since we removed .ts from filename, add it back to the title for clarity
-      const title = `${routeName}.ts`;
-      metaEntries[routeName] = title;
-    }
-    
-    // Special handling for index if it exists
-    if (entries.includes('index.mdx')) {
-      metaEntries['index'] = 'Overview';
-      // Move index to the front
-      const temp = { index: metaEntries['index'] };
-      delete metaEntries['index'];
-      Object.assign(temp, metaEntries);
-      Object.assign(metaEntries, temp);
+      const name = file.replace('.mdx', '');
+      metaEntries[name] = name;
     }
     
     await fs.writeFile(
@@ -149,55 +90,33 @@ async function createMetaJson(directory) {
     
     console.log(`Created _meta.json in ${path.relative(process.cwd(), directory)}`);
   } catch (error) {
-    console.error(`Error creating _meta.json in ${directory}: ${error.message}`);
+    console.error(`Error creating _meta.json: ${error.message}`);
   }
 }
 
-async function run() {
+async function main() {
   try {
     console.log('Starting copy of evolution documentation...');
     
-    // Remove the target directory if it exists
+    // Remove existing target directory
     try {
-      console.log(`Removing existing directory: ${targetDir}`);
       await fs.rm(targetDir, { recursive: true, force: true });
+      console.log(`Removing existing directory: ${targetDir}`);
     } catch (error) {
-      console.log(`No existing directory to remove: ${error.message}`);
+      // Directory might not exist, that's ok
     }
     
-    // Ensure the target directory exists
-    await ensureDirectoryExists(targetDir);
+    // Copy source to target
+    await copyDirectory(sourceDir, targetDir);
     
-    // Copy the config file directly
-    const configPath = path.join(sourceDir, '_config.yml');
-    try {
-      await copyFile(configPath, path.join(targetDir, '_config.yml'));
-    } catch (error) {
-      console.log(`Config file not found, skipping: ${error.message}`);
-    }
-    
-    // Copy the index file directly
-    const indexPath = path.join(sourceDir, 'index.md');
-    try {
-      await copyFile(indexPath, path.join(targetDir, 'index.mdx'));
-    } catch (error) {
-      console.log(`Index file not found, skipping: ${error.message}`);
-    }
-    
-    // Copy the contents of the modules directory directly to target (avoiding double nesting)
-    const modulesSourceDir = path.join(sourceDir, 'modules');
-    
-    // Copy modules directly to target directory instead of creating subdirectory
-    await copyDirectory(modulesSourceDir, targetDir);
-    
-    // Create _meta.json for the modules directory
+    // Create _meta.json for navigation
     await createMetaJson(targetDir);
     
     console.log('Documentation copy completed successfully!');
   } catch (error) {
-    console.error(`Error copying documentation: ${error.message}`);
+    console.error('Error copying documentation:', error.message);
     process.exit(1);
   }
 }
 
-run();
+main();

@@ -17,12 +17,14 @@ export class TransactionOutputError extends Data.TaggedError("TransactionOutputE
 /**
  * TransactionOutput types based on Conway CDDL specification
  *
+ * ```
  * CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
  *
  * shelley_transaction_output = [address, amount : value, ? Bytes32]
  *
  * babbage_transaction_output =
  *   {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
+ * ```
  *
  * @since 2.0.0
  * @category model
@@ -31,7 +33,9 @@ export class TransactionOutputError extends Data.TaggedError("TransactionOutputE
 /**
  * Shelley-era transaction output format
  *
+ * ```
  * CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
+ * ```
  *
  * @since 2.0.0
  * @category model
@@ -48,8 +52,10 @@ export class ShelleyTransactionOutput extends Schema.TaggedClass<ShelleyTransact
 /**
  * Babbage-era transaction output format
  *
+ * ```
  * CDDL: babbage_transaction_output =
  *   {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
+ * ```
  *
  * @since 2.0.0
  * @category model
@@ -67,7 +73,9 @@ export class BabbageTransactionOutput extends Schema.TaggedClass<BabbageTransact
 /**
  * Union type for transaction outputs
  *
+ * ```
  * CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -79,7 +87,9 @@ export type TransactionOutput = Schema.Schema.Type<typeof TransactionOutput>
 /**
  * CDDL schema for Shelley transaction outputs
  *
+ * ```
  * CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -129,7 +139,9 @@ export const ShelleyTransactionOutputCDDLSchema = Schema.transformOrFail(
 /**
  * CDDL schema for Babbage transaction outputs
  *
+ * ```
  * CDDL: babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -203,9 +215,11 @@ export const BabbageTransactionOutputCDDLSchema = Schema.transformOrFail(
 /**
  * CDDL schema for transaction outputs
  *
+ * ```
  * CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
  * shelley_transaction_output = [address, amount : value, ? Bytes32]
  * babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
+ * ```
  *
  * @since 2.0.0
  * @category schemas

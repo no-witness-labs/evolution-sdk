@@ -44,8 +44,11 @@ export type AssetMap = typeof AssetMapSchema.Type
 
 /**
  * Schema for MultiAsset representing native assets.
+ * 
+ * ```
  * multiasset<a0> = {+ policy_id => {+ asset_name => a0}}
  * case: multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -227,7 +230,10 @@ export const generator = FastCheck.array(
 
 /**
  * CDDL schema for MultiAsset.
+ * 
+ * ```
  * multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
+ * ```
  *
  * @since 2.0.0
  * @category schemas

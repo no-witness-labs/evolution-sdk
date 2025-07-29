@@ -3,7 +3,9 @@ import { Schema } from "effect"
 /**
  * VotingProcedures based on Conway CDDL specification
  *
+ * ```
  * CDDL: voting_procedures = {+ voter => {+ gov_action_id => voting_procedure}}
+ * ```
  *
  * This is a complex nested map structure that we'll implement gradually
  * as we create the required sub-types.

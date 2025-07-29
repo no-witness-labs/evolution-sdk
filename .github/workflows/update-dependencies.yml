@@ -1,0 +1,66 @@
+name: Update Dependencies
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    name: 🔄 Update Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ⎔ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: 📦 Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 📦 Install dependencies
+        run: pnpm install
+
+      - name: 🔄 Update dependencies
+        run: |
+          pnpm update --latest --recursive
+          pnpm install
+
+      - name: 🧪 Run tests
+        run: pnpm turbo run test
+        continue-on-error: true
+
+      - name: 🏗 Build packages
+        run: pnpm turbo run build
+        continue-on-error: true
+
+      - name: 📝 Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update dependencies'
+          title: 'chore: update dependencies'
+          body: |
+            This PR updates all dependencies to their latest versions.
+            
+            ## Changes
+            - Updated all dependencies to latest versions
+            
+            ## Testing
+            - [ ] CI tests pass
+            - [ ] Manual testing required
+            
+            ## Notes
+            Please review the changes carefully and test thoroughly before merging.
+          branch: chore/update-dependencies
+          delete-branch: true
+          base: main

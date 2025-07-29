@@ -26,6 +26,8 @@ export class PoolParamsError extends Data.TaggedError("PoolParamsError")<{
 
 /**
  * Schema for PoolParams representing stake pool registration parameters.
+ * 
+ * ```
  * pool_params =
  *   ( operator       : pool_keyhash
  *   , vrf_keyhash    : vrf_keyhash
@@ -37,6 +39,7 @@ export class PoolParamsError extends Data.TaggedError("PoolParamsError")<{
  *   , relays         : [* relay]
  *   , pool_metadata  : pool_metadata/ nil
  *   )
+ * ```
  *
  * @since 2.0.0
  * @category model
@@ -72,6 +75,8 @@ export class PoolParams extends Schema.TaggedClass<PoolParams>()("PoolParams", {
 
 /**
  * CDDL schema for PoolParams.
+ * 
+ * ```
  * pool_params = [
  *   operator       : pool_keyhash,
  *   vrf_keyhash    : vrf_keyhash,
@@ -83,6 +88,7 @@ export class PoolParams extends Schema.TaggedClass<PoolParams>()("PoolParams", {
  *   relays         : [* relay],
  *   pool_metadata  : pool_metadata / nil
  * ]
+ * ```
  *
  * @since 2.0.0
  * @category schemas

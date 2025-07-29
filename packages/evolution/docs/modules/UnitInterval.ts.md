@@ -225,7 +225,10 @@ Added in v2.0.0
 ## FromCDDL
 
 CDDL schema for UnitInterval following the Conway specification.
+
+```
 unit_interval = #6.30([uint, uint])
+```
 
 Transforms between CBOR tag 30 structure and UnitInterval model.
 
@@ -251,13 +254,17 @@ Added in v2.0.0
 
 Schema for UnitInterval representing a fractional value between 0 and 1.
 
+```
 CDDL: unit_interval = #6.30([uint, uint])
+```
 
 A unit interval is a number in the range between 0 and 1, which
 means there are two extra constraints:
 
-1. numerator <= denominator
+```
+1. numerator ≤ denominator
 2. denominator > 0
+```
 
 **Signature**
 

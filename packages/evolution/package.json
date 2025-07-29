@@ -32,7 +32,7 @@
     "dev": "tsc -b tsconfig.build.json --watch",
     "type-check": "tsc --noEmit",
     "lint": "eslint \"src/**/*.{ts,mjs}\"",
-    "test": "vitest",
+    "test": "vitest run",
     "docgen": "docgen",
     "clean": "rm -rf dist .turbo docs"
   },

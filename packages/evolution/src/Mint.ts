@@ -19,7 +19,10 @@ export class MintError extends Data.TaggedError("MintError")<{
 }> {}
 
 /**
- * Schema for inner asset map (asset_name => nonZeroInt64).
+ * Schema for inner asset map 
+ * ```
+ * (asset_name => nonZeroInt64).
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -38,11 +41,13 @@ export type AssetMap = typeof AssetMap.Type
 
 /**
  * Schema for Mint representing token minting/burning operations.
+ * ```
  * mint = multiasset<nonZeroInt64>
  *
  * The structure is: policy_id => { asset_name => nonZeroInt64 }
  * - Positive values represent minting
  * - Negative values represent burning
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -223,7 +228,9 @@ export const generator = FastCheck.array(
 
 /**
  * CDDL schema for Mint as map structure.
+ * ```
  * mint = {* policy_id => {* asset_name => nonZeroInt64}}
+ * ```
  *
  * Where:
  * - policy_id: 28-byte Uint8Array (from CBOR byte string)

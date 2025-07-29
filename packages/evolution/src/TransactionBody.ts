@@ -17,6 +17,7 @@ import * as Withdrawals from "./Withdrawals.js"
 /**
  * TransactionBody based on Conway CDDL specification
  *
+ * ```
  * CDDL: transaction_body =
  *   {   0  : set<transaction_input>
  *   ,   1  : [* transaction_output]
@@ -39,6 +40,7 @@ import * as Withdrawals from "./Withdrawals.js"
  *   , ? 21 : coin
  *   , ? 22 : positive_coin
  *   }
+ * ```
  *
  * @since 2.0.0
  * @category model

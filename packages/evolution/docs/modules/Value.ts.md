@@ -249,7 +249,10 @@ Added in v2.0.0
 ## OnlyCoin (class)
 
 Schema for Value representing both ADA and native assets.
+
+```
 value = coin / [coin, multiasset<positive_coin>]
+```
 
 This can be either:
 
@@ -267,7 +270,10 @@ Added in v2.0.0
 ## ValueCDDLSchema
 
 CDDL schema for Value as union structure.
+
+```
 value = coin / [coin, multiasset<positive_coin>]
+```
 
 This represents either:
 

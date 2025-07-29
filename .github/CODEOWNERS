@@ -1,0 +1,18 @@
+# Global owners
+* @no-witness-labs
+
+# Evolution SDK core
+/packages/evolution/ @no-witness-labs
+
+# Documentation
+/docs/ @no-witness-labs
+/README.md @no-witness-labs
+
+# CI/CD and GitHub configuration
+/.github/ @no-witness-labs
+/.changeset/ @no-witness-labs
+
+# Package configuration
+/package.json @no-witness-labs
+/turbo.json @no-witness-labs
+/tsconfig*.json @no-witness-labs

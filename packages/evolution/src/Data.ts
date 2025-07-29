@@ -19,6 +19,7 @@ export class DataError extends EffectData.TaggedError("DataError")<{
 /**
  * PlutusData type definition based on Conway CDDL specification
  *
+ * ```
  * CDDL: plutus_data =
  *   constr<plutus_data>
  *   / {* plutus_data => plutus_data}
@@ -35,6 +36,7 @@ export class DataError extends EffectData.TaggedError("DataError")<{
  *   / #6.126([* a0])
  *   / #6.127([* a0])
  *   / #6.102([uint, [* a0]])
+ * ```
  *
  * Constructor Index Limits:
  * - Tags 121-127: Direct encoding for constructor indices 0-6
@@ -50,6 +52,7 @@ export type Data = Constr | MapList | List | Int | ByteArray
 /**
  * Constr type for constructor alternatives based on Conway CDDL specification
  *
+ * ```
  * CDDL: constr<a0> =
  *   #6.121([* a0])    // index 0
  *   / #6.122([* a0])  // index 1
@@ -59,6 +62,7 @@ export type Data = Constr | MapList | List | Int | ByteArray
  *   / #6.126([* a0])  // index 5
  *   / #6.127([* a0])  // index 6
  *   / #6.102([uint, [* a0]])  // general constructor with custom index
+ * ```
  *
  * Constructor Index Range:
  * - Minimum: 0

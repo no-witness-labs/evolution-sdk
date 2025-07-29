@@ -33,8 +33,10 @@ parent: Modules
 
 Babbage-era transaction output format
 
+```
 CDDL: babbage_transaction_output =
-{0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
+  {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
+```
 
 **Signature**
 
@@ -48,7 +50,9 @@ Added in v2.0.0
 
 Shelley-era transaction output format
 
+```
 CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
+```
 
 **Signature**
 
@@ -64,7 +68,9 @@ Added in v2.0.0
 
 CDDL schema for Babbage transaction outputs
 
+```
 CDDL: babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
+```
 
 **Signature**
 
@@ -238,7 +244,9 @@ Added in v2.0.0
 
 CDDL schema for Shelley transaction outputs
 
+```
 CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
+```
 
 **Signature**
 
@@ -266,7 +274,9 @@ Added in v2.0.0
 
 Union type for transaction outputs
 
+```
 CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
+```
 
 **Signature**
 
@@ -280,9 +290,11 @@ Added in v2.0.0
 
 CDDL schema for transaction outputs
 
+```
 CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
 shelley_transaction_output = [address, amount : value, ? Bytes32]
 babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
+```
 
 **Signature**
 

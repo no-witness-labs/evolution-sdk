@@ -23,13 +23,15 @@ parent: Modules
 
 Block based on Conway CDDL specification
 
+```
 CDDL: block =
-[ header
-, transaction_bodies : [* transaction_body]
-, transaction_witness_sets : [* transaction_witness_set]
-, auxiliary_data_set : {_ transaction_index => auxiliary_data}
-, invalid_transactions : [_ transaction_index]
-]
+  [ header
+  , transaction_bodies       : [* transaction_body]
+  , transaction_witness_sets : [* transaction_witness_set]
+  , auxiliary_data_set       : {* transaction_index => auxiliary_data}
+  , invalid_transactions     : [* transaction_index]
+  ]
+```
 
 Valid blocks must also satisfy the following two constraints:
 

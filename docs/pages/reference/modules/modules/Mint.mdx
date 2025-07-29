@@ -164,7 +164,11 @@ Added in v2.0.0
 
 ## AssetMap
 
-Schema for inner asset map (asset_name => nonZeroInt64).
+Schema for inner asset map
+
+```
+(asset_name => nonZeroInt64).
+```
 
 **Signature**
 
@@ -254,12 +258,14 @@ Added in v2.0.0
 ## Mint
 
 Schema for Mint representing token minting/burning operations.
-mint = multiasset`<nonZeroInt64>`
 
-The structure is: policy_id => ``{ asset_name => nonZeroInt64 }``
+```
+mint = multiasset<nonZeroInt64>
 
+The structure is: policy_id => { asset_name => nonZeroInt64 }
 - Positive values represent minting
 - Negative values represent burning
+```
 
 **Signature**
 
@@ -286,7 +292,10 @@ Added in v2.0.0
 ## MintCDDLSchema
 
 CDDL schema for Mint as map structure.
-mint = ``{_ policy_id => {_ asset_name => nonZeroInt64}``}
+
+```
+mint = {* policy_id => {* asset_name => nonZeroInt64}}
+```
 
 Where:
 

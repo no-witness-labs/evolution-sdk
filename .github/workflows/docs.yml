@@ -40,18 +40,18 @@ jobs:
           echo "should_build=$?" >> $GITHUB_OUTPUT
         continue-on-error: true
 
+      - name: 📦 Install pnpm
+        if: steps.changes.outputs.should_build == '1'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: ⎔ Setup Node.js
         if: steps.changes.outputs.should_build == '1'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
-
-      - name: 📦 Install pnpm
-        if: steps.changes.outputs.should_build == '1'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: 🔧 Setup Pages
         if: steps.changes.outputs.should_build == '1'

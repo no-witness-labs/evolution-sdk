@@ -12,108 +12,100 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: ⬣ ESLint
+  setup:
+    name: Setup
     runs-on: ubuntu-latest
+    outputs:
+      cache-hit: ${{ steps.cache-node-modules.outputs.cache-hit }}
     steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: 📦 Install pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
 
-      - name: ⎔ Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+      - id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            docs/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-modules-
 
-      - name: 🔬 Lint
-        run: pnpm turbo run lint --affected
+      - id: cache-turbo
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
-  typecheck:
-    name: ʦ TypeScript
+      # Always run install to ensure all dependencies are available
+      # This ensures workspace packages like docs have their dependencies
+      - run: pnpm install --frozen-lockfile
+
+  validate:
+    name: Validate
+    needs: setup
     runs-on: ubuntu-latest
     steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: 📦 Install pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
 
-      - name: ⎔ Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 🔎 Type check
-        run: pnpm turbo run type-check --affected
-
-  test:
-    name: 🧪 Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
-
-      - name: 📦 Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: ⎔ Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/cache@v4
         with:
-          node-version: 20
-          cache: 'pnpm'
-
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: 🧪 Run tests
-        run: pnpm turbo run test --affected
-
-  build:
-    name: 🏗 Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
-
-      - name: 📦 Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: ⎔ Setup Node.js
-        uses: actions/setup-node@v4
+          path: |
+            node_modules
+            packages/*/node_modules
+            docs/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-modules-
+            
+      - uses: actions/cache@v4
         with:
-          node-version: 20
-          cache: 'pnpm'
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run lint --affected
+      - run: pnpm turbo run type-check --affected
+      - run: pnpm turbo run build --affected
+      - run: pnpm turbo run test --affected
+          
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: packages/*/dist
 
-      - name: 🏗 Build packages
-        run: pnpm turbo run build --affected
-
-      - name: 📄 Generate docs (validate examples)
-        run: pnpm turbo run docgen --affected || echo "No docgen script found, skipping"
-
-  # All jobs must pass
-  ci:
-    name: ✅ CI
+  cache-build:
+    name: Cache Artifacts
+    needs: validate
     runs-on: ubuntu-latest
-    if: always()
-    needs: [lint, typecheck, test, build]
     steps:
-      - name: ✅ All jobs passed
-        if: ${{ !(contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
-        run: exit 0
-      
-      - name: ❌ Some jobs failed
-        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-        run: exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: packages
+
+      - uses: actions/cache@v4
+        with:
+          path: packages/*/dist
+          key: build-artifacts-${{ github.sha }}

@@ -4,47 +4,66 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
-    name: 🚀 Release
+    name: Release
     runs-on: ubuntu-latest
     steps:
-      - name: ⬇️ Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          # This makes Actions fetch all Git history so that Changesets can generate changelogs with the correct commits
           fetch-depth: 0
 
-      - name: 📦 Install pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
 
-      - name: ⎔ Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org/'
 
-      - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+      - id: cached-build-artifacts
+        uses: actions/cache@v4
+        with:
+          path: packages/*/dist
+          key: build-artifacts-${{ github.sha }}
 
-      - name: 🏗 Build packages
-        run: pnpm turbo run build
+      - id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+            docs/node_modules
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-modules-
+            
+      - uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
 
-      - name: 🧪 Run tests
-        run: pnpm turbo run test
+      # Always run install to ensure all dependencies are available
+      # This ensures workspace packages like docs have their dependencies
+      - run: pnpm install --frozen-lockfile
 
-      - name: 📄 Generate docs
-        run: pnpm turbo run docgen || echo "No docgen script found, skipping"
+      - run: pnpm turbo run build
+        if: steps.cached-build-artifacts.outputs.cache-hit != 'true'
 
-      - name: 🦋 Create Release Pull Request or Publish to npm
-        id: changesets
+      - id: changesets
         uses: changesets/action@v1
         with:
-          # This uses our custom publish script that builds before publishing
           publish: pnpm changeset-publish
           title: "ci(changesets): version packages"
           commit: "ci(changesets): version packages"
@@ -52,8 +71,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: 📢 Send a Slack notification if a publish happened
-        if: steps.changesets.outputs.published == 'true'
-        # You can do something when a publish happens.
-        run: echo "A new version of Evolution SDK was published!"

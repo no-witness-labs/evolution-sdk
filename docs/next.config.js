@@ -6,7 +6,6 @@ const withNextra = require("nextra")({
 module.exports = withNextra({
   reactStrictMode: true,
   trailingSlash: true,
-  basePath: "",
   output: "export",
   distDir: "out",
   images: {

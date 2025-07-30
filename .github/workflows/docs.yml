@@ -67,7 +67,7 @@ jobs:
 
       - run: pnpm turbo run docgen --filter=@evolution-sdk/evolution
 
-      - run: pnpm turbo run build --filter=docs
+      - run: pnpm turbo run build --filter=@evolution-sdk/docs
 
       - id: cache-docs-output
         uses: actions/cache@v4

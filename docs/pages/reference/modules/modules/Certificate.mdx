@@ -1,0 +1,468 @@
+---
+title: Certificate.ts
+nav_order: 25
+parent: Modules
+---
+
+## Certificate overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [errors](#errors)
+  - [CertificateError (class)](#certificateerror-class)
+- [model](#model)
+  - [Certificate (type alias)](#certificate-type-alias)
+- [schemas](#schemas)
+  - [Certificate](#certificate)
+
+---
+
+# errors
+
+## CertificateError (class)
+
+Error class for Certificate related operations.
+
+**Signature**
+
+```ts
+export declare class CertificateError
+```
+
+Added in v2.0.0
+
+# model
+
+## Certificate (type alias)
+
+Type alias for Certificate.
+
+**Signature**
+
+```ts
+export type Certificate = typeof Certificate.Type
+```
+
+Added in v2.0.0
+
+# schemas
+
+## Certificate
+
+Certificate union schema based on Conway CDDL specification
+
+CDDL: certificate =
+[
+stake_registration
+// stake_deregistration
+// stake_delegation
+// pool_registration
+// pool_retirement
+// reg_cert
+// unreg_cert
+// vote_deleg_cert
+// stake_vote_deleg_cert
+// stake_reg_deleg_cert
+// vote_reg_deleg_cert
+// stake_vote_reg_deleg_cert
+// auth_committee_hot_cert
+// resign_committee_cold_cert
+// reg_drep_cert
+// unreg_drep_cert
+// update_drep_cert
+]
+
+stake_registration = (0, stake_credential)
+stake_deregistration = (1, stake_credential)
+stake_delegation = (2, stake_credential, pool_keyhash)
+pool_registration = (3, pool_params)
+pool_retirement = (4, pool_keyhash, epoch_no)
+reg_cert = (7, stake_credential, coin)
+unreg_cert = (8, stake_credential, coin)
+vote_deleg_cert = (9, stake_credential, drep)
+stake_vote_deleg_cert = (10, stake_credential, pool_keyhash, drep)
+stake_reg_deleg_cert = (11, stake_credential, pool_keyhash, coin)
+vote_reg_deleg_cert = (12, stake_credential, drep, coin)
+stake_vote_reg_deleg_cert = (13, stake_credential, pool_keyhash, drep, coin)
+auth_committee_hot_cert = (14, committee_cold_credential, committee_hot_credential)
+resign_committee_cold_cert = (15, committee_cold_credential, anchor/ nil)
+reg_drep_cert = (16, drep_credential, coin, anchor/ nil)
+unreg_drep_cert = (17, drep_credential, coin)
+update_drep_cert = (18, drep_credential, anchor/ nil)
+
+**Signature**
+
+```ts
+export declare const Certificate: Schema.Union<
+  [
+    Schema.TaggedStruct<
+      "StakeRegistration",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+      }
+    >,
+    Schema.TaggedStruct<
+      "StakeDeregistration",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+      }
+    >,
+    Schema.TaggedStruct<
+      "StakeDelegation",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        poolKeyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PoolKeyHash">
+      }
+    >,
+    Schema.TaggedStruct<
+      "PoolRetirement",
+      {
+        poolKeyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PoolKeyHash">
+        epoch: Schema.brand<Schema.refine<number, typeof Schema.Number>, "EpochNo">
+      }
+    >,
+    Schema.TaggedStruct<
+      "RegCert",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        coin: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }
+    >,
+    Schema.TaggedStruct<
+      "UnregCert",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        coin: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }
+    >,
+    Schema.TaggedStruct<
+      "VoteDelegCert",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        drep: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHashDRep",
+              { keyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHashDRep",
+              {
+                scriptHash: Schema.brand<
+                  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+                  "ScriptHash"
+                >
+              }
+            >,
+            Schema.TaggedStruct<"AlwaysAbstainDRep", {}>,
+            Schema.TaggedStruct<"AlwaysNoConfidenceDRep", {}>
+          ]
+        >
+      }
+    >,
+    Schema.TaggedStruct<
+      "StakeVoteDelegCert",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        poolKeyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PoolKeyHash">
+        drep: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHashDRep",
+              { keyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHashDRep",
+              {
+                scriptHash: Schema.brand<
+                  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+                  "ScriptHash"
+                >
+              }
+            >,
+            Schema.TaggedStruct<"AlwaysAbstainDRep", {}>,
+            Schema.TaggedStruct<"AlwaysNoConfidenceDRep", {}>
+          ]
+        >
+      }
+    >,
+    Schema.TaggedStruct<
+      "StakeRegDelegCert",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        poolKeyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PoolKeyHash">
+        coin: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }
+    >,
+    Schema.TaggedStruct<
+      "VoteRegDelegCert",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        drep: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHashDRep",
+              { keyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHashDRep",
+              {
+                scriptHash: Schema.brand<
+                  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+                  "ScriptHash"
+                >
+              }
+            >,
+            Schema.TaggedStruct<"AlwaysAbstainDRep", {}>,
+            Schema.TaggedStruct<"AlwaysNoConfidenceDRep", {}>
+          ]
+        >
+        coin: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }
+    >,
+    Schema.TaggedStruct<
+      "StakeVoteRegDelegCert",
+      {
+        stakeCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        poolKeyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PoolKeyHash">
+        drep: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHashDRep",
+              { keyHash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHashDRep",
+              {
+                scriptHash: Schema.brand<
+                  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+                  "ScriptHash"
+                >
+              }
+            >,
+            Schema.TaggedStruct<"AlwaysAbstainDRep", {}>,
+            Schema.TaggedStruct<"AlwaysNoConfidenceDRep", {}>
+          ]
+        >
+        coin: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }
+    >,
+    Schema.TaggedStruct<
+      "AuthCommitteeHotCert",
+      {
+        committeeColdCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        committeeHotCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+      }
+    >,
+    Schema.TaggedStruct<
+      "ResignCommitteeColdCert",
+      {
+        committeeColdCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        anchor: Schema.NullishOr<typeof Anchor.Anchor>
+      }
+    >,
+    Schema.TaggedStruct<
+      "RegDrepCert",
+      {
+        drepCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        coin: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        anchor: Schema.NullishOr<typeof Anchor.Anchor>
+      }
+    >,
+    Schema.TaggedStruct<
+      "UnregDrepCert",
+      {
+        drepCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        coin: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }
+    >,
+    Schema.TaggedStruct<
+      "UpdateDrepCert",
+      {
+        drepCredential: Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "KeyHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
+            >,
+            Schema.TaggedStruct<
+              "ScriptHash",
+              { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
+            >
+          ]
+        >
+        anchor: Schema.NullishOr<typeof Anchor.Anchor>
+      }
+    >
+  ]
+>
+```
+
+Added in v2.0.0

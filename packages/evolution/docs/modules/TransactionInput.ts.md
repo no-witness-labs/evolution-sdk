@@ -1,0 +1,206 @@
+---
+title: TransactionInput.ts
+nav_order: 89
+parent: Modules
+---
+
+## TransactionInput overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [TransactionInputError (class)](#transactioninputerror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [TransactionInput (class)](#transactioninput-class)
+- [predicates](#predicates)
+  - [isTransactionInput](#istransactioninput)
+- [schemas](#schemas)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
+  - [TransactionInputCDDLSchema](#transactioninputcddlschema)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Extended Codec with CBOR support for TransactionInput.
+
+**Signature**
+
+```ts
+export declare const Codec: (options?: CBOR.CodecOptions) => {
+  Encode: { cborBytes: (input: TransactionInput) => any; cborHex: (input: TransactionInput) => string }
+  Decode: { cborBytes: (input: any) => TransactionInput; cborHex: (input: string) => TransactionInput }
+  EncodeEffect: {
+    cborBytes: (input: TransactionInput) => Effect.Effect<any, InstanceType<typeof TransactionInputError>>
+    cborHex: (input: TransactionInput) => Effect.Effect<string, InstanceType<typeof TransactionInputError>>
+  }
+  DecodeEffect: {
+    cborBytes: (input: any) => Effect.Effect<TransactionInput, InstanceType<typeof TransactionInputError>>
+    cborHex: (input: string) => Effect.Effect<TransactionInput, InstanceType<typeof TransactionInputError>>
+  }
+  EncodeEither: {
+    cborBytes: (input: TransactionInput) => Either<any, InstanceType<typeof TransactionInputError>>
+    cborHex: (input: TransactionInput) => Either<string, InstanceType<typeof TransactionInputError>>
+  }
+  DecodeEither: {
+    cborBytes: (input: any) => Either<TransactionInput, InstanceType<typeof TransactionInputError>>
+    cborHex: (input: string) => Either<TransactionInput, InstanceType<typeof TransactionInputError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two TransactionInput instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: TransactionInput, b: TransactionInput) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## TransactionInputError (class)
+
+Error class for TransactionInput related operations.
+
+**Signature**
+
+```ts
+export declare class TransactionInputError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+FastCheck generator for TransactionInput instances.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<TransactionInput>
+```
+
+Added in v2.0.0
+
+# model
+
+## TransactionInput (class)
+
+Schema for TransactionInput representing a transaction input with transaction id and index.
+transaction_input = [transaction_id : $Bytes32, index : uint .size 2]
+
+**Signature**
+
+```ts
+export declare class TransactionInput
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isTransactionInput
+
+Check if the given value is a valid TransactionInput.
+
+**Signature**
+
+```ts
+export declare const isTransactionInput: (u: unknown, overrideOptions?: ParseOptions | number) => u is TransactionInput
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromBytes
+
+CBOR bytes transformation schema for TransactionInput.
+
+**Signature**
+
+```ts
+export declare const FromBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
+    Schema.SchemaClass<TransactionInput, TransactionInput, never>,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+CBOR hex transformation schema for TransactionInput.
+
+**Signature**
+
+```ts
+export declare const FromHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
+      Schema.SchemaClass<TransactionInput, TransactionInput, never>,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## TransactionInputCDDLSchema
+
+CDDL schema for TransactionInput.
+transaction_input = [transaction_id : $Bytes32, index : uint .size 2]
+
+**Signature**
+
+```ts
+export declare const TransactionInputCDDLSchema: Schema.transformOrFail<
+  Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
+  Schema.SchemaClass<TransactionInput, TransactionInput, never>,
+  never
+>
+```
+
+Added in v2.0.0

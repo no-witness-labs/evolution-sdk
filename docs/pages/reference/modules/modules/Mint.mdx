@@ -1,0 +1,477 @@
+---
+title: Mint.ts
+nav_order: 52
+parent: Modules
+---
+
+## Mint overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [constructors](#constructors)
+  - [empty](#empty)
+  - [singleton](#singleton)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [MintError (class)](#minterror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [Mint (type alias)](#mint-type-alias)
+- [predicates](#predicates)
+  - [has](#has)
+  - [isEmpty](#isempty)
+- [schemas](#schemas)
+  - [AssetMap](#assetmap)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
+  - [Mint](#mint)
+  - [MintCDDLSchema](#mintcddlschema)
+- [transformation](#transformation)
+  - [get](#get)
+  - [policyCount](#policycount)
+  - [removePolicy](#removepolicy)
+- [utils](#utils)
+  - [AssetMap (type alias)](#assetmap-type-alias)
+  - [Codec](#codec)
+  - [fromEntries](#fromentries)
+  - [insert](#insert)
+  - [prettyPrint](#prettyprint)
+  - [removeAsset](#removeasset)
+
+---
+
+# constructors
+
+## empty
+
+Create empty Mint.
+
+**Signature**
+
+```ts
+export declare const empty: () => Mint
+```
+
+Added in v2.0.0
+
+## singleton
+
+Create Mint from a single policy and asset entry.
+
+**Signature**
+
+```ts
+export declare const singleton: (
+  policyId: PolicyId.PolicyId,
+  assetName: AssetName.AssetName,
+  amount: NonZeroInt64.NonZeroInt64
+) => Mint
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two Mint instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (self: Mint, that: Mint) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## MintError (class)
+
+Error class for Mint related operations.
+
+**Signature**
+
+```ts
+export declare class MintError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+FastCheck generator for Mint instances.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<
+  Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
+>
+```
+
+Added in v2.0.0
+
+# model
+
+## Mint (type alias)
+
+Type alias for Mint representing a collection of minting/burning operations.
+Each policy ID maps to a collection of asset names and their amounts.
+Positive amounts indicate minting, negative amounts indicate burning.
+
+**Signature**
+
+```ts
+export type Mint = typeof Mint.Type
+```
+
+Added in v2.0.0
+
+# predicates
+
+## has
+
+Check if Mint contains a specific policy and asset.
+
+**Signature**
+
+```ts
+export declare const has: (mint: Mint, policyId: PolicyId.PolicyId, assetName: AssetName.AssetName) => boolean
+```
+
+Added in v2.0.0
+
+## isEmpty
+
+Check if Mint is empty.
+
+**Signature**
+
+```ts
+export declare const isEmpty: (mint: Mint) => boolean
+```
+
+Added in v2.0.0
+
+# schemas
+
+## AssetMap
+
+Schema for inner asset map
+
+```
+(asset_name => nonZeroInt64).
+```
+
+**Signature**
+
+```ts
+export declare const AssetMap: Schema.refine<
+  Map<string & Brand<"AssetName">, bigint>,
+  Schema.MapFromSelf<
+    Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AssetName">,
+    Schema.Union<
+      [Schema.refine<bigint, typeof Schema.BigIntFromSelf>, Schema.refine<bigint, typeof Schema.BigIntFromSelf>]
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromBytes
+
+CBOR bytes transformation schema for Mint.
+Transforms between Uint8Array and Mint using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.MapFromSelf<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
+    >,
+    Schema.SchemaClass<
+      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+      never
+    >,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+CBOR hex transformation schema for Mint.
+Transforms between hex string and Mint using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.MapFromSelf<
+        typeof Schema.Uint8ArrayFromSelf,
+        Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
+      >,
+      Schema.SchemaClass<
+        Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+        Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+        never
+      >,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## Mint
+
+Schema for Mint representing token minting/burning operations.
+
+```
+mint = multiasset<nonZeroInt64>
+
+The structure is: policy_id => { asset_name => nonZeroInt64 }
+- Positive values represent minting
+- Negative values represent burning
+```
+
+**Signature**
+
+```ts
+export declare const Mint: Schema.refine<
+  Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+  Schema.MapFromSelf<
+    Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PolicyId">,
+    Schema.refine<
+      Map<string & Brand<"AssetName">, bigint>,
+      Schema.MapFromSelf<
+        Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AssetName">,
+        Schema.Union<
+          [Schema.refine<bigint, typeof Schema.BigIntFromSelf>, Schema.refine<bigint, typeof Schema.BigIntFromSelf>]
+        >
+      >
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## MintCDDLSchema
+
+CDDL schema for Mint as map structure.
+
+```
+mint = {* policy_id => {* asset_name => nonZeroInt64}}
+```
+
+Where:
+
+- policy_id: 28-byte Uint8Array (from CBOR byte string)
+- asset_name: variable-length Uint8Array (from CBOR byte string, can be empty)
+- nonZeroInt64: signed 64-bit integer (positive = mint, negative = burn, cannot be zero)
+
+**Signature**
+
+```ts
+export declare const MintCDDLSchema: Schema.transformOrFail<
+  Schema.MapFromSelf<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
+  >,
+  Schema.SchemaClass<
+    Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+    Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+    never
+  >,
+  never
+>
+```
+
+Added in v2.0.0
+
+# transformation
+
+## get
+
+Get the amount for a specific policy and asset.
+
+**Signature**
+
+```ts
+export declare const get: (
+  mint: Mint,
+  policyId: PolicyId.PolicyId,
+  assetName: AssetName.AssetName
+) => bigint | undefined
+```
+
+Added in v2.0.0
+
+## policyCount
+
+Get the number of policies in the Mint.
+
+**Signature**
+
+```ts
+export declare const policyCount: (mint: Mint) => number
+```
+
+Added in v2.0.0
+
+## removePolicy
+
+Remove an asset from the Mint.
+
+**Signature**
+
+```ts
+export declare const removePolicy: (mint: Mint, policyId: PolicyId.PolicyId) => Mint
+```
+
+Added in v2.0.0
+
+# utils
+
+## AssetMap (type alias)
+
+**Signature**
+
+```ts
+export type AssetMap = typeof AssetMap.Type
+```
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: (options?: CBOR.CodecOptions) => {
+  Encode: {
+    cborBytes: (input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>) => any
+    cborHex: (input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>) => string
+  }
+  Decode: {
+    cborBytes: (input: any) => Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
+    cborHex: (input: string) => Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
+  }
+  EncodeEffect: {
+    cborBytes: (
+      input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
+    ) => Effect.Effect<any, InstanceType<typeof MintError>>
+    cborHex: (
+      input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
+    ) => Effect.Effect<string, InstanceType<typeof MintError>>
+  }
+  DecodeEffect: {
+    cborBytes: (
+      input: any
+    ) => Effect.Effect<
+      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+      InstanceType<typeof MintError>
+    >
+    cborHex: (
+      input: string
+    ) => Effect.Effect<
+      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+      InstanceType<typeof MintError>
+    >
+  }
+  EncodeEither: {
+    cborBytes: (
+      input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
+    ) => Either<any, InstanceType<typeof MintError>>
+    cborHex: (
+      input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
+    ) => Either<string, InstanceType<typeof MintError>>
+  }
+  DecodeEither: {
+    cborBytes: (
+      input: any
+    ) => Either<
+      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+      InstanceType<typeof MintError>
+    >
+    cborHex: (
+      input: string
+    ) => Either<
+      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+      InstanceType<typeof MintError>
+    >
+  }
+}
+```
+
+## fromEntries
+
+Helper function to create Mint from entries array
+
+**Signature**
+
+```ts
+export declare const fromEntries: (
+  entries: Array<[PolicyId.PolicyId, Array<[AssetName.AssetName, NonZeroInt64.NonZeroInt64]>]>
+) => Mint
+```
+
+## insert
+
+**Signature**
+
+```ts
+export declare const insert: (
+  mint: Mint,
+  policyId: PolicyId.PolicyId,
+  assetName: AssetName.AssetName,
+  amount: NonZeroInt64.NonZeroInt64
+) => Mint
+```
+
+## prettyPrint
+
+**Signature**
+
+```ts
+export declare const prettyPrint: PrettyPrint
+```
+
+## removeAsset
+
+**Signature**
+
+```ts
+export declare const removeAsset: (mint: Mint, policyId: PolicyId.PolicyId, assetName: AssetName.AssetName) => Mint
+```

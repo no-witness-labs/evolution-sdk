@@ -1,0 +1,77 @@
+---
+title: Bytes64.ts
+nav_order: 22
+parent: Modules
+---
+
+## Bytes64 overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [utils](#utils)
+  - [BYTES_LENGTH](#bytes_length)
+  - [BytesSchema](#bytesschema)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+  - [HEX_LENGTH](#hex_length)
+  - [HexSchema](#hexschema)
+
+---
+
+# utils
+
+## BYTES_LENGTH
+
+**Signature**
+
+```ts
+export declare const BYTES_LENGTH: 64
+```
+
+## BytesSchema
+
+**Signature**
+
+```ts
+export declare const BytesSchema: Schema.filter<typeof Schema.Uint8ArrayFromSelf>
+```
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  Schema.filter<Schema.refine<string, typeof Schema.String>>
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.filter<Schema.refine<string, typeof Schema.String>>,
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>
+>
+```
+
+## HEX_LENGTH
+
+**Signature**
+
+```ts
+export declare const HEX_LENGTH: 128
+```
+
+## HexSchema
+
+**Signature**
+
+```ts
+export declare const HexSchema: Schema.filter<Schema.refine<string, typeof Schema.String>>
+```

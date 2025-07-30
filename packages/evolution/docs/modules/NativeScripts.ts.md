@@ -1,0 +1,683 @@
+---
+title: NativeScripts.ts
+nav_order: 56
+parent: Modules
+---
+
+## NativeScripts overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [conversion](#conversion)
+  - [internalJSONToNative](#internaljsontonative)
+  - [internalNativeToJson](#internalnativetojson)
+- [decoding](#decoding)
+  - [internalDecodeCDDL](#internaldecodecddl)
+- [encoding](#encoding)
+  - [internalEncodeCDDL](#internalencodecddl)
+- [model](#model)
+  - [NativeScriptCDDL (type alias)](#nativescriptcddl-type-alias)
+- [schemas](#schemas)
+  - [NativeJSON](#nativejson)
+  - [NativeScriptCDDL](#nativescriptcddl)
+  - [SlotNumber](#slotnumber)
+- [utils](#utils)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
+  - [Codec](#codec)
+  - [InvalidBefore (class)](#invalidbefore-class)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
+  - [InvalidBeforeEncoded (interface)](#invalidbeforeencoded-interface)
+  - [InvalidHereafter (class)](#invalidhereafter-class)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method-1)
+  - [InvalidHereafterEncoded (interface)](#invalidhereafterencoded-interface)
+  - [NativeScript](#nativescript)
+  - [NativeScript (type alias)](#nativescript-type-alias)
+  - [NativeScriptEncoded (type alias)](#nativescriptencoded-type-alias)
+  - [NativeScriptError (class)](#nativescripterror-class)
+  - [ScriptAll (class)](#scriptall-class)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method-2)
+  - [ScriptAllEncoded (interface)](#scriptallencoded-interface)
+  - [ScriptAny (class)](#scriptany-class)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method-3)
+  - [ScriptAnyEncoded (interface)](#scriptanyencoded-interface)
+  - [ScriptNOfK (class)](#scriptnofk-class)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method-4)
+  - [ScriptNOfKEncoded (interface)](#scriptnofkencoded-interface)
+  - [ScriptPubKey (class)](#scriptpubkey-class)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method-5)
+  - [ScriptPubKeyEncoded (interface)](#scriptpubkeyencoded-interface)
+  - [SlotNumber (type alias)](#slotnumber-type-alias)
+
+---
+
+# conversion
+
+## internalJSONToNative
+
+Convert a NativeJSON to a NativeScript.
+
+**Signature**
+
+```ts
+export declare const internalJSONToNative: (
+  nativeJSON: NativeScriptJSON.NativeJSON
+) => Effect.Effect<NativeScript, ParseResult.ParseIssue>
+```
+
+Added in v2.0.0
+
+## internalNativeToJson
+
+Convert a NativeScript to a NativeJSON.
+
+**Signature**
+
+```ts
+export declare const internalNativeToJson: (
+  nativeScript: NativeScript
+) => Effect.Effect<NativeScriptJSON.NativeJSON, ParseResult.ParseIssue>
+```
+
+Added in v2.0.0
+
+# decoding
+
+## internalDecodeCDDL
+
+Convert a CDDL representation back to a NativeScript.
+
+This function recursively decodes nested CBOR scripts and constructs
+the appropriate NativeScript instances.
+
+**Signature**
+
+```ts
+export declare const internalDecodeCDDL: (cborTuple: NativeScriptCDDL) => Effect.Effect<NativeScript, ParseIssue>
+```
+
+Added in v2.0.0
+
+# encoding
+
+## internalEncodeCDDL
+
+Convert a NativeScript to its CDDL representation.
+
+**Signature**
+
+```ts
+export declare const internalEncodeCDDL: (nativeScript: NativeScript) => Effect.Effect<NativeScriptCDDL, ParseIssue>
+```
+
+Added in v2.0.0
+
+# model
+
+## NativeScriptCDDL (type alias)
+
+CDDL representation of a native script as a union of tuple types.
+
+This type represents the low-level CBOR structure of native scripts,
+where each variant is encoded as a tagged tuple.
+
+**Signature**
+
+```ts
+export type NativeScriptCDDL =
+  | readonly [0, Uint8Array]
+  | readonly [1, ReadonlyArray<NativeScriptCDDL>]
+  | readonly [2, ReadonlyArray<NativeScriptCDDL>]
+  | readonly [3, bigint, ReadonlyArray<NativeScriptCDDL>]
+  | readonly [4, bigint]
+  | readonly [5, bigint]
+```
+
+Added in v2.0.0
+
+# schemas
+
+## NativeJSON
+
+Schema transformer for converting between NativeJSON and NativeScript.
+
+**Signature**
+
+```ts
+export declare const NativeJSON: Schema.transformOrFail<
+  Schema.Union<
+    [
+      Schema.Struct<{ type: Schema.Literal<["sig"]>; keyHash: typeof Schema.String }>,
+      Schema.Struct<{ type: Schema.Literal<["before"]>; slot: typeof Schema.Number }>,
+      Schema.Struct<{ type: Schema.Literal<["after"]>; slot: typeof Schema.Number }>,
+      Schema.Struct<{
+        type: Schema.Literal<["all"]>
+        scripts: Schema.Array$<Schema.suspend<NativeScriptJSON.NativeJSON, NativeScriptJSON.NativeJSON, never>>
+      }>,
+      Schema.Struct<{
+        type: Schema.Literal<["any"]>
+        scripts: Schema.Array$<Schema.suspend<NativeScriptJSON.NativeJSON, NativeScriptJSON.NativeJSON, never>>
+      }>,
+      Schema.Struct<{
+        type: Schema.Literal<["atLeast"]>
+        required: typeof Schema.Number
+        scripts: Schema.Array$<Schema.suspend<NativeScriptJSON.NativeJSON, NativeScriptJSON.NativeJSON, never>>
+      }>
+    ]
+  >,
+  Schema.Union<
+    [
+      typeof ScriptPubKey,
+      typeof ScriptAll,
+      typeof ScriptAny,
+      typeof ScriptNOfK,
+      typeof InvalidBefore,
+      typeof InvalidHereafter
+    ]
+  >,
+  never
+>
+```
+
+Added in v2.0.0
+
+## NativeScriptCDDL
+
+Schema for NativeScriptCDDL union type.
+
+**Signature**
+
+```ts
+export declare const NativeScriptCDDL: Schema.transformOrFail<
+  Schema.Union<
+    [
+      Schema.Tuple2<Schema.Literal<[0]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[1]>, Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>>,
+      Schema.Tuple2<Schema.Literal<[2]>, Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>>,
+      Schema.Tuple<
+        [
+          Schema.Literal<[3]>,
+          typeof Schema.BigIntFromSelf,
+          Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>
+        ]
+      >,
+      Schema.Tuple2<Schema.Literal<[4]>, typeof Schema.BigIntFromSelf>,
+      Schema.Tuple2<Schema.Literal<[5]>, typeof Schema.BigIntFromSelf>
+    ]
+  >,
+  Schema.SchemaClass<
+    ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+    ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+    never
+  >,
+  never
+>
+```
+
+Added in v2.0.0
+
+## SlotNumber
+
+Schema for slot numbers used in time-based native script constraints.
+
+**Signature**
+
+```ts
+export declare const SlotNumber: Schema.refine<number, typeof Schema.Number>
+```
+
+Added in v2.0.0
+
+# utils
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.Union<
+      [
+        Schema.Tuple2<Schema.Literal<[0]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple2<Schema.Literal<[1]>, Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>>,
+        Schema.Tuple2<Schema.Literal<[2]>, Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>>,
+        Schema.Tuple<
+          [
+            Schema.Literal<[3]>,
+            typeof Schema.BigIntFromSelf,
+            Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>
+          ]
+        >,
+        Schema.Tuple2<Schema.Literal<[4]>, typeof Schema.BigIntFromSelf>,
+        Schema.Tuple2<Schema.Literal<[5]>, typeof Schema.BigIntFromSelf>
+      ]
+    >,
+    Schema.SchemaClass<
+      ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+      ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+      never
+    >,
+    never
+  >
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Union<
+        [
+          Schema.Tuple2<Schema.Literal<[0]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple2<Schema.Literal<[1]>, Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>>,
+          Schema.Tuple2<Schema.Literal<[2]>, Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>>,
+          Schema.Tuple<
+            [
+              Schema.Literal<[3]>,
+              typeof Schema.BigIntFromSelf,
+              Schema.Array$<Schema.suspend<NativeScriptCDDL, NativeScriptCDDL, never>>
+            ]
+          >,
+          Schema.Tuple2<Schema.Literal<[4]>, typeof Schema.BigIntFromSelf>,
+          Schema.Tuple2<Schema.Literal<[5]>, typeof Schema.BigIntFromSelf>
+        ]
+      >,
+      Schema.SchemaClass<
+        ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+        ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+        never
+      >,
+      never
+    >
+  >
+>
+```
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: (options?: CBOR.CodecOptions) => {
+  Encode: {
+    cborBytes: (input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter) => any
+    cborHex: (input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter) => string
+    nativeJSON: (
+      input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    ) =>
+      | { readonly keyHash: string; readonly type: "sig" }
+      | { readonly slot: number; readonly type: "before" }
+      | { readonly slot: number; readonly type: "after" }
+      | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "all" }
+      | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "any" }
+      | {
+          readonly scripts: readonly NativeScriptJSON.NativeJSON[]
+          readonly type: "atLeast"
+          readonly required: number
+        }
+  }
+  Decode: {
+    cborBytes: (input: any) => ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    cborHex: (input: string) => ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    nativeJSON: (
+      input:
+        | { readonly keyHash: string; readonly type: "sig" }
+        | { readonly slot: number; readonly type: "before" }
+        | { readonly slot: number; readonly type: "after" }
+        | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "all" }
+        | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "any" }
+        | {
+            readonly scripts: readonly NativeScriptJSON.NativeJSON[]
+            readonly type: "atLeast"
+            readonly required: number
+          }
+    ) => ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+  }
+  EncodeEffect: {
+    cborBytes: (
+      input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    ) => Effect.Effect<any, InstanceType<typeof NativeScriptError>>
+    cborHex: (
+      input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    ) => Effect.Effect<string, InstanceType<typeof NativeScriptError>>
+    nativeJSON: (
+      input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    ) => Effect.Effect<
+      | { readonly keyHash: string; readonly type: "sig" }
+      | { readonly slot: number; readonly type: "before" }
+      | { readonly slot: number; readonly type: "after" }
+      | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "all" }
+      | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "any" }
+      | {
+          readonly scripts: readonly NativeScriptJSON.NativeJSON[]
+          readonly type: "atLeast"
+          readonly required: number
+        },
+      InstanceType<typeof NativeScriptError>
+    >
+  }
+  DecodeEffect: {
+    cborBytes: (
+      input: any
+    ) => Effect.Effect<
+      ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+      InstanceType<typeof NativeScriptError>
+    >
+    cborHex: (
+      input: string
+    ) => Effect.Effect<
+      ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+      InstanceType<typeof NativeScriptError>
+    >
+    nativeJSON: (
+      input:
+        | { readonly keyHash: string; readonly type: "sig" }
+        | { readonly slot: number; readonly type: "before" }
+        | { readonly slot: number; readonly type: "after" }
+        | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "all" }
+        | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "any" }
+        | {
+            readonly scripts: readonly NativeScriptJSON.NativeJSON[]
+            readonly type: "atLeast"
+            readonly required: number
+          }
+    ) => Effect.Effect<
+      ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+      InstanceType<typeof NativeScriptError>
+    >
+  }
+  EncodeEither: {
+    cborBytes: (
+      input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    ) => Either<any, InstanceType<typeof NativeScriptError>>
+    cborHex: (
+      input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    ) => Either<string, InstanceType<typeof NativeScriptError>>
+    nativeJSON: (
+      input: ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+    ) => Either<
+      | { readonly keyHash: string; readonly type: "sig" }
+      | { readonly slot: number; readonly type: "before" }
+      | { readonly slot: number; readonly type: "after" }
+      | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "all" }
+      | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "any" }
+      | {
+          readonly scripts: readonly NativeScriptJSON.NativeJSON[]
+          readonly type: "atLeast"
+          readonly required: number
+        },
+      InstanceType<typeof NativeScriptError>
+    >
+  }
+  DecodeEither: {
+    cborBytes: (
+      input: any
+    ) => Either<
+      ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+      InstanceType<typeof NativeScriptError>
+    >
+    cborHex: (
+      input: string
+    ) => Either<
+      ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+      InstanceType<typeof NativeScriptError>
+    >
+    nativeJSON: (
+      input:
+        | { readonly keyHash: string; readonly type: "sig" }
+        | { readonly slot: number; readonly type: "before" }
+        | { readonly slot: number; readonly type: "after" }
+        | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "all" }
+        | { readonly scripts: readonly NativeScriptJSON.NativeJSON[]; readonly type: "any" }
+        | {
+            readonly scripts: readonly NativeScriptJSON.NativeJSON[]
+            readonly type: "atLeast"
+            readonly required: number
+          }
+    ) => Either<
+      ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter,
+      InstanceType<typeof NativeScriptError>
+    >
+  }
+}
+```
+
+## InvalidBefore (class)
+
+**Signature**
+
+```ts
+export declare class InvalidBefore
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+;[Symbol.for("nodejs.util.inspect.custom")]()
+```
+
+## InvalidBeforeEncoded (interface)
+
+**Signature**
+
+```ts
+export interface InvalidBeforeEncoded {
+  readonly _tag: "InvalidBefore"
+  readonly slot: number
+}
+```
+
+## InvalidHereafter (class)
+
+**Signature**
+
+```ts
+export declare class InvalidHereafter
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+;[Symbol.for("nodejs.util.inspect.custom")]()
+```
+
+## InvalidHereafterEncoded (interface)
+
+**Signature**
+
+```ts
+export interface InvalidHereafterEncoded {
+  readonly _tag: "InvalidHereafter"
+  readonly slot: number
+}
+```
+
+## NativeScript
+
+**Signature**
+
+```ts
+export declare const NativeScript: Schema.Union<
+  [
+    typeof ScriptPubKey,
+    typeof ScriptAll,
+    typeof ScriptAny,
+    typeof ScriptNOfK,
+    typeof InvalidBefore,
+    typeof InvalidHereafter
+  ]
+>
+```
+
+## NativeScript (type alias)
+
+**Signature**
+
+```ts
+export type NativeScript = ScriptPubKey | ScriptAll | ScriptAny | ScriptNOfK | InvalidBefore | InvalidHereafter
+```
+
+## NativeScriptEncoded (type alias)
+
+**Signature**
+
+```ts
+export type NativeScriptEncoded =
+  | ScriptPubKeyEncoded
+  | ScriptAllEncoded
+  | ScriptAnyEncoded
+  | ScriptNOfKEncoded
+  | InvalidBeforeEncoded
+  | InvalidHereafterEncoded
+```
+
+## NativeScriptError (class)
+
+**Signature**
+
+```ts
+export declare class NativeScriptError
+```
+
+## ScriptAll (class)
+
+**Signature**
+
+```ts
+export declare class ScriptAll
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+;[Symbol.for("nodejs.util.inspect.custom")]()
+```
+
+## ScriptAllEncoded (interface)
+
+**Signature**
+
+```ts
+export interface ScriptAllEncoded {
+  readonly _tag: "ScriptAll"
+  readonly scripts: ReadonlyArray<NativeScriptEncoded>
+}
+```
+
+## ScriptAny (class)
+
+**Signature**
+
+```ts
+export declare class ScriptAny
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+;[Symbol.for("nodejs.util.inspect.custom")]()
+```
+
+## ScriptAnyEncoded (interface)
+
+**Signature**
+
+```ts
+export interface ScriptAnyEncoded {
+  readonly _tag: "ScriptAny"
+  readonly scripts: ReadonlyArray<NativeScriptEncoded>
+}
+```
+
+## ScriptNOfK (class)
+
+**Signature**
+
+```ts
+export declare class ScriptNOfK
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+;[Symbol.for("nodejs.util.inspect.custom")]()
+```
+
+## ScriptNOfKEncoded (interface)
+
+**Signature**
+
+```ts
+export interface ScriptNOfKEncoded {
+  readonly _tag: "ScriptNOfK"
+  readonly n: bigint
+  readonly scripts: ReadonlyArray<NativeScriptEncoded>
+}
+```
+
+## ScriptPubKey (class)
+
+**Signature**
+
+```ts
+export declare class ScriptPubKey
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+;[Symbol.for("nodejs.util.inspect.custom")]()
+```
+
+## ScriptPubKeyEncoded (interface)
+
+**Signature**
+
+```ts
+export interface ScriptPubKeyEncoded {
+  readonly _tag: "ScriptPubKey"
+  readonly keyHash: typeof KeyHash.KeyHash.Encoded
+}
+```
+
+## SlotNumber (type alias)
+
+**Signature**
+
+```ts
+export type SlotNumber = typeof SlotNumber.Type
+```

@@ -1,0 +1,153 @@
+---
+title: IPv4.ts
+nav_order: 47
+parent: Modules
+---
+
+## IPv4 overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [IPv4Error (class)](#ipv4error-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [IPv4](#ipv4)
+- [utils](#utils)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+  - [IPv4 (type alias)](#ipv4-type-alias)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec utilities for IPv4 encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string & Brand<"IPv4">) => any; hex: (input: string & Brand<"IPv4">) => string }
+  Decode: { bytes: (input: any) => string & Brand<"IPv4">; hex: (input: string) => string & Brand<"IPv4"> }
+  EncodeEffect: {
+    bytes: (input: string & Brand<"IPv4">) => Effect<any, InstanceType<typeof IPv4Error>>
+    hex: (input: string & Brand<"IPv4">) => Effect<string, InstanceType<typeof IPv4Error>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string & Brand<"IPv4">, InstanceType<typeof IPv4Error>>
+    hex: (input: string) => Effect<string & Brand<"IPv4">, InstanceType<typeof IPv4Error>>
+  }
+  EncodeEither: {
+    bytes: (input: string & Brand<"IPv4">) => Either<any, InstanceType<typeof IPv4Error>>
+    hex: (input: string & Brand<"IPv4">) => Either<string, InstanceType<typeof IPv4Error>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string & Brand<"IPv4">, InstanceType<typeof IPv4Error>>
+    hex: (input: string) => Either<string & Brand<"IPv4">, InstanceType<typeof IPv4Error>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two IPv4 instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: IPv4, b: IPv4) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## IPv4Error (class)
+
+Error class for IPv4 related operations.
+
+**Signature**
+
+```ts
+export declare class IPv4Error
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random IPv4.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<string & Brand<"IPv4">>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## IPv4
+
+Schema for IPv4 representing an IPv4 network address.
+Stored as 4 bytes in network byte order (big-endian).
+
+**Signature**
+
+```ts
+export declare const IPv4: Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "IPv4">
+```
+
+Added in v2.0.0
+
+# utils
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.transform<
+    Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+    Schema.filter<Schema.refine<string, typeof Schema.String>>
+  >,
+  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "IPv4">
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.filter<Schema.refine<string, typeof Schema.String>>,
+  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "IPv4">
+>
+```
+
+## IPv4 (type alias)
+
+**Signature**
+
+```ts
+export type IPv4 = typeof IPv4.Type
+```

@@ -1,0 +1,79 @@
+{
+  "name": "@evolution-sdk/evolution",
+  "version": "0.1.0",
+  "description": "A modern TypeScript SDK for Cardano blockchain development",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": [],
+  "tags": [
+    "typescript",
+    "cardano",
+    "blockchain",
+    "effect"
+  ],
+  "exports": {
+    "./package.json": "./package.json",
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts",
+    "./internal/*": null,
+    "./*/index": null
+  },
+  "files": [
+    "src/**/*.ts",
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json && babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+    "dev": "tsc -b tsconfig.build.json --watch",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.{ts,mjs}\"",
+    "test": "vitest run",
+    "docgen": "docgen",
+    "clean": "rm -rf dist .turbo docs"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.90.0",
+    "@effect/platform-node": "^0.94.0",
+    "@scure/base": "^1.1.0",
+    "dockerode": "^4.0.0",
+    "effect": "^3.17.3"
+  },
+  "keywords": [
+    "cardano",
+    "blockchain",
+    "cryptocurrency",
+    "typescript",
+    "sdk",
+    "web3"
+  ],
+  "homepage": "https://github.com/no-witness-labs/evolution-sdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/no-witness-labs/evolution-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/no-witness-labs/evolution-sdk/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      "./package.json": "./package.json",
+      ".": "./dist/index.js",
+      "./*": "./dist/*.js",
+      "./internal/*": null,
+      "./*/index": null
+    }
+  }
+}

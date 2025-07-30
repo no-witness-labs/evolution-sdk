@@ -1,0 +1,136 @@
+---
+title: RewardAccount.ts
+nav_order: 75
+parent: Modules
+---
+
+## RewardAccount overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [equality](#equality)
+  - [equals](#equals)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [RewardAccount (class)](#rewardaccount-class)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
+- [utils](#utils)
+  - [Codec](#codec)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+  - [RewardAccountError (class)](#rewardaccounterror-class)
+
+---
+
+# equality
+
+## equals
+
+Check if two RewardAccount instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: RewardAccount, b: RewardAccount) => boolean
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random RewardAccount.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<RewardAccount>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## RewardAccount (class)
+
+Reward/stake address with only staking credential
+
+**Signature**
+
+```ts
+export declare class RewardAccount
+```
+
+Added in v2.0.0
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+;[Symbol.for("nodejs.util.inspect.custom")]()
+```
+
+# utils
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: RewardAccount) => any; hex: (input: RewardAccount) => string }
+  Decode: { bytes: (input: any) => RewardAccount; hex: (input: string) => RewardAccount }
+  EncodeEffect: {
+    bytes: (input: RewardAccount) => Effect.Effect<any, InstanceType<typeof RewardAccountError>>
+    hex: (input: RewardAccount) => Effect.Effect<string, InstanceType<typeof RewardAccountError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect.Effect<RewardAccount, InstanceType<typeof RewardAccountError>>
+    hex: (input: string) => Effect.Effect<RewardAccount, InstanceType<typeof RewardAccountError>>
+  }
+  EncodeEither: {
+    bytes: (input: RewardAccount) => Either<any, InstanceType<typeof RewardAccountError>>
+    hex: (input: RewardAccount) => Either<string, InstanceType<typeof RewardAccountError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<RewardAccount, InstanceType<typeof RewardAccountError>>
+    hex: (input: string) => Either<RewardAccount, InstanceType<typeof RewardAccountError>>
+  }
+}
+```
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transformOrFail<
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  typeof RewardAccount,
+  never
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transformOrFail<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof RewardAccount, never>
+>
+```
+
+## RewardAccountError (class)
+
+**Signature**
+
+```ts
+export declare class RewardAccountError
+```

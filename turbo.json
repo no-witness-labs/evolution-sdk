@@ -1,0 +1,43 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**", ".turbo/**"]
+    },
+    "type-check": {
+      "dependsOn": ["^type-check"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": []
+    },
+    "lint": {
+      "dependsOn": ["^lint"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", ".eslintrc*", "eslint.config.*"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": ["^test"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "vitest.config.*"],
+      "outputs": ["coverage/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "clean": {
+      "cache": false
+    },
+    "docgen": {
+      "dependsOn": ["^docgen"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "docgen.json"],
+      "outputs": ["docs/**"]
+    },
+    "verify": {
+      "dependsOn": ["^verify"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": []
+    }
+  }
+}

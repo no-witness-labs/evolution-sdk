@@ -1,0 +1,156 @@
+---
+title: VrfKeyHash.ts
+nav_order: 99
+parent: Modules
+---
+
+## VrfKeyHash overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [VrfKeyHashError (class)](#vrfkeyhasherror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [VrfKeyHash](#vrfkeyhash)
+- [utils](#utils)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+  - [VrfKeyHash (type alias)](#vrfkeyhash-type-alias)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec utilities for VrfKeyHash encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string & Brand<"VrfKeyHash">) => any; hex: (input: string & Brand<"VrfKeyHash">) => string }
+  Decode: { bytes: (input: any) => string & Brand<"VrfKeyHash">; hex: (input: string) => string & Brand<"VrfKeyHash"> }
+  EncodeEffect: {
+    bytes: (input: string & Brand<"VrfKeyHash">) => Effect<any, InstanceType<typeof VrfKeyHashError>>
+    hex: (input: string & Brand<"VrfKeyHash">) => Effect<string, InstanceType<typeof VrfKeyHashError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string & Brand<"VrfKeyHash">, InstanceType<typeof VrfKeyHashError>>
+    hex: (input: string) => Effect<string & Brand<"VrfKeyHash">, InstanceType<typeof VrfKeyHashError>>
+  }
+  EncodeEither: {
+    bytes: (input: string & Brand<"VrfKeyHash">) => Either<any, InstanceType<typeof VrfKeyHashError>>
+    hex: (input: string & Brand<"VrfKeyHash">) => Either<string, InstanceType<typeof VrfKeyHashError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string & Brand<"VrfKeyHash">, InstanceType<typeof VrfKeyHashError>>
+    hex: (input: string) => Either<string & Brand<"VrfKeyHash">, InstanceType<typeof VrfKeyHashError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two VrfKeyHash instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: VrfKeyHash, b: VrfKeyHash) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## VrfKeyHashError (class)
+
+Error class for VrfKeyHash related operations.
+
+**Signature**
+
+```ts
+export declare class VrfKeyHashError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random VrfKeyHash.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<string & Brand<"VrfKeyHash">>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## VrfKeyHash
+
+VrfKeyHash is a 32-byte hash representing a VRF verification key.
+vrf_keyhash = Bytes32
+
+**Signature**
+
+```ts
+export declare const VrfKeyHash: Schema.brand<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  "VrfKeyHash"
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.transform<
+    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+  >,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VrfKeyHash">
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VrfKeyHash">
+>
+```
+
+## VrfKeyHash (type alias)
+
+**Signature**
+
+```ts
+export type VrfKeyHash = typeof VrfKeyHash.Type
+```

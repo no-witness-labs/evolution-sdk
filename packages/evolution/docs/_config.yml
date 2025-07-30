@@ -1,0 +1,9 @@
+remote_theme: mikearnaldi/docgen-template
+
+# Enable or disable the site search
+search_enabled: true
+
+# Aux links for the upper right navigation
+aux_links:
+"@evolution-sdk/evolution on GitHub":
+  - "https://github.com/no-witness-labs/evolution-sdk"

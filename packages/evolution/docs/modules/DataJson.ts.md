@@ -1,0 +1,327 @@
+---
+title: DataJson.ts
+nav_order: 33
+parent: Modules
+---
+
+## DataJson overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [utils](#utils)
+  - [ByteArray](#bytearray)
+  - [ByteArray (interface)](#bytearray-interface)
+  - [Constr](#constr)
+  - [Constr (interface)](#constr-interface)
+  - [Data](#data)
+  - [Data (type alias)](#data-type-alias)
+  - [Integer](#integer)
+  - [Integer (interface)](#integer-interface)
+  - [List](#list)
+  - [List (interface)](#list-interface)
+  - [Map](#map)
+  - [Map (type alias)](#map-type-alias)
+  - [fromCBOR](#fromcbor)
+  - [fromData](#fromdata)
+  - [isByteArray](#isbytearray)
+  - [isConstr](#isconstr)
+  - [isInteger](#isinteger)
+  - [isList](#islist)
+  - [isMap](#ismap)
+  - [mkByteArray](#mkbytearray)
+  - [mkConstr](#mkconstr)
+  - [mkConstr (interface)](#mkconstr-interface)
+  - [mkInteger](#mkinteger)
+  - [mkMap](#mkmap)
+  - [resolveCBOR](#resolvecbor)
+  - [toCBOR](#tocbor)
+  - [toData](#todata)
+
+---
+
+# utils
+
+## ByteArray
+
+**Signature**
+
+```ts
+export declare const ByteArray: Schema.Struct<{ bytes: Schema.filter<Schema.Schema<string, string, never>> }>
+```
+
+## ByteArray (interface)
+
+**Signature**
+
+```ts
+export interface ByteArray {
+  readonly bytes: string
+}
+```
+
+## Constr
+
+**Signature**
+
+```ts
+export declare const Constr: Schema.Struct<{
+  constructor: typeof Schema.Number
+  fields: Schema.Array$<Schema.suspend<Data, Data, never>>
+}>
+```
+
+## Constr (interface)
+
+**Signature**
+
+```ts
+export interface Constr {
+  readonly constructor: number
+  readonly fields: ReadonlyArray<Data>
+}
+```
+
+## Data
+
+**Signature**
+
+```ts
+export declare const Data: Schema.Schema<Data, Data, never>
+```
+
+## Data (type alias)
+
+Plutus data types and schemas for serialization/deserialization between
+TypeScript types and Cardano's Plutus data format
+
+**Signature**
+
+```ts
+export type Data = Integer | ByteArray | List | Map | Constr
+```
+
+Added in v1.0.0
+
+## Integer
+
+**Signature**
+
+```ts
+export declare const Integer: Schema.Struct<{ int: typeof Schema.Number }>
+```
+
+## Integer (interface)
+
+**Signature**
+
+```ts
+export interface Integer {
+  readonly int: number
+}
+```
+
+## List
+
+**Signature**
+
+```ts
+export declare const List: Schema.Array$<Schema.suspend<Data, Data, never>>
+```
+
+## List (interface)
+
+**Signature**
+
+```ts
+export interface List extends ReadonlyArray<Data> {}
+```
+
+## Map
+
+**Signature**
+
+```ts
+export declare const Map: Schema.Record$<typeof Schema.String, Schema.suspend<Data, Data, never>>
+```
+
+## Map (type alias)
+
+**Signature**
+
+```ts
+export type Map = {
+  readonly [key: string]: Data
+}
+```
+
+## fromCBOR
+
+Decodes a CBOR hex string to a TypeScript type
+
+**Signature**
+
+```ts
+export declare function fromCBOR(input: string): Data
+export declare function fromCBOR<Source, Target extends Data>(
+  input: string,
+  schema: Schema.Schema<Source, Target>
+): Source
+```
+
+Added in v1.0.0
+
+## fromData
+
+Decodes an unknown value from Plutus Data Constructor to a TypeScript type
+
+**Signature**
+
+```ts
+export declare const fromData: <Source, Target extends Data>(
+  input: unknown,
+  schema: Schema.Schema<Source, Target>,
+  options?: SchemaAST.ParseOptions
+) => Source
+```
+
+Added in v1.0.0
+
+## isByteArray
+
+**Signature**
+
+```ts
+export declare const isByteArray: (
+  u: unknown,
+  overrideOptions?: SchemaAST.ParseOptions | number
+) => u is { readonly bytes: string }
+```
+
+## isConstr
+
+**Signature**
+
+```ts
+export declare const isConstr: (
+  u: unknown,
+  overrideOptions?: SchemaAST.ParseOptions | number
+) => u is { readonly fields: readonly Data[]; readonly constructor: number }
+```
+
+## isInteger
+
+**Signature**
+
+```ts
+export declare const isInteger: (
+  u: unknown,
+  overrideOptions?: SchemaAST.ParseOptions | number
+) => u is { readonly int: number }
+```
+
+## isList
+
+**Signature**
+
+```ts
+export declare const isList: (u: unknown, overrideOptions?: SchemaAST.ParseOptions | number) => u is readonly Data[]
+```
+
+## isMap
+
+**Signature**
+
+```ts
+export declare const isMap: (
+  u: unknown,
+  overrideOptions?: SchemaAST.ParseOptions | number
+) => u is { readonly [x: string]: Data }
+```
+
+## mkByteArray
+
+**Signature**
+
+```ts
+export declare const mkByteArray: (bytes: string) => ByteArray
+```
+
+## mkConstr
+
+**Signature**
+
+```ts
+export declare const mkConstr: <T extends Data>(
+  constructor: number,
+  fields: ReadonlyArray<T>
+) => { readonly constructor: number; readonly fields: ReadonlyArray<T> }
+```
+
+## mkConstr (interface)
+
+**Signature**
+
+```ts
+export interface mkConstr<T extends Data> {
+  readonly constructor: number
+  readonly fields: ReadonlyArray<T>
+}
+```
+
+## mkInteger
+
+**Signature**
+
+```ts
+export declare const mkInteger: (int: number) => Integer
+```
+
+## mkMap
+
+**Signature**
+
+```ts
+export declare const mkMap: (map: Record<string, Data>) => Readonly<Map>
+```
+
+## resolveCBOR
+
+**Signature**
+
+```ts
+export declare const resolveCBOR: (input: string) => Data
+```
+
+## toCBOR
+
+Converts TypeScript data into CBOR hex string
+
+**Signature**
+
+```ts
+export declare const toCBOR: <Source, Target extends Data>(
+  input: unknown,
+  schema?: Schema.Schema<Source, Target>,
+  options?: { canonical?: boolean; parseOptions?: SchemaAST.ParseOptions }
+) => string
+```
+
+Added in v1.0.0
+
+## toData
+
+Encodes a TypeScript value to Plutus Data Constructor
+
+**Signature**
+
+```ts
+export declare const toData: <Source, Target extends Data>(
+  input: unknown,
+  schema: Schema.Schema<Source, Target>,
+  options?: SchemaAST.ParseOptions
+) => Target
+```
+
+Added in v1.0.0

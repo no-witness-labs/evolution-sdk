@@ -1,0 +1,157 @@
+---
+title: VrfVkey.ts
+nav_order: 100
+parent: Modules
+---
+
+## VrfVkey overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [VrfVkeyError (class)](#vrfvkeyerror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [VrfVkey](#vrfvkey)
+- [utils](#utils)
+  - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
+  - [VrfVkey (type alias)](#vrfvkey-type-alias)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec utilities for VrfVkey encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string & Brand<"VrfVkey">) => any; hex: (input: string & Brand<"VrfVkey">) => string }
+  Decode: { bytes: (input: any) => string & Brand<"VrfVkey">; hex: (input: string) => string & Brand<"VrfVkey"> }
+  EncodeEffect: {
+    bytes: (input: string & Brand<"VrfVkey">) => Effect<any, InstanceType<typeof VrfVkeyError>>
+    hex: (input: string & Brand<"VrfVkey">) => Effect<string, InstanceType<typeof VrfVkeyError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string & Brand<"VrfVkey">, InstanceType<typeof VrfVkeyError>>
+    hex: (input: string) => Effect<string & Brand<"VrfVkey">, InstanceType<typeof VrfVkeyError>>
+  }
+  EncodeEither: {
+    bytes: (input: string & Brand<"VrfVkey">) => Either<any, InstanceType<typeof VrfVkeyError>>
+    hex: (input: string & Brand<"VrfVkey">) => Either<string, InstanceType<typeof VrfVkeyError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string & Brand<"VrfVkey">, InstanceType<typeof VrfVkeyError>>
+    hex: (input: string) => Either<string & Brand<"VrfVkey">, InstanceType<typeof VrfVkeyError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two VrfVkey instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: VrfVkey, b: VrfVkey) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## VrfVkeyError (class)
+
+Error class for VrfVkey related operations.
+
+**Signature**
+
+```ts
+export declare class VrfVkeyError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random VrfVkey.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<string & Brand<"VrfVkey">>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## VrfVkey
+
+Schema for VrfVkey representing a VRF verification key.
+vrf_vkey = bytes .size 32
+Follows the Conway-era CDDL specification.
+
+**Signature**
+
+```ts
+export declare const VrfVkey: Schema.brand<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  "VrfVkey"
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.transform<
+    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+  >,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VrfVkey">
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VrfVkey">
+>
+```
+
+## VrfVkey (type alias)
+
+**Signature**
+
+```ts
+export type VrfVkey = typeof VrfVkey.Type
+```

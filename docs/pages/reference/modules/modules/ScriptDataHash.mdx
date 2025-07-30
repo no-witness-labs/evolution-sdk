@@ -1,0 +1,55 @@
+---
+title: ScriptDataHash.ts
+nav_order: 77
+parent: Modules
+---
+
+## ScriptDataHash overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [model](#model)
+  - [ScriptDataHash](#scriptdatahash)
+- [utils](#utils)
+  - [ScriptDataHash (type alias)](#scriptdatahash-type-alias)
+
+---
+
+# model
+
+## ScriptDataHash
+
+ScriptDataHash based on Conway CDDL specification
+
+CDDL: script_data_hash = Bytes32
+
+This is a hash of data which may affect evaluation of a script.
+This data consists of:
+
+- The redeemers from the transaction_witness_set (the value of field 5).
+- The datums from the transaction_witness_set (the value of field 4).
+- The value in the cost_models map corresponding to the script's language
+  (in field 18 of protocol_param_update.)
+
+**Signature**
+
+```ts
+export declare const ScriptDataHash: Schema.brand<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  "ScriptDataHash"
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## ScriptDataHash (type alias)
+
+**Signature**
+
+```ts
+export type ScriptDataHash = Schema.Schema.Type<typeof ScriptDataHash>
+```

@@ -1,0 +1,42 @@
+---
+title: TransactionIndex.ts
+nav_order: 88
+parent: Modules
+---
+
+## TransactionIndex overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [model](#model)
+  - [TransactionIndexSchema](#transactionindexschema)
+- [utils](#utils)
+  - [TransactionIndex (type alias)](#transactionindex-type-alias)
+
+---
+
+# model
+
+## TransactionIndexSchema
+
+CDDL: transaction_index = uint .size 2
+
+**Signature**
+
+```ts
+export declare const TransactionIndexSchema: Schema.refine<number, typeof Schema.Number>
+```
+
+Added in v2.0.0
+
+# utils
+
+## TransactionIndex (type alias)
+
+**Signature**
+
+```ts
+export type TransactionIndex = Schema.Schema.Type<typeof TransactionIndexSchema>
+```

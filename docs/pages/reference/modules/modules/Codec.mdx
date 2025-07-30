@@ -1,0 +1,63 @@
+---
+title: Codec.ts
+nav_order: 26
+parent: Modules
+---
+
+## Codec overview
+
+Simple codec factory for creating encoding utilities from schema records
+
+Added in v2.0.0
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [constructors](#constructors)
+  - [createEncoders](#createencoders)
+
+---
+
+# constructors
+
+## createEncoders
+
+Creates encoding and decoding utilities with custom error mapping
+
+**Signature**
+
+```ts
+export declare const createEncoders: <
+  T extends Record<string, Schema.Schema<any, any, any>>,
+  ErrorClass extends { new (options: { message?: string; cause?: unknown }): unknown }
+>(
+  schemas: T,
+  ErrorClass: ErrorClass
+) => {
+  Encode: { [K in keyof T]: T[K] extends Schema.Schema<infer A, infer I, any> ? (input: A) => I : never }
+  Decode: { [K in keyof T]: T[K] extends Schema.Schema<infer A, infer I, any> ? (input: I) => A : never }
+  EncodeEffect: {
+    [K in keyof T]: T[K] extends Schema.Schema<infer A, infer I, any>
+      ? (input: A) => Effect.Effect<I, InstanceType<ErrorClass>>
+      : never
+  }
+  DecodeEffect: {
+    [K in keyof T]: T[K] extends Schema.Schema<infer A, infer I, any>
+      ? (input: I) => Effect.Effect<A, InstanceType<ErrorClass>>
+      : never
+  }
+  EncodeEither: {
+    [K in keyof T]: T[K] extends Schema.Schema<infer A, infer I, any>
+      ? (input: A) => Either.Either<I, InstanceType<ErrorClass>>
+      : never
+  }
+  DecodeEither: {
+    [K in keyof T]: T[K] extends Schema.Schema<infer A, infer I, any>
+      ? (input: I) => Either.Either<A, InstanceType<ErrorClass>>
+      : never
+  }
+}
+```
+
+Added in v2.0.0

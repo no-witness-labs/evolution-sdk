@@ -1,0 +1,202 @@
+---
+title: OperationalCert.ts
+nav_order: 62
+parent: Modules
+---
+
+## OperationalCert overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [OperationalCertError (class)](#operationalcerterror-class)
+- [model](#model)
+  - [OperationalCert (class)](#operationalcert-class)
+- [schemas](#schemas)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
+  - [FromCDDL](#fromcddl)
+- [utils](#utils)
+  - [Codec](#codec)
+
+---
+
+# equality
+
+## equals
+
+Check if two OperationalCert instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: OperationalCert, b: OperationalCert) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## OperationalCertError (class)
+
+Error class for OperationalCert operations
+
+**Signature**
+
+```ts
+export declare class OperationalCertError
+```
+
+Added in v2.0.0
+
+# model
+
+## OperationalCert (class)
+
+OperationalCert class based on Conway CDDL specification
+
+CDDL: operational_cert = [
+hot_vkey : kes_vkey,
+sequence_number : uint64,
+kes_period : uint64,
+sigma : ed25519_signature
+]
+
+**Signature**
+
+```ts
+export declare class OperationalCert
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromBytes
+
+CBOR bytes transformation schema for OperationalCert.
+
+**Signature**
+
+```ts
+export declare const FromBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.Tuple<
+      [
+        typeof Schema.Uint8ArrayFromSelf,
+        typeof Schema.BigIntFromSelf,
+        typeof Schema.BigIntFromSelf,
+        typeof Schema.Uint8ArrayFromSelf
+      ]
+    >,
+    Schema.SchemaClass<OperationalCert, OperationalCert, never>,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+CBOR hex transformation schema for OperationalCert.
+
+**Signature**
+
+```ts
+export declare const FromHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple<
+        [
+          typeof Schema.Uint8ArrayFromSelf,
+          typeof Schema.BigIntFromSelf,
+          typeof Schema.BigIntFromSelf,
+          typeof Schema.Uint8ArrayFromSelf
+        ]
+      >,
+      Schema.SchemaClass<OperationalCert, OperationalCert, never>,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+CDDL schema for OperationalCert.
+operational_cert = [
+hot_vkey : kes_vkey,
+sequence_number : uint64,
+kes_period : uint64,
+sigma : ed25519_signature
+]
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.Tuple<
+    [
+      typeof Schema.Uint8ArrayFromSelf,
+      typeof Schema.BigIntFromSelf,
+      typeof Schema.BigIntFromSelf,
+      typeof Schema.Uint8ArrayFromSelf
+    ]
+  >,
+  Schema.SchemaClass<OperationalCert, OperationalCert, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: (options?: CBOR.CodecOptions) => {
+  Encode: { cborBytes: (input: OperationalCert) => any; cborHex: (input: OperationalCert) => string }
+  Decode: { cborBytes: (input: any) => OperationalCert; cborHex: (input: string) => OperationalCert }
+  EncodeEffect: {
+    cborBytes: (input: OperationalCert) => Effect.Effect<any, InstanceType<typeof OperationalCertError>>
+    cborHex: (input: OperationalCert) => Effect.Effect<string, InstanceType<typeof OperationalCertError>>
+  }
+  DecodeEffect: {
+    cborBytes: (input: any) => Effect.Effect<OperationalCert, InstanceType<typeof OperationalCertError>>
+    cborHex: (input: string) => Effect.Effect<OperationalCert, InstanceType<typeof OperationalCertError>>
+  }
+  EncodeEither: {
+    cborBytes: (input: OperationalCert) => Either<any, InstanceType<typeof OperationalCertError>>
+    cborHex: (input: OperationalCert) => Either<string, InstanceType<typeof OperationalCertError>>
+  }
+  DecodeEither: {
+    cborBytes: (input: any) => Either<OperationalCert, InstanceType<typeof OperationalCertError>>
+    cborHex: (input: string) => Either<OperationalCert, InstanceType<typeof OperationalCertError>>
+  }
+}
+```

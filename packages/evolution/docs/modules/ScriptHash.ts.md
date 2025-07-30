@@ -1,0 +1,165 @@
+---
+title: ScriptHash.ts
+nav_order: 78
+parent: Modules
+---
+
+## ScriptHash overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [ScriptHashError (class)](#scripthasherror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [schemas](#schemas)
+  - [BytesSchema](#bytesschema)
+  - [HexSchema](#hexschema)
+  - [ScriptHash](#scripthash)
+- [utils](#utils)
+  - [ScriptHash (type alias)](#scripthash-type-alias)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec utilities for ScriptHash encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string & Brand<"ScriptHash">) => any; hex: (input: string & Brand<"ScriptHash">) => string }
+  Decode: { bytes: (input: any) => string & Brand<"ScriptHash">; hex: (input: string) => string & Brand<"ScriptHash"> }
+  EncodeEffect: {
+    bytes: (input: string & Brand<"ScriptHash">) => Effect<any, InstanceType<typeof ScriptHashError>>
+    hex: (input: string & Brand<"ScriptHash">) => Effect<string, InstanceType<typeof ScriptHashError>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string & Brand<"ScriptHash">, InstanceType<typeof ScriptHashError>>
+    hex: (input: string) => Effect<string & Brand<"ScriptHash">, InstanceType<typeof ScriptHashError>>
+  }
+  EncodeEither: {
+    bytes: (input: string & Brand<"ScriptHash">) => Either<any, InstanceType<typeof ScriptHashError>>
+    hex: (input: string & Brand<"ScriptHash">) => Either<string, InstanceType<typeof ScriptHashError>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string & Brand<"ScriptHash">, InstanceType<typeof ScriptHashError>>
+    hex: (input: string) => Either<string & Brand<"ScriptHash">, InstanceType<typeof ScriptHashError>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two ScriptHash instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: ScriptHash, b: ScriptHash) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## ScriptHashError (class)
+
+Error class for ScriptHash related operations.
+
+**Signature**
+
+```ts
+export declare class ScriptHashError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+Generate a random ScriptHash.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<string & Brand<"ScriptHash">>
+```
+
+Added in v2.0.0
+
+# schemas
+
+## BytesSchema
+
+Schema for transforming between Uint8Array and ScriptHash.
+
+**Signature**
+
+```ts
+export declare const BytesSchema: Schema.transform<
+  Schema.transform<
+    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+  >,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash">
+>
+```
+
+Added in v2.0.0
+
+## HexSchema
+
+Schema for transforming between hex string and ScriptHash.
+
+**Signature**
+
+```ts
+export declare const HexSchema: Schema.transform<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash">
+>
+```
+
+Added in v2.0.0
+
+## ScriptHash
+
+Schema for ScriptHash representing a script hash credential.
+script_hash = hash28
+Follows CIP-0019 binary representation.
+
+**Signature**
+
+```ts
+export declare const ScriptHash: Schema.brand<
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
+  "ScriptHash"
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## ScriptHash (type alias)
+
+**Signature**
+
+```ts
+export type ScriptHash = typeof ScriptHash.Type
+```

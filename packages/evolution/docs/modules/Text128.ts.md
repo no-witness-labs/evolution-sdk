@@ -1,0 +1,130 @@
+---
+title: Text128.ts
+nav_order: 84
+parent: Modules
+---
+
+## Text128 overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [constants](#constants)
+  - [TEXT128_MIN_LENGTH](#text128_min_length)
+- [errors](#errors)
+  - [Text128Error (class)](#text128error-class)
+- [schemas](#schemas)
+  - [FromVariableBytes](#fromvariablebytes)
+- [utils](#utils)
+  - [Codec](#codec)
+  - [FromVariableHex](#fromvariablehex)
+  - [TEXT128_MAX_LENGTH](#text128_max_length)
+  - [generator](#generator)
+
+---
+
+# constants
+
+## TEXT128_MIN_LENGTH
+
+Constants for Text128 validation.
+text .size (0 .. 128)
+
+**Signature**
+
+```ts
+export declare const TEXT128_MIN_LENGTH: 0
+```
+
+Added in v2.0.0
+
+# errors
+
+## Text128Error (class)
+
+Error class for Text128 related operations.
+
+**Signature**
+
+```ts
+export declare class Text128Error
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromVariableBytes
+
+Schema for validating variable-length text between 0 and 128 characters.
+text .size (0 .. 128)
+
+**Signature**
+
+```ts
+export declare const FromVariableBytes: Schema.filter<
+  Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string) => any; hex: (input: string) => string }
+  Decode: { bytes: (input: any) => string; hex: (input: string) => string }
+  EncodeEffect: {
+    bytes: (input: string) => Effect<any, InstanceType<typeof Text128Error>>
+    hex: (input: string) => Effect<string, InstanceType<typeof Text128Error>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string, InstanceType<typeof Text128Error>>
+    hex: (input: string) => Effect<string, InstanceType<typeof Text128Error>>
+  }
+  EncodeEither: {
+    bytes: (input: string) => Either<any, InstanceType<typeof Text128Error>>
+    hex: (input: string) => Either<string, InstanceType<typeof Text128Error>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string, InstanceType<typeof Text128Error>>
+    hex: (input: string) => Either<string, InstanceType<typeof Text128Error>>
+  }
+}
+```
+
+## FromVariableHex
+
+**Signature**
+
+```ts
+export declare const FromVariableHex: Schema.refine<
+  string,
+  Schema.transform<
+    Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
+  >
+>
+```
+
+## TEXT128_MAX_LENGTH
+
+**Signature**
+
+```ts
+export declare const TEXT128_MAX_LENGTH: 128
+```
+
+## generator
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<string>
+```

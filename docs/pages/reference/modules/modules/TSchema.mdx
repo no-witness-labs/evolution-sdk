@@ -1,0 +1,258 @@
+---
+title: TSchema.ts
+nav_order: 92
+parent: Modules
+---
+
+## TSchema overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [utils](#utils)
+  - [Array](#array)
+  - [Boolean](#boolean)
+  - [ByteArray](#bytearray)
+  - [Integer](#integer)
+  - [Literal](#literal)
+  - [Map](#map)
+  - [NullOr](#nullor)
+  - [OneLiteral](#oneliteral)
+  - [Struct](#struct)
+  - [Tuple](#tuple)
+  - [UndefinedOr](#undefinedor)
+  - [Union](#union)
+  - [compose](#compose)
+  - [filter](#filter)
+  - [is](#is)
+
+---
+
+# utils
+
+## Array
+
+Creates a schema for arrays with Plutus list type annotation
+
+**Signature**
+
+```ts
+export declare const Array: <S extends Schema.Schema.Any>(items: S) => Array<S>
+```
+
+Added in v1.0.0
+
+## Boolean
+
+Schema for boolean values using Plutus Data Constructor
+
+- False with index 0
+- True with index 1
+
+**Signature**
+
+```ts
+export declare const Boolean: Boolean
+```
+
+Added in v2.0.0
+
+## ByteArray
+
+Creates a schema for byte arrays using Plutus Data ByteArray transformation
+The byte array is represented as a hex string
+
+**Signature**
+
+```ts
+export declare const ByteArray: ByteArray
+```
+
+Added in v2.0.0
+
+## Integer
+
+Creates a schema for integers using Plutus Data Integer transformation
+The integer is represented as a BigInt
+
+**Signature**
+
+```ts
+export declare const Integer: Schema.SchemaClass<bigint, bigint, never>
+```
+
+Added in v2.0.0
+
+## Literal
+
+Creates a schema for literal types with Plutus Data Constructor transformation
+
+**Signature**
+
+```ts
+export declare const Literal: <Literals extends NonEmptyReadonlyArray<Exclude<SchemaAST.LiteralValue, null | bigint>>>(
+  ...self: Literals
+) => Literal<Literals>
+```
+
+Added in v2.0.0
+
+## Map
+
+Creates a schema for maps with Plutus Map type annotation
+Maps are represented as a list of constructor pairs, where each pair
+is a constructor with index 0 and fields [key, value]
+
+**Signature**
+
+```ts
+export declare const Map: <K extends Schema.Schema.Any, V extends Schema.Schema.Any>(key: K, value: V) => Map<K, V>
+```
+
+Added in v1.0.0
+
+## NullOr
+
+Creates a schema for nullable types that transforms to/from Plutus Data Constructor
+Represents optional values as:
+
+- Just(value) with index 0
+- Nothing with index 1
+
+**Signature**
+
+```ts
+export declare const NullOr: <S extends Schema.Schema.All>(self: S) => NullOr<S>
+```
+
+Added in v2.0.0
+
+## OneLiteral
+
+**Signature**
+
+```ts
+export declare const OneLiteral: <Single extends Exclude<SchemaAST.LiteralValue, null | bigint>>(
+  self: Single
+) => OneLiteral<Single>
+```
+
+## Struct
+
+Creates a schema for struct types using Plutus Data Constructor
+Objects are represented as a constructor with index 0 and fields as an array
+
+**Signature**
+
+```ts
+export declare const Struct: <Fields extends Schema.Struct.Fields>(fields: Fields) => Struct<Fields>
+```
+
+Added in v2.0.0
+
+## Tuple
+
+Creates a schema for tuple types using Plutus Data List transformation
+Tuples are represented as a constructor with index 0 and fields as an array
+
+**Signature**
+
+```ts
+export declare const Tuple: <Elements extends Schema.TupleType.Elements>(element: [...Elements]) => Tuple<Elements>
+```
+
+Added in v2.0.0
+
+## UndefinedOr
+
+Creates a schema for undefined types that transforms to/from Plutus Data Constructor
+Represents optional values as:
+
+- Just(value) with index 0
+- Nothing with index 1
+
+**Signature**
+
+```ts
+export declare const UndefinedOr: <S extends Schema.Schema.Any>(self: S) => UndefineOr<S>
+```
+
+Added in v2.0.0
+
+## Union
+
+Creates a schema for union types using Plutus Data Constructor
+Unions are represented as a constructor with index 0 and fields as an array
+
+**Signature**
+
+```ts
+export declare const Union: <Members extends ReadonlyArray<Schema.Schema.Any>>(...members: Members) => Union<Members>
+```
+
+Added in v2.0.0
+
+## compose
+
+**Signature**
+
+```ts
+export declare const compose: {
+  <To extends Schema.Schema.Any, From extends Schema.Schema.Any, C extends Schema.Schema.Type<From>>(
+    to: To & Schema.Schema<Schema.Schema.Type<To>, C, Schema.Schema.Context<To>>
+  ): (from: From) => Schema.transform<From, To>
+  <To extends Schema.Schema.Any>(
+    to: To
+  ): <From extends Schema.Schema.Any, B extends Schema.Schema.Encoded<To>>(
+    from: From & Schema.Schema<B, Schema.Schema.Encoded<From>, Schema.Schema.Context<From>>
+  ) => Schema.transform<From, To>
+  <To extends Schema.Schema.Any>(
+    to: To,
+    options?: { readonly strict: true }
+  ): <From extends Schema.Schema.Any>(
+    from: From & Schema.Schema<Schema.Schema.Encoded<To>, Schema.Schema.Encoded<From>, Schema.Schema.Context<From>>
+  ) => Schema.transform<From, To>
+  <To extends Schema.Schema.Any>(
+    to: To,
+    options: { readonly strict: false }
+  ): <From extends Schema.Schema.Any>(from: From) => Schema.transform<From, To>
+  <From extends Schema.Schema.Any, To extends Schema.Schema.Any, C extends Schema.Schema.Type<From>>(
+    from: From,
+    to: To & Schema.Schema<Schema.Schema.Type<To>, C, Schema.Schema.Context<To>>
+  ): Schema.transform<From, To>
+  <From extends Schema.Schema.Any, B extends Schema.Schema.Encoded<To>, To extends Schema.Schema.Any>(
+    from: From & Schema.Schema<B, Schema.Schema.Encoded<From>, Schema.Schema.Context<From>>,
+    to: To
+  ): Schema.transform<From, To>
+  <From extends Schema.Schema.Any, To extends Schema.Schema.Any>(
+    from: From & Schema.Schema<Schema.Schema.Encoded<To>, Schema.Schema.Encoded<From>, Schema.Schema.Context<From>>,
+    to: To,
+    options?: { readonly strict: true }
+  ): Schema.transform<From, To>
+  <From extends Schema.Schema.Any, To extends Schema.Schema.Any>(
+    from: From,
+    to: To,
+    options: { readonly strict: false }
+  ): Schema.transform<From, To>
+}
+```
+
+## filter
+
+**Signature**
+
+```ts
+export declare const filter: typeof Schema.filter
+```
+
+## is
+
+**Signature**
+
+```ts
+export declare const is: <A, I, R>(
+  schema: Schema.Schema<A, I, R>,
+  options?: SchemaAST.ParseOptions
+) => (u: unknown, overrideOptions?: SchemaAST.ParseOptions | number) => u is A
+```

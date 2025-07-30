@@ -1,0 +1,9 @@
+temp/
+.turbo
+node_modules
+dist
+*.log
+.DS_Store
+.direnv
+docs/out
+docs/.next

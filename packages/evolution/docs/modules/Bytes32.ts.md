@@ -1,0 +1,170 @@
+---
+title: Bytes32.ts
+nav_order: 18
+parent: Modules
+---
+
+## Bytes32 overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [encoding/decoding](#encodingdecoding)
+  - [Codec](#codec)
+- [schemas](#schemas)
+  - [BytesSchema](#bytesschema)
+  - [FromBytes](#frombytes)
+  - [FromVariableBytes](#fromvariablebytes)
+  - [HexSchema](#hexschema)
+  - [VariableBytesSchema](#variablebytesschema)
+  - [VariableHexSchema](#variablehexschema)
+- [utils](#utils)
+  - [Bytes32Error (class)](#bytes32error-class)
+  - [Bytes32_BYTES_LENGTH](#bytes32_bytes_length)
+  - [Bytes32_HEX_LENGTH](#bytes32_hex_length)
+
+---
+
+# encoding/decoding
+
+## Codec
+
+Codec for Bytes32 encoding and decoding operations.
+
+**Signature**
+
+```ts
+export declare const Codec: {
+  Encode: { bytes: (input: string) => any; variableBytes: (input: string) => any }
+  Decode: { bytes: (input: any) => string; variableBytes: (input: any) => string }
+  EncodeEffect: {
+    bytes: (input: string) => Effect<any, InstanceType<typeof Bytes32Error>>
+    variableBytes: (input: string) => Effect<any, InstanceType<typeof Bytes32Error>>
+  }
+  DecodeEffect: {
+    bytes: (input: any) => Effect<string, InstanceType<typeof Bytes32Error>>
+    variableBytes: (input: any) => Effect<string, InstanceType<typeof Bytes32Error>>
+  }
+  EncodeEither: {
+    bytes: (input: string) => Either<any, InstanceType<typeof Bytes32Error>>
+    variableBytes: (input: string) => Either<any, InstanceType<typeof Bytes32Error>>
+  }
+  DecodeEither: {
+    bytes: (input: any) => Either<string, InstanceType<typeof Bytes32Error>>
+    variableBytes: (input: any) => Either<string, InstanceType<typeof Bytes32Error>>
+  }
+}
+```
+
+Added in v2.0.0
+
+# schemas
+
+## BytesSchema
+
+Schema for Bytes32 bytes with 32-byte length validation.
+
+**Signature**
+
+```ts
+export declare const BytesSchema: Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>
+```
+
+Added in v2.0.0
+
+## FromBytes
+
+Schema transformer for Bytes32 that converts between hex strings and byte arrays.
+Like Bytes.BytesSchema but with Bytes32-specific length validation.
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+>
+```
+
+Added in v2.0.0
+
+## FromVariableBytes
+
+Schema transformer for variable-length data that converts between hex strings and byte arrays.
+Works with 0 to 32 bytes (0 to 64 hex characters).
+
+**Signature**
+
+```ts
+export declare const FromVariableBytes: Schema.transform<
+  Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+>
+```
+
+Added in v2.0.0
+
+## HexSchema
+
+Schema for Bytes32 hex strings with 64-character length validation.
+
+**Signature**
+
+```ts
+export declare const HexSchema: Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+```
+
+Added in v2.0.0
+
+## VariableBytesSchema
+
+Schema for variable-length byte arrays from 0 to 32 bytes.
+Useful for asset names and other variable-length data structures.
+
+**Signature**
+
+```ts
+export declare const VariableBytesSchema: Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>
+```
+
+Added in v2.0.0
+
+## VariableHexSchema
+
+Schema for variable-length hex strings from 0 to 64 characters (0 to 32 bytes).
+Useful for asset names and other variable-length data structures.
+
+**Signature**
+
+```ts
+export declare const VariableHexSchema: Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Bytes32Error (class)
+
+**Signature**
+
+```ts
+export declare class Bytes32Error
+```
+
+## Bytes32_BYTES_LENGTH
+
+**Signature**
+
+```ts
+export declare const Bytes32_BYTES_LENGTH: 32
+```
+
+## Bytes32_HEX_LENGTH
+
+**Signature**
+
+```ts
+export declare const Bytes32_HEX_LENGTH: 64
+```

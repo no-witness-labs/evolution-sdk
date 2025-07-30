@@ -1,0 +1,135 @@
+# Quick Start
+
+Get up and running with Evolution SDK in minutes.
+
+## Installation
+
+First, install the Evolution SDK in your project:
+
+```bash
+npm install @evolution-sdk/evolution
+# or
+yarn add @evolution-sdk/evolution
+# or
+pnpm add @evolution-sdk/evolution
+```
+
+## Basic Usage
+
+### Working with Cardano Addresses
+
+```typescript
+import * as Address from "@evolution-sdk/evolution/Address"
+import * as PaymentAddress from "@evolution-sdk/evolution/PaymentAddress"
+import * as RewardAddress from "@evolution-sdk/evolution/RewardAddress"
+
+// Sample mainnet addresses from the Cardano blockchain
+const mainnetBaseAddress =
+  "addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgse35a3x"
+const mainnetRewardAddress = "stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw"
+
+// Sample testnet addresses
+const testnetBaseAddress =
+  "addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgs68faae"
+const testnetRewardAddress = "stake_test1uqehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gssrtvn"
+
+// Validate payment addresses
+console.log(PaymentAddress.isPaymentAddress(mainnetBaseAddress)) // true
+console.log(PaymentAddress.isPaymentAddress(mainnetRewardAddress)) // false
+
+// Validate reward addresses
+console.log(RewardAddress.isRewardAddress(mainnetRewardAddress)) // true
+console.log(RewardAddress.isRewardAddress(mainnetBaseAddress)) // false
+```
+
+### Address Format Conversion
+
+```typescript
+import * as Address from "@evolution-sdk/evolution/Address"
+
+// Convert between hex and bech32 formats
+const hexAddress = "60ba1d6b6283c219a0530e3682c316215d55819cf97bbf26552c6f8530"
+const expectedBech32 = "addr_test1vzap66mzs0ppngznpcmg9scky9w4tqvul9am7fj493hc2vq4ry02m"
+
+// Decode from hex
+const address = Address.Codec.Decode.hex(hexAddress)
+
+// Encode to bech32
+const actualBech32 = Address.Codec.Encode.bech32(address)
+console.log(actualBech32 === expectedBech32) // true
+
+// Round-trip conversion
+const backToHex = Address.Codec.Encode.hex(address)
+console.log(backToHex === hexAddress) // true
+```
+
+### Working with Different Address Types
+
+```typescript
+// Base address (payment key hash + stake key hash)
+const baseAddress =
+  "addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3n0d3vllmyqwsx5wktcd8cc3sq835lu7drv2xwl2wywfgse35a3x"
+
+// Enterprise address (payment key hash only)
+const enterpriseAddress = "addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8"
+
+// Pointer address (payment key hash + pointer)
+const pointerAddress = "addr1gx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5pnz75xxcrzqf96k"
+
+// Reward address (stake key hash)
+const rewardAddress = "stake1uyehkck0lajq8gr28t9uxnuvgcqrc6070x3k9r8048z8y5gh6ffgw"
+
+// Each address type serves different purposes in the Cardano ecosystem
+console.log("All addresses are valid Cardano addresses")
+```
+
+### Working with Data Types
+
+```typescript
+import * as Data from "@evolution-sdk/evolution/Data"
+
+// Create a codec for encoding/decoding data
+const codec = Data.Codec()
+
+// Working with hex data
+const validHex = "deadbeef"
+const isValidBytes = Data.isBytes(validHex) // true
+
+// Invalid hex examples
+const invalidHex = "not-hex"
+const isInvalidBytes = Data.isBytes(invalidHex) // false
+```
+
+## Error Handling
+
+Evolution SDK uses Effect-TS for robust error handling. Most operations return an `Effect` that can either succeed or fail:
+
+```typescript
+import { Effect } from "effect"
+import * as Address from "@evolution-sdk/evolution/Address"
+
+// Operations that might fail are wrapped in Effect
+const program = Effect.gen(function* () {
+  // This will succeed with a valid address
+  const validAddress = yield* Effect.try(() =>
+    Address.Codec.Decode.hex("60ba1d6b6283c219a0530e3682c316215d55819cf97bbf26552c6f8530")
+  )
+
+  // Convert to bech32 format
+  const bech32 = Address.Codec.Encode.bech32(validAddress)
+
+  return bech32
+})
+
+// Run the program
+Effect.runPromise(program)
+  .then((result) => console.log("Address:", result))
+  .catch((error) => console.error("Error:", error))
+```
+
+## Next Steps
+
+- Explore the [API Reference](/api) for detailed documentation
+- Learn about [Address Types](/getting-started/address-types) for more details
+- Check out more [Examples](/getting-started/examples) for complex use cases
+- Read the [Guides](/guides) for specific development scenarios

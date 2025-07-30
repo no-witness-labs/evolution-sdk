@@ -1,0 +1,202 @@
+---
+title: Anchor.ts
+nav_order: 4
+parent: Modules
+---
+
+## Anchor overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [constructors](#constructors)
+  - [make](#make)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [AnchorError (class)](#anchorerror-class)
+- [generators](#generators)
+  - [generator](#generator)
+- [model](#model)
+  - [Anchor (class)](#anchor-class)
+- [schemas](#schemas)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
+  - [FromCDDL](#fromcddl)
+- [utils](#utils)
+  - [Codec](#codec)
+
+---
+
+# constructors
+
+## make
+
+Create an Anchor from a URL string and hash string.
+
+**Signature**
+
+```ts
+export declare const make: (anchorUrl: string, anchorDataHash: string) => Anchor
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two Anchor instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (self: Anchor, that: Anchor) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## AnchorError (class)
+
+Error class for Anchor related operations.
+
+**Signature**
+
+```ts
+export declare class AnchorError
+```
+
+Added in v2.0.0
+
+# generators
+
+## generator
+
+FastCheck generator for Anchor instances.
+
+**Signature**
+
+```ts
+export declare const generator: FastCheck.Arbitrary<Anchor>
+```
+
+Added in v2.0.0
+
+# model
+
+## Anchor (class)
+
+Schema for Anchor representing an anchor with URL and data hash.
+anchor = [anchor_url: url, anchor_data_hash: Bytes32]
+
+**Signature**
+
+```ts
+export declare class Anchor
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromBytes
+
+CBOR bytes transformation schema for Anchor.
+
+**Signature**
+
+```ts
+export declare const FromBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.SchemaClass<Anchor, Anchor, never>,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+CBOR hex transformation schema for Anchor.
+
+**Signature**
+
+```ts
+export declare const FromHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.SchemaClass<Anchor, Anchor, never>,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+CDDL schema for Anchor as tuple structure.
+anchor = [anchor_url: url, anchor_data_hash: Bytes32]
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.SchemaClass<Anchor, Anchor, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: (options?: CBOR.CodecOptions) => {
+  Encode: { cborBytes: (input: Anchor) => any; cborHex: (input: Anchor) => string }
+  Decode: { cborBytes: (input: any) => Anchor; cborHex: (input: string) => Anchor }
+  EncodeEffect: {
+    cborBytes: (input: Anchor) => Effect.Effect<any, InstanceType<typeof AnchorError>>
+    cborHex: (input: Anchor) => Effect.Effect<string, InstanceType<typeof AnchorError>>
+  }
+  DecodeEffect: {
+    cborBytes: (input: any) => Effect.Effect<Anchor, InstanceType<typeof AnchorError>>
+    cborHex: (input: string) => Effect.Effect<Anchor, InstanceType<typeof AnchorError>>
+  }
+  EncodeEither: {
+    cborBytes: (input: Anchor) => Either<any, InstanceType<typeof AnchorError>>
+    cborHex: (input: Anchor) => Either<string, InstanceType<typeof AnchorError>>
+  }
+  DecodeEither: {
+    cborBytes: (input: any) => Either<Anchor, InstanceType<typeof AnchorError>>
+    cborHex: (input: string) => Either<Anchor, InstanceType<typeof AnchorError>>
+  }
+}
+```

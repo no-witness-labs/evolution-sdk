@@ -1,0 +1,158 @@
+---
+title: PoolMetadata.ts
+nav_order: 68
+parent: Modules
+---
+
+## PoolMetadata overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [errors](#errors)
+  - [PoolMetadataError (class)](#poolmetadataerror-class)
+- [model](#model)
+  - [PoolMetadata (class)](#poolmetadata-class)
+- [schemas](#schemas)
+  - [FromBytes](#FromBytes)
+  - [FromHex](#FromHex)
+  - [FromCDDL](#fromcddl)
+- [utils](#utils)
+  - [Codec](#codec)
+
+---
+
+# errors
+
+## PoolMetadataError (class)
+
+Error class for PoolMetadata related operations.
+
+**Signature**
+
+```ts
+export declare class PoolMetadataError
+```
+
+Added in v2.0.0
+
+# model
+
+## PoolMetadata (class)
+
+Schema for PoolMetadata representing pool metadata information.
+pool_metadata = [url, bytes]
+
+**Signature**
+
+```ts
+export declare class PoolMetadata
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromBytes
+
+CBOR bytes transformation schema for PoolMetadata.
+Transforms between Uint8Array and PoolMetadata using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.SchemaClass<PoolMetadata, PoolMetadata, never>,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+CBOR hex transformation schema for PoolMetadata.
+Transforms between hex string and PoolMetadata using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.SchemaClass<PoolMetadata, PoolMetadata, never>,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+CDDL schema for PoolMetadata as defined in the specification:
+pool_metadata = [url, bytes]
+
+Transforms between CBOR tuple structure and PoolMetadata model.
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.SchemaClass<PoolMetadata, PoolMetadata, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Codec
+
+**Signature**
+
+```ts
+export declare const Codec: (options?: CBOR.CodecOptions) => {
+  Encode: { cborBytes: (input: PoolMetadata) => any; cborHex: (input: PoolMetadata) => string }
+  Decode: { cborBytes: (input: any) => PoolMetadata; cborHex: (input: string) => PoolMetadata }
+  EncodeEffect: {
+    cborBytes: (input: PoolMetadata) => Effect.Effect<any, InstanceType<typeof PoolMetadataError>>
+    cborHex: (input: PoolMetadata) => Effect.Effect<string, InstanceType<typeof PoolMetadataError>>
+  }
+  DecodeEffect: {
+    cborBytes: (input: any) => Effect.Effect<PoolMetadata, InstanceType<typeof PoolMetadataError>>
+    cborHex: (input: string) => Effect.Effect<PoolMetadata, InstanceType<typeof PoolMetadataError>>
+  }
+  EncodeEither: {
+    cborBytes: (input: PoolMetadata) => Either<any, InstanceType<typeof PoolMetadataError>>
+    cborHex: (input: PoolMetadata) => Either<string, InstanceType<typeof PoolMetadataError>>
+  }
+  DecodeEither: {
+    cborBytes: (input: any) => Either<PoolMetadata, InstanceType<typeof PoolMetadataError>>
+    cborHex: (input: string) => Either<PoolMetadata, InstanceType<typeof PoolMetadataError>>
+  }
+}
+```

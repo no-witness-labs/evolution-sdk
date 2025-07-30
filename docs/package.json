@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "export": "next build && next export",
+    "export": "next build",
     "copy-evolution-docs": "node scripts/copy-evolution-docs.mjs",
     "prebuild": "pnpm run copy-evolution-docs"
   },

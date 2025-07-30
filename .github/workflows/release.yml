@@ -42,6 +42,7 @@ jobs:
           path: |
             node_modules
             packages/*/node_modules
+            docs/node_modules
           key: ${{ runner.os }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-modules-
@@ -53,8 +54,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
+      # Always run install to ensure all dependencies are available
+      # This ensures workspace packages like docs have their dependencies
       - run: pnpm install --frozen-lockfile
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
 
       - run: pnpm turbo run build
         if: steps.cached-build-artifacts.outputs.cache-hit != 'true'

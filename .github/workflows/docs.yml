@@ -67,7 +67,8 @@ jobs:
 
       - run: pnpm turbo run docgen --filter=@evolution-sdk/evolution
 
-      - run: pnpm turbo run build --filter=@evolution-sdk/docs
+      # Build the docs with Next.js static export (output: export in next.config.js)
+      - run: pnpm --filter=@evolution-sdk/docs run build
 
       - id: cache-docs-output
         uses: actions/cache@v4
@@ -77,6 +78,11 @@ jobs:
           restore-keys: |
             docs-output-
 
+      # Add debug step to check if the output directory exists
+      - name: Debug output directory
+        run: |
+          ls -la docs/
+          
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/out

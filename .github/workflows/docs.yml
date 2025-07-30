@@ -2,14 +2,9 @@ name: Deploy Documentation
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'docs/**'
-      - 'packages/evolution/src/**'
-      - 'packages/evolution/docs/**'
+    branches: ["main"]
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
@@ -25,30 +20,36 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: ⬇️ Checkout
         uses: actions/checkout@v4
 
-      - name:  Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: ⎔ Setup Node.js
+      - name: ⎔ Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
 
-      - name: 🔧 Setup Pages
-        uses: actions/configure-pages@v4
+      - name: 📦 Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          # Automatically inject basePath in your Next.js configuration file and disable
-          # server side image optimization (https://nextjs.org/docs/api-reference/next/image#unoptimized).
-          #
-          # You may remove this line if you want to manage the configuration yourself.
-          static_site_generator: next
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: 🏗 Build packages (required for docs)
         run: pnpm turbo run build
@@ -61,14 +62,15 @@ jobs:
         run: node scripts/copy-evolution-docs.mjs
         working-directory: docs
 
-      - name: 🏗 Build documentation with Next.js
-        run: pnpm turbo run build
-        working-directory: docs
+      - name: 🏗 Build documentation
+        run: |
+          cd docs
+          pnpm build
 
       - name: 📤 Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs/out
+          path: docs/out
 
   # Deployment job
   deploy:

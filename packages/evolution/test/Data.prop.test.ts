@@ -32,11 +32,8 @@ describe("Data Property Tests", () => {
       it("should generate valid PlutusBytes data and roundtrip", () => {
         FastCheck.assert(
           FastCheck.property(genPlutusBytes(), (value) => {
-            console.log("Testing PlutusBytes roundtrip with value:", value)
             const cborHex = Data.Codec().Encode.cborHex(value)
-            console.log("CBOR Hex:", cborHex)
             const decoded = Data.Codec().Decode.cborHex(cborHex)
-            console.log("Decoded value:", decoded)
             expect(Data.isBytes(value)).toBe(true)
             expect(decoded).toEqual(value)
           })

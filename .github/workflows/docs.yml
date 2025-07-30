@@ -65,7 +65,7 @@ jobs:
       - run: pnpm turbo run build
         if: steps.cached-build-artifacts.outputs.cache-hit != 'true'
 
-      - run: pnpm turbo run docgen --filter=evolution
+      - run: pnpm turbo run docgen --filter=@evolution-sdk/evolution
 
       - run: pnpm turbo run build --filter=docs
 

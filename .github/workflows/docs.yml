@@ -25,34 +25,20 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
-    outputs:
-      should_build: ${{ steps.changes.outputs.should_build }}
     steps:
       - name: ⬇️ Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Need full history for turbo-ignore
 
-      - name: 🔍 Check for documentation changes
-        id: changes
-        run: |
-          npx turbo-ignore docs
-          echo "should_build=$?" >> $GITHUB_OUTPUT
-        continue-on-error: true
-
-      - name: 📦 Install pnpm
-        if: steps.changes.outputs.should_build == '1'
+      - name:  Install pnpm
         uses: pnpm/action-setup@v4
 
       - name: ⎔ Setup Node.js
-        if: steps.changes.outputs.should_build == '1'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
       - name: 🔧 Setup Pages
-        if: steps.changes.outputs.should_build == '1'
         uses: actions/configure-pages@v4
         with:
           # Automatically inject basePath in your Next.js configuration file and disable
@@ -62,30 +48,24 @@ jobs:
           static_site_generator: next
 
       - name: 📦 Install dependencies
-        if: steps.changes.outputs.should_build == '1'
         run: pnpm install --frozen-lockfile
 
       - name: 🏗 Build packages (required for docs)
-        if: steps.changes.outputs.should_build == '1'
         run: pnpm turbo run build
 
       - name: 📄 Generate Evolution SDK docs
-        if: steps.changes.outputs.should_build == '1'
         run: pnpm turbo run docgen
         working-directory: packages/evolution
 
       - name: 📚 Copy Evolution docs to website
-        if: steps.changes.outputs.should_build == '1'
         run: node scripts/copy-evolution-docs.mjs
         working-directory: docs
 
       - name: 🏗 Build documentation with Next.js
-        if: steps.changes.outputs.should_build == '1'
         run: pnpm turbo run build
         working-directory: docs
 
       - name: 📤 Upload artifact
-        if: steps.changes.outputs.should_build == '1'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs/out
@@ -97,7 +77,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
-    if: needs.build.outputs.should_build == '1' || github.event_name == 'workflow_dispatch'
     steps:
       - name: 🚀 Deploy to GitHub Pages
         id: deployment

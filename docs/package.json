@@ -9,7 +9,7 @@
     "start": "next start",
     "export": "next build && next export",
     "copy-evolution-docs": "node scripts/copy-evolution-docs.mjs",
-    "prebuild": "npm run copy-evolution-docs"
+    "prebuild": "pnpm run copy-evolution-docs"
   },
   "dependencies": {
     "next": "^14.0.0",

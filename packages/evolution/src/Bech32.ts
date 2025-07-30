@@ -10,7 +10,7 @@ export class Bech32Error extends Data.TaggedError("Bech32Error")<{
   cause?: unknown
 }> {}
 
-export const Bech32Schema = Schema.String.pipe(Schema.brand("Bech32"))
+export const Bech32Schema = Schema.String
 export type Bech32 = typeof Bech32Schema.Type
 
 export const FromBytes = (prefix: string = "addr") =>
@@ -23,6 +23,6 @@ export const FromBytes = (prefix: string = "addr") =>
       }),
     decode: (fromA, options, ast, fromI) => {
       const words = bech32.toWords(fromI)
-      return ParseResult.succeed(Bech32Schema.make(bech32.encode(prefix, words, false)))
+      return ParseResult.succeed(bech32.encode(prefix, words, false))
     }
   })

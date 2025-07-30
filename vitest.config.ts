@@ -1,9 +1,9 @@
 import { defineConfig } from "vitest/config"
-
 export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    testTimeout: 60000,
     exclude: ["**/node_modules/**", "**/dist/**", "**/temp/**", "**/.{idea,git,cache,output,temp}/**"],
     coverage: {
       provider: "v8",

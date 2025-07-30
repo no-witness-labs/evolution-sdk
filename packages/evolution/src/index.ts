@@ -30,7 +30,7 @@ export * as CommitteeColdCredential from "./CommitteeColdCredential.js"
 export * as CommitteeHotCredential from "./CommitteeHotCredential.js"
 export * as Credential from "./Credential.js"
 export * as Data from "./Data.js"
-export * as DataJson from "./DataJson.js"
+// export * as DataJson from "./DataJson.js"  // Temporarily disabled due to cardano-multiplatform-lib dependency
 export * as DatumOption from "./DatumOption.js"
 export * as Devnet from "./Devnet/Devnet.js"
 export * as DevnetDefault from "./Devnet/DevnetDefault.js"

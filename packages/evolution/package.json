@@ -37,15 +37,16 @@
     "clean": "rm -rf dist .turbo docs"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "@types/dockerode": "^3.3.0"
+    "@types/dockerode": "^3.3.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.4.0"
   },
   "dependencies": {
-    "effect": "^3.0.0",
+    "@effect/platform": "^0.90.0",
+    "@effect/platform-node": "^0.94.0",
     "@scure/base": "^1.1.0",
-    "@anastasia-labs/cardano-multiplatform-lib-nodejs": "^6.0.0",
     "dockerode": "^4.0.0",
-    "@effect/platform-node": "^0.63.0"
+    "effect": "^3.17.3"
   },
   "keywords": [
     "cardano",

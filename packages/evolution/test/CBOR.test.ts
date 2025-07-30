@@ -99,7 +99,7 @@ describe("CBOR Implementation Tests", () => {
         }
       ]
 
-      testCases.forEach(({ description, expectedMajorType, value }) => {
+      testCases.forEach(({ expectedMajorType, value }) => {
         const encoded = Codec.Encode.cborBytes(value)
         const firstByte = encoded[0]
         const majorType = firstByte >> 5
@@ -147,7 +147,6 @@ describe("CBOR Implementation Tests", () => {
       it("should handle arrays with length just over 4GB threshold", () => {
         // Test for 8-byte length encoding - using a smaller test due to memory constraints
         // This verifies the 8-byte length support is in place
-        const largeLength = 4294967297 // 2^32 + 1
         // Create a smaller version to actually test without memory issues
         const testArray = Array.from({ length: 100 }, (_, i) => BigInt(i))
 
@@ -182,7 +181,7 @@ describe("CBOR Implementation Tests", () => {
         const decoded = Codec.Decode.cborBytes(encoded) as Map<bigint, string>
         expect(decoded).toEqual(map65536)
         expect(decoded.size).toBe(65536)
-      })
+      }, 30000) // 30 second timeout for large map test
     })
   })
 
@@ -203,7 +202,7 @@ describe("CBOR Implementation Tests", () => {
         { name: "8-byte encoding (4294967296+)", value: 4294967296n }
       ]
 
-      testCases.forEach(({ name, value }) => {
+      testCases.forEach(({ value }) => {
         const encoded = Codec.Encode.cborBytes(value)
         const decoded = Codec.Decode.cborBytes(encoded)
         expect(decoded).toBe(value)
@@ -230,7 +229,7 @@ describe("CBOR Implementation Tests", () => {
         }
       ]
 
-      boundaryTestCases.forEach(({ name, value }) => {
+      boundaryTestCases.forEach(({ value }) => {
         const encoded = Codec.Encode.cborBytes(value)
         const decoded = Codec.Decode.cborBytes(encoded)
         expect(decoded).toBe(value)
@@ -741,7 +740,7 @@ describe("CBOR Implementation Tests", () => {
         }
       ]
 
-      it.each(taggedTestCases)("should handle $description correctly", ({ description, hex }) => {
+      it.each(taggedTestCases)("should handle $description correctly", ({ hex }) => {
         expect(() => {
           const decodedValue = Codec.Decode.cborHex(hex)
           expect(decodedValue).toBeDefined()

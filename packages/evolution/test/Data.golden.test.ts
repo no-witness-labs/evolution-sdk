@@ -116,17 +116,6 @@ interface GoldenEntry {
 }
 
 /**
- * Summary information for golden test data
- *
- */
-interface GoldenSummary {
-  readonly seed: number
-  readonly samplesPerType: number
-  readonly types: ReadonlyArray<string>
-  readonly totalSamples: number
-}
-
-/**
  * Reviver function for parsing JSON with BigInt support
  *
  */
@@ -359,7 +348,7 @@ describe("Data Golden Tests", () => {
         const encoded = Codec.Encode.cborHex(plutusData)
         expect(encoded, `Failed at sample index ${entry.index}`).toBe(entry.cborHex)
       })
-    })
+    }, 30000) // 30 second timeout for large test cases
 
     it("should encode lists to CBOR bytes consistently", () => {
       const testCases = getTestCases("list", "encoding")

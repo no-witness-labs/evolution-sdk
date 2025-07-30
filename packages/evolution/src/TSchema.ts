@@ -33,7 +33,7 @@ export const ByteArray: ByteArray = Data.BytesSchema.annotations({
 //   }
 // );
 
-interface Integer extends Schema.transform<typeof Data.IntSchema, typeof Schema.BigIntFromSelf> {}
+interface Integer extends Schema.SchemaClass<bigint, bigint, never> {}
 
 /**
  * Creates a schema for integers using Plutus Data Integer transformation
@@ -41,24 +41,12 @@ interface Integer extends Schema.transform<typeof Data.IntSchema, typeof Schema.
  *
  * @since 2.0.0
  */
-// export const Integer: Integer = Schema.transform(
-//   Data.IntSchema,
-//   Schema.BigIntFromSelf,
-//   {
-//     strict: true,
-//     encode: (value) => value,
-//     decode: (value) => value,
-//   }
-// ).annotations({
-//   identifier: "TSchema.Integer",
-// });
-
-export const Integer = Data.IntSchema.annotations({
+export const Integer: Integer = Data.IntSchema.annotations({
   identifier: "TSchema.Integer"
 })
 
 interface Literal<Literals extends NonEmptyReadonlyArray<SchemaAST.LiteralValue>>
-  extends Schema.transform<typeof Data.Constr, Schema.Literal<[...Literals]>> {}
+  extends Schema.transform<Schema.SchemaClass<Data.Constr, Data.Constr, never>, Schema.Literal<[...Literals]>> {}
 
 /**
  * Creates a schema for literal types with Plutus Data Constructor transformation
@@ -68,22 +56,22 @@ interface Literal<Literals extends NonEmptyReadonlyArray<SchemaAST.LiteralValue>
 export const Literal = <Literals extends NonEmptyReadonlyArray<Exclude<SchemaAST.LiteralValue, null | bigint>>>(
   ...self: Literals
 ): Literal<Literals> =>
-  Schema.transform(Data.Constr, Schema.Literal(...self), {
+  Schema.transform(Schema.typeSchema(Data.Constr), Schema.Literal(...self), {
     strict: true,
-    encode: (value) => Data.constr(BigInt(self.indexOf(value)), []),
+    encode: (value) => new Data.Constr({ index: BigInt(self.indexOf(value)), fields: [] }),
     decode: (value) => self[Number(value.index)]
   })
 
 interface OneLiteral<Single extends Exclude<SchemaAST.LiteralValue, null | bigint>>
-  extends Schema.transform<typeof Data.Constr, Schema.Literal<[Single]>> {}
+  extends Schema.transform<Schema.SchemaClass<Data.Constr, Data.Constr, never>, Schema.Literal<[Single]>> {}
 
 export const OneLiteral = <Single extends Exclude<SchemaAST.LiteralValue, null | bigint>>(
   self: Single
 ): OneLiteral<Single> =>
-  Schema.transform(Data.Constr, Schema.Literal(self), {
+  Schema.transform(Schema.typeSchema(Data.Constr), Schema.Literal(self), {
     strict: true,
 
-    encode: (_value) => Data.constr(0n, []),
+    encode: (_value) => new Data.Constr({ index: 0n, fields: [] }),
 
     decode: (_value) => self
   })
@@ -116,48 +104,22 @@ interface Map<K extends Schema.Schema.Any, V extends Schema.Schema.Any>
  * @since 1.0.0
  */
 export const Map = <K extends Schema.Schema.Any, V extends Schema.Schema.Any>(key: K, value: V): Map<K, V> =>
-  Schema.transform(
-    Schema.typeSchema(Data.MapSchema),
-    Schema.MapFromSelf({ key, value }).annotations({
-      identifier: "TSchema.Map"
-    }),
-    {
-      strict: false,
-      encode: (tsMap) => {
-        // Transform TypeScript Map<K_TS, V_TS> to Data Map<K_Data, V_Data>
-        // The individual key/value transformations are handled by the schema framework
-        return new globalThis.Map([...tsMap])
-      },
-      decode: (dataMap) => {
-        // Transform Data Map<K_Data, V_Data> to TypeScript Map<K_TS, V_TS>
-        // The individual key/value transformations are handled by the schema framework
-        return new globalThis.Map([...dataMap])
-      }
-    }
-  ).annotations({
-    identifier: "TSchema.MapFromDataMap",
-    message: (issue) => {
-      const actual = issue.actual
-      const isMap =
-        typeof actual === "object" &&
-        actual !== null &&
-        typeof (actual as Record<string, unknown>).size === "number" &&
-        typeof (actual as Record<string, unknown>).set === "function"
-
-      if (!isMap) {
-        const actualType =
-          typeof actual === "bigint"
-            ? "bigint"
-            : typeof actual === "object" && actual !== null && globalThis.Array.isArray(actual)
-              ? "array"
-              : typeof actual
-        return `Invalid value for Map: received ${actualType} (${JSON.stringify(actual)}), expected Map`
-      }
-      return `Invalid Map: check that all keys and values match the expected types`
+  Schema.transform(Schema.typeSchema(Data.MapSchema), Schema.MapFromSelf({ key, value }), {
+    strict: false,
+    encode: (tsMap) => {
+      // Transform TypeScript Map<K_TS, V_TS> to Data Map<K_Data, V_Data>
+      // The individual key/value transformations are handled by the schema framework
+      return new globalThis.Map([...tsMap])
+    },
+    decode: (dataMap) => {
+      // Transform Data Map<K_Data, V_Data> to TypeScript Map<K_TS, V_TS>
+      // The individual key/value transformations are handled by the schema framework
+      return new globalThis.Map([...dataMap])
     }
   })
 
-interface NullOr<S extends Schema.Schema.All> extends Schema.transform<typeof Data.Constr, Schema.NullOr<S>> {}
+interface NullOr<S extends Schema.Schema.All>
+  extends Schema.transform<Schema.SchemaClass<Data.Constr, Data.Constr, never>, Schema.NullOr<S>> {}
 
 /**
  * Creates a schema for nullable types that transforms to/from Plutus Data Constructor
@@ -168,13 +130,15 @@ interface NullOr<S extends Schema.Schema.All> extends Schema.transform<typeof Da
  * @since 2.0.0
  */
 export const NullOr = <S extends Schema.Schema.All>(self: S): NullOr<S> =>
-  Schema.transform(Data.Constr, Schema.NullOr(self), {
+  Schema.transform(Schema.typeSchema(Data.Constr), Schema.NullOr(self), {
     strict: true,
-    encode: (value) => (value === null ? Data.constr(1n, []) : Data.constr(0n, [value])),
+    encode: (value) =>
+      value === null ? new Data.Constr({ index: 1n, fields: [] }) : new Data.Constr({ index: 0n, fields: [value] }),
     decode: (value) => (value.index === 1n ? null : (value.fields[0] as Schema.Schema.Type<S>))
   })
 
-interface UndefineOr<S extends Schema.Schema.Any> extends Schema.transform<typeof Data.Constr, Schema.UndefinedOr<S>> {}
+interface UndefineOr<S extends Schema.Schema.Any>
+  extends Schema.transform<Schema.SchemaClass<Data.Constr, Data.Constr, never>, Schema.UndefinedOr<S>> {}
 
 /**
  * Creates a schema for undefined types that transforms to/from Plutus Data Constructor
@@ -185,9 +149,12 @@ interface UndefineOr<S extends Schema.Schema.Any> extends Schema.transform<typeo
  * @since 2.0.0
  */
 export const UndefinedOr = <S extends Schema.Schema.Any>(self: S): UndefineOr<S> =>
-  Schema.transform(Data.Constr, Schema.UndefinedOr(self), {
+  Schema.transform(Schema.typeSchema(Data.Constr), Schema.UndefinedOr(self), {
     strict: true,
-    encode: (value) => (value === undefined ? Data.constr(1n, []) : Data.constr(0n, [value])),
+    encode: (value) =>
+      value === undefined
+        ? new Data.Constr({ index: 1n, fields: [] })
+        : new Data.Constr({ index: 0n, fields: [value] }),
     decode: (value) => (value.index === 1n ? undefined : (value.fields[0] as Schema.Schema.Type<S>))
   })
 
@@ -225,7 +192,7 @@ export const Boolean: Boolean = Schema.transform(
 })
 
 interface Struct<Fields extends Schema.Struct.Fields>
-  extends Schema.transform<typeof Data.Constr, Schema.Struct<Fields>> {}
+  extends Schema.transform<Schema.SchemaClass<Data.Constr, Data.Constr, never>, Schema.Struct<Fields>> {}
 
 /**
  * Creates a schema for struct types using Plutus Data Constructor
@@ -234,12 +201,22 @@ interface Struct<Fields extends Schema.Struct.Fields>
  * @since 2.0.0
  */
 export const Struct = <Fields extends Schema.Struct.Fields>(fields: Fields): Struct<Fields> =>
-  Schema.transform(Data.Constr, Schema.Struct(fields), {
+  Schema.transform(Schema.typeSchema(Data.Constr), Schema.Struct(fields), {
     strict: false,
-    encode: (obj) => Data.constr(0n, Object.values(obj) as globalThis.Array<Data.Data>),
-    decode: (constr: { readonly index: bigint; readonly fields: ReadonlyArray<any> }) => {
+    encode: (encodedStruct) => {
+      // encodedStruct is the result of Schema.Struct(fields), which has already transformed all fields
+      return new Data.Constr({
+        index: 0n,
+        fields: Object.values(encodedStruct)
+      })
+    },
+    decode: (fromA) => {
       const keys = Object.keys(fields)
-      return Object.fromEntries(keys.map((key, index) => [key, constr.fields[index]]))
+      const result = {} as Record<string, Data.Data>
+      keys.forEach((key, index) => {
+        result[key] = fromA.fields[index]
+      })
+      return result as { [K in keyof Schema.Struct.Encoded<Fields>]: Schema.Struct.Encoded<Fields>[K] }
     }
   })
 

@@ -11,5 +11,6 @@ module.exports = withNextra({
   distDir: "out",
   images: {
     unoptimized: true
-  }
+  },
+  basePath: "/evolution-sdk",
 })

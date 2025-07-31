@@ -4,14 +4,7 @@ A comprehensive TypeScript SDK for Cardano blockchain development, built with Ef
 
 ## Overview
 
-Evolution SDK provides a type-safe, functional programming approach to Cardano blockchain development. Built on top of Effect-TS, it offers:
-
-- **Type Safety**: Full TypeScript support with comprehensive type definitions
-- **CBOR Support**: Native CBOR encoding/decoding for Cardano data structures
-- **Effect Integration**: Leverages Effect-TS for error handling and composability
-- **Address Management**: Support for all Cardano address types
-- **Transaction Building**: Tools for constructing and signing transactions
-- **Plutus Data**: Native support for Plutus data structures
+Evolution SDK provides a type-safe, functional programming approach to Cardano blockchain development. Built on top of Effect-TS.
 
 ## Quick Start
 
@@ -22,28 +15,4 @@ npm install @evolution-sdk/evolution
 ```typescript
 import { Address, Network } from "@evolution-sdk/evolution"
 
-// Create a base address
-const baseAddr = Address.Base.make({
-  network: Network.Mainnet,
-  paymentCredential: paymentCred,
-  stakeCredential: stakeCred
-})
 ```
-
-## Features
-
-- 🏗️ **Address Utilities** - Create and validate all Cardano address types
-- 🔐 **Cryptographic Primitives** - Ed25519 signatures, VRF, KES
-- 📦 **CBOR Encoding** - RFC 8949 compliant CBOR implementation
-- 🏛️ **Governance** - DRep, committee, and voting procedure support
-- 🌐 **Network Configuration** - Support for all Cardano networks
-- 🪙 **Native Tokens** - Multi-asset and minting utilities
-
-## Architecture
-
-Evolution SDK is designed around functional programming principles:
-
-- **Immutable Data Structures** - All data types are immutable by default
-- **Composable Operations** - Functions can be easily composed and chained
-- **Error Handling** - Leverages Effect-TS for robust error management
-- **Type Safety** - Comprehensive TypeScript definitions prevent runtime errors

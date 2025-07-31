@@ -89,23 +89,45 @@ jobs:
       - run: pnpm turbo run type-check --affected
       - run: pnpm turbo run build --affected
       - run: pnpm turbo run test --affected
+
+      # Debug: Check what was built
+      - name: Check build output
+        run: |
+          echo "Checking packages directory structure:"
+          find packages -name "dist" -type d || echo "No dist directories found"
+          ls -la packages/*/dist 2>/dev/null || echo "No dist directories to list"
           
       - uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: build-artifacts
           path: packages/*/dist
+          if-no-files-found: warn
 
   cache-build:
     name: Cache Artifacts
     needs: validate
     runs-on: ubuntu-latest
+    if: success()
     steps:
       - uses: actions/download-artifact@v4
+        id: download-artifacts
+        continue-on-error: true
         with:
           name: build-artifacts
           path: packages
 
+      - name: Check artifact download
+        run: |
+          if [[ "${{ steps.download-artifacts.outcome }}" == "success" ]]; then
+            echo "Artifacts downloaded successfully"
+            ls -la packages/
+          else
+            echo "No artifacts to download - this may be expected if no packages were built"
+          fi
+
       - uses: actions/cache@v4
+        if: steps.download-artifacts.outcome == 'success'
         with:
           path: packages/*/dist
           key: build-artifacts-${{ github.sha }}

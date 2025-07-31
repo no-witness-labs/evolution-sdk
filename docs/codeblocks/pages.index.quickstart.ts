@@ -1,10 +1,4 @@
-# Quickstart
-
-Quickstart module provides functionality for working with quickstart types in Cardano.
-
-## Quickstart Example
-
-```typescript
+import assert from "assert"
 import { Data } from "@evolution-sdk/evolution"
 
 // Create a sample data structure with constructor index 0
@@ -34,9 +28,3 @@ const decodedData = Data.Codec().Decode.cborHex(cborHex)
 // Verify round-trip encoding/decoding works correctly
 assert.deepEqual(sampleData, decodedData)
 console.log("✅ Round-trip encoding/decoding successful!")
-
-```
-
-## API Reference
-
-For detailed API documentation, see the generated TypeDoc documentation.

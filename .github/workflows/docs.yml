@@ -60,7 +60,14 @@ jobs:
 
       # Always run install to ensure all dependencies are available
       # This ensures workspace packages like docs have their dependencies
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies with debugging
+        run: |
+          echo "=== PNPM version ==="
+          pnpm --version
+          echo "=== Installing dependencies ==="
+          pnpm install --frozen-lockfile
+          echo "=== Checking docs dependencies ==="
+          cd docs && pnpm list
 
       - run: pnpm turbo run build
         if: steps.cached-build-artifacts.outputs.cache-hit != 'true'
@@ -68,7 +75,18 @@ jobs:
       - run: pnpm turbo run docgen --filter=@evolution-sdk/evolution
 
       # Build the docs with Next.js static export (output: export in next.config.js)
-      - run: pnpm --filter=@evolution-sdk/docs run build
+      - name: Build docs with debugging
+        run: |
+          echo "=== Git status before build ==="
+          git status
+          echo "=== Git log (last 5 commits) ==="
+          git log --oneline -5
+          echo "=== Environment variables ==="
+          env | grep -E "(GITHUB|CI|NODE)" | sort
+          echo "=== Building docs ==="
+          pnpm --filter=@evolution-sdk/docs run build
+        env:
+          NODE_ENV: production
 
       - id: cache-docs-output
         uses: actions/cache@v4
@@ -81,7 +99,19 @@ jobs:
       # Add debug step to check if the output directory exists
       - name: Debug output directory
         run: |
+          echo "=== Docs directory structure ==="
           ls -la docs/
+          echo "=== Output directory structure ==="
+          ls -la docs/out/
+          echo "=== Sample of generated files ==="
+          find docs/out -name "*.html" | head -10
+          echo "=== Check index.html content ==="
+          if [ -f docs/out/index.html ]; then
+            echo "Index.html exists, checking content:"
+            head -20 docs/out/index.html
+          else
+            echo "WARNING: index.html not found!"
+          fi
           
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -3,7 +3,6 @@ const withNextra = require("nextra")({
   themeConfig: "./theme.config.tsx"
 })
 
-const isGitHubPages = process.env.GITHUB_ACTIONS === 'true'
 
 module.exports = withNextra({
   reactStrictMode: true,
@@ -13,5 +12,5 @@ module.exports = withNextra({
   images: {
     unoptimized: true
   },
-  basePath: isGitHubPages ? "/evolution-sdk" : "",
+  basePath: "/evolution-sdk"
 })

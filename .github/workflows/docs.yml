@@ -38,6 +38,8 @@ jobs:
         with:
           path: packages/*/dist
           key: build-artifacts-${{ github.sha }}
+          restore-keys: |
+            build-artifacts-
 
       - id: cache-node-modules
         uses: actions/cache@v4
@@ -62,8 +64,9 @@ jobs:
       # This ensures workspace packages like docs have their dependencies
       - run: pnpm install --frozen-lockfile
 
+      # Always build packages to ensure we have the latest changes
+      # Don't rely solely on cache as it might be stale or missing
       - run: pnpm turbo run build
-        if: steps.cached-build-artifacts.outputs.cache-hit != 'true'
 
       - run: pnpm turbo run docgen --filter=@evolution-sdk/evolution
 
@@ -81,7 +84,17 @@ jobs:
       # Add debug step to check if the output directory exists
       - name: Debug output directory
         run: |
+          echo "Checking docs build output:"
           ls -la docs/
+          if [ -d "docs/out" ]; then
+            echo "docs/out directory exists:"
+            ls -la docs/out/
+            echo "Total files in docs/out:"
+            find docs/out -type f | wc -l
+          else
+            echo "ERROR: docs/out directory does not exist!"
+            exit 1
+          fi
           
       - uses: actions/upload-pages-artifact@v3
         with:

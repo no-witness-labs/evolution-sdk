@@ -11,5 +11,5 @@ module.exports = withNextra({
   images: {
     unoptimized: true
   },
-  basePath: "/evolution-sdk",
+  basePath: process.env.GITHUB_ACTIONS ? "/evolution-sdk" : "",
 })

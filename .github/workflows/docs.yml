@@ -67,6 +67,9 @@ jobs:
 
       - run: pnpm turbo run docgen --filter=@evolution-sdk/evolution
 
+      # Copy the generated API docs to the docs project
+      - run: pnpm --filter=@evolution-sdk/docs run copy-evolution-docs
+
       # Build the docs with Next.js static export (output: export in next.config.js)
       - run: pnpm --filter=@evolution-sdk/docs run build
 

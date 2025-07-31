@@ -1,0 +1,14 @@
+import assert from "assert"
+import { Address } from "@evolution-sdk/evolution"
+
+const hexAddress = "60ba1d6b6283c219a0530e3682c316215d55819cf97bbf26552c6f8530"
+const expectedBech32 = "addr_test1vzap66mzs0ppngznpcmg9scky9w4tqvul9am7fj493hc2vq4ry02m"
+
+// Decode from hex
+const address = Address.Codec.Decode.hex(hexAddress)
+
+// Encode to bech32
+const actualBech32 = Address.Codec.Encode.bech32(address)
+
+// Verify the conversion is correct
+assert(actualBech32 === expectedBech32)

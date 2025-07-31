@@ -10,8 +10,6 @@
     "export": "next build",
     "copy-evolution-docs": "node scripts/copy-evolution-docs.mjs",
     "validate-codeblocks": "node scripts/validate-and-update-codeblocks.mjs",
-    "validate-codeblocks-safe": "node scripts/validate-and-update-codeblocks.mjs",
-    "prebuild": "pnpm run copy-evolution-docs && (pnpm run validate-codeblocks-safe || true)",
     "update-docs": "pnpm run copy-evolution-docs && pnpm run validate-codeblocks"
   },
   "dependencies": {
@@ -25,7 +23,6 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "tsx": "^4.7.0",
     "typescript": "^5.0.0"
   }
 }

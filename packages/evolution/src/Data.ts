@@ -47,7 +47,7 @@ export class DataError extends EffectData.TaggedError("DataError")<{
  * @since 2.0.0
  * @category model
  */
-export type Data = Constr | Map| List | Int | ByteArray
+export type Data = Constr | MapList | List | Int | ByteArray
 
 /**
  * Constr type for constructor alternatives based on Conway CDDL specification
@@ -77,7 +77,7 @@ export type Data = Constr | Map| List | Int | ByteArray
 //   readonly fields: readonly Data[];
 // }
 
-export type Map = globalThis.Map<Data, Data>
+export type MapList = Map<Data, Data>
 
 /**
  * PlutusList type for plutus data lists
@@ -247,7 +247,7 @@ export const constr = (index: bigint, data: Array<Data>): Constr =>
  * @since 2.0.0
  * @category constructors
  */
-export const map = (entries: Array<{ key: Data; value: Data }>): Map =>
+export const map = (entries: Array<{ key: Data; value: Data }>): MapList =>
   new Map(entries.map(({ key, value }) => [key, value]))
 
 /**
@@ -416,7 +416,7 @@ export const genConstr = (depth: number): FastCheck.Arbitrary<Constr> =>
  *
  * @since 2.0.0
  */
-export const genPlutusMap = (depth: number): FastCheck.Arbitrary<Map> => {
+export const genPlutusMap = (depth: number): FastCheck.Arbitrary<MapList> => {
   // Helper to create key-value pairs with unique keys
   const uniqueKeyValuePairs = <T extends Data>(keyGen: FastCheck.Arbitrary<T>, maxSize: number) =>
     FastCheck.uniqueArray(FastCheck.tuple(keyGen, genPlutusData(depth > 0 ? depth - 1 : 0)), {

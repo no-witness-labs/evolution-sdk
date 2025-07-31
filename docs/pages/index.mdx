@@ -1,42 +1,49 @@
-# Quickstart
+# Evolution SDK
 
-Quickstart module provides functionality for working with quickstart types in Cardano.
+A comprehensive TypeScript SDK for Cardano blockchain development, built with Effect-TS.
 
-## Quickstart Example
+## Overview
 
-```typescript
-import { Data } from "@evolution-sdk/evolution"
+Evolution SDK provides a type-safe, functional programming approach to Cardano blockchain development. Built on top of Effect-TS, it offers:
 
-// Create a sample data structure with constructor index 0
-// and a Map containing key-value pairs
-const sampleData = new Data.Constr({
-  index: 0n,
-  fields: [
-    new Map([
-      ["deadbeef", 42n],
-      ["cafe", 100n], 
-      ["beef", 20n]
-    ])
-  ]
-})
+- **Type Safety**: Full TypeScript support with comprehensive type definitions
+- **CBOR Support**: Native CBOR encoding/decoding for Cardano data structures
+- **Effect Integration**: Leverages Effect-TS for error handling and composability
+- **Address Management**: Support for all Cardano address types
+- **Transaction Building**: Tools for constructing and signing transactions
+- **Plutus Data**: Native support for Plutus data structures
 
-// Encode the data to CBOR hex format
-const cborHex = Data.Codec().Encode.cborHex(sampleData)
-console.log("CBOR Hex:", cborHex)
-// Output: d8799fbf44deadbeef182a42cafe186442beef14ffff
+## Quick Start
 
-// CBOR diagnostic notation: 121_0([_ {_ h'deadbeef': 42_0, h'cafe': 100_0, h'beef': 20}])
-// Visualize at: https://cbor.nemo157.com/
-
-// Decode the CBOR hex back to data structure
-const decodedData = Data.Codec().Decode.cborHex(cborHex)
-
-// Verify round-trip encoding/decoding works correctly
-assert.deepEqual(sampleData, decodedData)
-console.log("✅ Round-trip encoding/decoding successful!")
-
+```bash
+npm install @evolution-sdk/evolution
 ```
 
-## API Reference
+```typescript
+import { Address, Network } from "@evolution-sdk/evolution"
 
-For detailed API documentation, see the generated TypeDoc documentation.
+// Create a base address
+const baseAddr = Address.Base.make({
+  network: Network.Mainnet,
+  paymentCredential: paymentCred,
+  stakeCredential: stakeCred
+})
+```
+
+## Features
+
+- 🏗️ **Address Utilities** - Create and validate all Cardano address types
+- 🔐 **Cryptographic Primitives** - Ed25519 signatures, VRF, KES
+- 📦 **CBOR Encoding** - RFC 8949 compliant CBOR implementation
+- 🏛️ **Governance** - DRep, committee, and voting procedure support
+- 🌐 **Network Configuration** - Support for all Cardano networks
+- 🪙 **Native Tokens** - Multi-asset and minting utilities
+
+## Architecture
+
+Evolution SDK is designed around functional programming principles:
+
+- **Immutable Data Structures** - All data types are immutable by default
+- **Composable Operations** - Functions can be easily composed and chained
+- **Error Handling** - Leverages Effect-TS for robust error management
+- **Type Safety** - Comprehensive TypeScript definitions prevent runtime errors

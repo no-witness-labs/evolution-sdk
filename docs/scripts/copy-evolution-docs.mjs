@@ -3,9 +3,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-const sourceDir = path.resolve(process.cwd(), '../packages/evolution/docs/modules');
+const sourceDir = path.resolve(process.cwd(), '../packages/evolution/docs');
 const targetDir = path.resolve(process.cwd(), './pages/reference/modules');
-const referenceDir = path.resolve(process.cwd(), './pages/reference');
 
 async function ensureDirectoryExists(dir) {
   try {
@@ -95,63 +94,23 @@ async function createMetaJson(directory) {
   }
 }
 
-async function createReferenceIndex() {
-  try {
-    // Create reference index.mdx
-    const indexContent = `# API Reference
-
-Complete API reference for the Evolution SDK.
-
-## Modules
-
-Browse the complete API documentation for all Evolution SDK modules.
-`;
-    
-    await fs.writeFile(
-      path.join(referenceDir, 'index.mdx'),
-      indexContent
-    );
-    
-    // Create reference _meta.json
-    const metaContent = {
-      "index": "Introduction",
-      "modules": "Modules"
-    };
-    
-    await fs.writeFile(
-      path.join(referenceDir, '_meta.json'),
-      JSON.stringify(metaContent, null, 2)
-    );
-    
-    console.log(`Created reference index and meta files`);
-  } catch (error) {
-    console.error(`Error creating reference index: ${error.message}`);
-  }
-}
-
 async function main() {
   try {
     console.log('Starting copy of evolution documentation...');
     
-    // Remove existing reference directory to clean up any nested structure
+    // Remove existing target directory
     try {
-      await fs.rm(referenceDir, { recursive: true, force: true });
-      console.log(`Cleaning up existing reference directory: ${referenceDir}`);
+      await fs.rm(targetDir, { recursive: true, force: true });
+      console.log(`Removing existing directory: ${targetDir}`);
     } catch (error) {
       // Directory might not exist, that's ok
     }
-    
-    // Ensure the reference directory structure exists
-    await ensureDirectoryExists(path.dirname(targetDir));
     
     // Copy source to target
     await copyDirectory(sourceDir, targetDir);
     
     // Create _meta.json for navigation
     await createMetaJson(targetDir);
-    
-    // Create reference index and meta files
-    await createReferenceIndex();
     
     console.log('Documentation copy completed successfully!');
   } catch (error) {

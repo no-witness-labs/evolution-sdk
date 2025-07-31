@@ -1,6 +1,6 @@
 {
   "index": "Introduction",
   "getting-started": "Getting Started",
-  "examples": "Examples",
-  "reference": "API Reference"
+  "api": "API Reference",
+  "guides": "Guides"
 }

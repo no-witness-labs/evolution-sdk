@@ -3,7 +3,6 @@ const withNextra = require("nextra")({
   themeConfig: "./theme.config.tsx"
 })
 
-
 module.exports = withNextra({
   reactStrictMode: true,
   trailingSlash: true,
@@ -12,5 +11,5 @@ module.exports = withNextra({
   images: {
     unoptimized: true
   },
-  basePath: "/evolution-sdk"
+  basePath: "/evolution-sdk",
 })

@@ -3,7 +3,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-const sourceDir = path.resolve(process.cwd(), '../packages/evolution/docs');
+const sourceDir = path.resolve(process.cwd(), '../packages/evolution/docs/modules');
 const targetDir = path.resolve(process.cwd(), './pages/reference/modules');
 
 async function ensureDirectoryExists(dir) {

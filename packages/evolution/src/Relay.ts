@@ -1,8 +1,7 @@
-import { Data, FastCheck, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as MultiHostName from "./MultiHostName.js"
 import * as SingleHostAddr from "./SingleHostAddr.js"
 import * as SingleHostName from "./SingleHostName.js"
@@ -15,7 +14,7 @@ import * as SingleHostName from "./SingleHostName.js"
  */
 export class RelayError extends Data.TaggedError("RelayError")<{
   message?: string
-  reason?: "InvalidStructure" | "UnsupportedType"
+  cause?: unknown
 }> {}
 
 /**
@@ -31,11 +30,7 @@ export const Relay = Schema.Union(
   MultiHostName.MultiHostName
 )
 
-export const FromCDDL = Schema.Union(
-  SingleHostAddr.SingleHostAddrCDDLSchema,
-  SingleHostName.SingleHostNameCDDLSchema,
-  MultiHostName.FromCDDL
-)
+export const FromCDDL = Schema.Union(SingleHostAddr.FromCDDL, SingleHostName.FromCDDL, MultiHostName.FromCDDL)
 
 /**
  * Type alias for Relay.
@@ -47,14 +42,21 @@ export type Relay = typeof Relay.Type
 
 /**
  * CBOR bytes transformation schema for Relay.
- * For union types, we create a union of the child FromBytess
- * rather than trying to create a complex three-layer transformation.
+ * For union types, we create a union of the child CBOR schemas.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  Schema.Union(SingleHostAddr.FromBytes(options), SingleHostName.FromBytes(options), MultiHostName.FromBytes(options))
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+  Schema.Union(
+    SingleHostAddr.FromCBORBytes(options),
+    SingleHostName.FromBytes(options), // Still uses old naming
+    MultiHostName.FromCBORBytes(options)
+  ).annotations({
+    identifier: "Relay.FromCBORBytes",
+    title: "Relay from CBOR Bytes",
+    description: "Transforms CBOR bytes (Uint8Array) to Relay"
+  })
 
 /**
  * CBOR hex transformation schema for Relay.
@@ -62,20 +64,162 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → Relay
-  )
+    FromCBORBytes(options) // Uint8Array → Relay
+  ).annotations({
+    identifier: "Relay.FromCBORHex",
+    title: "Relay from CBOR Hex",
+    description: "Transforms CBOR hex string to Relay"
+  })
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    RelayError
-  )
+/**
+ * Check if two Relay instances are equal.
+ *
+ * @since 2.0.0
+ * @category equality
+ */
+export const equals = (self: Relay, that: Relay): boolean => {
+  if (self._tag !== that._tag) return false
+
+  switch (self._tag) {
+    case "SingleHostAddr":
+      return SingleHostAddr.equals(self, that as SingleHostAddr.SingleHostAddr)
+    case "SingleHostName":
+      return SingleHostName.equals(self, that as SingleHostName.SingleHostName)
+    case "MultiHostName":
+      return MultiHostName.equals(self, that as MultiHostName.MultiHostName)
+    default:
+      return false
+  }
+}
+
+/**
+ * @since 2.0.0
+ * @category FastCheck
+ */
+export const arbitrary = FastCheck.oneof(
+  SingleHostAddr.arbitrary,
+  FastCheck.constant({} as SingleHostName.SingleHostName), // Placeholder since it may not have arbitrary
+  MultiHostName.arbitrary
+)
+
+/**
+ * Create a Relay from a SingleHostAddr.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const fromSingleHostAddr = (singleHostAddr: SingleHostAddr.SingleHostAddr): Relay => singleHostAddr
+
+/**
+ * Create a Relay from a SingleHostName.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const fromSingleHostName = (singleHostName: SingleHostName.SingleHostName): Relay => singleHostName
+
+/**
+ * Create a Relay from a MultiHostName.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const fromMultiHostName = (multiHostName: MultiHostName.MultiHostName): Relay => multiHostName
+
+/**
+ * Effect namespace containing schema decode and encode operations.
+ *
+ * @since 2.0.0
+ * @category Effect
+ */
+export namespace Effect {
+  /**
+   * Parse a Relay from CBOR bytes using Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = (input: Uint8Array, options?: CBOR.CodecOptions): Eff.Effect<Relay, RelayError> =>
+    Eff.mapError(
+      Schema.decode(FromCBORBytes(options))(input),
+      (cause) => new RelayError({ message: "Failed to decode Relay from CBOR bytes", cause })
+    )
+
+  /**
+   * Parse a Relay from CBOR hex using Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = (input: string, options?: CBOR.CodecOptions): Eff.Effect<Relay, RelayError> =>
+    Eff.mapError(
+      Schema.decode(FromCBORHex(options))(input),
+      (cause) => new RelayError({ message: "Failed to decode Relay from CBOR hex", cause })
+    )
+
+  /**
+   * Convert a Relay to CBOR bytes using Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = (value: Relay, options?: CBOR.CodecOptions): Eff.Effect<Uint8Array, RelayError> =>
+    Eff.mapError(
+      Schema.encode(FromCBORBytes(options))(value),
+      (cause) => new RelayError({ message: "Failed to encode Relay to CBOR bytes", cause })
+    )
+
+  /**
+   * Convert a Relay to CBOR hex using Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = (value: Relay, options?: CBOR.CodecOptions): Eff.Effect<string, RelayError> =>
+    Eff.mapError(
+      Schema.encode(FromCBORHex(options))(value),
+      (cause) => new RelayError({ message: "Failed to encode Relay to CBOR hex", cause })
+    )
+}
+
+/**
+ * Convert Relay to CBOR bytes (unsafe).
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = (value: Relay, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(value, options))
+
+/**
+ * Convert Relay to CBOR hex (unsafe).
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = (value: Relay, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(value, options))
+
+/**
+ * Parse Relay from CBOR bytes (unsafe).
+ *
+ * @since 2.0.0
+ * @category decoding
+ */
+export const fromCBORBytes = (value: Uint8Array, options?: CBOR.CodecOptions): Relay =>
+  Eff.runSync(Effect.fromCBORBytes(value, options))
+
+/**
+ * Parse Relay from CBOR hex (unsafe).
+ *
+ * @since 2.0.0
+ * @category decoding
+ */
+export const fromCBORHex = (value: string, options?: CBOR.CodecOptions): Relay =>
+  Eff.runSync(Effect.fromCBORHex(value, options))
 
 /**
  * Pattern match on a Relay to handle different relay types.
@@ -128,56 +272,3 @@ export const isSingleHostName = (relay: Relay): relay is SingleHostName.SingleHo
  * @category predicates
  */
 export const isMultiHostName = (relay: Relay): relay is MultiHostName.MultiHostName => relay._tag === "MultiHostName"
-
-/**
- * FastCheck generator for Relay instances.
- *
- * @since 2.0.0
- * @category generators
- */
-export const generator = FastCheck.oneof(SingleHostAddr.generator, SingleHostName.generator, MultiHostName.generator)
-
-/**
- * Check if two Relay instances are equal.
- *
- * @since 2.0.0
- * @category equality
- */
-export const equals = (self: Relay, that: Relay): boolean => {
-  if (self._tag !== that._tag) return false
-
-  switch (self._tag) {
-    case "SingleHostAddr":
-      return SingleHostAddr.equals(self, that as SingleHostAddr.SingleHostAddr)
-    case "SingleHostName":
-      return SingleHostName.equals(self, that as SingleHostName.SingleHostName)
-    case "MultiHostName":
-      return MultiHostName.equals(self, that as MultiHostName.MultiHostName)
-    default:
-      return false
-  }
-}
-
-/**
- * Create a Relay from a SingleHostAddr.
- *
- * @since 2.0.0
- * @category constructors
- */
-export const fromSingleHostAddr = (singleHostAddr: SingleHostAddr.SingleHostAddr): Relay => singleHostAddr
-
-/**
- * Create a Relay from a SingleHostName.
- *
- * @since 2.0.0
- * @category constructors
- */
-export const fromSingleHostName = (singleHostName: SingleHostName.SingleHostName): Relay => singleHostName
-
-/**
- * Create a Relay from a MultiHostName.
- *
- * @since 2.0.0
- * @category constructors
- */
-export const fromMultiHostName = (multiHostName: MultiHostName.MultiHostName): Relay => multiHostName

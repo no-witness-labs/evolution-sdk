@@ -20,7 +20,7 @@ interface ByteArray extends Schema.refine<string, typeof Schema.String> {}
  *
  * @since 2.0.0
  */
-export const ByteArray: ByteArray = Data.BytesSchema.annotations({
+export const ByteArray: ByteArray = Data.ByteArray.annotations({
   identifier: "TSchema.ByteArray"
 })
 // : Schema.Schema<string, typeof Data.BytesSchema.Type> = Schema.transform(

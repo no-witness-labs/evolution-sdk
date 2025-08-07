@@ -204,10 +204,6 @@ const getTestCases = (
   return entries.slice(0, count)
 }
 
-/**
- * Initialize the codec for CBOR encoding/decoding operations
- */
-const Codec = Data.Codec()
 
 /**
  * Golden Tests for Data module
@@ -222,7 +218,7 @@ describe("Data Golden Tests", () => {
           throw new Error(`Invalid integer sample at index ${entry.index}`)
         }
         const plutusData = Data.int(entry.sample.integer)
-        const encoded = Codec.Encode.cborHex(plutusData)
+        const encoded = Data.toCBORHex(plutusData)
         expect(encoded, `Failed at sample index ${entry.index}`).toBe(entry.cborHex)
       })
     })
@@ -235,7 +231,7 @@ describe("Data Golden Tests", () => {
           throw new Error(`Invalid integer sample at index ${entry.index}`)
         }
         const plutusData = Data.int(entry.sample.integer)
-        const encoded = Codec.Encode.cborBytes(plutusData)
+        const encoded = Data.toCBORBytes(plutusData)
         expect(Array.from(encoded), `Failed at sample index ${entry.index}`).toEqual(entry.cborBytes)
       })
     })
@@ -244,7 +240,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("integer", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborHex(entry.cborHex)
+        const decoded = Data.fromCBORHex(entry.cborHex)
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -253,7 +249,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("integer", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborBytes(new Uint8Array(entry.cborBytes))
+        const decoded = Data.fromCBORBytes(new Uint8Array(entry.cborBytes))
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -266,8 +262,8 @@ describe("Data Golden Tests", () => {
           throw new Error(`Invalid integer sample at index ${entry.index}`)
         }
         const plutusData = Data.int(entry.sample.integer)
-        const encoded = Codec.Encode.cborHex(plutusData)
-        const decoded = Codec.Decode.cborHex(encoded)
+        const encoded = Data.toCBORHex(plutusData)
+        const decoded = Data.fromCBORHex(encoded)
 
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
@@ -283,7 +279,7 @@ describe("Data Golden Tests", () => {
           throw new Error(`Invalid byte array sample at index ${entry.index}`)
         }
         const plutusData = Data.bytearray(entry.sample.bytearray)
-        const encoded = Codec.Encode.cborHex(plutusData)
+        const encoded = Data.toCBORHex(plutusData)
         expect(encoded, `Failed at sample index ${entry.index}`).toBe(entry.cborHex)
       })
     })
@@ -296,7 +292,7 @@ describe("Data Golden Tests", () => {
           throw new Error(`Invalid byte array sample at index ${entry.index}`)
         }
         const plutusData = Data.bytearray(entry.sample.bytearray)
-        const encoded = Codec.Encode.cborBytes(plutusData)
+        const encoded = Data.toCBORBytes(plutusData)
         expect(Array.from(encoded), `Failed at sample index ${entry.index}`).toEqual(entry.cborBytes)
       })
     })
@@ -305,7 +301,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("byteArray", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborHex(entry.cborHex)
+        const decoded = Data.fromCBORHex(entry.cborHex)
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -314,7 +310,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("byteArray", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborBytes(new Uint8Array(entry.cborBytes))
+        const decoded = Data.fromCBORBytes(new Uint8Array(entry.cborBytes))
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -327,8 +323,8 @@ describe("Data Golden Tests", () => {
           throw new Error(`Invalid byte array sample at index ${entry.index}`)
         }
         const plutusData = Data.bytearray(entry.sample.bytearray)
-        const encoded = Codec.Encode.cborHex(plutusData)
-        const decoded = Codec.Decode.cborHex(encoded)
+        const encoded = Data.toCBORHex(plutusData)
+        const decoded = Data.fromCBORHex(encoded)
 
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
@@ -345,7 +341,7 @@ describe("Data Golden Tests", () => {
         }
         const plutusDataList = entry.sample.list.map(reconstructPlutusData)
         const plutusData = Data.list(plutusDataList)
-        const encoded = Codec.Encode.cborHex(plutusData)
+        const encoded = Data.toCBORHex(plutusData)
         expect(encoded, `Failed at sample index ${entry.index}`).toBe(entry.cborHex)
       })
     }, 30000) // 30 second timeout for large test cases
@@ -359,7 +355,7 @@ describe("Data Golden Tests", () => {
         }
         const plutusDataList = entry.sample.list.map(reconstructPlutusData)
         const plutusData = Data.list(plutusDataList)
-        const encoded = Codec.Encode.cborBytes(plutusData)
+        const encoded = Data.toCBORBytes(plutusData)
         expect(Array.from(encoded), `Failed at sample index ${entry.index}`).toEqual(entry.cborBytes)
       })
     })
@@ -368,7 +364,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("list", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborHex(entry.cborHex)
+        const decoded = Data.fromCBORHex(entry.cborHex)
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -377,7 +373,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("list", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborBytes(new Uint8Array(entry.cborBytes))
+        const decoded = Data.fromCBORBytes(new Uint8Array(entry.cborBytes))
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -391,8 +387,8 @@ describe("Data Golden Tests", () => {
         }
         const plutusDataList = entry.sample.list.map(reconstructPlutusData)
         const plutusData = Data.list(plutusDataList)
-        const encoded = Codec.Encode.cborHex(plutusData)
-        const decoded = Codec.Decode.cborHex(encoded)
+        const encoded = Data.toCBORHex(plutusData)
+        const decoded = Data.fromCBORHex(encoded)
 
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
@@ -407,12 +403,12 @@ describe("Data Golden Tests", () => {
         if (!isMapSample(entry.sample)) {
           throw new Error(`Invalid map sample at index ${entry.index}`)
         }
-        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => ({
-          key: reconstructPlutusData(entryObj.key),
-          value: reconstructPlutusData(entryObj.value)
-        }))
+        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => [
+          reconstructPlutusData(entryObj.key),
+          reconstructPlutusData(entryObj.value)
+        ] as [Data.Data, Data.Data])
         const plutusData = Data.map(plutusDataEntries)
-        const encoded = Codec.Encode.cborHex(plutusData)
+        const encoded = Data.toCBORHex(plutusData)
         expect(encoded, `Failed at sample index ${entry.index}`).toBe(entry.cborHex)
       })
     })
@@ -424,12 +420,12 @@ describe("Data Golden Tests", () => {
         if (!isMapSample(entry.sample)) {
           throw new Error(`Invalid map sample at index ${entry.index}`)
         }
-        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => ({
-          key: reconstructPlutusData(entryObj.key),
-          value: reconstructPlutusData(entryObj.value)
-        }))
+        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => [
+          reconstructPlutusData(entryObj.key),
+          reconstructPlutusData(entryObj.value)
+        ] as [Data.Data, Data.Data])
         const plutusData = Data.map(plutusDataEntries)
-        const encoded = Codec.Encode.cborBytes(plutusData)
+        const encoded = Data.toCBORBytes(plutusData)
         expect(Array.from(encoded), `Failed at sample index ${entry.index}`).toEqual(entry.cborBytes)
       })
     })
@@ -438,7 +434,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("map", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborHex(entry.cborHex)
+        const decoded = Data.fromCBORHex(entry.cborHex)
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -447,7 +443,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("map", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborBytes(new Uint8Array(entry.cborBytes))
+        const decoded = Data.fromCBORBytes(new Uint8Array(entry.cborBytes))
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -459,13 +455,13 @@ describe("Data Golden Tests", () => {
         if (!isMapSample(entry.sample)) {
           throw new Error(`Invalid map sample at index ${entry.index}`)
         }
-        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => ({
-          key: reconstructPlutusData(entryObj.key),
-          value: reconstructPlutusData(entryObj.value)
-        }))
+        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => [
+          reconstructPlutusData(entryObj.key),
+          reconstructPlutusData(entryObj.value)
+        ] as [Data.Data, Data.Data])
         const plutusData = Data.map(plutusDataEntries)
-        const encoded = Codec.Encode.cborHex(plutusData)
-        const decoded = Codec.Decode.cborHex(encoded)
+        const encoded = Data.toCBORHex(plutusData)
+        const decoded = Data.fromCBORHex(encoded)
 
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
@@ -482,7 +478,7 @@ describe("Data Golden Tests", () => {
         }
         const plutusDataFields = entry.sample.fields.map(reconstructPlutusData)
         const plutusData = Data.constr(BigInt(entry.sample.index), plutusDataFields)
-        const encoded = Codec.Encode.cborHex(plutusData)
+        const encoded = Data.toCBORHex(plutusData)
         expect(encoded, `Failed at sample index ${entry.index}`).toBe(entry.cborHex)
       })
     })
@@ -496,7 +492,7 @@ describe("Data Golden Tests", () => {
         }
         const plutusDataFields = entry.sample.fields.map(reconstructPlutusData)
         const plutusData = Data.constr(BigInt(entry.sample.index), plutusDataFields)
-        const encoded = Codec.Encode.cborBytes(plutusData)
+        const encoded = Data.toCBORBytes(plutusData)
         expect(Array.from(encoded), `Failed at sample index ${entry.index}`).toEqual(entry.cborBytes)
       })
     })
@@ -505,7 +501,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("constr", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborHex(entry.cborHex)
+        const decoded = Data.fromCBORHex(entry.cborHex)
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -514,7 +510,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("constr", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborBytes(new Uint8Array(entry.cborBytes))
+        const decoded = Data.fromCBORBytes(new Uint8Array(entry.cborBytes))
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -528,8 +524,8 @@ describe("Data Golden Tests", () => {
         }
         const plutusDataFields = entry.sample.fields.map(reconstructPlutusData)
         const plutusData = Data.constr(BigInt(entry.sample.index), plutusDataFields)
-        const encoded = Codec.Encode.cborHex(plutusData)
-        const decoded = Codec.Decode.cborHex(encoded)
+        const encoded = Data.toCBORHex(plutusData)
+        const decoded = Data.fromCBORHex(encoded)
 
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
@@ -542,7 +538,7 @@ describe("Data Golden Tests", () => {
 
       testCases.forEach((entry) => {
         const plutusData = reconstructPlutusData(entry.sample)
-        const encoded = Codec.Encode.cborHex(plutusData)
+        const encoded = Data.toCBORHex(plutusData)
         expect(encoded, `Failed at sample index ${entry.index}`).toBe(entry.cborHex)
       })
     })
@@ -552,7 +548,7 @@ describe("Data Golden Tests", () => {
 
       testCases.forEach((entry) => {
         const plutusData = reconstructPlutusData(entry.sample)
-        const encoded = Codec.Encode.cborBytes(plutusData)
+        const encoded = Data.toCBORBytes(plutusData)
         expect(Array.from(encoded), `Failed at sample index ${entry.index}`).toEqual(entry.cborBytes)
       })
     })
@@ -561,7 +557,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("data", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborHex(entry.cborHex)
+        const decoded = Data.fromCBORHex(entry.cborHex)
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -570,7 +566,7 @@ describe("Data Golden Tests", () => {
       const testCases = getTestCases("data", "decoding")
 
       testCases.forEach((entry) => {
-        const decoded = Codec.Decode.cborBytes(new Uint8Array(entry.cborBytes))
+        const decoded = Data.fromCBORBytes(new Uint8Array(entry.cborBytes))
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
     })
@@ -580,8 +576,8 @@ describe("Data Golden Tests", () => {
 
       testCases.forEach((entry) => {
         const plutusData = reconstructPlutusData(entry.sample)
-        const encoded = Codec.Encode.cborHex(plutusData)
-        const decoded = Codec.Decode.cborHex(encoded)
+        const encoded = Data.toCBORHex(plutusData)
+        const decoded = Data.fromCBORHex(encoded)
 
         expect(normalizeDecodedData(decoded), `Failed at sample index ${entry.index}`).toEqual(entry.sample)
       })
@@ -610,10 +606,10 @@ const reconstructPlutusData = (sample: unknown): Data.Data => {
       return Data.list((typedSample.list as Array<unknown>).map(reconstructPlutusData))
     case "Map":
       return Data.map(
-        (typedSample.entries as Array<{ key: unknown; value: unknown }>).map((entry) => ({
-          key: reconstructPlutusData(entry.key),
-          value: reconstructPlutusData(entry.value)
-        }))
+        (typedSample.entries as Array<{ key: unknown; value: unknown }>).map((entry) => [
+          reconstructPlutusData(entry.key),
+          reconstructPlutusData(entry.value)
+        ])
       )
     case "Constr":
       return Data.constr(

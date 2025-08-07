@@ -1,4 +1,4 @@
-import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as AssetName from "./AssetName.js"
 import * as Bytes from "./Bytes.js"
@@ -24,7 +24,7 @@ export class MultiAssetError extends Data.TaggedError("MultiAssetError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const AssetMapSchema = Schema.Map({
+export const AssetMap = Schema.MapFromSelf({
   key: AssetName.AssetName,
   value: PositiveCoin.PositiveCoinSchema
 })
@@ -40,7 +40,7 @@ export const AssetMapSchema = Schema.Map({
  * @since 2.0.0
  * @category model
  */
-export type AssetMap = typeof AssetMapSchema.Type
+export type AssetMap = typeof AssetMap.Type
 
 /**
  * Schema for MultiAsset representing native assets.
@@ -53,14 +53,17 @@ export type AssetMap = typeof AssetMapSchema.Type
  * @since 2.0.0
  * @category schemas
  */
-export const MultiAssetSchema = Schema.MapFromSelf({
+export const MultiAsset = Schema.MapFromSelf({
   key: PolicyId.PolicyId,
-  value: AssetMapSchema
+  value: AssetMap
 })
   .pipe(Schema.filter((map) => map.size > 0))
+  .pipe(Schema.brand("MultiAsset"))
   .annotations({
     message: () => "MultiAsset cannot be empty",
-    identifier: "MultiAsset"
+    identifier: "MultiAsset",
+    title: "Multi-Asset Collection",
+    description: "A collection of native assets grouped by policy ID with positive amounts"
   })
 
 /**
@@ -71,11 +74,19 @@ export const MultiAssetSchema = Schema.MapFromSelf({
  * @since 2.0.0
  * @category model
  */
-export type MultiAsset = typeof MultiAssetSchema.Type
+export interface MultiAsset extends Schema.Schema.Type<typeof MultiAsset> {}
 
 /**
- * Create an empty MultiAsset (note: this will fail validation as MultiAsset cannot be empty).
- * Use this only as a starting point for building a MultiAsset.
+ * Smart constructor for MultiAsset that validates and applies branding.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = Schema.decodeSync(MultiAsset)
+
+/**
+ * Create an empty Map for building MultiAssets (note: empty maps will fail validation).
+ * Use this only as a starting point for building a MultiAsset with add operations.
  *
  * @since 2.0.0
  * @category constructors
@@ -94,7 +105,7 @@ export const singleton = (
   amount: PositiveCoin.PositiveCoin
 ): MultiAsset => {
   const assetMap = new Map([[assetName, amount]])
-  return new Map([[policyId, assetMap]])
+  return make(new Map([[policyId, assetMap]]))
 }
 
 /**
@@ -120,12 +131,12 @@ export const addAsset = (
 
     const result = new Map(multiAsset)
     result.set(policyId, updatedAssetMap)
-    return result
+    return make(result)
   } else {
     const newAssetMap = new Map([[assetName, amount]])
     const result = new Map(multiAsset)
     result.set(policyId, newAssetMap)
-    return result
+    return make(result)
   }
 }
 
@@ -139,9 +150,9 @@ export const getAsset = (multiAsset: MultiAsset, policyId: PolicyId.PolicyId, as
   const assetMap = multiAsset.get(policyId)
   if (assetMap !== undefined) {
     const amount = assetMap.get(assetName)
-    return amount !== undefined ? { _tag: "Some" as const, value: amount } : { _tag: "None" as const }
+    return amount !== undefined ? amount : undefined
   }
-  return { _tag: "None" as const }
+  return undefined
 }
 
 /**
@@ -156,7 +167,7 @@ export const hasAsset = (
   assetName: AssetName.AssetName
 ): boolean => {
   const result = getAsset(multiAsset, policyId, assetName)
-  return result._tag === "Some"
+  return result !== undefined
 }
 
 /**
@@ -165,7 +176,7 @@ export const hasAsset = (
  * @since 2.0.0
  * @category transformation
  */
-export const getPolicyIds = (multiAsset: MultiAsset) => multiAsset.keys()
+export const getPolicyIds = (multiAsset: MultiAsset): Array<PolicyId.PolicyId> => Array.from(multiAsset.keys())
 
 /**
  * Get all assets for a specific policy ID.
@@ -175,7 +186,7 @@ export const getPolicyIds = (multiAsset: MultiAsset) => multiAsset.keys()
  */
 export const getAssetsByPolicy = (multiAsset: MultiAsset, policyId: PolicyId.PolicyId) => {
   const assetMap = multiAsset.get(policyId)
-  return assetMap !== undefined ? { _tag: "Some" as const, value: assetMap } : { _tag: "None" as const }
+  return assetMap !== undefined ? Array.from(assetMap.entries()) : []
 }
 
 /**
@@ -210,23 +221,23 @@ export const equals = (a: MultiAsset, b: MultiAsset): boolean =>
  * @since 2.0.0
  * @category predicates
  */
-export const is = (value: unknown): value is MultiAsset => Schema.is(MultiAssetSchema)(value)
+export const is = (value: unknown): value is MultiAsset => Schema.is(MultiAsset)(value)
 
 /**
- * Generate a random MultiAsset.
+ * Change generator to arbitrary and rename CBOR schemas.
  *
  * @since 2.0.0
- * @category generators
+ * @category arbitrary
  */
-export const generator = FastCheck.array(
+export const arbitrary = FastCheck.array(
   FastCheck.tuple(
-    PolicyId.generator,
-    FastCheck.array(FastCheck.tuple(AssetName.generator, PositiveCoin.generator), { minLength: 1, maxLength: 5 }).map(
-      (assets) => new Map(assets)
+    PolicyId.arbitrary,
+    FastCheck.array(FastCheck.tuple(AssetName.arbitrary, PositiveCoin.arbitrary), { minLength: 1, maxLength: 5 }).map(
+      (tokens) => new Map(tokens)
     )
   ),
-  { minLength: 1, maxLength: 3 }
-).map((policies) => new Map(policies))
+  { minLength: 1, maxLength: 5 }
+).map((entries) => make(new Map(entries)))
 
 /**
  * CDDL schema for MultiAsset.
@@ -246,11 +257,11 @@ export const MultiAssetCDDLSchema = Schema.transformOrFail(
       value: CBOR.Integer
     })
   }),
-  Schema.typeSchema(MultiAssetSchema),
+  Schema.typeSchema(MultiAsset),
   {
     strict: true,
     encode: (toI, _, __, toA) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         // Convert MultiAsset to raw Map data for CBOR encoding
         const outerMap = new Map<Uint8Array, Map<Uint8Array, bigint>>()
 
@@ -270,7 +281,7 @@ export const MultiAssetCDDLSchema = Schema.transformOrFail(
       }),
 
     decode: (fromA) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         const result = new Map<PolicyId.PolicyId, AssetMap>()
 
         for (const [policyIdBytes, assetMapCddl] of fromA.entries()) {
@@ -286,43 +297,85 @@ export const MultiAssetCDDLSchema = Schema.transformOrFail(
           result.set(policyId, assetMap)
         }
 
-        return result
+        return yield* ParseResult.decode(MultiAsset)(result)
       })
   }
 )
 
 /**
  * CBOR bytes transformation schema for MultiAsset.
+ * Transforms between CBOR bytes and MultiAsset using CBOR encoding.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     MultiAssetCDDLSchema // CBOR → MultiAsset
-  )
+  ).annotations({
+    identifier: "MultiAsset.FromCBORBytes",
+    title: "MultiAsset from CBOR Bytes",
+    description: "Transforms CBOR bytes to MultiAsset"
+  })
 
 /**
  * CBOR hex transformation schema for MultiAsset.
+ * Transforms between CBOR hex string and MultiAsset using CBOR encoding.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → MultiAsset
-  )
+    FromCBORBytes(options) // Uint8Array → MultiAsset
+  ).annotations({
+    identifier: "MultiAsset.FromCBORHex",
+    title: "MultiAsset from CBOR Hex",
+    description: "Transforms CBOR hex string to MultiAsset"
+  })
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    MultiAssetError
-  )
+/**
+ * Root Functions
+ * ============================================================================
+ */
+
+/**
+ * Parse MultiAsset from CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): MultiAsset =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Parse MultiAsset from CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): MultiAsset =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+/**
+ * Encode MultiAsset to CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = (multiAsset: MultiAsset, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(multiAsset, options))
+
+/**
+ * Encode MultiAsset to CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = (multiAsset: MultiAsset, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(multiAsset, options))
 
 /**
  * Merge two MultiAsset instances, combining amounts for assets that exist in both.
@@ -396,5 +449,93 @@ export const subtract = (a: MultiAsset, b: MultiAsset): MultiAsset => {
     })
   }
 
-  return result
+  return make(result)
 }
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse MultiAsset from CBOR bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = (
+    bytes: Uint8Array,
+    options?: CBOR.CodecOptions
+  ): Eff.Effect<MultiAsset, MultiAssetError> =>
+    Schema.decode(FromCBORBytes(options))(bytes).pipe(
+      Eff.mapError(
+        (cause) =>
+          new MultiAssetError({
+            message: "Failed to parse MultiAsset from CBOR bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse MultiAsset from CBOR hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Eff.Effect<MultiAsset, MultiAssetError> =>
+    Schema.decode(FromCBORHex(options))(hex).pipe(
+      Eff.mapError(
+        (cause) =>
+          new MultiAssetError({
+            message: "Failed to parse MultiAsset from CBOR hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode MultiAsset to CBOR bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = (
+    multiAsset: MultiAsset,
+    options?: CBOR.CodecOptions
+  ): Eff.Effect<Uint8Array, MultiAssetError> =>
+    Schema.encode(FromCBORBytes(options))(multiAsset).pipe(
+      Eff.mapError(
+        (cause) =>
+          new MultiAssetError({
+            message: "Failed to encode MultiAsset to CBOR bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode MultiAsset to CBOR hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = (multiAsset: MultiAsset, options?: CBOR.CodecOptions): Eff.Effect<string, MultiAssetError> =>
+    Schema.encode(FromCBORHex(options))(multiAsset).pipe(
+      Eff.mapError(
+        (cause) =>
+          new MultiAssetError({
+            message: "Failed to encode MultiAsset to CBOR hex",
+            cause
+          })
+      )
+    )
+}
+
+// ============================================================================

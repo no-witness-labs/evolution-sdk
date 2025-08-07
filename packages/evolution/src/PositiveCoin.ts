@@ -1,4 +1,4 @@
-import { Data, FastCheck, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Schema } from "effect"
 
 import * as Coin from "./Coin.js"
 
@@ -10,7 +10,7 @@ import * as Coin from "./Coin.js"
  */
 export class PositiveCoinError extends Data.TaggedError("PositiveCoinError")<{
   message?: string
-  reason?: "InvalidAmount" | "ZeroAmount" | "ExceedsMaxValue"
+  cause?: unknown
 }> {}
 
 /**
@@ -37,11 +37,13 @@ export const MAX_POSITIVE_COIN_VALUE = Coin.MAX_COIN_VALUE
  * @category schemas
  */
 export const PositiveCoinSchema = Schema.BigIntFromSelf.pipe(
-  Schema.filter((value) => value >= MIN_POSITIVE_COIN_VALUE && value <= MAX_POSITIVE_COIN_VALUE)
+  Schema.filter((value) => value >= MIN_POSITIVE_COIN_VALUE && value <= MAX_POSITIVE_COIN_VALUE),
 ).annotations({
   message: (issue) =>
     `PositiveCoin must be between ${MIN_POSITIVE_COIN_VALUE} and ${MAX_POSITIVE_COIN_VALUE}, but got ${issue.actual}`,
-  identifier: "PositiveCoin"
+  identifier: "PositiveCoin",
+  title: "Positive Coin Amount",
+  description: "A positive amount of native assets (1 to maxWord64)"
 })
 
 /**
@@ -55,11 +57,12 @@ export type PositiveCoin = typeof PositiveCoinSchema.Type
 
 /**
  * Smart constructor for creating PositiveCoin values.
+ * Uses the built-in .make property for branded schemas.
  *
  * @since 2.0.0
  * @category constructors
  */
-export const make = (value: bigint): PositiveCoin => PositiveCoinSchema.make(value)
+export const make = PositiveCoinSchema.make
 
 /**
  * Create a PositiveCoin from a regular Coin, throwing if the value is zero.
@@ -70,8 +73,7 @@ export const make = (value: bigint): PositiveCoin => PositiveCoinSchema.make(val
 export const fromCoin = (coin: Coin.Coin): PositiveCoin => {
   if (coin === 0n) {
     throw new PositiveCoinError({
-      message: "Cannot create PositiveCoin from zero coin amount",
-      reason: "ZeroAmount"
+      message: "Cannot create PositiveCoin from zero coin amount"
     })
   }
   return make(coin)
@@ -103,11 +105,10 @@ export const add = (a: PositiveCoin, b: PositiveCoin): PositiveCoin => {
   const result = a + b
   if (result > MAX_POSITIVE_COIN_VALUE) {
     throw new PositiveCoinError({
-      message: `Addition overflow: ${a} + ${b} exceeds maximum positive coin value`,
-      reason: "ExceedsMaxValue"
+      message: `Addition overflow: ${a} + ${b} exceeds maximum positive coin value`
     })
   }
-  return result
+  return make(result)
 }
 
 /**
@@ -121,11 +122,10 @@ export const subtract = (a: PositiveCoin, b: PositiveCoin): PositiveCoin => {
   const result = a - b
   if (result <= 0n) {
     throw new PositiveCoinError({
-      message: `Subtraction underflow: ${a} - ${b} results in non-positive value`,
-      reason: "ZeroAmount"
+      message: `Subtraction underflow: ${a} - ${b} results in non-positive value`
     })
   }
-  return result
+  return make(result)
 }
 
 /**
@@ -149,40 +149,82 @@ export const compare = (a: PositiveCoin, b: PositiveCoin): -1 | 0 | 1 => {
 export const equals = (a: PositiveCoin, b: PositiveCoin): boolean => a === b
 
 /**
- * Generate a random PositiveCoin value.
+ * FastCheck arbitrary for generating random PositiveCoin values.
  *
  * @since 2.0.0
- * @category generators
+ * @category arbitrary
  */
-export const generator = FastCheck.bigInt({
+export const arbitrary = FastCheck.bigInt({
   min: MIN_POSITIVE_COIN_VALUE,
   max: MAX_POSITIVE_COIN_VALUE
-})
+}).map(make)
+
+// ============================================================================
+// Root Functions
+// ============================================================================
 
 /**
- * Synchronous encoding/decoding utilities.
+ * Parse PositiveCoin from bigint value.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category parsing
  */
-export const Encode = {
-  sync: Schema.encodeSync(PositiveCoinSchema)
-}
-
-export const Decode = {
-  sync: Schema.decodeUnknownSync(PositiveCoinSchema)
-}
+export const fromBigInt = (value: bigint): PositiveCoin =>
+  Eff.runSync(Effect.fromBigInt(value))
 
 /**
- * Either encoding/decoding utilities.
+ * Convert PositiveCoin to bigint value.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category encoding
  */
-export const EncodeEither = {
-  either: Schema.encodeEither(PositiveCoinSchema)
+export const toBigInt = (positiveCoin: PositiveCoin): bigint =>
+  Eff.runSync(Effect.toBigInt(positiveCoin))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse PositiveCoin from bigint value with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBigInt = (value: bigint): Eff.Effect<PositiveCoin, PositiveCoinError> =>
+    Schema.decode(PositiveCoinSchema)(value).pipe(
+      Eff.mapError(
+        (cause) =>
+          new PositiveCoinError({
+            message: "Failed to parse PositiveCoin from bigint",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Convert PositiveCoin to bigint value with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBigInt = (positiveCoin: PositiveCoin): Eff.Effect<bigint, PositiveCoinError> =>
+    Schema.encode(PositiveCoinSchema)(positiveCoin).pipe(
+      Eff.mapError(
+        (cause) =>
+          new PositiveCoinError({
+            message: "Failed to encode PositiveCoin to bigint",
+            cause
+          })
+      )
+    )
 }
 
-export const DecodeEither = {
-  either: Schema.decodeUnknownEither(PositiveCoinSchema)
-}
+// ============================================================================

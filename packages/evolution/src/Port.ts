@@ -95,9 +95,9 @@ export const isDynamic = (port: Port): boolean => port >= 49152 && port <= 65535
  * Generate a random Port.
  *
  * @since 2.0.0
- * @category generators
+ * @category arbitrary
  */
-export const generator = Numeric.Uint16Generator
+export const arbitrary = Numeric.Uint16Generator
 
 /**
  * Synchronous encoding/decoding utilities.

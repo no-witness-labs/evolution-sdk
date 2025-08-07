@@ -82,32 +82,21 @@ describe("Data Module Tests", () => {
     describe("Plutus Map", () => {
       it("should create a valid empty map", () => {
         const map = Data.map([])
-        expect((map as Data.MapList).size).toBe(0)
+        expect((map as Data.Map).size).toBe(0)
         expect(Data.isMap(map)).toBe(true)
       })
 
       it("should create a valid map with entries", () => {
         const map = Data.map([
-          {
-            key: "cafe",
-            value: 42n
-          },
-          {
-            key: 99n,
-            value: "deadbeef"
-          }
+          ["cafe", 42n],
+          [99n, "deadbeef"]
         ])
-        expect((map as Data.MapList).size).toBe(2)
+        expect((map as Data.Map).size).toBe(2)
         expect(Data.isMap(map)).toBe(true)
       })
 
       it("should validate Plutus Map with schema", () => {
-        const map = Data.map([
-          {
-            key: 1n,
-            value: 2n
-          }
-        ])
+        const map = Data.map([[1n, 2n]])
         expect(Data.isMap(map)).toBe(true)
       })
     })
@@ -175,12 +164,7 @@ describe("Data Module Tests", () => {
       },
       {
         name: "map with entries",
-        value: Data.map([
-          {
-            key: 1n,
-            value: "cafe"
-          }
-        ]),
+        value: Data.map([[1n, "cafe"]]),
         expectedHex: "bf0142cafeff"
       },
       {
@@ -322,14 +306,8 @@ describe("Data Module Tests", () => {
       const complex = Data.constr(0n, [
         [1n, 2n, "cafe"],
         Data.map([
-          {
-            key: 42n,
-            value: ["deadbeef"]
-          },
-          {
-            key: "deadbeef",
-            value: Data.constr(1n, [-999n])
-          }
+          [42n, ["deadbeef"]],
+          ["deadbeef", Data.constr(1n, [-999n])]
         ]),
         Data.constr(7n, [[], Data.map([])])
       ])
@@ -481,16 +459,16 @@ describe("Data Module Tests", () => {
 
     it("should handle large maps", () => {
       // Create a map with many entries
-      const entries = Array.from({ length: 100 }, (_, i) => ({
-        key: BigInt(i),
-        value: `${i.toString(16).padStart(4, "0")}`
-      }))
+      const entries = Array.from(
+        { length: 100 },
+        (_, i) => [BigInt(i), `${i.toString(16).padStart(4, "0")}`] as [Data.Int, Data.ByteArray]
+      )
       const largeMap = Data.map(entries)
 
       const encoded = Codec.Encode.cborBytes(largeMap)
       const decoded = Codec.Decode.cborBytes(encoded)
       expect(decoded).toEqual(largeMap)
-      expect((decoded as Data.MapList).size).toBe(100)
+      expect((decoded as Data.Map).size).toBe(100)
     })
 
     it("should handle constructors with many fields", () => {
@@ -642,7 +620,7 @@ describe("Data Module Tests", () => {
         expect(Data.isInt(42n)).toBe(true)
         expect(Data.isBytes("deadbeef")).toBe(true)
         expect(Data.isList([1n])).toBe(true)
-        expect(Data.isMap(Data.map([{ key: 1n, value: 2n }]))).toBe(true)
+        expect(Data.isMap(Data.map([[1n, 2n]]))).toBe(true)
         expect(Data.isConstr(Data.constr(0n, [42n]))).toBe(true)
       })
     })
@@ -667,16 +645,13 @@ describe("Data Module Tests", () => {
       it("should handle mixed nested structures", () => {
         // Create a complex mixed structure with valid hex strings
         const complex = Data.constr(0n, [
-          [Data.map([{ key: 1n, value: "cafe" }]), Data.constr(1n, [-999n])],
+          [Data.map([[1n, "cafe"]]), Data.constr(1n, [-999n])],
           Data.map([
-            {
-              key: "deadbeef", // Valid hex string
-              value: [1n, 2n, 3n]
-            },
-            {
-              key: 42n,
-              value: Data.constr(2n, [])
-            }
+            [
+              "deadbeef", // Valid hex string
+              [1n, 2n, 3n]
+            ],
+            [42n, Data.constr(2n, [])]
           ])
         ])
 
@@ -794,30 +769,13 @@ describe("Data Module Tests", () => {
   it("should handle unsorted map and return sorted canonical format", () => {
     const unsorted = Data.constr(15n, [
       Data.map([
-        {
-          key: 9358323691080620716n,
-          value: 6877988357227539948n
-        },
-        {
-          key: "70f3d8f8803183c15033",
-          value: "88472079a8ce"
-        },
-        {
-          key: "0f7f249c0a9f4f829d2e4f",
-          value: 13859100696864903302n
-        },
-        {
-          key: "07",
-          value: "b649"
-        }
+        [9358323691080620716n, 6877988357227539948n],
+        ["70f3d8f8803183c15033", "88472079a8ce"],
+        ["0f7f249c0a9f4f829d2e4f", 13859100696864903302n],
+        ["07", "b649"]
       ]),
       6n,
-      Data.map([
-        {
-          key: "65b7f7",
-          value: 5432168958238743917n
-        }
-      ])
+      Data.map([["65b7f7", 5432168958238743917n]])
     ])
 
     const encoded = CodecCanonical.Encode.cborHex(unsorted)

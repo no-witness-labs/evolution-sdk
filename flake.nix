@@ -21,7 +21,7 @@
 
       devShells = forEachSupportedSystem ({ pkgs }: {
         default = pkgs.mkShell {
-          packages = with pkgs; [ nodejs nodePackages.pnpm ];
+          packages = with pkgs; [ nodejs nodePackages.pnpm bun python3 ];
         };
       });
     };

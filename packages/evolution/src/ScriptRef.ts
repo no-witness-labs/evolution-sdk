@@ -114,7 +114,7 @@ export const FromCDDL = Schema.transformOrFail(CBOR.Tag, ScriptRef, {
  * @since 2.0.0
  * @category schemas
  */
-export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → ScriptRef
@@ -128,7 +128,7 @@ export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS)
  * @since 2.0.0
  * @category schemas
  */
-export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
     FromCBORBytes(options) // Uint8Array → ScriptRef
@@ -161,7 +161,7 @@ export const generator = FastCheck.uint8Array({
  * @since 2.0.0
  * @category encoding/decoding
  */
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const Codec = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   createEncoders(
     {
       bytes: FromBytes,

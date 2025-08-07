@@ -1,7 +1,6 @@
-import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
-import * as _Codec from "./Codec.js"
 import * as Credential from "./Credential.js"
 import * as KeyHash from "./KeyHash.js"
 import * as Natural from "./Natural.js"
@@ -44,7 +43,7 @@ export class PointerAddress extends Schema.TaggedClass<PointerAddress>("PointerA
 export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, PointerAddress, {
   strict: true,
   encode: (toI, options, ast, toA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const paymentBit = toA.paymentCredential._tag === "KeyHash" ? 0 : 1
       const header = (0b01 << 6) | (0b0 << 5) | (paymentBit << 4) | (toA.networkId & 0b00001111)
 
@@ -76,7 +75,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
       return result
     }),
   decode: (_, __, ast, fromA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const header = fromA[0]
       // Extract network ID from the lower 4 bits
       const networkId = header & 0b00001111
@@ -94,7 +93,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
         : {
             _tag: "ScriptHash",
 
-            hash: yield* ParseResult.decode(ScriptHash.BytesSchema)(fromA.slice(1, 29))
+            hash: yield* ParseResult.decode(ScriptHash.FromBytes)(fromA.slice(1, 29))
           }
 
       // After the credential, we have 3 variable-length integers
@@ -115,13 +114,19 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
         paymentCredential,
         pointer: Pointer.make(slot, txIndex, certIndex)
       })
-    }).pipe(Effect.catchTag("PointerAddressError", (e) => Effect.fail(new ParseResult.Type(ast, fromA, e.message))))
+    }).pipe(Eff.catchTag("PointerAddressError", (e) => Eff.fail(new ParseResult.Type(ast, fromA, e.message))))
+}).annotations({
+  identifier: "PointerAddress.FromBytes",
+  description: "Transforms raw bytes to PointerAddress"
 })
 
 export const FromHex = Schema.compose(
   Bytes.FromHex, // string → Uint8Array
   FromBytes // Uint8Array → PointerAddress
-)
+).annotations({
+  identifier: "PointerAddress.FromHex",
+  description: "Transforms raw hex string to PointerAddress"
+})
 
 /**
  * Encode a number as a variable length integer following the Cardano ledger specification
@@ -130,7 +135,7 @@ export const FromHex = Schema.compose(
  * @category encoding/decoding
  */
 export const encodeVariableLength = (natural: Natural.Natural) =>
-  Effect.gen(function* () {
+  Eff.gen(function* () {
     // Handle the simple case: values less than 128 (0x80, binary 10000000) fit in a single byte
     // with no continuation bit needed
     if (natural < 128) {
@@ -165,8 +170,8 @@ export const encodeVariableLength = (natural: Natural.Natural) =>
 export const decodeVariableLength: (
   bytes: Uint8Array,
   offset?: number | undefined
-) => Effect.Effect<[Natural.Natural, number], PointerAddressError | ParseResult.ParseIssue> = Effect.fnUntraced(
-  function* (bytes, offset = 0) {
+) => Eff.Effect<[Natural.Natural, number], PointerAddressError | ParseResult.ParseIssue> = Eff.fnUntraced(
+  function* (bytes: Uint8Array, offset = 0) {
     // The accumulated decoded value
     let number = 0
 
@@ -215,8 +220,19 @@ export const decodeVariableLength: (
 )
 
 /**
- * Check if two PointerAddress instances are equal.
+ * Smart constructor for creating PointerAddress instances
  *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = (props: {
+  networkId: NetworkId.NetworkId
+  paymentCredential: Credential.Credential
+  pointer: Pointer.Pointer
+}): PointerAddress => new PointerAddress(props)
+
+/**
+ * Check if two PointerAddress instances are equal.
  *
  * @since 2.0.0
  * @category equality
@@ -233,30 +249,114 @@ export const equals = (a: PointerAddress, b: PointerAddress): boolean => {
 }
 
 /**
- * Generate a random PointerAddress.
+ * FastCheck arbitrary for generating random PointerAddress instances
  *
  * @since 2.0.0
- * @category generators
+ * @category testing
  */
-export const generator = FastCheck.tuple(
-  NetworkId.generator,
-  Credential.generator,
-  Natural.generator,
-  Natural.generator,
-  Natural.generator
+export const arbitrary = FastCheck.tuple(
+  NetworkId.arbitrary,
+  Credential.arbitrary,
+  FastCheck.integer({ min: 1, max: 1000000 }),
+  FastCheck.integer({ min: 1, max: 1000000 }),
+  FastCheck.integer({ min: 1, max: 1000000 })
 ).map(
   ([networkId, paymentCredential, slot, txIndex, certIndex]) =>
-    new PointerAddress({
+    make({
       networkId,
       paymentCredential,
-      pointer: Pointer.make(slot, txIndex, certIndex)
+      pointer: Pointer.make(
+        Natural.make(slot),
+        Natural.make(txIndex),
+        Natural.make(certIndex)
+      )
     })
 )
 
-export const Codec = _Codec.createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  PointerAddressError
-)
+/**
+ * Effect namespace for PointerAddress operations that can fail
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Convert bytes to PointerAddress using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromBytes = (bytes: Uint8Array) =>
+    Eff.mapError(
+      Schema.decode(FromBytes)(bytes),
+      (cause) => new PointerAddressError({ message: "Failed to decode from bytes", cause })
+    )
+
+  /**
+   * Convert hex string to PointerAddress using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromHex = (hex: string) =>
+    Eff.mapError(
+      Schema.decode(FromHex)(hex),
+      (cause) => new PointerAddressError({ message: "Failed to decode from hex", cause })
+    )
+
+  /**
+   * Convert PointerAddress to bytes using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toBytes = (address: PointerAddress) =>
+    Eff.mapError(
+      Schema.encode(FromBytes)(address),
+      (cause) => new PointerAddressError({ message: "Failed to encode to bytes", cause })
+    )
+
+  /**
+   * Convert PointerAddress to hex string using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toHex = (address: PointerAddress) =>
+    Eff.mapError(
+      Schema.encode(FromHex)(address),
+      (cause) => new PointerAddressError({ message: "Failed to encode to hex", cause })
+    )
+}
+
+/**
+ * Convert bytes to PointerAddress (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromBytes = (bytes: Uint8Array): PointerAddress => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Convert hex string to PointerAddress (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromHex = (hex: string): PointerAddress => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Convert PointerAddress to bytes (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toBytes = (address: PointerAddress): Uint8Array => Eff.runSync(Effect.toBytes(address))
+
+/**
+ * Convert PointerAddress to hex string (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toHex = (address: PointerAddress): string => Eff.runSync(Effect.toHex(address))

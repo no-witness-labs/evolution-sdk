@@ -7,10 +7,9 @@
  * @since 2.0.0
  */
 
-import { Data, FastCheck, pipe, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
-import { createEncoders } from "./Codec.js"
 
 /**
  * Error class for AuxiliaryDataHash related operations.
@@ -30,7 +29,7 @@ export class AuxiliaryDataHashError extends Data.TaggedError("AuxiliaryDataHashE
  * @since 2.0.0
  * @category schemas
  */
-export const AuxiliaryDataHash = pipe(Bytes32.HexSchema, Schema.brand("AuxiliaryDataHash")).annotations({
+export const AuxiliaryDataHash = Bytes32.HexSchema.pipe(Schema.brand("AuxiliaryDataHash")).annotations({
   identifier: "AuxiliaryDataHash"
 })
 
@@ -51,6 +50,14 @@ export const HexSchema = Schema.compose(
 })
 
 /**
+ * Smart constructor for AuxiliaryDataHash that validates and applies branding.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = AuxiliaryDataHash.make
+
+/**
  * Check if two AuxiliaryDataHash instances are equal.
  *
  * @since 2.0.0
@@ -59,26 +66,140 @@ export const HexSchema = Schema.compose(
 export const equals = (a: AuxiliaryDataHash, b: AuxiliaryDataHash): boolean => a === b
 
 /**
- * Generate a random AuxiliaryDataHash.
+ * Check if the given value is a valid AuxiliaryDataHash
  *
  * @since 2.0.0
- * @category generators
+ * @category predicates
  */
-export const generator = FastCheck.uint8Array({
-  minLength: Bytes32.Bytes32_BYTES_LENGTH,
-  maxLength: Bytes32.Bytes32_BYTES_LENGTH
-}).map((bytes) => Codec.Decode.bytes(bytes))
+export const isAuxiliaryDataHash = Schema.is(AuxiliaryDataHash)
 
 /**
- * Codec utilities for AuxiliaryDataHash encoding and decoding operations.
+ * FastCheck arbitrary for generating random AuxiliaryDataHash instances.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category arbitrary
  */
-export const Codec = createEncoders(
-  {
-    bytes: BytesSchema,
-    hex: HexSchema
-  },
-  AuxiliaryDataHashError
-)
+export const arbitrary = FastCheck.hexaString({
+  minLength: Bytes32.HEX_LENGTH,
+  maxLength: Bytes32.HEX_LENGTH
+}).map((hex) => hex as AuxiliaryDataHash)
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse AuxiliaryDataHash from bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array): AuxiliaryDataHash =>
+  Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse AuxiliaryDataHash from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): AuxiliaryDataHash =>
+  Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Encode AuxiliaryDataHash to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (auxDataHash: AuxiliaryDataHash): Uint8Array =>
+  Eff.runSync(Effect.toBytes(auxDataHash))
+
+/**
+ * Encode AuxiliaryDataHash to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (auxDataHash: AuxiliaryDataHash): string =>
+  Eff.runSync(Effect.toHex(auxDataHash))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse AuxiliaryDataHash from bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<AuxiliaryDataHash, AuxiliaryDataHashError> =>
+    Schema.decode(BytesSchema)(bytes).pipe(
+      Eff.mapError(
+        (cause) =>
+          new AuxiliaryDataHashError({
+            message: "Failed to parse AuxiliaryDataHash from bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse AuxiliaryDataHash from hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): Eff.Effect<AuxiliaryDataHash, AuxiliaryDataHashError> =>
+    Schema.decode(HexSchema)(hex).pipe(
+      Eff.mapError(
+        (cause) =>
+          new AuxiliaryDataHashError({
+            message: "Failed to parse AuxiliaryDataHash from hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode AuxiliaryDataHash to bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (auxDataHash: AuxiliaryDataHash): Eff.Effect<Uint8Array, AuxiliaryDataHashError> =>
+    Schema.encode(BytesSchema)(auxDataHash).pipe(
+      Eff.mapError(
+        (cause) =>
+          new AuxiliaryDataHashError({
+            message: "Failed to encode AuxiliaryDataHash to bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode AuxiliaryDataHash to hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (auxDataHash: AuxiliaryDataHash): Eff.Effect<string, AuxiliaryDataHashError> =>
+    Schema.encode(HexSchema)(auxDataHash).pipe(
+      Eff.mapError(
+        (cause) =>
+          new AuxiliaryDataHashError({
+            message: "Failed to encode AuxiliaryDataHash to hex",
+            cause
+          })
+      )
+    )
+}

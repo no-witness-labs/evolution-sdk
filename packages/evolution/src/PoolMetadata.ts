@@ -1,8 +1,7 @@
-import { Data, Effect, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as Url from "./Url.js"
 
 /**
@@ -13,7 +12,7 @@ import * as Url from "./Url.js"
  */
 export class PoolMetadataError extends Data.TaggedError("PoolMetadataError")<{
   message?: string
-  reason?: "InvalidStructure" | "InvalidUrl" | "InvalidBytes"
+  cause?: unknown
 }> {}
 
 /**
@@ -45,14 +44,48 @@ export const FromCDDL = Schema.transformOrFail(
   Schema.typeSchema(PoolMetadata),
   {
     strict: true,
-    encode: (poolMetadata) => Effect.succeed([poolMetadata.url, poolMetadata.hash] as const),
+    encode: (poolMetadata) => Eff.succeed([poolMetadata.url, poolMetadata.hash] as const),
     decode: ([urlText, hash]) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         const url = yield* ParseResult.decode(Url.Url)(urlText)
         return new PoolMetadata({ url, hash })
       })
   }
-)
+).annotations({
+  identifier: "PoolMetadata.FromCDDL",
+  description: "Transforms CBOR structure to PoolMetadata"
+})
+
+/**
+ * Smart constructor for creating PoolMetadata instances
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = (props: {
+  url: Url.Url
+  hash: Uint8Array
+}): PoolMetadata => new PoolMetadata(props)
+
+/**
+ * Check if two PoolMetadata instances are equal.
+ *
+ * @since 2.0.0
+ * @category equality
+ */
+export const equals = (a: PoolMetadata, b: PoolMetadata): boolean =>
+  a.url === b.url && a.hash.every((byte, index) => byte === b.hash[index])
+
+/**
+ * FastCheck arbitrary for generating random PoolMetadata instances
+ *
+ * @since 2.0.0
+ * @category testing
+ */
+export const arbitrary = FastCheck.record({
+  url: Url.arbitrary,
+  hash: FastCheck.uint8Array({ minLength: 32, maxLength: 32 })
+}).map(make)
 
 /**
  * CBOR bytes transformation schema for PoolMetadata.
@@ -61,11 +94,14 @@ export const FromCDDL = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → PoolMetadata
-  )
+  ).annotations({
+    identifier: "PoolMetadata.FromCBORBytes",
+    description: "Transforms CBOR bytes to PoolMetadata"
+  })
 
 /**
  * CBOR hex transformation schema for PoolMetadata.
@@ -74,17 +110,103 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → PoolMetadata
-  )
+    FromCBORBytes(options) // Uint8Array → PoolMetadata
+  ).annotations({
+    identifier: "PoolMetadata.FromCBORHex",
+    description: "Transforms CBOR hex string to PoolMetadata"
+  })
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    PoolMetadataError
-  )
+/**
+ * Effect namespace for PoolMetadata operations that can fail
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Convert CBOR bytes to PoolMetadata using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.decode(FromCBORBytes(options))(bytes),
+      (cause) => new PoolMetadataError({ message: "Failed to decode from CBOR bytes", cause })
+    )
+
+  /**
+   * Convert CBOR hex string to PoolMetadata using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.decode(FromCBORHex(options))(hex),
+      (cause) => new PoolMetadataError({ message: "Failed to decode from CBOR hex", cause })
+    )
+
+  /**
+   * Convert PoolMetadata to CBOR bytes using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toCBORBytes = (metadata: PoolMetadata, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.encode(FromCBORBytes(options))(metadata),
+      (cause) => new PoolMetadataError({ message: "Failed to encode to CBOR bytes", cause })
+    )
+
+  /**
+   * Convert PoolMetadata to CBOR hex string using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toCBORHex = (metadata: PoolMetadata, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.encode(FromCBORHex(options))(metadata),
+      (cause) => new PoolMetadataError({ message: "Failed to encode to CBOR hex", cause })
+    )
+}
+
+/**
+ * Convert CBOR bytes to PoolMetadata (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): PoolMetadata =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Convert CBOR hex string to PoolMetadata (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): PoolMetadata =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+/**
+ * Convert PoolMetadata to CBOR bytes (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toCBORBytes = (metadata: PoolMetadata, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(metadata, options))
+
+/**
+ * Convert PoolMetadata to CBOR hex string (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toCBORHex = (metadata: PoolMetadata, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(metadata, options))

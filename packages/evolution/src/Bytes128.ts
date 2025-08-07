@@ -2,16 +2,16 @@ import { Data, Effect as Eff, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 
-export class Bytes448Error extends Data.TaggedError("Bytes448Error")<{
+export class Bytes128Error extends Data.TaggedError("Bytes128Error")<{
   message?: string
   cause?: unknown
 }> {}
 
-export const BYTES_LENGTH = 448
-export const HEX_LENGTH = 896
+export const BYTES_LENGTH = 128
+export const HEX_LENGTH = 256
 
 /**
- * Schema for Bytes448 bytes with 448-byte length validation.
+ * Schema for Bytes128 bytes with 128-byte length validation.
  *
  * @since 2.0.0
  * @category schemas
@@ -19,16 +19,16 @@ export const HEX_LENGTH = 896
 export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
   Schema.filter((a) => a.length === BYTES_LENGTH)
 ).annotations({
-  identifier: "Bytes448.Bytes",
-  title: "448-byte Array",
-  description: "A Uint8Array containing exactly 448 bytes",
+  identifier: "Bytes128.Bytes",
+  title: "128-byte Array",
+  description: "A Uint8Array containing exactly 128 bytes",
   message: (issue) =>
-    `Bytes448 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
-  examples: [new Uint8Array(448).fill(0)],
+    `Bytes128 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
+  examples: [new Uint8Array(128).fill(0)],
 })
 
 /**
- * Schema for Bytes448 hex strings with 896-character length validation.
+ * Schema for Bytes128 hex strings with 256-character length validation.
  *
  * @since 2.0.0
  * @category schemas
@@ -36,17 +36,17 @@ export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
 export const HexSchema = Bytes.HexSchema.pipe(
   Schema.filter((a) => a.length === HEX_LENGTH)
 ).annotations({
-  identifier: "Bytes448.Hex",
-  title: "448-byte Hex String", 
-  description: "A hexadecimal string representing exactly 448 bytes (896 characters)",
+  identifier: "Bytes128.Hex",
+  title: "128-byte Hex String", 
+  description: "A hexadecimal string representing exactly 128 bytes (256 characters)",
   message: (issue) =>
-    `Bytes448 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
-  examples: ["a".repeat(896)],
+    `Bytes128 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
+  examples: ["a".repeat(256)],
 })
 
 /**
- * Schema transformer for Bytes448 that converts between hex strings and byte arrays.
- * Like Bytes.BytesSchema but with Bytes448-specific length validation.
+ * Schema transformer for Bytes128 that converts between hex strings and byte arrays.
+ * Like Bytes.BytesSchema but with Bytes128-specific length validation.
  *
  * @since 2.0.0
  * @category schemas
@@ -68,9 +68,9 @@ export const FromBytes = Schema.transform(BytesSchema, HexSchema, {
     return array
   }
 }).annotations({
-  identifier: "Bytes448.FromBytes",
-  title: "Bytes448 from Uint8Array",
-  description: "Transforms a 448-byte Uint8Array to hex string representation",
+  identifier: "Bytes128.FromBytes",
+  title: "Bytes128 from Uint8Array",
+  description: "Transforms a 128-byte Uint8Array to hex string representation",
   documentation: "Converts raw bytes to lowercase hexadecimal string without 0x prefix"
 })
 
@@ -80,32 +80,32 @@ export const FromBytes = Schema.transform(BytesSchema, HexSchema, {
  */
 export namespace Effect {
   /**
-   * Parse Bytes448 from raw bytes using Effect error handling.
+   * Parse Bytes128 from raw bytes using Effect error handling.
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<string, Bytes448Error> =>
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<string, Bytes128Error> =>
     Eff.mapError(
       Schema.decode(FromBytes)(bytes),
-      (cause) => new Bytes448Error({
-        message: "Failed to parse Bytes448 from bytes",
+      (cause) => new Bytes128Error({
+        message: "Failed to parse Bytes128 from bytes",
         cause
       })
     )
 
   /**
-   * Convert Bytes448 hex to raw bytes using Effect error handling.
+   * Convert Bytes128 hex to raw bytes using Effect error handling.
    */
-  export const toBytes = (hex: string): Eff.Effect<Uint8Array, Bytes448Error> =>
+  export const toBytes = (hex: string): Eff.Effect<Uint8Array, Bytes128Error> =>
     Eff.mapError(
       Schema.encode(FromBytes)(hex),
-      (cause) => new Bytes448Error({
-        message: "Failed to encode Bytes448 to bytes",
+      (cause) => new Bytes128Error({
+        message: "Failed to encode Bytes128 to bytes",
         cause
       })
     )
 }
 
 /**
- * Parse Bytes448 from raw bytes (unsafe - throws on error).
+ * Parse Bytes128 from raw bytes (unsafe - throws on error).
  *
  * @since 2.0.0  
  * @category parsing
@@ -114,7 +114,7 @@ export const fromBytes = (bytes: Uint8Array): string =>
   Eff.runSync(Effect.fromBytes(bytes))
 
 /**
- * Convert Bytes448 hex to raw bytes (unsafe - throws on error).
+ * Convert Bytes128 hex to raw bytes (unsafe - throws on error).
  *
  * @since 2.0.0
  * @category encoding

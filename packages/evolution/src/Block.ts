@@ -36,7 +36,7 @@ export class BlockClass extends Schema.TaggedClass<BlockClass>()("Block", {
   //   key: TransactionIndex.TransactionIndexSchema,
   //   value: AuxiliaryData.AuxiliaryData,
   // }),
-  invalidTransactions: Schema.Array(TransactionIndex.TransactionIndexSchema)
+  invalidTransactions: Schema.Array(TransactionIndex.TransactionIndex)
 }) {}
 
 export type Block = Schema.Schema.Type<typeof BlockClass>

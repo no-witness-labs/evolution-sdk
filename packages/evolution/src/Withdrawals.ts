@@ -1,4 +1,4 @@
-import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
@@ -19,7 +19,7 @@ import * as RewardAccount from "./RewardAccount.js"
  * @category errors
  */
 export class WithdrawalsError extends Data.TaggedError("WithdrawalsError")<{
-  message: string
+  message?: string
   cause?: unknown
 }> {}
 
@@ -31,22 +31,14 @@ export class WithdrawalsError extends Data.TaggedError("WithdrawalsError")<{
  * ```
  *
  * @since 2.0.0
- * @since 2.0.0
  * @category model
  */
 export class Withdrawals extends Schema.TaggedClass<Withdrawals>()("Withdrawals", {
   withdrawals: Schema.MapFromSelf({
     key: RewardAccount.RewardAccount,
-    value: Coin.CoinSchema
+    value: Coin.Coin
   })
-}) {
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      _tag: "Withdrawals",
-      withdrawals: Array.from(this.withdrawals.entries()).map(([acc, coin]) => [acc, coin.toString()])
-    }
-  }
-}
+}) {}
 
 /**
  * Check if the given value is a valid Withdrawals
@@ -55,6 +47,11 @@ export class Withdrawals extends Schema.TaggedClass<Withdrawals>()("Withdrawals"
  * @category predicates
  */
 export const isWithdrawals = Schema.is(Withdrawals)
+
+export const CDDLSchema = Schema.MapFromSelf({
+  key: Schema.Uint8ArrayFromSelf, // RewardAccount as Uint8Array (29 bytes)
+  value: CBOR.Integer // Coin as bigint
+})
 
 /**
  * CDDL schema for Withdrawals.
@@ -66,38 +63,31 @@ export const isWithdrawals = Schema.is(Withdrawals)
  * @since 2.0.0
  * @category schemas
  */
-export const WithdrawalsCDDLSchema = Schema.transformOrFail(
-  Schema.MapFromSelf({
-    key: Schema.Uint8ArrayFromSelf, // RewardAccount as Uint8Array (29 bytes)
-    value: CBOR.Integer // Coin as bigint
-  }),
-  Schema.typeSchema(Withdrawals),
-  {
-    strict: true,
-    encode: (toA) =>
-      Effect.gen(function* () {
-        const withdrawalsMap = new Map<Uint8Array, bigint>()
-        for (const [rewardAccount, coin] of toA.withdrawals.entries()) {
-          const accountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(rewardAccount)
-          withdrawalsMap.set(accountBytes, BigInt(coin))
-        }
-        return withdrawalsMap
-      }),
-    decode: (fromA) =>
-      Effect.gen(function* () {
-        const decodedWithdrawals = new Map<RewardAccount.RewardAccount, Coin.Coin>()
-        for (const [accountBytes, coinAmount] of fromA.entries()) {
-          const rewardAccount = yield* ParseResult.decode(RewardAccount.FromBytes)(accountBytes)
-          const coin = Coin.make(coinAmount)
-          decodedWithdrawals.set(rewardAccount, coin)
-        }
-        return yield* ParseResult.decode(Withdrawals)({
-          _tag: "Withdrawals",
-          withdrawals: decodedWithdrawals
-        })
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Withdrawals), {
+  strict: true,
+  encode: (toA) =>
+    Eff.gen(function* () {
+      const withdrawalsMap = new Map<Uint8Array, bigint>()
+      for (const [rewardAccount, coin] of toA.withdrawals.entries()) {
+        const accountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(rewardAccount)
+        withdrawalsMap.set(accountBytes, BigInt(coin))
+      }
+      return withdrawalsMap
+    }),
+  decode: (fromA) =>
+    Eff.gen(function* () {
+      const decodedWithdrawals = new Map<RewardAccount.RewardAccount, Coin.Coin>()
+      for (const [accountBytes, coinAmount] of fromA.entries()) {
+        const rewardAccount = yield* ParseResult.decode(RewardAccount.FromBytes)(accountBytes)
+        const coin = Coin.make(coinAmount)
+        decodedWithdrawals.set(rewardAccount, coin)
+      }
+      return yield* ParseResult.decode(Withdrawals)({
+        _tag: "Withdrawals",
+        withdrawals: decodedWithdrawals
       })
-  }
-)
+    })
+})
 
 /**
  * CBOR bytes transformation schema for Withdrawals.
@@ -105,10 +95,10 @@ export const WithdrawalsCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    WithdrawalsCDDLSchema // CBOR → Withdrawals
+    FromCDDL // CBOR → Withdrawals
   )
 
 /**
@@ -117,10 +107,10 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → Withdrawals
+    FromCBORBytes(options) // Uint8Array → Withdrawals
   )
 
 /**
@@ -141,12 +131,12 @@ export const equals = (self: Withdrawals, that: Withdrawals): boolean => {
 }
 
 /**
- * FastCheck generator for Withdrawals instances.
+ * FastCheck arbitrary for Withdrawals instances.
  *
  * @since 2.0.0
- * @category generators
+ * @category testing
  */
-export const generator = FastCheck.array(FastCheck.tuple(RewardAccount.generator, Coin.generator), {
+export const arbitrary = FastCheck.array(FastCheck.tuple(RewardAccount.arbitrary, Coin.arbitrary), {
   minLength: 0,
   maxLength: 10
 }).map((entries) => new Withdrawals({ withdrawals: new Map(entries) }))
@@ -248,29 +238,138 @@ export const size = (withdrawals: Withdrawals): number => withdrawals.withdrawal
 export const entries = (withdrawals: Withdrawals): Array<[RewardAccount.RewardAccount, Coin.Coin]> =>
   Array.from(withdrawals.withdrawals.entries())
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) => ({
-  Encode: {
-    cborBytes: Schema.encodeSync(FromBytes(options)),
-    cborHex: Schema.encodeSync(FromHex(options))
-  },
-  Decode: {
-    cborBytes: Schema.decodeUnknownSync(FromBytes(options)),
-    cborHex: Schema.decodeUnknownSync(FromHex(options))
-  },
-  EncodeEither: {
-    cborBytes: Schema.encodeEither(FromBytes(options)),
-    cborHex: Schema.encodeEither(FromHex(options))
-  },
-  DecodeEither: {
-    cborBytes: Schema.decodeUnknownEither(FromBytes(options)),
-    cborHex: Schema.decodeUnknownEither(FromHex(options))
-  },
-  EncodeEffect: {
-    cborBytes: Schema.encode(FromBytes(options)),
-    cborHex: Schema.encode(FromHex(options))
-  },
-  DecodeEffect: {
-    cborBytes: Schema.decodeUnknown(FromBytes(options)),
-    cborHex: Schema.decodeUnknown(FromHex(options))
-  }
-})
+// ============================================================================
+// Parsing Functions
+// ============================================================================
+
+/**
+ * Parse a Withdrawals from CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Withdrawals =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Parse a Withdrawals from CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Withdrawals =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
+
+/**
+ * Convert a Withdrawals to CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = (withdrawals: Withdrawals, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(withdrawals, options))
+
+/**
+ * Convert a Withdrawals to CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = (withdrawals: Withdrawals, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(withdrawals, options))
+
+// ============================================================================
+// Effect Namespace - Effect-based Error Handling
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse a Withdrawals from CBOR bytes.
+   *
+   * @since 2.0.0
+   * @category effect
+   */
+  export const fromCBORBytes = (
+    bytes: Uint8Array,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<Withdrawals, WithdrawalsError> =>
+    Schema.decode(FromCBORBytes(options))(bytes).pipe(
+      Eff.mapError(
+        (error) =>
+          new WithdrawalsError({
+            message: "Failed to decode Withdrawals from CBOR bytes",
+            cause: error
+          })
+      )
+    )
+
+  /**
+   * Parse a Withdrawals from CBOR hex string.
+   *
+   * @since 2.0.0
+   * @category effect
+   */
+  export const fromCBORHex = (
+    hex: string,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<Withdrawals, WithdrawalsError> =>
+    Schema.decode(FromCBORHex(options))(hex).pipe(
+      Eff.mapError(
+        (error) =>
+          new WithdrawalsError({
+            message: "Failed to decode Withdrawals from CBOR hex",
+            cause: error
+          })
+      )
+    )
+
+  /**
+   * Convert a Withdrawals to CBOR bytes.
+   *
+   * @since 2.0.0
+   * @category effect
+   */
+  export const toCBORBytes = (
+    withdrawals: Withdrawals,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<Uint8Array, WithdrawalsError> =>
+    Schema.encode(FromCBORBytes(options))(withdrawals).pipe(
+      Eff.mapError(
+        (error) =>
+          new WithdrawalsError({
+            message: "Failed to encode Withdrawals to CBOR bytes",
+            cause: error
+          })
+      )
+    )
+
+  /**
+   * Convert a Withdrawals to CBOR hex string.
+   *
+   * @since 2.0.0
+   * @category effect
+   */
+  export const toCBORHex = (
+    withdrawals: Withdrawals,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<string, WithdrawalsError> =>
+    Schema.encode(FromCBORHex(options))(withdrawals).pipe(
+      Eff.mapError(
+        (error) =>
+          new WithdrawalsError({
+            message: "Failed to encode Withdrawals to CBOR hex",
+            cause: error
+          })
+      )
+    )
+}

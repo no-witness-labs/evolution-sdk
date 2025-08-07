@@ -1,8 +1,7 @@
-import { Data, Effect, FastCheck, Option, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Option, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as IPv4 from "./IPv4.js"
 import * as IPv6 from "./IPv6.js"
 import * as Port from "./Port.js"
@@ -29,16 +28,7 @@ export class SingleHostAddr extends Schema.TaggedClass<SingleHostAddr>()("Single
   port: Schema.OptionFromNullOr(Port.PortSchema),
   ipv4: Schema.OptionFromNullOr(IPv4.IPv4),
   ipv6: Schema.OptionFromNullOr(IPv6.IPv6)
-}) {
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      _tag: "SingleHostAddr",
-      port: this.port,
-      ipv4: this.ipv4,
-      ipv6: this.ipv6
-    }
-  }
-}
+}) {}
 
 /**
  * Create a SingleHostAddr with IPv4 address.
@@ -115,32 +105,13 @@ export const equals = (a: SingleHostAddr, b: SingleHostAddr): boolean =>
   Option.getEquivalence(IPv6.equals)(a.ipv6, b.ipv6)
 
 /**
- * Generate a random SingleHostAddr.
- *
- * @since 2.0.0
- * @category generators
- */
-export const generator = FastCheck.record({
-  port: FastCheck.option(Port.generator),
-  ipv4: FastCheck.option(IPv4.generator),
-  ipv6: FastCheck.option(IPv6.generator)
-}).map(
-  ({ ipv4, ipv6, port }) =>
-    new SingleHostAddr({
-      port: port ? Option.some(port) : Option.none(),
-      ipv4: ipv4 ? Option.some(ipv4) : Option.none(),
-      ipv6: ipv6 ? Option.some(ipv6) : Option.none()
-    })
-)
-
-/**
  * CDDL schema for SingleHostAddr.
  * single_host_addr = (0, port / nil, ipv4 / nil, ipv6 / nil)
  *
  * @since 2.0.0
  * @category schemas
  */
-export const SingleHostAddrCDDLSchema = Schema.transformOrFail(
+export const FromCDDL = Schema.transformOrFail(
   Schema.Tuple(
     Schema.Literal(0n), // tag (literal 0)
     Schema.NullOr(CBOR.Integer), // port (number or null)
@@ -151,17 +122,17 @@ export const SingleHostAddrCDDLSchema = Schema.transformOrFail(
   {
     strict: true,
     encode: (toA) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         const port = Option.isSome(toA.port) ? BigInt(toA.port.value) : null
 
         const ipv4 = Option.isSome(toA.ipv4) ? yield* ParseResult.encode(IPv4.FromBytes)(toA.ipv4.value) : null
 
         const ipv6 = Option.isSome(toA.ipv6) ? yield* ParseResult.encode(IPv6.FromBytes)(toA.ipv6.value) : null
 
-        return yield* Effect.succeed([0n, port, ipv4, ipv6] as const)
+        return yield* Eff.succeed([0n, port, ipv4, ipv6] as const)
       }),
     decode: ([, portValue, ipv4Value, ipv6Value]) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         const port =
           portValue === null || portValue === undefined ? Option.none() : Option.some(Port.make(Number(portValue)))
 
@@ -175,9 +146,42 @@ export const SingleHostAddrCDDLSchema = Schema.transformOrFail(
             ? Option.none()
             : Option.some(yield* ParseResult.decode(IPv6.FromBytes)(ipv6Value))
 
-        return yield* Effect.succeed(new SingleHostAddr({ port, ipv4, ipv6 }))
+        return yield* Eff.succeed(new SingleHostAddr({ port, ipv4, ipv6 }))
       })
   }
+).annotations({
+  identifier: "SingleHostAddr.SingleHostAddrCDDLSchema",
+  description: "Transforms CBOR structure to SingleHostAddr"
+})
+
+/**
+ * Smart constructor for creating SingleHostAddr instances
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = (props: {
+  port: Option.Option<Port.Port>
+  ipv4: Option.Option<IPv4.IPv4>
+  ipv6: Option.Option<IPv6.IPv6>
+}): SingleHostAddr => new SingleHostAddr(props)
+
+/**
+ * FastCheck arbitrary for generating random SingleHostAddr instances
+ *
+ * @since 2.0.0
+ * @category testing
+ */
+export const arbitrary = FastCheck.record({
+  port: FastCheck.option(Port.arbitrary),
+  ipv4: FastCheck.option(IPv4.arbitrary),
+  ipv6: FastCheck.option(IPv6.arbitrary)
+}).map(({ ipv4, ipv6, port }) =>
+  make({
+    port: port ? Option.some(port) : Option.none(),
+    ipv4: ipv4 ? Option.some(ipv4) : Option.none(),
+    ipv6: ipv6 ? Option.some(ipv6) : Option.none()
+  })
 )
 
 /**
@@ -186,11 +190,14 @@ export const SingleHostAddrCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    SingleHostAddrCDDLSchema // CBOR → SingleHostAddr
-  )
+    FromCDDL // CBOR → SingleHostAddr
+  ).annotations({
+    identifier: "SingleHostAddr.FromCBORBytes",
+    description: "Transforms CBOR bytes to SingleHostAddr"
+  })
 
 /**
  * CBOR hex transformation schema for SingleHostAddr.
@@ -198,17 +205,103 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → SingleHostAddr
-  )
+    FromCBORBytes(options) // Uint8Array → SingleHostAddr
+  ).annotations({
+    identifier: "SingleHostAddr.FromCBORHex",
+    description: "Transforms CBOR hex string to SingleHostAddr"
+  })
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    SingleHostAddrError
-  )
+/**
+ * Effect namespace for SingleHostAddr operations that can fail
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Convert CBOR bytes to SingleHostAddr using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.decode(FromCBORBytes(options))(bytes),
+      (cause) => new SingleHostAddrError({ message: "Failed to decode from CBOR bytes", cause })
+    )
+
+  /**
+   * Convert CBOR hex string to SingleHostAddr using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.decode(FromCBORHex(options))(hex),
+      (cause) => new SingleHostAddrError({ message: "Failed to decode from CBOR hex", cause })
+    )
+
+  /**
+   * Convert SingleHostAddr to CBOR bytes using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toCBORBytes = (hostAddr: SingleHostAddr, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.encode(FromCBORBytes(options))(hostAddr),
+      (cause) => new SingleHostAddrError({ message: "Failed to encode to CBOR bytes", cause })
+    )
+
+  /**
+   * Convert SingleHostAddr to CBOR hex string using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toCBORHex = (hostAddr: SingleHostAddr, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.encode(FromCBORHex(options))(hostAddr),
+      (cause) => new SingleHostAddrError({ message: "Failed to encode to CBOR hex", cause })
+    )
+}
+
+/**
+ * Convert CBOR bytes to SingleHostAddr (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): SingleHostAddr =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Convert CBOR hex string to SingleHostAddr (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): SingleHostAddr =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+/**
+ * Convert SingleHostAddr to CBOR bytes (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toCBORBytes = (hostAddr: SingleHostAddr, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(hostAddr, options))
+
+/**
+ * Convert SingleHostAddr to CBOR hex string (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toCBORHex = (hostAddr: SingleHostAddr, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(hostAddr, options))

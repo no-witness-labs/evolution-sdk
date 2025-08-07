@@ -1,4 +1,4 @@
-import { Schema } from "effect"
+import { Schema, FastCheck } from "effect"
 
 import * as Natural from "./Natural.js"
 
@@ -49,3 +49,29 @@ export const make = (slot: Natural.Natural, txIndex: Natural.Natural, certIndex:
     { disableValidation: true }
   )
 }
+
+/**
+ * Check if two Pointer instances are equal.
+ *
+ * @since 2.0.0
+ * @category equality
+ */
+export const equals = (a: Pointer, b: Pointer): boolean => {
+  return (
+    a.slot === b.slot &&
+    a.txIndex === b.txIndex &&
+    a.certIndex === b.certIndex
+  )
+}
+
+/**
+ * FastCheck arbitrary for generating random Pointer instances
+ *
+ * @since 2.0.0
+ * @category generators
+ */
+export const arbitrary = FastCheck.tuple(
+  Natural.arbitrary,
+  Natural.arbitrary,
+  Natural.arbitrary
+).map(([slot, txIndex, certIndex]) => make(slot, txIndex, certIndex))

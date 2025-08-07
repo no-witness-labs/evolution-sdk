@@ -1,8 +1,7 @@
-import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Bytes29 from "./Bytes29.js"
-import * as _Codec from "./Codec.js"
 import * as Credential from "./Credential.js"
 import * as KeyHash from "./KeyHash.js"
 import * as NetworkId from "./NetworkId.js"
@@ -22,20 +21,12 @@ export class EnterpriseAddressError extends Data.TaggedError("EnterpriseAddressE
 export class EnterpriseAddress extends Schema.TaggedClass<EnterpriseAddress>("EnterpriseAddress")("EnterpriseAddress", {
   networkId: NetworkId.NetworkId,
   paymentCredential: Credential.Credential
-}) {
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      _tag: "EnterpriseAddress",
-      networkId: this.networkId,
-      paymentCredential: this.paymentCredential
-    }
-  }
-}
+}) {}
 
 export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseAddress, {
   strict: true,
   encode: (_, __, ___, toA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const paymentBit = toA.paymentCredential._tag === "KeyHash" ? 0 : 1
       const header = (0b01 << 6) | (0b1 << 5) | (paymentBit << 4) | (toA.networkId & 0b00001111)
 
@@ -48,7 +39,7 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseA
       return yield* ParseResult.succeed(result)
     }),
   decode: (_, __, ___, fromA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const header = fromA[0]
       // Extract network ID from the lower 4 bits
       const networkId = header & 0b00001111
@@ -64,7 +55,7 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseA
           }
         : {
             _tag: "ScriptHash",
-            hash: yield* ParseResult.decode(ScriptHash.BytesSchema)(fromA.slice(1, 29))
+            hash: yield* ParseResult.decode(ScriptHash.FromBytes)(fromA.slice(1, 29))
           }
       return yield* ParseResult.decode(EnterpriseAddress)({
         _tag: "EnterpriseAddress",
@@ -72,12 +63,29 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseA
         paymentCredential
       })
     })
+}).annotations({
+  identifier: "EnterpriseAddress.FromBytes",
+  description: "Transforms raw bytes to EnterpriseAddress"
 })
 
 export const FromHex = Schema.compose(
   Bytes.FromHex, // string → Uint8Array
   FromBytes // Uint8Array → EnterpriseAddress
-)
+).annotations({
+  identifier: "EnterpriseAddress.FromHex",
+  description: "Transforms raw hex string to EnterpriseAddress"
+})
+
+/**
+ * Smart constructor for creating EnterpriseAddress instances
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = (props: {
+  networkId: NetworkId.NetworkId
+  paymentCredential: Credential.Credential
+}): EnterpriseAddress => new EnterpriseAddress(props)
 
 /**
  * Check if two EnterpriseAddress instances are equal.
@@ -86,31 +94,103 @@ export const FromHex = Schema.compose(
  * @category equality
  */
 export const equals = (a: EnterpriseAddress, b: EnterpriseAddress): boolean => {
-  return (
-    a.networkId === b.networkId &&
-    a.paymentCredential._tag === b.paymentCredential._tag &&
-    a.paymentCredential.hash === b.paymentCredential.hash
-  )
+  return a.networkId === b.networkId && Credential.equals(a.paymentCredential, b.paymentCredential)
 }
 
 /**
- * Generate a random EnterpriseAddress.
+ * FastCheck arbitrary for generating random EnterpriseAddress instances
  *
  * @since 2.0.0
- * @category generators
+ * @category testing
  */
-export const generator = FastCheck.tuple(NetworkId.generator, Credential.generator).map(
-  ([networkId, paymentCredential]) =>
-    new EnterpriseAddress({
-      networkId,
-      paymentCredential
-    })
+export const arbitrary = FastCheck.tuple(NetworkId.arbitrary, Credential.arbitrary).map(
+  ([networkId, paymentCredential]) => make({ networkId, paymentCredential })
 )
 
-export const Codec = _Codec.createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  EnterpriseAddressError
-)
+/**
+ * Effect namespace for EnterpriseAddress operations that can fail
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Convert bytes to EnterpriseAddress using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromBytes = (bytes: Uint8Array) =>
+    Eff.mapError(
+      Schema.decode(FromBytes)(bytes),
+      (cause) => new EnterpriseAddressError({ message: "Failed to decode from bytes", cause })
+    )
+
+  /**
+   * Convert hex string to EnterpriseAddress using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromHex = (hex: string) =>
+    Eff.mapError(
+      Schema.decode(FromHex)(hex),
+      (cause) => new EnterpriseAddressError({ message: "Failed to decode from hex", cause })
+    )
+
+  /**
+   * Convert EnterpriseAddress to bytes using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toBytes = (address: EnterpriseAddress) =>
+    Eff.mapError(
+      Schema.encode(FromBytes)(address),
+      (cause) => new EnterpriseAddressError({ message: "Failed to encode to bytes", cause })
+    )
+
+  /**
+   * Convert EnterpriseAddress to hex string using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toHex = (address: EnterpriseAddress) =>
+    Eff.mapError(
+      Schema.encode(FromHex)(address),
+      (cause) => new EnterpriseAddressError({ message: "Failed to encode to hex", cause })
+    )
+}
+
+/**
+ * Convert bytes to EnterpriseAddress (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromBytes = (bytes: Uint8Array): EnterpriseAddress => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Convert hex string to EnterpriseAddress (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromHex = (hex: string): EnterpriseAddress => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Convert EnterpriseAddress to bytes (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toBytes = (address: EnterpriseAddress): Uint8Array => Eff.runSync(Effect.toBytes(address))
+
+/**
+ * Convert EnterpriseAddress to hex string (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toHex = (address: EnterpriseAddress): string => Eff.runSync(Effect.toHex(address))

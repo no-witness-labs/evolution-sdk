@@ -1,7 +1,6 @@
-import { Data, FastCheck, pipe, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, pipe, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
-import { createEncoders } from "./Codec.js"
 
 /**
  * Error class for VrfKeyHash related operations.
@@ -50,26 +49,111 @@ export const FromHex = Schema.compose(
 export const equals = (a: VrfKeyHash, b: VrfKeyHash): boolean => a === b
 
 /**
- * Generate a random VrfKeyHash.
+ * FastCheck arbitrary for generating random VrfKeyHash instances.
  *
  * @since 2.0.0
- * @category generators
+ * @category arbitrary
  */
-export const generator = FastCheck.uint8Array({
-  minLength: Bytes32.Bytes32_BYTES_LENGTH,
-  maxLength: Bytes32.Bytes32_BYTES_LENGTH
-}).map((bytes) => Codec.Decode.bytes(bytes))
+export const arbitrary = FastCheck.uint8Array({
+  minLength: Bytes32.BYTES_LENGTH,
+  maxLength: Bytes32.BYTES_LENGTH
+}).map((bytes) => Eff.runSync(Effect.fromBytes(bytes)))
+
+// ============================================================================
+// Root Functions
+// ============================================================================
 
 /**
- * Codec utilities for VrfKeyHash encoding and decoding operations.
+ * Parse VrfKeyHash from raw bytes.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category parsing
  */
-export const Codec = createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  VrfKeyHashError
-)
+export const fromBytes = (bytes: Uint8Array): VrfKeyHash => 
+  Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse VrfKeyHash from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): VrfKeyHash => 
+  Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Encode VrfKeyHash to raw bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (vrfKeyHash: VrfKeyHash): Uint8Array => 
+  Eff.runSync(Effect.toBytes(vrfKeyHash))
+
+/**
+ * Encode VrfKeyHash to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (vrfKeyHash: VrfKeyHash): string => vrfKeyHash // Already a hex string
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse VrfKeyHash from raw bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<VrfKeyHash, VrfKeyHashError> =>
+    Eff.mapError(
+      Schema.decode(FromBytes)(bytes),
+      (cause) =>
+        new VrfKeyHashError({
+          message: "Failed to parse VrfKeyHash from bytes",
+          cause
+        })
+    )
+
+  /**
+   * Parse VrfKeyHash from hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): Eff.Effect<VrfKeyHash, VrfKeyHashError> =>
+    Eff.mapError(
+      Schema.decode(VrfKeyHash)(hex),
+      (cause) =>
+        new VrfKeyHashError({
+          message: "Failed to parse VrfKeyHash from hex",
+          cause
+        })
+    )
+
+  /**
+   * Encode VrfKeyHash to raw bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (vrfKeyHash: VrfKeyHash): Eff.Effect<Uint8Array, VrfKeyHashError> =>
+    Eff.mapError(
+      Schema.encode(FromBytes)(vrfKeyHash),
+      (cause) =>
+        new VrfKeyHashError({
+          message: "Failed to encode VrfKeyHash to bytes",
+          cause
+        })
+    )
+}

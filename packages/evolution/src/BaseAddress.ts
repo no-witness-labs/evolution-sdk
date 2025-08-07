@@ -1,8 +1,7 @@
-import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Bytes57 from "./Bytes57.js"
-import * as _Codec from "./Codec.js"
 import * as Credential from "./Credential.js"
 import * as KeyHash from "./KeyHash.js"
 import * as NetworkId from "./NetworkId.js"
@@ -23,21 +22,12 @@ export class BaseAddress extends Schema.TaggedClass<BaseAddress>("BaseAddress")(
   networkId: NetworkId.NetworkId,
   paymentCredential: Credential.Credential,
   stakeCredential: Credential.Credential
-}) {
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      _tag: "BaseAddress",
-      networkId: this.networkId,
-      paymentCredential: this.paymentCredential,
-      stakeCredential: this.stakeCredential
-    }
-  }
-}
+}) {}
 
 export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, BaseAddress, {
   strict: true,
   encode: (_, __, ___, toA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const paymentBit = toA.paymentCredential._tag === "KeyHash" ? 0 : 1
       const stakeBit = toA.stakeCredential._tag === "KeyHash" ? 0 : 1
       const header = (0b00 << 6) | (stakeBit << 5) | (paymentBit << 4) | (toA.networkId & 0b00001111)
@@ -53,7 +43,7 @@ export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, BaseAddress
       return yield* ParseResult.succeed(result)
     }),
   decode: (fromI, options, ast, fromA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const header = fromA[0]
       // Extract network ID from the lower 4 bits
       const networkId = header & 0b00001111
@@ -68,7 +58,7 @@ export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, BaseAddress
           }
         : {
             _tag: "ScriptHash",
-            hash: yield* ParseResult.decode(ScriptHash.BytesSchema)(fromA.slice(1, 29))
+            hash: yield* ParseResult.decode(ScriptHash.FromBytes)(fromA.slice(1, 29))
           }
       const isStakeKey = (addressType & 0b0010) === 0
       const stakeCredential: Credential.Credential = isStakeKey
@@ -78,7 +68,7 @@ export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, BaseAddress
           }
         : {
             _tag: "ScriptHash",
-            hash: yield* ParseResult.decode(ScriptHash.BytesSchema)(fromA.slice(29, 57))
+            hash: yield* ParseResult.decode(ScriptHash.FromBytes)(fromA.slice(29, 57))
           }
       return yield* ParseResult.decode(BaseAddress)({
         _tag: "BaseAddress",
@@ -110,12 +100,20 @@ export const equals = (a: BaseAddress, b: BaseAddress): boolean => {
 }
 
 /**
- * Generate a random BaseAddress.
+ * Smart constructor for BaseAddress.
  *
  * @since 2.0.0
- * @category generators
+ * @category constructors
  */
-export const generator = FastCheck.tuple(NetworkId.generator, Credential.generator, Credential.generator).map(
+export const make = Schema.decodeSync(BaseAddress)
+
+/**
+ * FastCheck arbitrary for BaseAddress instances.
+ *
+ * @since 2.0.0
+ * @category arbitrary
+ */
+export const arbitrary = FastCheck.tuple(NetworkId.arbitrary, Credential.arbitrary, Credential.arbitrary).map(
   ([networkId, paymentCredential, stakeCredential]) =>
     new BaseAddress({
       networkId,
@@ -124,10 +122,103 @@ export const generator = FastCheck.tuple(NetworkId.generator, Credential.generat
     })
 )
 
-export const Codec = _Codec.createEncoders(
-  {
-    hex: FromHex,
-    bytes: FromBytes
-  },
-  BaseAddressError
-)
+// ============================================================================
+// Parsing Functions
+// ============================================================================
+
+/**
+ * Parse a BaseAddress from bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array): BaseAddress => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse a BaseAddress from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): BaseAddress => Eff.runSync(Effect.fromHex(hex))
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
+
+/**
+ * Convert a BaseAddress to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (address: BaseAddress): Uint8Array => Eff.runSync(Effect.toBytes(address))
+
+/**
+ * Convert a BaseAddress to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (address: BaseAddress): string => Eff.runSync(Effect.toHex(address))
+
+// ============================================================================
+// Effect Namespace - Effect-based Error Handling
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ * Returns Effect<Success, Error> for composable error handling.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse a BaseAddress from bytes.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array) =>
+    Eff.mapError(
+      Schema.decode(FromBytes)(bytes),
+      (error) => new BaseAddressError({ message: "Failed to decode BaseAddress from bytes", cause: error })
+    )
+
+  /**
+   * Parse a BaseAddress from hex string.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string) =>
+    Eff.mapError(
+      Schema.decode(FromHex)(hex),
+      (error) => new BaseAddressError({ message: "Failed to decode BaseAddress from hex", cause: error })
+    )
+
+  /**
+   * Convert a BaseAddress to bytes.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (address: BaseAddress) =>
+    Eff.mapError(
+      Schema.encode(FromBytes)(address),
+      (error) => new BaseAddressError({ message: "Failed to encode BaseAddress to bytes", cause: error })
+    )
+
+  /**
+   * Convert a BaseAddress to hex string.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (address: BaseAddress) =>
+    Eff.mapError(
+      Schema.encode(FromHex)(address),
+      (error) => new BaseAddressError({ message: "Failed to encode BaseAddress to hex", cause: error })
+    )
+}

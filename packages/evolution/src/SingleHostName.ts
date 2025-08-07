@@ -102,8 +102,8 @@ export const equals = (a: SingleHostName, b: SingleHostName): boolean =>
  * @category generators
  */
 export const generator = FastCheck.record({
-  port: FastCheck.option(Port.generator),
-  dnsName: DnsName.generator
+  port: FastCheck.option(Port.arbitrary),
+  dnsName: DnsName.arbitrary
 }).map(
   ({ dnsName, port }) =>
     new SingleHostName({
@@ -119,7 +119,7 @@ export const generator = FastCheck.record({
  * @since 2.0.0
  * @category schemas
  */
-export const SingleHostNameCDDLSchema = Schema.transformOrFail(
+export const FromCDDL = Schema.transformOrFail(
   Schema.Tuple(
     Schema.Literal(1n), // tag (literal 1)
     Schema.NullOr(CBOR.Integer), // port (number or null)
@@ -155,10 +155,10 @@ export const SingleHostNameCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    SingleHostNameCDDLSchema // CBOR → SingleHostName
+    FromCDDL // CBOR → SingleHostName
   )
 
 /**
@@ -167,13 +167,13 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
     FromBytes(options) // Uint8Array → SingleHostName
   )
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) => ({
+export const Codec = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) => ({
   Encode: {
     cborBytes: Schema.encodeSync(FromBytes(options)),
     cborHex: Schema.encodeSync(FromHex(options))

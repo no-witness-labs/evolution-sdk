@@ -1,6 +1,5 @@
-import { Data, Schema } from "effect"
+import { Data, Effect as Eff, Schema } from "effect"
 
-import * as _Codec from "./Codec.js"
 import * as Text128 from "./Text128.js"
 
 /**
@@ -56,23 +55,137 @@ export const make = DnsName.make
 export const equals = (a: DnsName, b: DnsName): boolean => a === b
 
 /**
- * Generate a random DnsName.
+ * Check if the given value is a valid DnsName
  *
  * @since 2.0.0
- * @category generators
+ * @category predicates
  */
-export const generator = Text128.generator.map((text) => make(text))
+export const isDnsName = Schema.is(DnsName)
 
 /**
- * Codec utilities for DnsName encoding and decoding operations.
+ * FastCheck arbitrary for generating random DnsName instances.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category arbitrary
  */
-export const Codec = _Codec.createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  DnsNameError
-)
+export const arbitrary = Text128.arbitrary.map((text) => make(text))
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse DnsName from bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array): DnsName =>
+  Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse DnsName from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): DnsName =>
+  Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Encode DnsName to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (dnsName: DnsName): Uint8Array =>
+  Eff.runSync(Effect.toBytes(dnsName))
+
+/**
+ * Encode DnsName to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (dnsName: DnsName): string =>
+  Eff.runSync(Effect.toHex(dnsName))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse DnsName from bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<DnsName, DnsNameError> =>
+    Schema.decode(FromBytes)(bytes).pipe(
+      Eff.mapError(
+        (cause) =>
+          new DnsNameError({
+            message: "Failed to parse DnsName from bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse DnsName from hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): Eff.Effect<DnsName, DnsNameError> =>
+    Schema.decode(FromHex)(hex).pipe(
+      Eff.mapError(
+        (cause) =>
+          new DnsNameError({
+            message: "Failed to parse DnsName from hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode DnsName to bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (dnsName: DnsName): Eff.Effect<Uint8Array, DnsNameError> =>
+    Schema.encode(FromBytes)(dnsName).pipe(
+      Eff.mapError(
+        (cause) =>
+          new DnsNameError({
+            message: "Failed to encode DnsName to bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode DnsName to hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (dnsName: DnsName): Eff.Effect<string, DnsNameError> =>
+    Schema.encode(FromHex)(dnsName).pipe(
+      Eff.mapError(
+        (cause) =>
+          new DnsNameError({
+            message: "Failed to encode DnsName to hex",
+            cause
+          })
+      )
+    )
+}

@@ -1,8 +1,7 @@
-import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as DnsName from "./DnsName.js"
 
 /**
@@ -43,17 +42,20 @@ export const FromCDDL = Schema.transformOrFail(
   {
     strict: true,
     encode: (toA) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         const dnsName = yield* ParseResult.encode(DnsName.DnsName)(toA.dnsName)
-        return yield* Effect.succeed([2n, dnsName] as const)
+        return yield* Eff.succeed([2n, dnsName] as const)
       }),
     decode: ([, dnsNameValue]) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         const dnsName = yield* ParseResult.decode(DnsName.DnsName)(dnsNameValue)
-        return yield* Effect.succeed(new MultiHostName({ dnsName }))
+        return yield* Eff.succeed(new MultiHostName({ dnsName }))
       })
   }
-)
+).annotations({
+  identifier: "MultiHostName.FromCDDL",
+  description: "Transforms CBOR structure to MultiHostName"
+})
 
 /**
  * CBOR bytes transformation schema for MultiHostName.
@@ -61,11 +63,14 @@ export const FromCDDL = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → MultiHostName
-  )
+  ).annotations({
+    identifier: "MultiHostName.FromCBORBytes",
+    description: "Transforms CBOR bytes to MultiHostName"
+  })
 
 /**
  * CBOR hex transformation schema for MultiHostName.
@@ -73,11 +78,14 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → MultiHostName
-  )
+    FromCBORBytes(options) // Uint8Array → MultiHostName
+  ).annotations({
+    identifier: "MultiHostName.FromCBORHex",
+    description: "Transforms CBOR hex string to MultiHostName"
+  })
 
 /**
  * Create a MultiHostName instance.
@@ -96,20 +104,103 @@ export const make = (dnsName: DnsName.DnsName): MultiHostName => new MultiHostNa
 export const equals = (self: MultiHostName, that: MultiHostName): boolean => DnsName.equals(self.dnsName, that.dnsName)
 
 /**
- * FastCheck generator for MultiHostName instances.
+ * FastCheck arbitrary for MultiHostName instances.
  *
  * @since 2.0.0
- * @category generators
+ * @category testing
  */
-export const generator = FastCheck.record({
-  dnsName: DnsName.generator
+export const arbitrary = FastCheck.record({
+  dnsName: DnsName.arbitrary
 }).map((props) => new MultiHostName(props))
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    MultiHostNameError
-  )
+/**
+ * Effect namespace for MultiHostName operations that can fail
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Convert CBOR bytes to MultiHostName using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.decode(FromCBORBytes(options))(bytes),
+      (cause) => new MultiHostNameError({ message: "Failed to decode from CBOR bytes", cause })
+    )
+
+  /**
+   * Convert CBOR hex string to MultiHostName using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.decode(FromCBORHex(options))(hex),
+      (cause) => new MultiHostNameError({ message: "Failed to decode from CBOR hex", cause })
+    )
+
+  /**
+   * Convert MultiHostName to CBOR bytes using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toCBORBytes = (hostName: MultiHostName, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.encode(FromCBORBytes(options))(hostName),
+      (cause) => new MultiHostNameError({ message: "Failed to encode to CBOR bytes", cause })
+    )
+
+  /**
+   * Convert MultiHostName to CBOR hex string using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toCBORHex = (hostName: MultiHostName, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.encode(FromCBORHex(options))(hostName),
+      (cause) => new MultiHostNameError({ message: "Failed to encode to CBOR hex", cause })
+    )
+}
+
+/**
+ * Convert CBOR bytes to MultiHostName (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): MultiHostName =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Convert CBOR hex string to MultiHostName (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): MultiHostName =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+/**
+ * Convert MultiHostName to CBOR bytes (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toCBORBytes = (hostName: MultiHostName, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(hostName, options))
+
+/**
+ * Convert MultiHostName to CBOR hex string (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toCBORHex = (hostName: MultiHostName, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(hostName, options))

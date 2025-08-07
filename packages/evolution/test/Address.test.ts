@@ -82,7 +82,7 @@ describe("Address", () => {
       expect(() => {
         Address.Codec.Decode.bech32(INVALID_ADDRESS)
       }).toThrow()
-      
+
       expect(() => {
         Address.Codec.Decode.bech32("")
       }).toThrow()
@@ -103,11 +103,11 @@ describe("Address", () => {
       expect(() => {
         Address.Codec.Decode.hex("not-a-hex-address")
       }).toThrow()
-      
+
       expect(() => {
         Address.Codec.Decode.hex("123xyz")
       }).toThrow()
-      
+
       expect(() => {
         Address.Codec.Decode.hex("")
       }).toThrow()
@@ -141,16 +141,17 @@ describe("Address", () => {
     })
 
     it("should convert between bech32 and hex formats", () => {
-      for (const address of ALL_ADDRESSES.slice(0, 2)) { // Test a couple of addresses
+      for (const address of ALL_ADDRESSES.slice(0, 2)) {
+        // Test a couple of addresses
         try {
           // bech32 -> bytes -> hex
           const addr = Address.Codec.Decode.bech32(address)
           const hex = Address.Codec.Encode.hex(addr)
-          
+
           // hex -> bytes -> bech32
           const addrFromHex = Address.Codec.Decode.hex(hex)
           const backToBech32 = Address.Codec.Encode.bech32(addrFromHex)
-          
+
           // Should match the original
           expect(backToBech32.toLowerCase()).toBe(address.toLowerCase())
         } catch (error) {
@@ -189,7 +190,7 @@ describe("Address", () => {
       // Bech32 addresses are case-insensitive
       const lowerCaseAddr = MAINNET_ADDRESSES[0].toLowerCase()
       const upperCaseAddr = MAINNET_ADDRESSES[0].toUpperCase()
-      
+
       try {
         const addr1 = Address.Codec.Decode.bech32(lowerCaseAddr)
         const addr2 = Address.Codec.Decode.bech32(upperCaseAddr)
@@ -206,15 +207,15 @@ describe("Address", () => {
         // Base address (mainnet)
         const baseAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[0])
         expect(baseAddr._tag).toBe("BaseAddress")
-        
+
         // Enterprise address (mainnet)
         const enterpriseAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[6])
         expect(enterpriseAddr._tag).toBe("EnterpriseAddress")
-        
+
         // Reward address (mainnet)
         const rewardAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[8])
         expect(rewardAddr._tag).toBe("RewardAccount")
-        
+
         // Pointer address (testnet)
         const pointerAddr = Address.Codec.Decode.bech32(TESTNET_ADDRESSES[4])
         expect(pointerAddr._tag).toBe("PointerAddress")
@@ -222,7 +223,7 @@ describe("Address", () => {
         expect.fail(`Failed to decode address: ${error}`)
       }
     })
-    
+
     it("should correctly identify network IDs", () => {
       try {
         // Mainnet address
@@ -232,7 +233,7 @@ describe("Address", () => {
         } else {
           expect.fail("Failed to decode as BaseAddress")
         }
-        
+
         // Testnet address
         const testnetAddr = Address.Codec.Decode.bech32(TESTNET_ADDRESSES[0])
         if (testnetAddr._tag === "BaseAddress") {
@@ -247,7 +248,7 @@ describe("Address", () => {
 
     it("should correctly extract payment credential from base address", () => {
       try {
-        const baseAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[0]) 
+        const baseAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[0])
         if (baseAddr._tag === "BaseAddress") {
           expect(baseAddr.paymentCredential).toBeDefined()
         } else {
@@ -278,13 +279,13 @@ describe("Address", () => {
         Address.Codec.Decode.bech32(INVALID_ADDRESS)
       }).toThrow()
     })
-    
+
     it("should throw errors for invalid hex addresses", () => {
       expect(() => {
         Address.Codec.Decode.hex("invalid-hex")
       }).toThrow()
     })
-    
+
     it("should throw errors for empty addresses", () => {
       expect(() => {
         Address.Codec.Decode.bech32("")
@@ -296,46 +297,46 @@ describe("Address", () => {
     it("should generate valid addresses", () => {
       // Get a sample address from the generator
       const generatedAddr = FastCheck.sample(Address.generator, 1)[0]
-      
+
       // Check that we can encode it without errors
       const bytes = Address.Codec.Encode.bytes(generatedAddr)
       expect(bytes).toBeDefined()
-      
+
       // Verify the address can be encoded to bech32
       const bech32 = Address.Codec.Encode.bech32(generatedAddr)
       expect(bech32).toBeDefined()
       expect(bech32.length).toBeGreaterThan(0)
-      
+
       // Verify the address can be encoded to hex
       const hex = Address.Codec.Encode.hex(generatedAddr)
       expect(hex).toBeDefined()
       expect(hex.length).toBeGreaterThan(0)
     })
   })
-  
+
   describe("Address additional features", () => {
     it("should handle direct encoding between formats", () => {
       // First decode a bech32 address to get an Address object
       const addr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[0])
-      
+
       // Encode to bytes
       const bytes = Address.Codec.Encode.bytes(addr)
       expect(bytes).toBeDefined()
-      
+
       // Encode to hex
       const hex = Address.Codec.Encode.hex(addr)
       expect(hex).toBeDefined()
-      
+
       // Encode back to bech32
       const bech32 = Address.Codec.Encode.bech32(addr)
       expect(bech32).toBeDefined()
-      
+
       // The full conversion cycle should preserve the address
       const addrFromHex = Address.Codec.Decode.hex(hex)
       const bech32FromHex = Address.Codec.Encode.bech32(addrFromHex)
       expect(bech32FromHex.toLowerCase()).toBe(MAINNET_ADDRESSES[0].toLowerCase())
     })
-    
+
     it("should correctly identify address properties", () => {
       // Process a Base Address (type 0)
       const baseAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[0])
@@ -346,7 +347,7 @@ describe("Address", () => {
       } else {
         expect.fail(`Expected BaseAddress but got ${baseAddr._tag}`)
       }
-      
+
       // Process an Enterprise Address (type 6)
       const enterpriseAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[6])
       if (enterpriseAddr._tag === "EnterpriseAddress") {
@@ -355,7 +356,7 @@ describe("Address", () => {
       } else {
         expect.fail(`Expected EnterpriseAddress but got ${enterpriseAddr._tag}`)
       }
-      
+
       // Process a Pointer Address (type 4)
       const pointerAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[4])
       if (pointerAddr._tag === "PointerAddress") {
@@ -365,7 +366,7 @@ describe("Address", () => {
       } else {
         expect.fail(`Expected PointerAddress but got ${pointerAddr._tag}`)
       }
-      
+
       // Process a Reward Account (type 14)
       const rewardAddr = Address.Codec.Decode.bech32(MAINNET_ADDRESSES[8])
       if (rewardAddr._tag === "RewardAccount") {
@@ -375,7 +376,7 @@ describe("Address", () => {
         expect.fail(`Expected RewardAccount but got ${rewardAddr._tag}`)
       }
     })
-    
+
     it("should validate address network consistency", () => {
       // Test mainnet addresses
       for (const address of MAINNET_ADDRESSES) {
@@ -384,7 +385,7 @@ describe("Address", () => {
           expect(addr.networkId).toBe(1)
         }
       }
-      
+
       // Test testnet addresses
       for (const address of TESTNET_ADDRESSES) {
         const addr = Address.Codec.Decode.bech32(address)
@@ -395,4 +396,3 @@ describe("Address", () => {
     })
   })
 })
-

@@ -1,6 +1,8 @@
 import { bech32 } from "@scure/base"
 import { Data, Effect, ParseResult, Schema } from "effect"
 
+import * as Bytes from "./Bytes.js"
+
 /**
  * @since 2.0.0
  * @category model
@@ -21,8 +23,13 @@ export const FromBytes = (prefix: string = "addr") =>
         try: () => bech32.decodeToBytes(toA).bytes,
         catch: () => new ParseResult.Type(ast, toA, ` ${toA} is not a valid Bech32 address`)
       }),
-    decode: (fromA, options, ast, fromI) => {
+    decode: (_, __, ___, fromI) => {
       const words = bech32.toWords(fromI)
       return ParseResult.succeed(bech32.encode(prefix, words, false))
     }
+  })
+
+export const FromHex = (prefix: string = "addr") =>
+  Schema.compose(Bytes.FromHex, FromBytes(prefix)).annotations({
+    identifier: "Bech32.FromHex"
   })

@@ -1,10 +1,9 @@
-import { Data, Effect, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Bytes32 from "./Bytes32.js"
 import * as Bytes80 from "./Bytes80.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 
 /**
  * Error class for VrfCert related operations.
@@ -24,7 +23,10 @@ export class VrfCertError extends Data.TaggedError("VrfCertError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const VRFOutput = Bytes32.HexSchema.pipe(Schema.brand("VrfOutput"))
+export const VRFOutput = Bytes32.HexSchema.pipe(Schema.brand("VrfOutput")).annotations({
+  identifier: "VrfOutput",
+  description: "VRF output as a 32-byte hex string used in VRF certificates"
+})
 
 /**
  * Type alias for VRF output.
@@ -69,7 +71,10 @@ export const VRFOutputHexSchema = Schema.compose(
  * @since 2.0.0
  * @category schemas
  */
-export const VRFProof = Bytes80.HexSchema.pipe(Schema.brand("VrfProof"))
+export const VRFProof = Bytes80.HexSchema.pipe(Schema.brand("VrfProof")).annotations({
+  identifier: "VrfProof",
+  description: "VRF proof as an 80-byte hex string used in VRF certificates"
+})
 
 /**
  * Type alias for VRF proof.
@@ -145,18 +150,18 @@ export const VrfCertCDDLSchema = Schema.transformOrFail(
   {
     strict: true,
     encode: (vrfCert) =>
-      Effect.gen(function* () {
-        const outputBytes = yield* ParseResult.encode(Bytes.FromBytes)(vrfCert.output)
-        const proofBytes = yield* ParseResult.encode(Bytes.FromBytes)(vrfCert.proof)
+      Eff.gen(function* () {
+        const outputBytes = yield* ParseResult.encode(VRFOutputFromBytes)(vrfCert.output)
+        const proofBytes = yield* ParseResult.encode(VRFProofFromBytes)(vrfCert.proof)
         return [outputBytes, proofBytes] as const
       }),
     decode: ([outputBytes, proofBytes]) =>
-      Effect.gen(function* () {
-        const output = yield* ParseResult.decode(Bytes.FromBytes)(outputBytes)
-        const proof = yield* ParseResult.decode(Bytes.FromBytes)(proofBytes)
+      Eff.gen(function* () {
+        const output = yield* ParseResult.decode(VRFOutputFromBytes)(outputBytes)
+        const proof = yield* ParseResult.decode(VRFProofFromBytes)(proofBytes)
         return new VrfCert({
-          output: VRFOutput.make(output),
-          proof: VRFProof.make(proof)
+          output,
+          proof
         })
       })
   }
@@ -168,11 +173,15 @@ export const VrfCertCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     VrfCertCDDLSchema // CBOR → VrfCert
-  )
+  ).annotations({
+    identifier: "VrfCert.FromCBORBytes",
+    title: "VrfCert from CBOR Bytes",
+    description: "Transforms CBOR bytes (Uint8Array) to VrfCert"
+  })
 
 /**
  * CBOR hex transformation schema for VrfCert.
@@ -180,11 +189,15 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → VrfCert
-  )
+    FromCBORBytes(options) // Uint8Array → VrfCert
+  ).annotations({
+    identifier: "VrfCert.FromCBORHex",
+    title: "VrfCert from CBOR Hex",
+    description: "Transforms CBOR hex string to VrfCert"
+  })
 
 /**
  * Check if two VrfCert instances are equal.
@@ -203,11 +216,111 @@ export const equals = (a: VrfCert, b: VrfCert): boolean =>
  */
 export const make = (output: VRFOutput, proof: VRFProof): VrfCert => new VrfCert({ output, proof })
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    VrfCertError
+/**
+ * @since 2.0.0
+ * @category FastCheck
+ */
+export const arbitrary = (): FastCheck.Arbitrary<VrfCert> =>
+  FastCheck.record({
+    output: FastCheck.hexaString({ minLength: 64, maxLength: 64 }),
+    proof: FastCheck.hexaString({ minLength: 160, maxLength: 160 })
+  }).chain(({ output, proof }) =>
+    FastCheck.constant(
+      new VrfCert({
+        output: Eff.runSync(Schema.decode(VRFOutput)(output)),
+        proof: Eff.runSync(Schema.decode(VRFProof)(proof))
+      })
+    )
   )
+
+/**
+ * Effect namespace containing schema decode and encode operations.
+ *
+ * @since 2.0.0
+ * @category Effect
+ */
+export namespace Effect {
+  /**
+   * Parse a VrfCert from CBOR bytes using Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = (input: Uint8Array, options?: CBOR.CodecOptions): Eff.Effect<VrfCert, VrfCertError> =>
+    Eff.mapError(
+      Schema.decode(FromCBORBytes(options))(input),
+      (cause) => new VrfCertError({ message: "Failed to decode VrfCert from CBOR bytes", cause })
+    )
+
+  /**
+   * Parse a VrfCert from CBOR hex using Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = (input: string, options?: CBOR.CodecOptions): Eff.Effect<VrfCert, VrfCertError> =>
+    Eff.mapError(
+      Schema.decode(FromCBORHex(options))(input),
+      (cause) => new VrfCertError({ message: "Failed to decode VrfCert from CBOR hex", cause })
+    )
+
+  /**
+   * Convert a VrfCert to CBOR bytes using Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = (value: VrfCert, options?: CBOR.CodecOptions): Eff.Effect<Uint8Array, VrfCertError> =>
+    Eff.mapError(
+      Schema.encode(FromCBORBytes(options))(value),
+      (cause) => new VrfCertError({ message: "Failed to encode VrfCert to CBOR bytes", cause })
+    )
+
+  /**
+   * Convert a VrfCert to CBOR hex using Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = (value: VrfCert, options?: CBOR.CodecOptions): Eff.Effect<string, VrfCertError> =>
+    Eff.mapError(
+      Schema.encode(FromCBORHex(options))(value),
+      (cause) => new VrfCertError({ message: "Failed to encode VrfCert to CBOR hex", cause })
+    )
+}
+
+/**
+ * Convert VrfCert to CBOR bytes (unsafe).
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = (value: VrfCert, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(value, options))
+
+/**
+ * Convert VrfCert to CBOR hex (unsafe).
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = (value: VrfCert, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(value, options))
+
+/**
+ * Parse VrfCert from CBOR bytes (unsafe).
+ *
+ * @since 2.0.0
+ * @category decoding
+ */
+export const fromCBORBytes = (value: Uint8Array, options?: CBOR.CodecOptions): VrfCert =>
+  Eff.runSync(Effect.fromCBORBytes(value, options))
+
+/**
+ * Parse VrfCert from CBOR hex (unsafe).
+ *
+ * @since 2.0.0
+ * @category decoding
+ */
+export const fromCBORHex = (value: string, options?: CBOR.CodecOptions): VrfCert =>
+  Eff.runSync(Effect.fromCBORHex(value, options))

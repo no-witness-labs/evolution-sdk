@@ -1,9 +1,8 @@
-import { Data, Effect, FastCheck, ParseResult, pipe, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, pipe, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Bytes32 from "./Bytes32.js"
 import * as CBOR from "./CBOR.js"
-import { createEncoders } from "./Codec.js"
 import * as Url from "./Url.js"
 
 /**
@@ -14,7 +13,7 @@ import * as Url from "./Url.js"
  */
 export class AnchorError extends Data.TaggedError("AnchorError")<{
   message?: string
-  reason?: "InvalidStructure" | "InvalidUrl" | "InvalidHash"
+  cause?: unknown
 }> {}
 
 /**
@@ -22,12 +21,17 @@ export class AnchorError extends Data.TaggedError("AnchorError")<{
  * anchor = [anchor_url: url, anchor_data_hash: Bytes32]
  *
  * @since 2.0.0
- * @category model
+ * @category schemas
  */
-export class Anchor extends Schema.TaggedClass<Anchor>()("Anchor", {
+export class Anchor extends Schema.Class<Anchor>("Anchor")({
   anchorUrl: Url.Url,
   anchorDataHash: Bytes32.HexSchema
 }) {}
+
+export const CDDLSchema = Schema.Tuple(
+  CBOR.Text, // anchor_url: url
+  CBOR.ByteArray // anchor_data_hash: Bytes32
+)
 
 /**
  * CDDL schema for Anchor as tuple structure.
@@ -36,17 +40,17 @@ export class Anchor extends Schema.TaggedClass<Anchor>()("Anchor", {
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(Schema.Tuple(CBOR.Text, CBOR.ByteArray), Schema.typeSchema(Anchor), {
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Anchor), {
   strict: true,
   encode: (toA) =>
     pipe(
       ParseResult.encode(Bytes32.FromBytes)(toA.anchorDataHash),
-      Effect.map((anchorDataHash) => [toA.anchorUrl, anchorDataHash] as const)
+      Eff.map((anchorDataHash) => [toA.anchorUrl, anchorDataHash] as const)
     ),
   decode: ([anchorUrl, anchorDataHash]) =>
     pipe(
       ParseResult.decode(Bytes32.FromBytes)(anchorDataHash),
-      Effect.map(
+      Eff.map(
         (anchorDataHash) =>
           new Anchor({
             anchorUrl: Url.make(anchorUrl),
@@ -62,7 +66,7 @@ export const FromCDDL = Schema.transformOrFail(Schema.Tuple(CBOR.Text, CBOR.Byte
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → Anchor
@@ -74,10 +78,10 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → Anchor
+    FromCBORBytes(options) // Uint8Array → Anchor
   )
 
 /**
@@ -108,27 +112,126 @@ export const equals = (self: Anchor, that: Anchor): boolean => {
 }
 
 /**
- * FastCheck generator for Anchor instances.
+ * FastCheck arbitrary for Anchor instances.
  *
  * @since 2.0.0
- * @category generators
+ * @category arbitrary
  */
-export const generator = FastCheck.record({
-  anchorUrl: Url.generator,
-  anchorDataHash: FastCheck.uint8Array({ minLength: 32, maxLength: 32 })
+export const arbitrary = FastCheck.record({
+  anchorUrl: Url.arbitrary,
+  anchorDataHash: FastCheck.hexaString({
+    minLength: Bytes32.HEX_LENGTH,
+    maxLength: Bytes32.HEX_LENGTH
+  })
 }).map(
   ({ anchorDataHash, anchorUrl }) =>
     new Anchor({
       anchorUrl,
-      anchorDataHash: Bytes.Codec.Decode.bytes(anchorDataHash)
+      anchorDataHash
     })
 )
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    AnchorError
-  )
+// ============================================================================
+// Parsing Functions
+// ============================================================================
+
+/**
+ * Parse an Anchor from CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Anchor =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Parse an Anchor from CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Anchor =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
+
+/**
+ * Convert an Anchor to CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = (value: Anchor, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(value, options))
+
+/**
+ * Convert an Anchor to CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = (value: Anchor, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(value, options))
+
+// ============================================================================
+// Effect Namespace - Effect-based Error Handling
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ * Returns Effect<Success, Error> for composable error handling.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse an Anchor from CBOR bytes.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Eff.mapError(
+      Schema.decode(FromCBORBytes(options))(bytes),
+      (error) => new AnchorError({ message: "Failed to decode Anchor from CBOR bytes", cause: error })
+    )
+
+  /**
+   * Parse an Anchor from CBOR hex string.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Eff.mapError(
+      Schema.decode(FromCBORHex(options))(hex),
+      (error) => new AnchorError({ message: "Failed to decode Anchor from CBOR hex", cause: error })
+    )
+
+  /**
+   * Convert an Anchor to CBOR bytes.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = (value: Anchor, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Eff.mapError(
+      Schema.encode(FromCBORBytes(options))(value),
+      (error) => new AnchorError({ message: "Failed to encode Anchor to CBOR bytes", cause: error })
+    )
+
+  /**
+   * Convert an Anchor to CBOR hex string.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = (value: Anchor, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Eff.mapError(
+      Schema.encode(FromCBORHex(options))(value),
+      (error) => new AnchorError({ message: "Failed to encode Anchor to CBOR hex", cause: error })
+    )
+}

@@ -1,8 +1,7 @@
-import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Bytes29 from "./Bytes29.js"
-import * as _Codec from "./Codec.js"
 import * as Credential from "./Credential.js"
 import * as KeyHash from "./KeyHash.js"
 import * as NetworkId from "./NetworkId.js"
@@ -22,20 +21,12 @@ export class RewardAccountError extends Data.TaggedError("RewardAccountError")<{
 export class RewardAccount extends Schema.TaggedClass<RewardAccount>("RewardAccount")("RewardAccount", {
   networkId: NetworkId.NetworkId,
   stakeCredential: Credential.Credential
-}) {
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      _tag: "RewardAccount",
-      networkId: this.networkId,
-      stakeCredential: this.stakeCredential
-    }
-  }
-}
+}) {}
 
 export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, RewardAccount, {
   strict: true,
   encode: (_, __, ___, toA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const stakingBit = toA.stakeCredential._tag === "KeyHash" ? 0 : 1
       const header = (0b111 << 5) | (stakingBit << 4) | (toA.networkId & 0b00001111)
       const result = new Uint8Array(29)
@@ -45,7 +36,7 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, RewardAccou
       return yield* ParseResult.succeed(result)
     }),
   decode: (_, __, ___, fromA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const header = fromA[0]
       // Extract network ID from the lower 4 bits
       const networkId = header & 0b00001111
@@ -60,7 +51,7 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, RewardAccou
           }
         : {
             _tag: "ScriptHash",
-            hash: yield* ParseResult.decode(ScriptHash.BytesSchema)(fromA.slice(1, 29))
+            hash: yield* ParseResult.decode(ScriptHash.FromBytes)(fromA.slice(1, 29))
           }
       return yield* ParseResult.decode(RewardAccount)({
         _tag: "RewardAccount",
@@ -68,12 +59,29 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, RewardAccou
         stakeCredential
       })
     })
+}).annotations({
+  identifier: "RewardAccount.FromBytes",
+  description: "Transforms raw bytes to RewardAccount"
 })
 
 export const FromHex = Schema.compose(
   Bytes.FromHex, // string → Uint8Array
   FromBytes // Uint8Array → RewardAccount
-)
+).annotations({
+  identifier: "RewardAccount.FromHex",
+  description: "Transforms raw hex string to RewardAccount"
+})
+
+/**
+ * Smart constructor for creating RewardAccount instances
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = (props: {
+  networkId: NetworkId.NetworkId
+  stakeCredential: Credential.Credential
+}): RewardAccount => new RewardAccount(props)
 
 /**
  * Check if two RewardAccount instances are equal.
@@ -90,23 +98,103 @@ export const equals = (a: RewardAccount, b: RewardAccount): boolean => {
 }
 
 /**
- * Generate a random RewardAccount.
+ * FastCheck arbitrary for generating random RewardAccount instances
  *
  * @since 2.0.0
- * @category generators
+ * @category testing
  */
-export const generator = FastCheck.tuple(NetworkId.generator, Credential.generator).map(
+export const arbitrary = FastCheck.tuple(NetworkId.arbitrary, Credential.arbitrary).map(
   ([networkId, stakeCredential]) =>
-    new RewardAccount({
+    make({
       networkId,
       stakeCredential
     })
 )
 
-export const Codec = _Codec.createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  RewardAccountError
-)
+/**
+ * Effect namespace for RewardAccount operations that can fail
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Convert bytes to RewardAccount using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromBytes = (bytes: Uint8Array) =>
+    Eff.mapError(
+      Schema.decode(FromBytes)(bytes),
+      (cause) => new RewardAccountError({ message: "Failed to decode from bytes", cause })
+    )
+
+  /**
+   * Convert hex string to RewardAccount using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromHex = (hex: string) =>
+    Eff.mapError(
+      Schema.decode(FromHex)(hex),
+      (cause) => new RewardAccountError({ message: "Failed to decode from hex", cause })
+    )
+
+  /**
+   * Convert RewardAccount to bytes using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toBytes = (account: RewardAccount) =>
+    Eff.mapError(
+      Schema.encode(FromBytes)(account),
+      (cause) => new RewardAccountError({ message: "Failed to encode to bytes", cause })
+    )
+
+  /**
+   * Convert RewardAccount to hex string using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toHex = (account: RewardAccount) =>
+    Eff.mapError(
+      Schema.encode(FromHex)(account),
+      (cause) => new RewardAccountError({ message: "Failed to encode to hex", cause })
+    )
+}
+
+/**
+ * Convert bytes to RewardAccount (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromBytes = (bytes: Uint8Array): RewardAccount => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Convert hex string to RewardAccount (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromHex = (hex: string): RewardAccount => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Convert RewardAccount to bytes (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toBytes = (account: RewardAccount): Uint8Array => Eff.runSync(Effect.toBytes(account))
+
+/**
+ * Convert RewardAccount to hex string (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toHex = (account: RewardAccount): string => Eff.runSync(Effect.toHex(account))

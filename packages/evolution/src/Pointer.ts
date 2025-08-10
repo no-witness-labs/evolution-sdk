@@ -1,4 +1,4 @@
-import { Schema, FastCheck } from "effect"
+import { FastCheck,Schema } from "effect"
 
 import * as Natural from "./Natural.js"
 

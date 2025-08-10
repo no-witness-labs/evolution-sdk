@@ -7,6 +7,8 @@ import * as Credential from "./Credential.js"
 import * as DRep from "./DRep.js"
 import * as GovernanceAction from "./GovernanceAction.js"
 import * as PoolKeyHash from "./PoolKeyHash.js"
+import * as TransactionHash from "./TransactionHash.js"
+import * as TransactionIndex from "./TransactionIndex.js"
 
 /**
  * Error class for VotingProcedures related operations.
@@ -21,7 +23,7 @@ export class VotingProceduresError extends Data.TaggedError("VotingProceduresErr
 
 /**
  * Voter types based on Conway CDDL specification.
- * 
+ *
  * ```
  * voter =
  *   [ 0, committee_hot_credential ]  // Constitutional Committee
@@ -32,17 +34,23 @@ export class VotingProceduresError extends Data.TaggedError("VotingProceduresErr
  * @since 2.0.0
  * @category schemas
  */
-export const ConstitutionalCommitteeVoter = Schema.TaggedStruct("ConstitutionalCommitteeVoter", {
-  credential: Credential.Credential
-})
+// export const ConstitutionalCommitteeVoter = Schema.TaggedStruct("ConstitutionalCommitteeVoter", {
+//   credential: Credential.Credential
+// })
+export class ConstitutionalCommitteeVoter extends Schema.TaggedClass<ConstitutionalCommitteeVoter>()(
+  "ConstitutionalCommitteeVoter",
+  {
+    credential: Credential.Credential
+  }
+) {}
 
-export const DRepVoter = Schema.TaggedStruct("DRepVoter", {
+export class DRepVoter extends Schema.TaggedClass<DRepVoter>()("DRepVoter", {
   drep: DRep.DRep
-})
+}) {}
 
-export const StakePoolVoter = Schema.TaggedStruct("StakePoolVoter", {
+export class StakePoolVoter extends Schema.TaggedClass<StakePoolVoter>()("StakePoolVoter", {
   poolKeyHash: PoolKeyHash.PoolKeyHash
-})
+}) {}
 
 /**
  * Voter union schema.
@@ -50,13 +58,9 @@ export const StakePoolVoter = Schema.TaggedStruct("StakePoolVoter", {
  * @since 2.0.0
  * @category schemas
  */
-export const Voter = Schema.Union(
-  ConstitutionalCommitteeVoter,
-  DRepVoter,
-  StakePoolVoter
-)
+export const Voter = Schema.Union(ConstitutionalCommitteeVoter, DRepVoter, StakePoolVoter)
 
-export type Voter = Schema.Schema.Type<typeof Voter>
+export type Voter = typeof Voter.Type
 
 /**
  * CDDL schema for Voter as tuple structure.
@@ -66,9 +70,9 @@ export type Voter = Schema.Schema.Type<typeof Voter>
  * @category schemas
  */
 export const VoterCDDL = Schema.Union(
-  Schema.Tuple(Schema.Literal(0), Credential.CDDLSchema), // committee_hot_credential
-  Schema.Tuple(Schema.Literal(1), DRep.CDDLSchema), // drep
-  Schema.Tuple(Schema.Literal(2), CBOR.ByteArray) // pool_keyhash
+  Schema.Tuple(Schema.Literal(0n), Credential.CDDLSchema), // committee_hot_credential
+  Schema.Tuple(Schema.Literal(1n), DRep.CDDLSchema), // drep
+  Schema.Tuple(Schema.Literal(2n), CBOR.ByteArray) // pool_keyhash
 )
 
 /**
@@ -84,15 +88,15 @@ export const VoterFromCDDL = Schema.transformOrFail(VoterCDDL, Schema.typeSchema
       switch (voter._tag) {
         case "ConstitutionalCommitteeVoter": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(voter.credential)
-          return [0, credentialCDDL] as const
+          return [0n, credentialCDDL] as const
         }
         case "DRepVoter": {
           const drepCDDL = yield* ParseResult.encode(DRep.FromCDDL)(voter.drep)
-          return [1, drepCDDL] as const
+          return [1n, drepCDDL] as const
         }
         case "StakePoolVoter": {
           const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(voter.poolKeyHash)
-          return [2, poolKeyHashBytes] as const
+          return [2n, poolKeyHashBytes] as const
         }
       }
     }),
@@ -100,17 +104,17 @@ export const VoterFromCDDL = Schema.transformOrFail(VoterCDDL, Schema.typeSchema
     Eff.gen(function* () {
       const [voterType, voterData] = cddl
       switch (voterType) {
-        case 0: {
+        case 0n: {
           const credential = yield* ParseResult.decode(Credential.FromCDDL)(voterData)
-          return { _tag: "ConstitutionalCommitteeVoter", credential } as const
+          return new ConstitutionalCommitteeVoter({ credential })
         }
-        case 1: {
+        case 1n: {
           const drep = yield* ParseResult.decode(DRep.FromCDDL)(voterData)
-          return { _tag: "DRepVoter", drep } as const
+          return new DRepVoter({ drep })
         }
-        case 2: {
+        case 2n: {
           const poolKeyHash = yield* ParseResult.decode(PoolKeyHash.FromBytes)(voterData)
-          return { _tag: "StakePoolVoter", poolKeyHash } as const
+          return new StakePoolVoter({ poolKeyHash })
         }
         default:
           return yield* ParseResult.fail(new ParseResult.Type(VoterCDDL.ast, cddl))
@@ -120,7 +124,7 @@ export const VoterFromCDDL = Schema.transformOrFail(VoterCDDL, Schema.typeSchema
 
 /**
  * Vote types based on Conway CDDL specification.
- * 
+ *
  * ```
  * vote = 0 / 1 / 2  ; No / Yes / Abstain
  * ```
@@ -150,7 +154,7 @@ export type Vote = typeof Vote.Type
  */
 export const VoteCDDL = Schema.Union(
   Schema.Literal(0n), // No
-  Schema.Literal(1n), // Yes  
+  Schema.Literal(1n), // Yes
   Schema.Literal(2n) // Abstain
 )
 
@@ -190,7 +194,7 @@ export const VoteFromCDDL = Schema.transformOrFail(VoteCDDL, Schema.typeSchema(V
 
 /**
  * Voting procedure based on Conway CDDL specification.
- * 
+ *
  * ```
  * voting_procedure = [ vote, anchor / null ]
  * ```
@@ -283,39 +287,39 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Vot
   encode: (toA) =>
     Eff.gen(function* () {
       const mapEntries = new Map()
-      
+
       for (const [voter, govActionMap] of toA.procedures) {
         const voterCDDL = yield* ParseResult.encode(VoterFromCDDL)(voter)
         const innerMapEntries = new Map()
-        
+
         for (const [govActionId, votingProcedure] of govActionMap) {
           const govActionIdCDDL = yield* ParseResult.encode(GovernanceAction.GovActionIdFromCDDL)(govActionId)
           const procedureCDDL = yield* ParseResult.encode(VotingProcedureFromCDDL)(votingProcedure)
           innerMapEntries.set(govActionIdCDDL, procedureCDDL)
         }
-        
+
         mapEntries.set(voterCDDL, innerMapEntries)
       }
-      
+
       return mapEntries
     }),
   decode: (fromA) =>
     Eff.gen(function* () {
       const proceduresMap = new Map<Voter, Map<GovernanceAction.GovActionId, VotingProcedure>>()
-      
+
       for (const [voterCDDL, innerMapCDDL] of fromA) {
         const voter = yield* ParseResult.decode(VoterFromCDDL)(voterCDDL)
         const govActionMap = new Map<GovernanceAction.GovActionId, VotingProcedure>()
-        
+
         for (const [govActionIdCDDL, procedureCDDL] of innerMapCDDL) {
           const govActionId = yield* ParseResult.decode(GovernanceAction.GovActionIdFromCDDL)(govActionIdCDDL)
           const procedure = yield* ParseResult.decode(VotingProcedureFromCDDL)(procedureCDDL)
           govActionMap.set(govActionId, procedure)
         }
-        
+
         proceduresMap.set(voter, govActionMap)
       }
-      
+
       return new VotingProcedures({ procedures: proceduresMap })
     })
 })
@@ -381,7 +385,7 @@ export const makeProcedure = (vote: Vote, anchor?: Anchor.Anchor | null): Voting
  * @category constructors
  */
 export const makeCommitteeVoter = (credential: Credential.Credential): Voter =>
-  ({ _tag: "ConstitutionalCommitteeVoter", credential })
+  new ConstitutionalCommitteeVoter({ credential })
 
 /**
  * Create a DRep voter.
@@ -389,8 +393,7 @@ export const makeCommitteeVoter = (credential: Credential.Credential): Voter =>
  * @since 2.0.0
  * @category constructors
  */
-export const makeDRepVoter = (drep: DRep.DRep): Voter =>
-  ({ _tag: "DRepVoter", drep })
+export const makeDRepVoter = (drep: DRep.DRep): DRepVoter => new DRepVoter({ drep })
 
 /**
  * Create a Stake Pool voter.
@@ -398,8 +401,8 @@ export const makeDRepVoter = (drep: DRep.DRep): Voter =>
  * @since 2.0.0
  * @category constructors
  */
-export const makeStakePoolVoter = (poolKeyHash: PoolKeyHash.PoolKeyHash): Voter =>
-  ({ _tag: "StakePoolVoter", poolKeyHash })
+export const makeStakePoolVoter = (poolKeyHash: PoolKeyHash.PoolKeyHash): StakePoolVoter =>
+  new StakePoolVoter({ poolKeyHash })
 
 /**
  * Create a No vote.
@@ -435,8 +438,9 @@ export const abstain = (): Vote => new AbstainVote()
  * @since 2.0.0
  * @category predicates
  */
-export const isConstitutionalCommitteeVoter = (voter: Voter): voter is Schema.Schema.Type<typeof ConstitutionalCommitteeVoter> =>
-  voter._tag === "ConstitutionalCommitteeVoter"
+export const isConstitutionalCommitteeVoter = (
+  voter: Voter
+): voter is Schema.Schema.Type<typeof ConstitutionalCommitteeVoter> => voter._tag === "ConstitutionalCommitteeVoter"
 
 /**
  * Check if a voter is a DRep voter.
@@ -452,7 +456,8 @@ export const isDRepVoter = (voter: Voter): voter is Schema.Schema.Type<typeof DR
  * @since 2.0.0
  * @category predicates
  */
-export const isStakePoolVoter = (voter: Voter): voter is Schema.Schema.Type<typeof StakePoolVoter> => voter._tag === "StakePoolVoter"
+export const isStakePoolVoter = (voter: Voter): voter is Schema.Schema.Type<typeof StakePoolVoter> =>
+  voter._tag === "StakePoolVoter"
 
 /**
  * Check if a vote is a No vote.
@@ -488,20 +493,22 @@ export const isAbstainVote = (vote: Vote): vote is Schema.Schema.Type<typeof Abs
  * @since 2.0.0
  * @category pattern matching
  */
-export const matchVoter = <R>(patterns: {
-  ConstitutionalCommitteeVoter: (credential: Credential.Credential) => R
-  DRepVoter: (drep: DRep.DRep) => R
-  StakePoolVoter: (poolKeyHash: PoolKeyHash.PoolKeyHash) => R
-}) => (voter: Voter): R => {
-  switch (voter._tag) {
-    case "ConstitutionalCommitteeVoter":
-      return patterns.ConstitutionalCommitteeVoter(voter.credential)
-    case "DRepVoter":
-      return patterns.DRepVoter(voter.drep)
-    case "StakePoolVoter":
-      return patterns.StakePoolVoter(voter.poolKeyHash)
+export const matchVoter =
+  <R>(patterns: {
+    ConstitutionalCommitteeVoter: (credential: Credential.Credential) => R
+    DRepVoter: (drep: DRep.DRep) => R
+    StakePoolVoter: (poolKeyHash: PoolKeyHash.PoolKeyHash) => R
+  }) =>
+  (voter: Voter): R => {
+    switch (voter._tag) {
+      case "ConstitutionalCommitteeVoter":
+        return patterns.ConstitutionalCommitteeVoter(voter.credential)
+      case "DRepVoter":
+        return patterns.DRepVoter(voter.drep)
+      case "StakePoolVoter":
+        return patterns.StakePoolVoter(voter.poolKeyHash)
+    }
   }
-}
 
 /**
  * Pattern match on a Vote.
@@ -509,20 +516,18 @@ export const matchVoter = <R>(patterns: {
  * @since 2.0.0
  * @category pattern matching
  */
-export const matchVote = <R>(patterns: {
-  NoVote: () => R
-  YesVote: () => R
-  AbstainVote: () => R
-}) => (vote: Vote): R => {
-  switch (vote._tag) {
-    case "NoVote":
-      return patterns.NoVote()
-    case "YesVote":
-      return patterns.YesVote()
-    case "AbstainVote":
-      return patterns.AbstainVote()
+export const matchVote =
+  <R>(patterns: { NoVote: () => R; YesVote: () => R; AbstainVote: () => R }) =>
+  (vote: Vote): R => {
+    switch (vote._tag) {
+      case "NoVote":
+        return patterns.NoVote()
+      case "YesVote":
+        return patterns.YesVote()
+      case "AbstainVote":
+        return patterns.AbstainVote()
+    }
   }
-}
 
 // ============================================================================
 // Equality
@@ -536,7 +541,7 @@ export const matchVote = <R>(patterns: {
  */
 export const voterEquals = (a: Voter, b: Voter): boolean => {
   if (a._tag !== b._tag) return false
-  
+
   switch (a._tag) {
     case "ConstitutionalCommitteeVoter":
       return Credential.equals(a.credential, (b as Schema.Schema.Type<typeof ConstitutionalCommitteeVoter>).credential)
@@ -563,45 +568,49 @@ export const voteEquals = (a: Vote, b: Vote): boolean => a._tag === b._tag
  */
 export const equals = (a: VotingProcedures, b: VotingProcedures): boolean => {
   if (a.procedures.size !== b.procedures.size) return false
-  
+
   for (const [voterA, govActionMapA] of a.procedures) {
     let foundMatchingVoter = false
-    
+
     for (const [voterB, govActionMapB] of b.procedures) {
       if (voterEquals(voterA, voterB)) {
         foundMatchingVoter = true
-        
+
         if (govActionMapA.size !== govActionMapB.size) return false
-        
+
         for (const [govActionIdA, procedureA] of govActionMapA) {
           let foundMatchingAction = false
-          
+
           for (const [govActionIdB, procedureB] of govActionMapB) {
             // Simple equality for GovActionId
-            if (govActionIdA.transactionId === govActionIdB.transactionId && 
-                govActionIdA.govActionIndex === govActionIdB.govActionIndex) {
+            if (
+              govActionIdA.transactionId === govActionIdB.transactionId &&
+              govActionIdA.govActionIndex === govActionIdB.govActionIndex
+            ) {
               foundMatchingAction = true
-              
+
               const votesEqual = voteEquals(procedureA.vote, procedureB.vote)
-              const anchorsEqual = (procedureA.anchor === null && procedureB.anchor === null) ||
-                (procedureA.anchor !== null && procedureB.anchor !== null && 
-                 Anchor.equals(procedureA.anchor, procedureB.anchor))
-              
+              const anchorsEqual =
+                (procedureA.anchor === null && procedureB.anchor === null) ||
+                (procedureA.anchor !== null &&
+                  procedureB.anchor !== null &&
+                  Anchor.equals(procedureA.anchor, procedureB.anchor))
+
               if (!votesEqual || !anchorsEqual) return false
               break
             }
           }
-          
+
           if (!foundMatchingAction) return false
         }
-        
+
         break
       }
     }
-    
+
     if (!foundMatchingVoter) return false
   }
-  
+
   return true
 }
 
@@ -611,34 +620,38 @@ export const equals = (a: VotingProcedures, b: VotingProcedures): boolean => {
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.record({
-  procedures: FastCheck.array(
-    FastCheck.tuple(
-      FastCheck.oneof(
-        FastCheck.record({ _tag: FastCheck.constant("ConstitutionalCommitteeVoter"), credential: Credential.arbitrary }),
-        FastCheck.record({ _tag: FastCheck.constant("DRepVoter"), drep: DRep.arbitrary }),
-        FastCheck.record({ _tag: FastCheck.constant("StakePoolVoter"), poolKeyHash: PoolKeyHash.arbitrary })
-      ),
-      FastCheck.array(
+export const arbitrary = FastCheck.array(
+  FastCheck.tuple(
+    // Reuse existing voter arbitraries
+    FastCheck.oneof(
+      Credential.arbitrary.map(credential => new ConstitutionalCommitteeVoter({ credential })),
+      DRep.arbitrary.map(drep => new DRepVoter({ drep })),
+      PoolKeyHash.arbitrary.map(poolKeyHash => new StakePoolVoter({ poolKeyHash }))
+    ),
+    FastCheck.array(
+      FastCheck.tuple(
+        // Create GovActionId instances using proper branded types
         FastCheck.tuple(
-          FastCheck.record({
-            _tag: FastCheck.constant("GovActionId"),
-            transactionId: FastCheck.hexaString({ minLength: 64, maxLength: 64 }),
-            govActionIndex: FastCheck.integer({ min: 0, max: 65535 })
-          }),
-          FastCheck.record({
-            vote: FastCheck.oneof(
-              FastCheck.constant(new NoVote()),
-              FastCheck.constant(new YesVote()),
-              FastCheck.constant(new AbstainVote())
-            ),
-            anchor: FastCheck.option(Anchor.arbitrary, { nil: null })
+          FastCheck.hexaString({ minLength: 64, maxLength: 64 }),
+          FastCheck.integer({ min: 0, max: 65535 })
+        ).map(([transactionId, govActionIndex]) => 
+          new GovernanceAction.GovActionId({ 
+            transactionId: TransactionHash.make(transactionId), 
+            govActionIndex: TransactionIndex.make(govActionIndex) 
           })
-        )
-      ).map(arr => new Map(arr))
-    )
-  ).map(arr => new Map(arr))
-})
+        ),
+        FastCheck.tuple(
+          FastCheck.oneof(
+            FastCheck.constant(new NoVote()),
+            FastCheck.constant(new YesVote()),
+            FastCheck.constant(new AbstainVote())
+          ),
+          FastCheck.option(Anchor.arbitrary, { nil: null })
+        ).map(([vote, anchor]) => new VotingProcedure({ vote, anchor }))
+      )
+    ).map((arr) => new Map(arr))
+  )
+).map((arr) => new VotingProcedures({ procedures: new Map(arr) }))
 
 // ============================================================================
 // Root Functions
@@ -651,7 +664,7 @@ export const arbitrary = FastCheck.record({
  * @category parsing
  */
 export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): VotingProcedures =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options) as any)
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
 
 /**
  * Parse VotingProcedures from CBOR hex string.
@@ -660,7 +673,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): V
  * @category parsing
  */
 export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): VotingProcedures =>
-  Eff.runSync(Effect.fromCBORHex(hex, options) as any)
+  Eff.runSync(Effect.fromCBORHex(hex, options))
 
 /**
  * Encode VotingProcedures to CBOR bytes.
@@ -669,7 +682,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): VotingPro
  * @category encoding
  */
 export const toCBORBytes = (votingProcedures: VotingProcedures, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(votingProcedures, options) as any)
+  Eff.runSync(Effect.toCBORBytes(votingProcedures, options))
 
 /**
  * Encode VotingProcedures to CBOR hex string.
@@ -678,7 +691,7 @@ export const toCBORBytes = (votingProcedures: VotingProcedures, options?: CBOR.C
  * @category encoding
  */
 export const toCBORHex = (votingProcedures: VotingProcedures, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(votingProcedures, options) as any)
+  Eff.runSync(Effect.toCBORHex(votingProcedures, options))
 
 // ============================================================================
 // Effect Namespace
@@ -700,7 +713,7 @@ export namespace Effect {
   export const fromCBORBytes = (
     bytes: Uint8Array,
     options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<VotingProcedures, VotingProceduresError, any> =>
+  ): Eff.Effect<VotingProcedures, VotingProceduresError> =>
     Schema.decode(FromCBORBytes(options))(bytes).pipe(
       Eff.mapError(
         (cause) =>
@@ -720,7 +733,7 @@ export namespace Effect {
   export const fromCBORHex = (
     hex: string,
     options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<VotingProcedures, VotingProceduresError, any> =>
+  ): Eff.Effect<VotingProcedures, VotingProceduresError> =>
     Schema.decode(FromCBORHex(options))(hex).pipe(
       Eff.mapError(
         (cause) =>
@@ -740,7 +753,7 @@ export namespace Effect {
   export const toCBORBytes = (
     votingProcedures: VotingProcedures,
     options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, VotingProceduresError, any> =>
+  ): Eff.Effect<Uint8Array, VotingProceduresError> =>
     Schema.encode(FromCBORBytes(options))(votingProcedures).pipe(
       Eff.mapError(
         (cause) =>
@@ -760,7 +773,7 @@ export namespace Effect {
   export const toCBORHex = (
     votingProcedures: VotingProcedures,
     options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, VotingProceduresError, any> =>
+  ): Eff.Effect<string, VotingProceduresError> =>
     Schema.encode(FromCBORHex(options))(votingProcedures).pipe(
       Eff.mapError(
         (cause) =>

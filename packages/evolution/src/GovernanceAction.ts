@@ -89,7 +89,7 @@ export class ParameterChangeAction extends Schema.TaggedClass<ParameterChangeAct
  * @category schemas
  */
 export const ParameterChangeActionCDDL = Schema.Tuple(
-  Schema.Literal(0), // action type
+  Schema.Literal(0n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
   CBOR.RecordSchema, // protocol_param_update
   Schema.NullOr(CBOR.ByteArray) // policy_hash / nil
@@ -115,7 +115,7 @@ export const ParameterChangeActionFromCDDL = Schema.transformOrFail(
         const policyHash = action.policyHash ? yield* ParseResult.encode(ScriptHash.FromBytes)(action.policyHash) : null
 
         // Return as CBOR tuple
-        return [0, govActionId, protocolParamUpdate, policyHash] as const
+        return [0n, govActionId, protocolParamUpdate, policyHash] as const
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
@@ -157,7 +157,7 @@ export class HardForkInitiationAction extends Schema.TaggedClass<HardForkInitiat
  * @category schemas
  */
 export const HardForkInitiationActionCDDL = Schema.Tuple(
-  Schema.Literal(1), // action type
+  Schema.Literal(1n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
   Schema.Tuple(CBOR.Integer, CBOR.Integer), // protocol_version = [major, minor]
   Schema.NullOr(CBOR.ByteArray) // policy_hash / nil
@@ -183,7 +183,7 @@ export const HardForkInitiationActionFromCDDL = Schema.transformOrFail(
 
         // Return as CBOR tuple
         return [
-          1,
+          1n,
           govActionId,
           [BigInt(action.protocolVersion[0]), BigInt(action.protocolVersion[1])],
           policyHash
@@ -231,7 +231,7 @@ export class TreasuryWithdrawalsAction extends Schema.TaggedClass<TreasuryWithdr
  * @category schemas
  */
 export const TreasuryWithdrawalsActionCDDL = Schema.Tuple(
-  Schema.Literal(2), // action type
+  Schema.Literal(2n), // action type
   Schema.MapFromSelf({
     key: CBOR.ByteArray, // reward_account as bytes
     value: CBOR.Integer // coin as bigint
@@ -260,7 +260,7 @@ export const TreasuryWithdrawalsActionFromCDDL = Schema.transformOrFail(
         const policyHash = action.policyHash ? yield* ParseResult.encode(ScriptHash.FromBytes)(action.policyHash) : null
 
         // Return as CBOR tuple
-        return [2, withdrawals, policyHash] as const
+        return [2n, withdrawals, policyHash] as const
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
@@ -300,7 +300,7 @@ export class NoConfidenceAction extends Schema.TaggedClass<NoConfidenceAction>()
  * @category schemas
  */
 export const NoConfidenceActionCDDL = Schema.Tuple(
-  Schema.Literal(3), // action type
+  Schema.Literal(3n), // action type
   Schema.NullOr(GovActionIdCDDL) // gov_action_id / nil
 )
 
@@ -322,7 +322,7 @@ export const NoConfidenceActionFromCDDL = Schema.transformOrFail(
           : null
 
         // Return as CBOR tuple
-        return [3, govActionId] as const
+        return [3n, govActionId] as const
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
@@ -359,7 +359,7 @@ export class UpdateCommitteeAction extends Schema.TaggedClass<UpdateCommitteeAct
  * @category schemas
  */
 export const UpdateCommitteeActionCDDL = Schema.Tuple(
-  Schema.Literal(4), // action type
+  Schema.Literal(4n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
   Schema.Array(CBOR.CBORSchema), // set<committee_cold_credential>
   CBOR.MapSchema, // { * committee_cold_credential => committee_hot_credential }
@@ -387,7 +387,7 @@ export const UpdateCommitteeActionFromCDDL = Schema.transformOrFail(
         const threshold = yield* ParseResult.encode(CBOR.CBORSchema)(action.threshold)
 
         // Return as CBOR tuple
-        return [4, govActionId, membersToRemove, membersToAdd, threshold] as const
+        return [4n, govActionId, membersToRemove, membersToAdd, threshold] as const
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
@@ -425,7 +425,7 @@ export class NewConstitutionAction extends Schema.TaggedClass<NewConstitutionAct
  * @category schemas
  */
 export const NewConstitutionActionCDDL = Schema.Tuple(
-  Schema.Literal(5), // action type
+  Schema.Literal(5n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
   CBOR.CBORSchema // constitution
 )
@@ -449,7 +449,7 @@ export const NewConstitutionActionFromCDDL = Schema.transformOrFail(
         const constitution = yield* ParseResult.encode(CBOR.CBORSchema)(action.constitution)
 
         // Return as CBOR tuple
-        return [5, govActionId, constitution] as const
+        return [5n, govActionId, constitution] as const
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
@@ -483,7 +483,7 @@ export class InfoAction extends Schema.TaggedClass<InfoAction>()("InfoAction", {
  * @category schemas
  */
 export const InfoActionCDDL = Schema.Tuple(
-  Schema.Literal(6) // action type
+  Schema.Literal(6n) // action type
 )
 
 /**
@@ -497,7 +497,7 @@ export const InfoActionFromCDDL = Schema.transformOrFail(InfoActionCDDL, Schema.
   encode: (_action) =>
     Eff.gen(function* () {
       // Return as CBOR tuple
-      return [6] as const
+      return [6n] as const
     }),
   decode: (_cddl) =>
     Eff.gen(function* () {

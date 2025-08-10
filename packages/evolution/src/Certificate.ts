@@ -176,24 +176,14 @@ export const CDDLSchema = Schema.Union(
   Schema.Tuple(
     Schema.Literal(9n),
     Credential.CDDLSchema,
-    Schema.Union(
-      Schema.Tuple(Schema.Literal(0), Schema.Uint8ArrayFromSelf),
-      Schema.Tuple(Schema.Literal(1), Schema.Uint8ArrayFromSelf),
-      Schema.Tuple(Schema.Literal(2)),
-      Schema.Tuple(Schema.Literal(3))
-    )
+    DRep.CDDLSchema
   ),
   // 10: stake_vote_deleg_cert = (10, stake_credential, pool_keyhash, drep)
   Schema.Tuple(
     Schema.Literal(10n),
     Credential.CDDLSchema,
     CBOR.ByteArray,
-    Schema.Union(
-      Schema.Tuple(Schema.Literal(0), Schema.Uint8ArrayFromSelf),
-      Schema.Tuple(Schema.Literal(1), Schema.Uint8ArrayFromSelf),
-      Schema.Tuple(Schema.Literal(2)),
-      Schema.Tuple(Schema.Literal(3))
-    )
+    DRep.CDDLSchema,
   ),
   // 11: stake_reg_deleg_cert = (11, stake_credential, pool_keyhash, coin)
   Schema.Tuple(Schema.Literal(11n), Credential.CDDLSchema, CBOR.ByteArray, CBOR.Integer),

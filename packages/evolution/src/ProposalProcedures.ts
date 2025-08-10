@@ -5,6 +5,7 @@ import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
 import * as GovernanceAction from "./GovernanceAction.js"
+import * as ProposalProcedure from "./ProposalProcedure.js"
 import * as RewardAccount from "./RewardAccount.js"
 
 /**
@@ -19,30 +20,6 @@ export class ProposalProceduresError extends Data.TaggedError("ProposalProcedure
 }> {}
 
 /**
- * Schema for a single proposal procedure based on Conway CDDL specification.
- *
- * ```
- * proposal_procedure = [
- *   deposit : coin,
- *   reward_account : reward_account,
- *   governance_action : governance_action,
- *   anchor : anchor / null
- * ]
- *
- * governance_action = [action_type, action_data]
- * ```
- *
- * @since 2.0.0
- * @category model
- */
-export class ProposalProcedure extends Schema.Class<ProposalProcedure>("ProposalProcedure")({
-  deposit: Coin.Coin,
-  rewardAccount: RewardAccount.RewardAccount,
-  governanceAction: GovernanceAction.GovernanceAction,
-  anchor: Schema.NullOr(Anchor.Anchor)
-}) {}
-
-/**
  * ProposalProcedures based on Conway CDDL specification.
  *
  * ```
@@ -53,7 +30,7 @@ export class ProposalProcedure extends Schema.Class<ProposalProcedure>("Proposal
  * @category model
  */
 export class ProposalProcedures extends Schema.Class<ProposalProcedures>("ProposalProcedures")({
-  procedures: Schema.Array(ProposalProcedure).pipe(
+  procedures: Schema.Array(ProposalProcedure.ProposalProcedure).pipe(
     Schema.filter((arr) => arr.length > 0, {
       message: () => "ProposalProcedures must contain at least one procedure"
     })
@@ -61,25 +38,12 @@ export class ProposalProcedures extends Schema.Class<ProposalProcedures>("Propos
 }) {}
 
 /**
- * CDDL schema for ProposalProcedure tuple structure.
- *
- * @since 2.0.0
- * @category schemas
- */
-export const ProposalProcedureCDDLSchema = Schema.Tuple(
-  CBOR.Integer, // deposit: coin
-  CBOR.ByteArray, // reward_account (raw bytes)
-  GovernanceAction.CDDLSchema, // governance_action using proper CDDL schema
-  Schema.NullOr(Anchor.CDDLSchema) // anchor / null
-)
-
-/**
  * CDDL schema for ProposalProcedures that produces CBOR-compatible types.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const CDDLSchema = Schema.Array(ProposalProcedureCDDLSchema)
+export const CDDLSchema = Schema.Array(ProposalProcedure.CDDLSchema)
 
 /**
  * CDDL transformation schema for ProposalProcedures.
@@ -90,38 +54,11 @@ export const CDDLSchema = Schema.Array(ProposalProcedureCDDLSchema)
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(ProposalProcedures), {
   strict: true,
   encode: (toA) =>
-    Eff.all(
-      toA.procedures.map((procedure) =>
-        Eff.gen(function* () {
-          const depositBigInt = BigInt(procedure.deposit)
-          const rewardAccountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(procedure.rewardAccount)
-          const governanceActionCDDL = yield* ParseResult.encode(GovernanceAction.FromCDDL)(
-            procedure.governanceAction
-          )
-          const anchorCDDL = procedure.anchor ? yield* ParseResult.encode(Anchor.FromCDDL)(procedure.anchor) : null
-          return [depositBigInt, rewardAccountBytes, governanceActionCDDL, anchorCDDL] as any
-        })
-      )
-    ),
+    Eff.all(toA.procedures.map((procedure) => ParseResult.encode(ProposalProcedure.FromCDDL)(procedure))),
   decode: (fromA) =>
     Eff.gen(function* () {
       const procedures = yield* Eff.all(
-        fromA.map((procedureTuple: any) =>
-          Eff.gen(function* () {
-            const [depositBigInt, rewardAccountBytes, governanceActionCDDL, anchorCDDL] = procedureTuple
-            const deposit = Coin.make(depositBigInt)
-            const rewardAccount = yield* ParseResult.decode(RewardAccount.FromBytes)(rewardAccountBytes)
-            const governanceAction = yield* ParseResult.decode(GovernanceAction.FromCDDL)(governanceActionCDDL)
-            const anchor = anchorCDDL ? yield* ParseResult.decode(Anchor.FromCDDL)(anchorCDDL) : null
-
-            return new ProposalProcedure({
-              deposit,
-              rewardAccount,
-              governanceAction,
-              anchor
-            })
-          })
-        )
+        fromA.map((procedureTuple ) => ParseResult.decode(ProposalProcedure.FromCDDL)(procedureTuple))
       )
 
       return new ProposalProcedures({ procedures })
@@ -170,15 +107,7 @@ export const equals = (a: ProposalProcedures, b: ProposalProcedures): boolean =>
   a.procedures.length === b.procedures.length &&
   a.procedures.every((procedureA, index) => {
     const procedureB = b.procedures[index]
-    return (
-      procedureA.deposit === procedureB.deposit &&
-      RewardAccount.equals(procedureA.rewardAccount, procedureB.rewardAccount) &&
-      GovernanceAction.equals(procedureA.governanceAction, procedureB.governanceAction) &&
-      ((procedureA.anchor === null && procedureB.anchor === null) ||
-        (procedureA.anchor !== null &&
-          procedureB.anchor !== null &&
-          Anchor.equals(procedureA.anchor, procedureB.anchor)))
-    )
+    return ProposalProcedure.equals(procedureA, procedureB)
   })
 
 /**
@@ -187,7 +116,7 @@ export const equals = (a: ProposalProcedures, b: ProposalProcedures): boolean =>
  * @since 2.0.0
  * @category constructors
  */
-export const make = (procedures: Array<ProposalProcedure>): ProposalProcedures => {
+export const make = (procedures: Array<ProposalProcedure.ProposalProcedure>): ProposalProcedures => {
   if (procedures.length === 0) {
     throw new Error("ProposalProcedures must contain at least one procedure")
   }
@@ -205,13 +134,7 @@ export const makeProcedure = (params: {
   rewardAccount: RewardAccount.RewardAccount
   governanceAction: GovernanceAction.GovernanceAction
   anchor?: Anchor.Anchor | null
-}): ProposalProcedure =>
-  new ProposalProcedure({
-    deposit: params.deposit,
-    rewardAccount: params.rewardAccount,
-    governanceAction: params.governanceAction,
-    anchor: params.anchor ?? null
-  })
+}): ProposalProcedure.ProposalProcedure => ProposalProcedure.make(params)
 
 /**
  * FastCheck arbitrary for ProposalProcedures.
@@ -226,7 +149,7 @@ export const arbitrary = FastCheck.record({
       rewardAccount: RewardAccount.arbitrary,
       governanceAction: GovernanceAction.arbitrary,
       anchor: FastCheck.option(Anchor.arbitrary, { nil: null })
-    }).map((params) => new ProposalProcedure(params)),
+    }).map((params) => ProposalProcedure.make(params)),
     { minLength: 1, maxLength: 5 }
   )
 }).map((params) => new ProposalProcedures(params))
@@ -242,7 +165,7 @@ export const arbitrary = FastCheck.record({
  * @category parsing
  */
 export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): ProposalProcedures =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options) as any)
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
 
 /**
  * Parse ProposalProcedures from CBOR hex string.
@@ -251,7 +174,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): P
  * @category parsing
  */
 export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): ProposalProcedures =>
-  Eff.runSync(Effect.fromCBORHex(hex, options) as any)
+  Eff.runSync(Effect.fromCBORHex(hex, options))
 
 /**
  * Encode ProposalProcedures to CBOR bytes.
@@ -260,7 +183,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): ProposalP
  * @category encoding
  */
 export const toCBORBytes = (proposalProcedures: ProposalProcedures, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(proposalProcedures, options) as any)
+  Eff.runSync(Effect.toCBORBytes(proposalProcedures, options))
 
 /**
  * Encode ProposalProcedures to CBOR hex string.
@@ -269,7 +192,7 @@ export const toCBORBytes = (proposalProcedures: ProposalProcedures, options?: CB
  * @category encoding
  */
 export const toCBORHex = (proposalProcedures: ProposalProcedures, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(proposalProcedures, options) as any)
+  Eff.runSync(Effect.toCBORHex(proposalProcedures, options))
 
 // ============================================================================
 // Effect Namespace
@@ -291,7 +214,7 @@ export namespace Effect {
   export const fromCBORBytes = (
     bytes: Uint8Array,
     options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<ProposalProcedures, ProposalProceduresError, any> =>
+  ): Eff.Effect<ProposalProcedures, ProposalProceduresError> =>
     Schema.decode(FromCBORBytes(options))(bytes).pipe(
       Eff.mapError(
         (cause) =>
@@ -311,7 +234,7 @@ export namespace Effect {
   export const fromCBORHex = (
     hex: string,
     options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<ProposalProcedures, ProposalProceduresError, any> =>
+  ): Eff.Effect<ProposalProcedures, ProposalProceduresError> =>
     Schema.decode(FromCBORHex(options))(hex).pipe(
       Eff.mapError(
         (cause) =>
@@ -331,7 +254,7 @@ export namespace Effect {
   export const toCBORBytes = (
     proposalProcedures: ProposalProcedures,
     options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, ProposalProceduresError, any> =>
+  ): Eff.Effect<Uint8Array, ProposalProceduresError> =>
     Schema.encode(FromCBORBytes(options))(proposalProcedures).pipe(
       Eff.mapError(
         (cause) =>
@@ -351,7 +274,7 @@ export namespace Effect {
   export const toCBORHex = (
     proposalProcedures: ProposalProcedures,
     options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, ProposalProceduresError, any> =>
+  ): Eff.Effect<string, ProposalProceduresError> =>
     Schema.encode(FromCBORHex(options))(proposalProcedures).pipe(
       Eff.mapError(
         (cause) =>

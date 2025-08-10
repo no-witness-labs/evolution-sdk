@@ -44,10 +44,10 @@ export const DRep = Schema.Union(
 export type DRep = typeof DRep.Type
 
 export const CDDLSchema = Schema.Union(
-  Schema.Tuple(Schema.Literal(0), Schema.Uint8ArrayFromSelf),
-  Schema.Tuple(Schema.Literal(1), Schema.Uint8ArrayFromSelf),
-  Schema.Tuple(Schema.Literal(2)),
-  Schema.Tuple(Schema.Literal(3))
+  Schema.Tuple(Schema.Literal(0n), Schema.Uint8ArrayFromSelf),
+  Schema.Tuple(Schema.Literal(1n), Schema.Uint8ArrayFromSelf),
+  Schema.Tuple(Schema.Literal(2n)),
+  Schema.Tuple(Schema.Literal(3n))
 )
 
 /**
@@ -64,41 +64,41 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(DRe
       switch (toA._tag) {
         case "KeyHashDRep": {
           const keyHashBytes = yield* ParseResult.encode(KeyHash.FromBytes)(toA.keyHash)
-          return [0, keyHashBytes] as const
+          return [0n, keyHashBytes] as const
         }
         case "ScriptHashDRep": {
           const scriptHashBytes = yield* ParseResult.encode(ScriptHash.FromBytes)(toA.scriptHash)
-          return [1, scriptHashBytes] as const
+          return [1n, scriptHashBytes] as const
         }
         case "AlwaysAbstainDRep":
-          return [2] as const
+          return [2n] as const
         case "AlwaysNoConfidenceDRep":
-          return [3] as const
+          return [3n] as const
       }
     }),
   decode: (fromA) =>
     Eff.gen(function* () {
       const [tag, ...rest] = fromA
       switch (tag) {
-        case 0: {
+        case 0n: {
           const keyHash = yield* ParseResult.decode(KeyHash.FromBytes)(rest[0] as Uint8Array)
           return yield* ParseResult.decode(DRep)({
             _tag: "KeyHashDRep",
             keyHash
           })
         }
-        case 1: {
+        case 1n: {
           const scriptHash = yield* ParseResult.decode(ScriptHash.FromBytes)(rest[0] as Uint8Array)
           return yield* ParseResult.decode(DRep)({
             _tag: "ScriptHashDRep",
             scriptHash
           })
         }
-        case 2:
+        case 2n:
           return yield* ParseResult.decode(DRep)({
             _tag: "AlwaysAbstainDRep"
           })
-        case 3:
+        case 3n:
           return yield* ParseResult.decode(DRep)({
             _tag: "AlwaysNoConfidenceDRep"
           })

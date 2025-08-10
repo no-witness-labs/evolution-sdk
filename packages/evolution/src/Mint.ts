@@ -219,10 +219,10 @@ export const policyCount = (mint: Mint): number => mint.size
 export const equals = (self: Mint, that: Mint): boolean => Equal.equals(self, that)
 
 export const CDDLSchema = Schema.MapFromSelf({
-  key: CBOR.ByteArray, // Policy ID as Uint8Array (28 bytes)
+  key: CBOR.ByteArray, // Policy ID as 28-byte Uint8Array
   value: Schema.MapFromSelf({
     key: CBOR.ByteArray, // Asset name as Uint8Array (variable length)
-    value: CBOR.Integer // Amount as number (will be converted to NonZeroInt64)
+    value: CBOR.Integer // Amount as nonZeroInt64
   })
 })
 
@@ -240,16 +240,16 @@ export const CDDLSchema = Schema.MapFromSelf({
  * @since 2.0.0
  * @category schemas
  */
-export const MintCDDLSchema = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Mint), {
+export const FromCDDL = Schema.transformOrFail(Schema.encodedSchema(CDDLSchema), Schema.typeSchema(Mint), {
   strict: true,
   encode: (toA) =>
     Eff.gen(function* () {
       // Convert Mint to raw Map data for CBOR encoding
-      const outerMap = new Map<Uint8Array, Map<Uint8Array, bigint>>()
+      const outerMap = new Map() as Map<Uint8Array, Map<Uint8Array, bigint>>
 
       for (const [policyId, assetMap] of toA.entries()) {
         const policyIdBytes = yield* ParseResult.encode(PolicyId.FromBytes)(policyId)
-        const innerMap = new Map<Uint8Array, bigint>()
+        const innerMap = new Map() as Map<Uint8Array, bigint>
 
         for (const [assetName, amount] of assetMap.entries()) {
           const assetNameBytes = yield* ParseResult.encode(AssetName.FromBytes)(assetName)
@@ -294,7 +294,7 @@ export const MintCDDLSchema = Schema.transformOrFail(CDDLSchema, Schema.typeSche
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    MintCDDLSchema // CBOR → Mint
+    FromCDDL // CBOR → Mint
   ).annotations({
     identifier: "Mint.FromCBORBytes",
     title: "Mint from CBOR Bytes",

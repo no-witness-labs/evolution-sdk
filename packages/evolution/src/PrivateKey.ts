@@ -5,7 +5,9 @@ import { wordlist } from "@scure/bip39/wordlists/english"
 import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 import sodium from "libsodium-wrappers-sumo"
 
-import { Bytes32, Bytes64, VKey } from "./index.js"
+import * as Bytes32 from "./Bytes32.js"
+import * as Bytes64 from "./Bytes64.js"
+import * as VKey from "./VKey.js"
 
 /**
  * Error class for PrivateKey related operations.

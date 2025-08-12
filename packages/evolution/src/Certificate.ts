@@ -21,6 +21,109 @@ export class CertificateError extends Data.TaggedError("CertificateError")<{
   cause?: unknown
 }> {}
 
+export class StakeRegistration extends Schema.TaggedClass<StakeRegistration>("StakeRegistration")("StakeRegistration", {
+  stakeCredential: Credential.Credential
+}) {}
+
+export class StakeDeregistration extends Schema.TaggedClass<StakeDeregistration>("StakeDeregistration")(
+  "StakeDeregistration",
+  {
+    stakeCredential: Credential.Credential
+  }
+) {}
+
+export class StakeDelegation extends Schema.TaggedClass<StakeDelegation>("StakeDelegation")("StakeDelegation", {
+  stakeCredential: Credential.Credential,
+  poolKeyHash: PoolKeyHash.PoolKeyHash
+}) {}
+
+export class PoolRegistration extends Schema.TaggedClass<PoolRegistration>("PoolRegistration")("PoolRegistration", {
+  poolParams: PoolParams.PoolParams
+}) {}
+
+export class PoolRetirement extends Schema.TaggedClass<PoolRetirement>("PoolRetirement")("PoolRetirement", {
+  poolKeyHash: PoolKeyHash.PoolKeyHash,
+  epoch: EpochNo.EpochNoSchema
+}) {}
+
+export class RegCert extends Schema.TaggedClass<RegCert>("RegCert")("RegCert", {
+  stakeCredential: Credential.Credential,
+  coin: Coin.Coin
+}) {}
+
+export class UnregCert extends Schema.TaggedClass<UnregCert>("UnregCert")("UnregCert", {
+  stakeCredential: Credential.Credential,
+  coin: Coin.Coin
+}) {}
+
+export class VoteDelegCert extends Schema.TaggedClass<VoteDelegCert>("VoteDelegCert")("VoteDelegCert", {
+  stakeCredential: Credential.Credential,
+  drep: DRep.DRep
+}) {}
+
+export class StakeVoteDelegCert extends Schema.TaggedClass<StakeVoteDelegCert>("StakeVoteDelegCert")(
+  "StakeVoteDelegCert",
+  {
+    stakeCredential: Credential.Credential,
+    poolKeyHash: PoolKeyHash.PoolKeyHash,
+    drep: DRep.DRep
+  }
+) {}
+
+export class StakeRegDelegCert extends Schema.TaggedClass<StakeRegDelegCert>("StakeRegDelegCert")("StakeRegDelegCert", {
+  stakeCredential: Credential.Credential,
+  poolKeyHash: PoolKeyHash.PoolKeyHash,
+  coin: Coin.Coin
+}) {}
+
+export class VoteRegDelegCert extends Schema.TaggedClass<VoteRegDelegCert>("VoteRegDelegCert")("VoteRegDelegCert", {
+  stakeCredential: Credential.Credential,
+  drep: DRep.DRep,
+  coin: Coin.Coin
+}) {}
+
+export class StakeVoteRegDelegCert extends Schema.TaggedClass<StakeVoteRegDelegCert>("StakeVoteRegDelegCert")(
+  "StakeVoteRegDelegCert",
+  {
+    stakeCredential: Credential.Credential,
+    poolKeyHash: PoolKeyHash.PoolKeyHash,
+    drep: DRep.DRep,
+    coin: Coin.Coin
+  }
+) {}
+
+export class AuthCommitteeHotCert extends Schema.TaggedClass<AuthCommitteeHotCert>("AuthCommitteeHotCert")(
+  "AuthCommitteeHotCert",
+  {
+    committeeColdCredential: Credential.Credential,
+    committeeHotCredential: Credential.Credential
+  }
+) {}
+
+export class ResignCommitteeColdCert extends Schema.TaggedClass<ResignCommitteeColdCert>("ResignCommitteeColdCert")(
+  "ResignCommitteeColdCert",
+  {
+    committeeColdCredential: Credential.Credential,
+    anchor: Schema.NullishOr(Anchor.Anchor)
+  }
+) {}
+
+export class RegDrepCert extends Schema.TaggedClass<RegDrepCert>("RegDrepCert")("RegDrepCert", {
+  drepCredential: Credential.Credential,
+  coin: Coin.Coin,
+  anchor: Schema.NullishOr(Anchor.Anchor)
+}) {}
+
+export class UnregDrepCert extends Schema.TaggedClass<UnregDrepCert>("UnregDrepCert")("UnregDrepCert", {
+  drepCredential: Credential.Credential,
+  coin: Coin.Coin
+}) {}
+
+export class UpdateDrepCert extends Schema.TaggedClass<UpdateDrepCert>("UpdateDrepCert")("UpdateDrepCert", {
+  drepCredential: Credential.Credential,
+  anchor: Schema.NullishOr(Anchor.Anchor)
+}) {}
+
 /**
  * Certificate union schema based on Conway CDDL specification
  *
@@ -68,93 +171,39 @@ export class CertificateError extends Data.TaggedError("CertificateError")<{
  */
 export const Certificate = Schema.Union(
   // 0: stake_registration = (0, stake_credential)
-  Schema.TaggedStruct("StakeRegistration", {
-    stakeCredential: Credential.Credential
-  }),
+  StakeRegistration,
   // 1: stake_deregistration = (1, stake_credential)
-  Schema.TaggedStruct("StakeDeregistration", {
-    stakeCredential: Credential.Credential
-  }),
+  StakeDeregistration,
   // 2: stake_delegation = (2, stake_credential, pool_keyhash)
-  Schema.TaggedStruct("StakeDelegation", {
-    stakeCredential: Credential.Credential,
-    poolKeyHash: PoolKeyHash.PoolKeyHash
-  }),
+  StakeDelegation,
   // 3: pool_registration = (3, pool_params)
-  Schema.TaggedStruct("PoolRegistration", {
-    poolParams: PoolParams.PoolParams
-  }),
+  PoolRegistration,
   // 4: pool_retirement = (4, pool_keyhash, epoch_no)
-  Schema.TaggedStruct("PoolRetirement", {
-    poolKeyHash: PoolKeyHash.PoolKeyHash,
-    epoch: EpochNo.EpochNoSchema
-  }),
+  PoolRetirement,
   // 7: reg_cert = (7, stake_credential, coin)
-  Schema.TaggedStruct("RegCert", {
-    stakeCredential: Credential.Credential,
-    coin: Coin.Coin
-  }),
+  RegCert,
   // 8: unreg_cert = (8, stake_credential, coin)
-  Schema.TaggedStruct("UnregCert", {
-    stakeCredential: Credential.Credential,
-    coin: Coin.Coin
-  }),
+  UnregCert,
   // 9: vote_deleg_cert = (9, stake_credential, drep)
-  Schema.TaggedStruct("VoteDelegCert", {
-    stakeCredential: Credential.Credential,
-    drep: DRep.DRep
-  }),
+  VoteDelegCert,
   // 10: stake_vote_deleg_cert = (10, stake_credential, pool_keyhash, drep)
-  Schema.TaggedStruct("StakeVoteDelegCert", {
-    stakeCredential: Credential.Credential,
-    poolKeyHash: PoolKeyHash.PoolKeyHash,
-    drep: DRep.DRep
-  }),
+  StakeVoteDelegCert,
   // 11: stake_reg_deleg_cert = (11, stake_credential, pool_keyhash, coin)
-  Schema.TaggedStruct("StakeRegDelegCert", {
-    stakeCredential: Credential.Credential,
-    poolKeyHash: PoolKeyHash.PoolKeyHash,
-    coin: Coin.Coin
-  }),
+  StakeRegDelegCert,
   // 12: vote_reg_deleg_cert = (12, stake_credential, drep, coin)
-  Schema.TaggedStruct("VoteRegDelegCert", {
-    stakeCredential: Credential.Credential,
-    drep: DRep.DRep,
-    coin: Coin.Coin
-  }),
+  VoteRegDelegCert,
   // 13: stake_vote_reg_deleg_cert = (13, stake_credential, pool_keyhash, drep, coin)
-  Schema.TaggedStruct("StakeVoteRegDelegCert", {
-    stakeCredential: Credential.Credential,
-    poolKeyHash: PoolKeyHash.PoolKeyHash,
-    drep: DRep.DRep,
-    coin: Coin.Coin
-  }),
+  StakeVoteRegDelegCert,
   // 14: auth_committee_hot_cert = (14, committee_cold_credential, committee_hot_credential)
-  Schema.TaggedStruct("AuthCommitteeHotCert", {
-    committeeColdCredential: Credential.Credential,
-    committeeHotCredential: Credential.Credential
-  }),
+  AuthCommitteeHotCert,
   // 15: resign_committee_cold_cert = (15, committee_cold_credential, anchor/ nil)
-  Schema.TaggedStruct("ResignCommitteeColdCert", {
-    committeeColdCredential: Credential.Credential,
-    anchor: Schema.NullishOr(Anchor.Anchor)
-  }),
+  ResignCommitteeColdCert,
   // 16: reg_drep_cert = (16, drep_credential, coin, anchor/ nil)
-  Schema.TaggedStruct("RegDrepCert", {
-    drepCredential: Credential.Credential,
-    coin: Coin.Coin,
-    anchor: Schema.NullishOr(Anchor.Anchor)
-  }),
+  RegDrepCert,
   // 17: unreg_drep_cert = (17, drep_credential, coin)
-  Schema.TaggedStruct("UnregDrepCert", {
-    drepCredential: Credential.Credential,
-    coin: Coin.Coin
-  }),
+  UnregDrepCert,
   // 18: update_drep_cert = (18, drep_credential, anchor/ nil)
-  Schema.TaggedStruct("UpdateDrepCert", {
-    drepCredential: Credential.Credential,
-    anchor: Schema.NullishOr(Anchor.Anchor)
-  })
+  UpdateDrepCert
 )
 
 export const CDDLSchema = Schema.Union(
@@ -173,18 +222,9 @@ export const CDDLSchema = Schema.Union(
   // 8: unreg_cert = (8, stake_credential, coin)
   Schema.Tuple(Schema.Literal(8n), Credential.CDDLSchema, CBOR.Integer),
   // 9: vote_deleg_cert = (9, stake_credential, drep)
-  Schema.Tuple(
-    Schema.Literal(9n),
-    Credential.CDDLSchema,
-    DRep.CDDLSchema
-  ),
+  Schema.Tuple(Schema.Literal(9n), Credential.CDDLSchema, DRep.CDDLSchema),
   // 10: stake_vote_deleg_cert = (10, stake_credential, pool_keyhash, drep)
-  Schema.Tuple(
-    Schema.Literal(10n),
-    Credential.CDDLSchema,
-    CBOR.ByteArray,
-    DRep.CDDLSchema,
-  ),
+  Schema.Tuple(Schema.Literal(10n), Credential.CDDLSchema, CBOR.ByteArray, DRep.CDDLSchema),
   // 11: stake_reg_deleg_cert = (11, stake_credential, pool_keyhash, coin)
   Schema.Tuple(Schema.Literal(11n), Credential.CDDLSchema, CBOR.ByteArray, CBOR.Integer),
   // 12: vote_reg_deleg_cert = (12, stake_credential, drep, coin)
@@ -240,11 +280,11 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
         }
         case "RegCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
-          return [7n, credentialCDDL, BigInt(toA.coin)] as const
+          return [7n, credentialCDDL, toA.coin] as const
         }
         case "UnregCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
-          return [8n, credentialCDDL, BigInt(toA.coin)] as const
+          return [8n, credentialCDDL, toA.coin] as const
         }
         case "VoteDelegCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
@@ -260,18 +300,18 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
         case "StakeRegDelegCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
           const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.poolKeyHash)
-          return [11n, credentialCDDL, poolKeyHashBytes, BigInt(toA.coin)] as const
+          return [11n, credentialCDDL, poolKeyHashBytes, toA.coin] as const
         }
         case "VoteRegDelegCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
           const drepCDDL = yield* ParseResult.encode(DRep.FromCDDL)(toA.drep)
-          return [12n, credentialCDDL, drepCDDL, BigInt(toA.coin)] as const
+          return [12n, credentialCDDL, drepCDDL, toA.coin] as const
         }
         case "StakeVoteRegDelegCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
           const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.poolKeyHash)
           const drepCDDL = yield* ParseResult.encode(DRep.FromCDDL)(toA.drep)
-          return [13n, credentialCDDL, poolKeyHashBytes, drepCDDL, BigInt(toA.coin)] as const
+          return [13n, credentialCDDL, poolKeyHashBytes, drepCDDL, toA.coin] as const
         }
         case "AuthCommitteeHotCert": {
           const coldCredentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.committeeColdCredential)
@@ -286,11 +326,11 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
         case "RegDrepCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.drepCredential)
           const anchorCDDL = toA.anchor ? yield* ParseResult.encode(Anchor.FromCDDL)(toA.anchor) : null
-          return [16n, credentialCDDL, BigInt(toA.coin), anchorCDDL] as const
+          return [16n, credentialCDDL, toA.coin, anchorCDDL] as const
         }
         case "UnregDrepCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.drepCredential)
-          return [17n, credentialCDDL, BigInt(toA.coin)] as const
+          return [17n, credentialCDDL, toA.coin] as const
         }
         case "UpdateDrepCert": {
           const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.drepCredential)
@@ -338,7 +378,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
           // pool_retirement = (4, pool_keyhash, epoch_no)
           const [, poolKeyHashBytes, epochBigInt] = fromA
           const poolKeyHash = yield* ParseResult.decode(PoolKeyHash.FromBytes)(poolKeyHashBytes)
-          const epoch = EpochNo.make(Number(epochBigInt))
+          const epoch = EpochNo.make(epochBigInt)
           return yield* ParseResult.decode(Certificate)({ _tag: "PoolRetirement", poolKeyHash, epoch })
         }
         case 7n: {
@@ -511,46 +551,67 @@ export const is = Schema.is(Certificate)
  */
 export const arbitrary = FastCheck.oneof(
   // StakeRegistration
-  FastCheck.record({
-    _tag: FastCheck.constant("StakeRegistration"),
-    stakeCredential: Credential.arbitrary
-  }),
+  Credential.arbitrary.map((stakeCredential) => new StakeRegistration({ stakeCredential })),
   // StakeDeregistration
-  FastCheck.record({
-    _tag: FastCheck.constant("StakeDeregistration"),
-    stakeCredential: Credential.arbitrary
-  }),
+  Credential.arbitrary.map((stakeCredential) => new StakeDeregistration({ stakeCredential })),
   // StakeDelegation
-  FastCheck.record({
-    _tag: FastCheck.constant("StakeDelegation"),
-    stakeCredential: Credential.arbitrary,
-    poolKeyHash: PoolKeyHash.arbitrary
-  }),
+  FastCheck.tuple(Credential.arbitrary, PoolKeyHash.arbitrary).map(
+    ([stakeCredential, poolKeyHash]) => new StakeDelegation({ stakeCredential, poolKeyHash })
+  ),
+  // PoolRegistration
+  PoolParams.arbitrary.map((poolParams) => new PoolRegistration({ poolParams })),
   // PoolRetirement
-  FastCheck.record({
-    _tag: FastCheck.constant("PoolRetirement"),
-    poolKeyHash: PoolKeyHash.arbitrary,
-    epoch: EpochNo.generator
-  }),
+  FastCheck.tuple(PoolKeyHash.arbitrary, EpochNo.generator).map(
+    ([poolKeyHash, epoch]) => new PoolRetirement({ poolKeyHash, epoch: EpochNo.make(epoch) })
+  ),
   // RegCert
-  FastCheck.record({
-    _tag: FastCheck.constant("RegCert"),
-    stakeCredential: Credential.arbitrary,
-    coin: Coin.arbitrary
-  }),
+  FastCheck.tuple(Credential.arbitrary, Coin.arbitrary).map(
+    ([stakeCredential, coin]) => new RegCert({ stakeCredential, coin })
+  ),
   // UnregCert
-  FastCheck.record({
-    _tag: FastCheck.constant("UnregCert"),
-    stakeCredential: Credential.arbitrary,
-    coin: Coin.arbitrary
-  }),
+  FastCheck.tuple(Credential.arbitrary, Coin.arbitrary).map(
+    ([stakeCredential, coin]) => new UnregCert({ stakeCredential, coin })
+  ),
   // VoteDelegCert
-  FastCheck.record({
-    _tag: FastCheck.constant("VoteDelegCert"),
-    stakeCredential: Credential.arbitrary,
-    drep: DRep.arbitrary
-  })
-  // Note: Additional certificate types would be added here
+  FastCheck.tuple(Credential.arbitrary, DRep.arbitrary).map(
+    ([stakeCredential, drep]) => new VoteDelegCert({ stakeCredential, drep })
+  ),
+  // StakeVoteDelegCert
+  FastCheck.tuple(Credential.arbitrary, PoolKeyHash.arbitrary, DRep.arbitrary).map(
+    ([stakeCredential, poolKeyHash, drep]) => new StakeVoteDelegCert({ stakeCredential, poolKeyHash, drep })
+  ),
+  // StakeRegDelegCert
+  FastCheck.tuple(Credential.arbitrary, PoolKeyHash.arbitrary, Coin.arbitrary).map(
+    ([stakeCredential, poolKeyHash, coin]) => new StakeRegDelegCert({ stakeCredential, poolKeyHash, coin })
+  ),
+  // VoteRegDelegCert
+  FastCheck.tuple(Credential.arbitrary, DRep.arbitrary, Coin.arbitrary).map(
+    ([stakeCredential, drep, coin]) => new VoteRegDelegCert({ stakeCredential, drep, coin })
+  ),
+  // StakeVoteRegDelegCert
+  FastCheck.tuple(Credential.arbitrary, PoolKeyHash.arbitrary, DRep.arbitrary, Coin.arbitrary).map(
+    ([stakeCredential, poolKeyHash, drep, coin]) => new StakeVoteRegDelegCert({ stakeCredential, poolKeyHash, drep, coin })
+  ),
+  // AuthCommitteeHotCert
+  FastCheck.tuple(Credential.arbitrary, Credential.arbitrary).map(
+    ([committeeColdCredential, committeeHotCredential]) => new AuthCommitteeHotCert({ committeeColdCredential, committeeHotCredential })
+  ),
+  // ResignCommitteeColdCert
+  FastCheck.tuple(Credential.arbitrary, FastCheck.option(Anchor.arbitrary, { nil: undefined })).map(
+    ([committeeColdCredential, anchor]) => new ResignCommitteeColdCert({ committeeColdCredential, anchor })
+  ),
+  // RegDrepCert
+  FastCheck.tuple(Credential.arbitrary, Coin.arbitrary, FastCheck.option(Anchor.arbitrary, { nil: undefined })).map(
+    ([drepCredential, coin, anchor]) => new RegDrepCert({ drepCredential, coin, anchor })
+  ),
+  // UnregDrepCert
+  FastCheck.tuple(Credential.arbitrary, Coin.arbitrary).map(
+    ([drepCredential, coin]) => new UnregDrepCert({ drepCredential, coin })
+  ),
+  // UpdateDrepCert
+  FastCheck.tuple(Credential.arbitrary, FastCheck.option(Anchor.arbitrary, { nil: undefined })).map(
+    ([drepCredential, anchor]) => new UpdateDrepCert({ drepCredential, anchor })
+  )
 )
 
 /**

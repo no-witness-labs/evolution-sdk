@@ -1,8 +1,8 @@
 import { Data, Effect as Eff, ParseResult, Schema } from "effect"
 import type { ParseIssue } from "effect/ParseResult"
 
+import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import { Bytes } from "./index.js"
 
 /**
  * Error class for Native script related operations.
@@ -116,27 +116,27 @@ export const make = (native: Native): Native => native
  * @category schemas
  */
 
-const ScriptPubKeyCDDL = Schema.Tuple(Schema.Literal(0), Schema.String)
+const ScriptPubKeyCDDL = Schema.Tuple(Schema.Literal(0n), Schema.Uint8ArrayFromSelf)
 
 const ScriptAllCDDL = Schema.Tuple(
-  Schema.Literal(1),
-  Schema.Array(Schema.suspend((): Schema.Schema<NativeCDDL> => Schema.encodedSchema(NativeCDDL)))
+  Schema.Literal(1n),
+  Schema.Array(Schema.suspend((): Schema.Schema<NativeCDDL> => Schema.encodedSchema(FromCDDL)))
 )
 
 const ScriptAnyCDDL = Schema.Tuple(
-  Schema.Literal(2),
-  Schema.Array(Schema.suspend((): Schema.Schema<NativeCDDL> => Schema.encodedSchema(NativeCDDL)))
+  Schema.Literal(2n),
+  Schema.Array(Schema.suspend((): Schema.Schema<NativeCDDL> => Schema.encodedSchema(FromCDDL)))
 )
 
 const ScriptNOfKCDDL = Schema.Tuple(
-  Schema.Literal(3),
+  Schema.Literal(3n),
   CBOR.Integer,
-  Schema.Array(Schema.suspend((): Schema.Schema<NativeCDDL> => Schema.encodedSchema(NativeCDDL)))
+  Schema.Array(Schema.suspend((): Schema.Schema<NativeCDDL> => Schema.encodedSchema(FromCDDL)))
 )
 
-const InvalidBeforeCDDL = Schema.Tuple(Schema.Literal(4), CBOR.Integer)
+const InvalidBeforeCDDL = Schema.Tuple(Schema.Literal(4n), CBOR.Integer)
 
-const InvalidHereafterCDDL = Schema.Tuple(Schema.Literal(5), CBOR.Integer)
+const InvalidHereafterCDDL = Schema.Tuple(Schema.Literal(5n), CBOR.Integer)
 
 /**
  * CDDL representation of a native script as a union of tuple types.
@@ -148,12 +148,21 @@ const InvalidHereafterCDDL = Schema.Tuple(Schema.Literal(5), CBOR.Integer)
  * @category model
  */
 export type NativeCDDL =
-  | readonly [0, string]
-  | readonly [1, ReadonlyArray<NativeCDDL>]
-  | readonly [2, ReadonlyArray<NativeCDDL>]
-  | readonly [3, bigint, ReadonlyArray<NativeCDDL>]
-  | readonly [4, bigint]
-  | readonly [5, bigint]
+  | readonly [0n, Uint8Array]
+  | readonly [1n, ReadonlyArray<NativeCDDL>]
+  | readonly [2n, ReadonlyArray<NativeCDDL>]
+  | readonly [3n, bigint, ReadonlyArray<NativeCDDL>]
+  | readonly [4n, bigint]
+  | readonly [5n, bigint]
+
+export const CDDLSchema = Schema.Union(
+  ScriptPubKeyCDDL,
+  ScriptAllCDDL,
+  ScriptAnyCDDL,
+  ScriptNOfKCDDL,
+  InvalidBeforeCDDL,
+  InvalidHereafterCDDL
+)
 
 /**
  * Schema for NativeCDDL union type.
@@ -161,15 +170,11 @@ export type NativeCDDL =
  * @since 2.0.0
  * @category schemas
  */
-export const NativeCDDL = Schema.transformOrFail(
-  Schema.Union(ScriptPubKeyCDDL, ScriptAllCDDL, ScriptAnyCDDL, ScriptNOfKCDDL, InvalidBeforeCDDL, InvalidHereafterCDDL),
-  Schema.typeSchema(Native),
-  {
-    strict: true,
-    encode: (native) => internalEncodeCDDL(native),
-    decode: (cborTuple) => internalDecodeCDDL(cborTuple)
-  }
-)
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Native), {
+  strict: true,
+  encode: (native) => internalEncodeCDDL(native),
+  decode: (cborTuple) => internalDecodeCDDL(cborTuple)
+})
 
 /**
  * Convert a Native to its CDDL representation.
@@ -181,25 +186,27 @@ export const internalEncodeCDDL = (native: Native): Eff.Effect<NativeCDDL, Parse
   Eff.gen(function* () {
     switch (native.type) {
       case "sig": {
-        return [0, native.keyHash] as const
+        // Convert hex string keyHash to bytes for CBOR encoding
+        const keyHashBytes = yield* ParseResult.decode(Bytes.FromHex)(native.keyHash)
+        return [0n, keyHashBytes] as const
       }
       case "all": {
         const scripts = yield* Eff.forEach(native.scripts, internalEncodeCDDL)
-        return [1, scripts] as const
+        return [1n, scripts] as const
       }
       case "any": {
         const scripts = yield* Eff.forEach(native.scripts, internalEncodeCDDL)
-        return [2, scripts] as const
+        return [2n, scripts] as const
       }
       case "atLeast": {
         const scripts = yield* Eff.forEach(native.scripts, internalEncodeCDDL)
-        return [3, BigInt(native.required), scripts] as const
+        return [3n, BigInt(native.required), scripts] as const
       }
       case "before": {
-        return [4, BigInt(native.slot)] as const
+        return [4n, BigInt(native.slot)] as const
       }
       case "after": {
-        return [5, BigInt(native.slot)] as const
+        return [5n, BigInt(native.slot)] as const
       }
     }
   })
@@ -216,15 +223,16 @@ export const internalEncodeCDDL = (native: Native): Eff.Effect<NativeCDDL, Parse
 export const internalDecodeCDDL = (cborTuple: NativeCDDL): Eff.Effect<Native, ParseIssue> =>
   Eff.gen(function* () {
     switch (cborTuple[0]) {
-      case 0: {
-        // sig: [0, keyHash_string]
-        const [, keyHash] = cborTuple
+      case 0n: {
+        // sig: [0, keyHash_bytes] - convert bytes back to hex string
+        const [, keyHashBytes] = cborTuple
+        const keyHash = yield* ParseResult.encode(Bytes.FromHex)(keyHashBytes)
         return {
           type: "sig" as const,
           keyHash
         }
       }
-      case 1: {
+      case 1n: {
         // all: [1, [native_script, ...]]
         const [, scriptCBORs] = cborTuple
         const scripts: Array<Native> = []
@@ -237,7 +245,7 @@ export const internalDecodeCDDL = (cborTuple: NativeCDDL): Eff.Effect<Native, Pa
           scripts
         }
       }
-      case 2: {
+      case 2n: {
         // any: [2, [native_script, ...]]
         const [, scriptCBORs] = cborTuple
         const scripts: Array<Native> = []
@@ -250,7 +258,7 @@ export const internalDecodeCDDL = (cborTuple: NativeCDDL): Eff.Effect<Native, Pa
           scripts
         }
       }
-      case 3: {
+      case 3n: {
         // atLeast: [3, required, [native_script, ...]]
         const [, required, scriptCBORs] = cborTuple
         const scripts: Array<Native> = []
@@ -264,7 +272,7 @@ export const internalDecodeCDDL = (cborTuple: NativeCDDL): Eff.Effect<Native, Pa
           scripts
         }
       }
-      case 4: {
+      case 4n: {
         // before: [4, slot]
         const [, slot] = cborTuple
         return {
@@ -272,7 +280,7 @@ export const internalDecodeCDDL = (cborTuple: NativeCDDL): Eff.Effect<Native, Pa
           slot: Number(slot)
         }
       }
-      case 5: {
+      case 5n: {
         // after: [5, slot]
         const [, slot] = cborTuple
         return {
@@ -296,7 +304,7 @@ export const internalDecodeCDDL = (cborTuple: NativeCDDL): Eff.Effect<Native, Pa
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    NativeCDDL // CBOR → Native
+    FromCDDL // CBOR → Native
   ).annotations({
     identifier: "Native.FromCBORBytes",
     title: "Native from CBOR Bytes",

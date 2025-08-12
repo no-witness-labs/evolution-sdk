@@ -1,4 +1,4 @@
-import { Data as EffectData, Either as E, FastCheck, ParseResult, pipe, Schema } from "effect"
+import { Data as EffectData, Effect, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
@@ -684,27 +684,82 @@ export const cborValueToPlutusData = (cborValue: CBOR.CBOR): Data => {
   })
 }
 
+export const CDDLSchema = CBOR.CBORSchema
+
 /**
- * CBOR value representation for PlutusData
- * This represents the intermediate CBOR structure that corresponds to PlutusData
+ * CDDL schema for PlutusData following the Conway specification.
+ *
+ * ```
+ * plutus_data =
+ *   constr<plutus_data>
+ *   / {* plutus_data => plutus_data}
+ *   / [* plutus_data]
+ *   / big_int
+ *   / bounded_bytes
+ *
+ * constr<a0> =
+ *   #6.121([* a0])    // index 0
+ *   / #6.122([* a0])  // index 1
+ *   / #6.123([* a0])  // index 2
+ *   / #6.124([* a0])  // index 3
+ *   / #6.125([* a0])  // index 4
+ *   / #6.126([* a0])  // index 5
+ *   / #6.127([* a0])  // index 6
+ *   / #6.102([uint, [* a0]])  // general constructor
+ *
+ * big_int = int / big_uint / big_nint
+ * big_uint = #6.2(bounded_bytes)
+ * big_nint = #6.3(bounded_bytes)
+ * ```
+ *
+ * This transforms between CBOR values and PlutusData using the existing
+ * plutusDataToCBORValue and cborValueToPlutusData functions.
  *
  * @since 2.0.0
- * @category model
+ * @category schemas
  */
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, DataSchema, {
+  strict: true,
+  encode: (_, __, ___, data) => Effect.succeed(plutusDataToCBORValue(data)),
+  decode: (_, __, ___, cborValue) =>
+    Effect.try({
+      try: () => cborValueToPlutusData(cborValue),
+      catch: (error) => new ParseResult.Type(DataSchema.ast, cborValue, String(error))
+    })
+})
 
+/**
+ * CBOR bytes transformation schema for PlutusData using CDDL.
+ * Transforms between CBOR bytes and Data using CDDL encoding.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DATA_DEFAULT_OPTIONS) =>
-  Schema.transformOrFail(Schema.Uint8ArrayFromSelf, DataSchema, {
-    strict: true,
-    encode: (toI) =>
-      pipe(plutusDataToCBORValue(toI), (cborValue) => ParseResult.encode(CBOR.FromBytes(options))(cborValue)),
-    decode: (fromI) => pipe(ParseResult.decode(CBOR.FromBytes(options))(fromI), ParseResult.map(cborValueToPlutusData))
-  }).annotations({
-    identifier: "Data.FromCBORBytes"
+  Schema.compose(
+    CBOR.FromBytes(options), // Uint8Array → CBOR
+    FromCDDL // CBOR → Data
+  ).annotations({
+    identifier: "Data.FromCBORBytes",
+    title: "Data from CBOR Bytes using CDDL",
+    description: "Transforms CBOR bytes to Data using CDDL encoding"
   })
 
+/**
+ * CBOR hex transformation schema for PlutusData using CDDL.
+ * Transforms between CBOR hex string and Data using CDDL encoding.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
 export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DATA_DEFAULT_OPTIONS) =>
-  Schema.compose(Bytes.FromHex, FromCBORBytes(options)).annotations({
-    identifier: "Data.FromCBORHex"
+  Schema.compose(
+    Bytes.FromHex, // string → Uint8Array
+    FromCBORBytes(options) // Uint8Array → Data
+  ).annotations({
+    identifier: "Data.FromCBORHex",
+    title: "Data from CBOR Hex using CDDL",
+    description: "Transforms CBOR hex string to Data using CDDL encoding"
   })
 
 // ============================================================================

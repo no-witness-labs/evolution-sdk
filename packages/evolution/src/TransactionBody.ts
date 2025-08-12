@@ -50,7 +50,7 @@ import * as Withdrawals from "./Withdrawals.js"
  * @category model
  */
 export class TransactionBody extends Schema.TaggedClass<TransactionBody>()("TransactionBody", {
-  inputs: Schema.NonEmptyArray(TransactionInput.TransactionInput), // 0
+  inputs: Schema.Array(TransactionInput.TransactionInput), // 0
   outputs: Schema.Array(TransactionOutput.TransactionOutput), // 1
   fee: Coin.Coin, // 2
   ttl: Schema.optional(Schema.BigIntFromSelf), // 3 - slot_no

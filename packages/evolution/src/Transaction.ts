@@ -1,8 +1,8 @@
 import { Schema } from "effect"
 
+import * as AuxiliaryData from "./AuxiliaryData.js";
 import * as TransactionBody from "./TransactionBody.js"
-// import * as TransactionWitnessSet from "./TransactionWitnessSet.js";
-// import * as AuxiliaryData from "./AuxiliaryData.js";
+import * as TransactionWitnessSet from "./TransactionWitnessSet.js";
 
 /**
  * Transaction based on Conway CDDL specification
@@ -13,15 +13,13 @@ import * as TransactionBody from "./TransactionBody.js"
  * @since 2.0.0
  * @category model
  */
-//TODO: Implement TransactionWitnessSet and AuxiliaryData when available
-export class TransactionClass extends Schema.TaggedClass<TransactionClass>()("Transaction", {
+export class Transaction extends Schema.TaggedClass<Transaction>()("Transaction", {
   body: TransactionBody.TransactionBody,
-  // witnessSet: TransactionWitnessSet.TransactionWitnessSet,
-  isValid: Schema.Boolean
-  // auxiliaryData: Schema.Union(
-  //   AuxiliaryData.AuxiliaryData,
-  //   Schema.Null,
-  // ),
+  witnessSet: TransactionWitnessSet.TransactionWitnessSet,
+  isValid: Schema.Boolean,
+  auxiliaryData: Schema.Union(
+    AuxiliaryData.AuxiliaryData,
+    Schema.Null,
+  ),
 }) {}
 
-export type Transaction = Schema.Schema.Type<typeof TransactionClass>

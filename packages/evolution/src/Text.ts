@@ -13,6 +13,9 @@ export class TextError extends Data.TaggedError("TextError")<{
   cause?: unknown
 }> {}
 
+export const Text = Schema.String
+
+//TODO: Invert the schema order
 /**
  * Schema for converting between strings and UTF-8 byte arrays.
  * text -> bytes

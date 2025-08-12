@@ -11,8 +11,8 @@ export class NumericError extends Data.TaggedError("NumericError")<{
   cause?: unknown
 }> {}
 
-export const UINT8_MIN = 0
-export const UINT8_MAX = 255
+export const UINT8_MIN = 0n
+export const UINT8_MAX = 255n
 
 /**
  * Schema for 8-bit unsigned integers.
@@ -20,7 +20,7 @@ export const UINT8_MAX = 255
  * @since 2.0.0
  * @category schemas
  */
-export const Uint8Schema = Schema.Number.pipe(
+export const Uint8Schema = Schema.BigIntFromSelf.pipe(
   Schema.filter((number) => Number.isInteger(number) && number >= UINT8_MIN && number <= UINT8_MAX),
   Schema.annotations({
     identifier: "Uint8",
@@ -51,7 +51,7 @@ export const Uint8Make = Uint8Schema.make
  * @since 2.0.0
  * @category arbitrary
  */
-export const Uint8Generator = FastCheck.integer({
+export const Uint8Generator = FastCheck.bigInt({
   min: UINT8_MIN,
   max: UINT8_MAX
 }).map(Uint8Make)

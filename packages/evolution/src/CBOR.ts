@@ -66,6 +66,7 @@ export const CBOR_SIMPLE = {
 export type CodecOptions =
   | {
       readonly mode: "canonical"
+      readonly mapsAsObjects?: boolean
     }
   | {
       readonly mode: "custom"
@@ -74,6 +75,7 @@ export type CodecOptions =
       readonly useDefiniteForEmpty: boolean
       readonly sortMapKeys: boolean
       readonly useMinimalEncoding: boolean
+      readonly mapsAsObjects?: boolean
     }
 
 /**
@@ -98,12 +100,13 @@ export const CML_DEFAULT_OPTIONS: CodecOptions = {
   useIndefiniteMaps: false,
   useDefiniteForEmpty: true,
   sortMapKeys: false,
-  useMinimalEncoding: true
+  useMinimalEncoding: true,
+  mapsAsObjects: false
 } as const
 
 /**
- * Default CBOR encoding option for Data 
- * 
+ * Default CBOR encoding option for Data
+ *
  * @since 1.0.0
  * @category constants
  */
@@ -113,7 +116,34 @@ export const CML_DATA_DEFAULT_OPTIONS: CodecOptions = {
   useIndefiniteMaps: true,
   useDefiniteForEmpty: true,
   sortMapKeys: false,
-  useMinimalEncoding: true
+  useMinimalEncoding: true,
+  mapsAsObjects: false
+} as const
+
+/**
+ * CBOR encoding options that return objects instead of Maps for Schema.Struct compatibility
+ *
+ * @since 2.0.0
+ * @category constants
+ */
+export const STRUCT_FRIENDLY_OPTIONS: CodecOptions = {
+  mode: "custom",
+  useIndefiniteArrays: false,
+  useIndefiniteMaps: false,
+  useDefiniteForEmpty: true,
+  sortMapKeys: false,
+  useMinimalEncoding: true,
+  mapsAsObjects: true
+} as const
+
+const DEFAULT_OPTIONS: CodecOptions = {
+  mode: "custom",
+  useIndefiniteArrays: false,
+  useIndefiniteMaps: false,
+  useDefiniteForEmpty: true,
+  sortMapKeys: false,
+  useMinimalEncoding: true,
+  mapsAsObjects: false
 } as const
 
 /**
@@ -128,12 +158,37 @@ export type CBOR =
   | string // text strings
   | ReadonlyArray<CBOR> // arrays
   | ReadonlyMap<CBOR, CBOR> // maps
-  | { readonly [key: string]: CBOR } // record alternative to maps
-  | Tag // tagged values
+  | { readonly [key: string | number]: CBOR } // record alternative to maps
+  | { _tag: "Tag"; tag: number; value: CBOR } // tagged values
   | boolean // boolean values
   | null // null value
   | undefined // undefined value
   | number // floating point numbers
+
+/**
+ * **Record vs Map Key Ordering**
+ * 
+ * Records `{ readonly [key: string | number]: CBOR }` follow JavaScript object property enumeration rules:
+ * 1. **Integer-like strings in ascending numeric order** (e.g., "0", "1", "42", "999")
+ * 2. **Other strings in insertion order** (e.g., "text", "key1", "key2")
+ * 
+ * Maps `ReadonlyMap<CBOR, CBOR>` preserve insertion order for all key types.
+ * 
+ * **Example:**
+ * ```typescript
+ * // Map preserves insertion order: ["text", 42n, 999n]
+ * const map = new Map([["text", "a"], [42n, "b"], [999n, "c"]])
+ * 
+ * // Record follows JS enumeration: [42, 999, "text"] 
+ * const record = { text: "a", 42: "b", 999: "c" }
+ * ```
+ * 
+ * **Recommendation:** Use Maps for consistent insertion order with mixed key types,
+ * or use canonical encoding to eliminate ordering differences.
+ * 
+ * @since 1.0.0
+ * @category model
+ */
 
 /**
  * CBOR Value schema definitions for each major type
@@ -159,8 +214,8 @@ export const isArray = Schema.is(ArraySchema)
 
 // Map (Major Type 5)
 export const MapSchema = Schema.ReadonlyMapFromSelf({
-  key: Schema.suspend(() => CBORSchema),
-  value: Schema.suspend(() => CBORSchema)
+  key: Schema.suspend((): Schema.Schema<CBOR> => CBORSchema),
+  value: Schema.suspend((): Schema.Schema<CBOR> => CBORSchema)
 })
 
 export const isMap = Schema.is(MapSchema)
@@ -169,17 +224,32 @@ export const isMap = Schema.is(MapSchema)
 // Provides a Record<string, CBOR> alternative to ReadonlyMap<CBOR, CBOR>
 // for applications that prefer object-based map representations
 export const RecordSchema = Schema.Record({
-  key: Schema.String,
-  value: Schema.suspend(() => CBORSchema)
+  key: Schema.String, // Keep only string keys for Schema compatibility
+  value: Schema.suspend((): Schema.Schema<CBOR> => CBORSchema)
 })
 
 export const isRecord = Schema.is(RecordSchema)
 
 // Tag (Major Type 6)
-export class Tag extends Schema.TaggedClass<Tag>("Tag")("Tag", {
+// export class Tag extends Schema.TaggedClass<Tag>("Tag")("Tag", {
+//   tag: Schema.Number,
+//   value: Schema.suspend((): Schema.Schema<CBOR> => CBORSchema)
+// }) {}
+export const Tag = Schema.TaggedStruct("Tag", {
   tag: Schema.Number,
-  value: Schema.suspend(() => CBORSchema)
-}) {}
+  value: Schema.suspend((): Schema.Schema<CBOR> => CBORSchema)
+})
+
+// I want a tag functiion to generate a custom tag , the first input takes a number and the second input takes a cbor value schema
+export const tag = <T extends number, C extends CBOR>(tag: T, value: Schema.Schema<C>) =>
+  Schema.TaggedStruct("Tag", {
+    tag: Schema.Literal(tag),
+    value
+  })
+
+// Map function to create a schema for CBOR maps with specific key and value types
+export const map = <K extends CBOR, V extends CBOR>(key: Schema.Schema<K>, value: Schema.Schema<V>) =>
+  Schema.ReadonlyMapFromSelf({ key, value })
 
 export const isTag = Schema.is(Tag)
 
@@ -267,7 +337,7 @@ export const match = <R>(
   if (value instanceof Map) {
     return patterns.map(value)
   }
-  if (value instanceof Tag) {
+  if (isTag(value)) {
     return patterns.tag(value.tag, value.value)
   }
   if (
@@ -319,7 +389,7 @@ const internalEncode = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS
     if (value instanceof Map) {
       return yield* encodeMap(value, options)
     }
-    if (value instanceof Tag) {
+    if (isTag(value)) {
       return yield* encodeTag(value.tag, value.value, options)
     }
     if (
@@ -330,7 +400,7 @@ const internalEncode = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS
       !(value instanceof Uint8Array) &&
       !(value instanceof Tag)
     ) {
-      return yield* encodeRecord(value as { readonly [key: string]: CBOR }, options)
+      return yield* encodeRecord(value as { readonly [key: string | number]: CBOR }, options)
     }
     if (typeof value === "boolean" || value === null || value === undefined) {
       return yield* encodeSimple(value)
@@ -345,13 +415,16 @@ const internalEncode = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS
   })
 
 // Internal decoding function used by Schema.transformOrFail
-const internalDecode = (data: Uint8Array): Eff.Effect<CBOR, CBORError> =>
+export const internalDecode = (
+  data: Uint8Array,
+  options: CodecOptions = DEFAULT_OPTIONS
+): Eff.Effect<CBOR, CBORError> =>
   Eff.gen(function* () {
     if (data.length === 0) {
       return yield* new CBORError({ message: "Empty CBOR data" })
     }
 
-    const { bytesConsumed, item } = yield* decodeItemWithLength(data)
+    const { bytesConsumed, item } = yield* decodeItemWithLength(data, options)
 
     // Verify that all input bytes were consumed
     if (bytesConsumed !== data.length) {
@@ -693,111 +766,45 @@ const encodeMap = (value: ReadonlyMap<CBOR, CBOR>, options: CodecOptions): Eff.E
     return result
   })
 
+/**
+ * Encode a Record (JavaScript object) as a CBOR Map.
+ * 
+ * **Number Key Support:** Number keys (e.g., `42`) are automatically converted to 
+ * bigint and encoded as CBOR integers, not text strings.
+ * 
+ * **Key Ordering:** Records follow JavaScript object property enumeration:
+ * - Integer-like strings in ascending numeric order
+ * - Other strings in insertion order
+ * This may differ from Map insertion order with mixed key types.
+ * 
+ * @param value - The record to encode
+ * @param options - CBOR encoding options
+ * @returns Effect that yields the encoded CBOR bytes
+ * 
+ * @since 1.0.0
+ * @category encoding
+ */
 const encodeRecord = (
-  value: { readonly [key: string]: CBOR },
+  value: { readonly [key: string | number]: CBOR },
   options: CodecOptions
 ): Eff.Effect<Uint8Array, CBORError> =>
   Eff.gen(function* () {
-    // Convert Record to array of pairs for processing
-    const pairs = Object.entries(value)
-    const length = pairs.length
-    const chunks: Array<Uint8Array> = []
-    const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
-    const sortKeys = options.mode === "canonical" || (options.mode === "custom" && options.sortMapKeys)
-    const useIndefinite = options.mode === "custom" && options.useIndefiniteMaps && length > 0
-
-    // Sort keys if required (canonical CBOR requires sorted keys)
-    let encodedPairs: Array<{ encodedKey: Uint8Array; encodedValue: Uint8Array }> | undefined
-
-    if (sortKeys) {
-      // Sort by encoded key length only (matches old CBOR.ts behavior)
-      const tempEncodedPairs = yield* Eff.all(
-        pairs.map(([key, val]) =>
-          Eff.gen(function* () {
-            const encodedKey = yield* internalEncode(key, options)
-            const encodedValue = yield* internalEncode(val, options)
-            return { encodedKey, encodedValue }
-          })
-        )
-      )
-
-      // Sort by encoded key length only (not full lexicographic order)
-      tempEncodedPairs.sort((a, b) => {
-        return a.encodedKey.length - b.encodedKey.length
-      })
-
-      encodedPairs = tempEncodedPairs
-    }
-
-    if (useIndefinite) {
-      // Indefinite-length map
-      chunks.push(new Uint8Array([0xbf])) // Start indefinite map
-
-      // Encode each key-value pair
-      if (encodedPairs) {
-        // Use pre-encoded pairs for sorted output
-        for (const { encodedKey, encodedValue } of encodedPairs) {
-          chunks.push(encodedKey)
-          chunks.push(encodedValue)
-        }
-      } else {
-        // Encode pairs on-the-fly for unsorted output
-        for (const [key, val] of pairs) {
-          const encodedKey = yield* internalEncode(key, options)
-          const encodedValue = yield* internalEncode(val, options)
-          chunks.push(encodedKey)
-          chunks.push(encodedValue)
-        }
+    // Convert Record to Map to preserve insertion order and reuse Map encoding logic
+    // Handle the case where number keys get converted to strings by Object.entries
+    const rawPairs = Object.entries(value)
+    const mapEntries = rawPairs.map(([key, val]) => {
+      // Check if the string key represents a number that should be encoded as bigint
+      const numKey = Number(key)
+      if (Number.isInteger(numKey) && !Number.isNaN(numKey) && key === String(numKey)) {
+        // Convert back to bigint for proper CBOR encoding
+        return [BigInt(numKey), val] as [CBOR, CBOR]
       }
-
-      // Add break marker
-      chunks.push(new Uint8Array([0xff]))
-    } else {
-      // Definite-length map
-      if (length < 24) {
-        chunks.push(new Uint8Array([0xa0 + length]))
-      } else if (length < 256 && useMinimal) {
-        chunks.push(new Uint8Array([0xb8, length]))
-      } else if (length < 65536 && useMinimal) {
-        chunks.push(new Uint8Array([0xb9, length >> 8, length & 0xff]))
-      } else if (length < 4294967296 && useMinimal) {
-        chunks.push(
-          new Uint8Array([0xba, (length >> 24) & 0xff, (length >> 16) & 0xff, (length >> 8) & 0xff, length & 0xff])
-        )
-      } else {
-        return yield* new CBORError({
-          message: `Record too long: ${length} entries`
-        })
-      }
-
-      // Encode each key-value pair
-      if (encodedPairs) {
-        // Use pre-encoded pairs for sorted output
-        for (const { encodedKey, encodedValue } of encodedPairs) {
-          chunks.push(encodedKey)
-          chunks.push(encodedValue)
-        }
-      } else {
-        // Encode pairs on-the-fly for unsorted output
-        for (const [key, val] of pairs) {
-          const encodedKey = yield* internalEncode(key, options)
-          const encodedValue = yield* internalEncode(val, options)
-          chunks.push(encodedKey)
-          chunks.push(encodedValue)
-        }
-      }
-    }
-
-    // Combine chunks
-    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-    const result = new Uint8Array(totalLength)
-    let offset = 0
-    for (const chunk of chunks) {
-      result.set(chunk, offset)
-      offset += chunk.length
-    }
-
-    return result
+      return [key, val] as [CBOR, CBOR]
+    })
+    
+    // Create a Map from the processed entries and encode it
+    const map = new Map(mapEntries)
+    return yield* encodeMap(map, options)
   })
 
 const encodeTag = (tag: number, value: CBOR, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
@@ -1129,7 +1136,7 @@ const decodeTextWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesC
   })
 
 // Helper function to decode an item and return both the item and bytes consumed
-const decodeItemWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
+const decodeItemWithLength = (data: Uint8Array, options: CodecOptions = CML_DEFAULT_OPTIONS): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
   Eff.gen(function* () {
     if (data.length === 0) {
       return yield* new CBORError({ message: "Empty CBOR data" })
@@ -1194,19 +1201,19 @@ const decodeItemWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesC
         break
       }
       case CBOR_MAJOR_TYPE.ARRAY: {
-        const { bytesConsumed: arrayBytes, item: arrayItem } = yield* decodeArrayWithLength(data)
+        const { bytesConsumed: arrayBytes, item: arrayItem } = yield* decodeArrayWithLength(data, options)
         item = arrayItem
         bytesConsumed = arrayBytes
         break
       }
       case CBOR_MAJOR_TYPE.MAP: {
-        const { bytesConsumed: mapBytes, item: mapItem } = yield* decodeMapWithLength(data)
+        const { bytesConsumed: mapBytes, item: mapItem } = yield* decodeMapWithLength(data, options)
         item = mapItem
         bytesConsumed = mapBytes
         break
       }
       case CBOR_MAJOR_TYPE.TAG: {
-        const { bytesConsumed: tagBytes, item: tagItem } = yield* decodeTagWithLength(data)
+        const { bytesConsumed: tagBytes, item: tagItem } = yield* decodeTagWithLength(data, options)
         item = tagItem
         bytesConsumed = tagBytes
         break
@@ -1239,7 +1246,7 @@ const decodeItemWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesC
     return { item, bytesConsumed }
   })
 
-const decodeArrayWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
+const decodeArrayWithLength = (data: Uint8Array, options: CodecOptions = CML_DEFAULT_OPTIONS): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
   Eff.gen(function* () {
     const firstByte = data[0]
     const additionalInfo = firstByte & 0x1f
@@ -1257,7 +1264,7 @@ const decodeArrayWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytes
           break
         }
 
-        const { bytesConsumed, item } = yield* decodeItemWithLength(data.slice(offset))
+        const { bytesConsumed, item } = yield* decodeItemWithLength(data.slice(offset), options)
         result.push(item)
         offset += bytesConsumed
       }
@@ -1285,7 +1292,7 @@ const decodeArrayWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytes
           })
         }
 
-        const { bytesConsumed, item } = yield* decodeItemWithLength(data.slice(offset))
+        const { bytesConsumed, item } = yield* decodeItemWithLength(data.slice(offset), options)
         result.push(item)
         offset += bytesConsumed
       }
@@ -1297,7 +1304,26 @@ const decodeArrayWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytes
     }
   })
 
-const decodeMapWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
+/**
+ * Helper function to convert Map entries to a plain object.
+ * Used when mapsAsObjects option is enabled.
+ */
+const convertEntriesToObject = (entries: Array<[CBOR, CBOR]>): Record<string | number, CBOR> => {
+  const obj: Record<string | number, CBOR> = {}
+  for (const [key, value] of entries) {
+    if (typeof key === 'string' || typeof key === 'number') {
+      obj[key] = value
+    } else if (typeof key === 'bigint') {
+      obj[Number(key)] = value
+    } else {
+      // For non-primitive keys, convert to string
+      obj[String(key)] = value
+    }
+  }
+  return obj
+}
+
+const decodeMapWithLength = (data: Uint8Array, options: CodecOptions = CML_DEFAULT_OPTIONS): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
   Eff.gen(function* () {
     const firstByte = data[0]
     const additionalInfo = firstByte & 0x1f
@@ -1305,7 +1331,7 @@ const decodeMapWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesCo
     if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
       // Indefinite-length map
       let offset = 1
-      const result = new Map<CBOR, CBOR>()
+      const entries: Array<[CBOR, CBOR]> = []
       let foundBreak = false
 
       while (offset < data.length) {
@@ -1316,7 +1342,7 @@ const decodeMapWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesCo
         }
 
         // Decode key
-        const { bytesConsumed: keyBytes, item: key } = yield* decodeItemWithLength(data.slice(offset))
+        const { bytesConsumed: keyBytes, item: key } = yield* decodeItemWithLength(data.slice(offset), options)
         offset += keyBytes
 
         // Decode value
@@ -1326,10 +1352,10 @@ const decodeMapWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesCo
           })
         }
 
-        const { bytesConsumed: valueBytes, item: value } = yield* decodeItemWithLength(data.slice(offset))
+        const { bytesConsumed: valueBytes, item: value } = yield* decodeItemWithLength(data.slice(offset), options)
         offset += valueBytes
 
-        result.set(key, value)
+        entries.push([key, value])
       }
 
       if (!foundBreak) {
@@ -1338,12 +1364,17 @@ const decodeMapWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesCo
         })
       }
 
+      // Convert to Map or Object based on option
+      const result = options.mapsAsObjects ? 
+        convertEntriesToObject(entries) : 
+        new Map(entries)
+
       return { item: result, bytesConsumed: offset }
     } else {
       // Definite-length map
       const { bytesRead, length } = yield* decodeLength(data, 0)
       let offset = bytesRead
-      const result = new Map<CBOR, CBOR>()
+      const entries: Array<[CBOR, CBOR]> = []
 
       for (let i = 0; i < length; i++) {
         // Decode key
@@ -1353,7 +1384,7 @@ const decodeMapWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesCo
           })
         }
 
-        const { bytesConsumed: keyBytes, item: key } = yield* decodeItemWithLength(data.slice(offset))
+        const { bytesConsumed: keyBytes, item: key } = yield* decodeItemWithLength(data.slice(offset), options)
         offset += keyBytes
 
         // Decode value
@@ -1363,17 +1394,22 @@ const decodeMapWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesCo
           })
         }
 
-        const { bytesConsumed: valueBytes, item: value } = yield* decodeItemWithLength(data.slice(offset))
+        const { bytesConsumed: valueBytes, item: value } = yield* decodeItemWithLength(data.slice(offset), options)
         offset += valueBytes
 
-        result.set(key, value)
+        entries.push([key, value])
       }
+
+      // Convert to Map or Object based on option
+      const result = options.mapsAsObjects ? 
+        convertEntriesToObject(entries) : 
+        new Map(entries)
 
       return { item: result, bytesConsumed: offset }
     }
   })
 
-const decodeTagWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
+const decodeTagWithLength = (data: Uint8Array, options: CodecOptions = DEFAULT_OPTIONS): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
   Eff.gen(function* () {
     const firstByte = data[0]
     const additionalInfo = firstByte & 0x1f
@@ -1405,7 +1441,7 @@ const decodeTagWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesCo
       })
     }
 
-    const { bytesConsumed, item: innerValue } = yield* decodeItemWithLength(data.slice(dataOffset))
+    const { bytesConsumed, item: innerValue } = yield* decodeItemWithLength(data.slice(dataOffset), options)
 
     // Handle special tags that should be converted to plain values
     if (tagValue === 2) {
@@ -1437,7 +1473,10 @@ const decodeTagWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesCo
 
     // For all other tags, return as tagged object
     return {
-      item: new Tag({ tag: tagValue, value: innerValue }),
+      item: Tag.make({
+        tag: tagValue,
+        value: innerValue
+      }),
       bytesConsumed: dataOffset + bytesConsumed
     }
   })
@@ -1546,10 +1585,7 @@ const bytesToBigint = (bytes: Uint8Array): bigint => {
 
 // Helper function for length decoding
 
-const decodeLength = (
-  data: Uint8Array,
-  offset: number
-): Eff.Effect<{ length: number; bytesRead: number }, CBORError> =>
+const decodeLength = (data: Uint8Array, offset: number): Eff.Effect<{ length: number; bytesRead: number }, CBORError> =>
   Eff.gen(function* () {
     if (offset >= data.length) {
       return yield* new CBORError({
@@ -1649,7 +1685,7 @@ export const FromBytes = (options: CodecOptions) =>
     strict: true,
     decode: (fromA, _, ast) =>
       Eff.mapError(
-        internalDecode(fromA),
+        internalDecode(fromA, options),
         (error) =>
           new ParseResult.Type(
             ast,
@@ -1670,3 +1706,109 @@ export const FromBytes = (options: CodecOptions) =>
   })
 
 export const FromHex = (options: CodecOptions) => Schema.compose(Bytes.FromHex, FromBytes(options))
+
+export namespace Effect {
+  /**
+   * Decode CBOR bytes to a CBOR value using Effect error handling.
+   *
+   * @since 1.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options: CodecOptions = CML_DEFAULT_OPTIONS): Eff.Effect<CBOR, CBORError> =>
+    Eff.mapError(
+      Schema.decode(FromBytes(options))(bytes),
+      (cause) => new CBORError({
+        message: "Failed to parse CBOR from bytes",
+        cause
+      })
+    )
+
+  /**
+   * Decode CBOR hex string to a CBOR value using Effect error handling.
+   *
+   * @since 1.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = (hex: string, options: CodecOptions = CML_DEFAULT_OPTIONS): Eff.Effect<CBOR, CBORError> =>
+    Eff.mapError(
+      Schema.decode(FromHex(options))(hex),
+      (cause) => new CBORError({
+        message: "Failed to parse CBOR from hex",
+        cause
+      })
+    )
+
+  /**
+   * Encode a CBOR value to bytes using Effect error handling.
+   *
+   * @since 1.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS): Eff.Effect<Uint8Array, CBORError> =>
+    Eff.mapError(
+      Schema.encode(FromBytes(options))(value),
+      (cause) => new CBORError({
+        message: "Failed to encode CBOR to bytes",
+        cause
+      })
+    )
+
+  /**
+   * Encode a CBOR value to hex string using Effect error handling.
+   *
+   * @since 1.0.0
+   * @category encoding
+   */
+  export const toCBORHex = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS): Eff.Effect<string, CBORError> =>
+    Eff.mapError(
+      Schema.encode(FromHex(options))(value),
+      (cause) => new CBORError({
+        message: "Failed to encode CBOR to hex",
+        cause
+      })
+    )
+}
+
+// ============================================================================
+// Parsing Functions
+// ============================================================================
+
+/**
+ * Parse a CBOR value from CBOR bytes.
+ * 
+ * @since 1.0.0
+ * @category parsing
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CodecOptions): CBOR =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Parse a CBOR value from CBOR hex string.
+ * 
+ * @since 1.0.0
+ * @category parsing
+ */
+export const fromCBORHex = (hex: string, options?: CodecOptions): CBOR =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
+
+/**
+ * Convert a CBOR value to CBOR bytes.
+ * 
+ * @since 1.0.0
+ * @category encoding
+ */
+export const toCBORBytes = (value: CBOR, options?: CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(value, options))
+
+/**
+ * Convert a CBOR value to CBOR hex string.
+ * 
+ * @since 1.0.0
+ * @category encoding
+ */
+export const toCBORHex = (value: CBOR, options?: CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(value, options))

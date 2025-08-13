@@ -10,3 +10,5 @@ docs/.next
 # TypeScript incremental compilation cache
 *.tsbuildinfo
 .tsbuildinfo/
+
+.github/instructions/

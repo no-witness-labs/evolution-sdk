@@ -72,36 +72,21 @@ export const FromHex = Schema.compose(
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(CBOR.Tag, ScriptRef, {
+export const FromCDDL = Schema.transformOrFail(CBOR.tag(24, Schema.Uint8ArrayFromSelf), ScriptRef, {
   strict: true,
   encode: (_, __, ___, toA) =>
     Effect.gen(function* () {
       // Convert ScriptRef (hex string) to bytes for CBOR tag
       const bytes = yield* ParseResult.decode(Bytes.FromHex)(toA)
-      return new CBOR.Tag({
-        tag: 24, // tag 24 for CBOR script reference
+      return {
+        _tag: "Tag" as const,
+        tag: 24 as const,
         value: bytes
-      })
+      }
     }),
 
-  decode: (taggedValue, _, ast) =>
+  decode: (taggedValue) =>
     Effect.gen(function* () {
-      if (taggedValue.tag !== 24) {
-        return yield* Effect.fail(
-          new ParseResult.Type(ast, taggedValue, `Expected tag 24 for ScriptRef, got tag ${taggedValue.tag}`)
-        )
-      }
-
-      if (!(taggedValue.value instanceof Uint8Array)) {
-        return yield* Effect.fail(
-          new ParseResult.Type(
-            ast,
-            taggedValue,
-            `Expected Uint8Array for ScriptRef value, got ${typeof taggedValue.value}`
-          )
-        )
-      }
-
       // Convert bytes to hex string for ScriptRef
       const hex = yield* ParseResult.encode(Bytes.FromHex)(taggedValue.value)
       return ScriptRef.make(hex)

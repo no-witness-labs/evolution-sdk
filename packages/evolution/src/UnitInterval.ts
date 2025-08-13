@@ -70,7 +70,7 @@ export type UnitInterval = typeof UnitInterval.Type
  */
 export const make = UnitInterval.make
 
-export const CDDLSchema = CBOR.Tag
+export const CDDLSchema = CBOR.tag(30, Schema.Tuple(CBOR.Integer, CBOR.Integer))
 
 /**
  * CDDL schema for UnitInterval following the Conway specification.
@@ -87,12 +87,11 @@ export const CDDLSchema = CBOR.Tag
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, UnitInterval, {
   strict: true,
   encode: (_, __, ___, unitInterval) =>
-    Effect.succeed(
-      new CBOR.Tag({
-        tag: 30,
-        value: [unitInterval.numerator, unitInterval.denominator]
-      })
-    ),
+    Effect.succeed({
+      _tag: "Tag" as const,
+      tag: 30 as const,
+      value: [unitInterval.numerator, unitInterval.denominator] as const
+    }),
   decode: (_, __, ___, taggedValue) =>
     Effect.gen(function* () {
       // Validate tag number

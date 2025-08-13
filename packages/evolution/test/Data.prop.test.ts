@@ -15,14 +15,13 @@ describe("Data Property Tests", () => {
      */
 
     // Reference to exported generators for clarity
-    const { genConstr, genPlutusBigInt, genPlutusBytes, genPlutusData, genPlutusList, genPlutusMap } = Data
 
     describe("Generator-based Roundtrip Tests", () => {
       it("should generate valid PlutusBigInt data and roundtrip", () => {
         FastCheck.assert(
-          FastCheck.property(genPlutusBigInt(), (value) => {
-            const cborHex = Data.Codec().Encode.cborHex(value)
-            const decoded = Data.Codec().Decode.cborHex(cborHex)
+          FastCheck.property(Data.arbitraryPlutusBigInt(), (value) => {
+            const cborHex = Data.toCBORHex(value)
+            const decoded = Data.fromCBORHex(cborHex)
             expect(Data.isInt(value)).toBe(true)
             expect(decoded).toEqual(value)
           })
@@ -31,9 +30,9 @@ describe("Data Property Tests", () => {
 
       it("should generate valid PlutusBytes data and roundtrip", () => {
         FastCheck.assert(
-          FastCheck.property(genPlutusBytes(), (value) => {
-            const cborHex = Data.Codec().Encode.cborHex(value)
-            const decoded = Data.Codec().Decode.cborHex(cborHex)
+          FastCheck.property(Data.arbitraryPlutusBytes(), (value) => {
+            const cborHex = Data.toCBORHex(value)
+            const decoded = Data.fromCBORHex(cborHex)
             expect(Data.isBytes(value)).toBe(true)
             expect(decoded).toEqual(value)
           })
@@ -42,9 +41,9 @@ describe("Data Property Tests", () => {
 
       it("should generate valid PlutusList data and roundtrip", () => {
         FastCheck.assert(
-          FastCheck.property(genPlutusList(1), (value) => {
-            const cborHex = Data.Codec().Encode.cborHex(value)
-            const decoded = Data.Codec().Decode.cborHex(cborHex)
+          FastCheck.property(Data.arbitraryPlutusList(1), (value) => {
+            const cborHex = Data.toCBORHex(value)
+            const decoded = Data.fromCBORHex(cborHex)
             expect(Data.isList(value)).toBe(true)
             expect(decoded).toEqual(value)
           })
@@ -53,9 +52,9 @@ describe("Data Property Tests", () => {
 
       it("should generate valid PlutusMap data and roundtrip", () => {
         FastCheck.assert(
-          FastCheck.property(genPlutusMap(1), (value) => {
-            const cborHex = Data.Codec().Encode.cborHex(value)
-            const decoded = Data.Codec().Decode.cborHex(cborHex)
+          FastCheck.property(Data.arbitraryPlutusMap(1), (value) => {
+            const cborHex = Data.toCBORHex(value)
+            const decoded = Data.fromCBORHex(cborHex)
             expect(Data.isMap(value)).toBe(true)
             expect(decoded).toEqual(value)
           })
@@ -64,9 +63,9 @@ describe("Data Property Tests", () => {
 
       it("should generate valid Constr data and roundtrip", () => {
         FastCheck.assert(
-          FastCheck.property(genConstr(1), (value) => {
-            const cborHex = Data.Codec().Encode.cborHex(value)
-            const decoded = Data.Codec().Decode.cborHex(cborHex)
+          FastCheck.property(Data.arbitraryConstr(1), (value) => {
+            const cborHex = Data.toCBORHex(value)
+            const decoded = Data.fromCBORHex(cborHex)
             expect(Data.isConstr(value)).toBe(true)
             expect(decoded).toEqual(value)
           })
@@ -75,9 +74,9 @@ describe("Data Property Tests", () => {
 
       it("should generate complex PlutusData structures and roundtrip", () => {
         FastCheck.assert(
-          FastCheck.property(genPlutusData(2), (value) => {
-            const cborHex = Data.Codec().Encode.cborHex(value)
-            const decoded = Data.Codec().Decode.cborHex(cborHex)
+          FastCheck.property(Data.arbitraryPlutusData(2), (value) => {
+            const cborHex = Data.toCBORHex(value)
+            const decoded = Data.fromCBORHex(cborHex)
             expect(decoded).toEqual(value)
           })
         )
@@ -88,9 +87,9 @@ describe("Data Property Tests", () => {
   describe("Generator-based Alternative Tests", () => {
     it("should maintain PlutusBigInt through roundtrip using exported generator", () => {
       FastCheck.assert(
-        FastCheck.property(Data.genPlutusBigInt(), (value) => {
-          const cborHex = Data.Codec().Encode.cborHex(value)
-          const decoded = Data.Codec().Decode.cborHex(cborHex)
+        FastCheck.property(Data.arbitraryPlutusBigInt(), (value) => {
+          const cborHex = Data.toCBORHex(value)
+          const decoded = Data.fromCBORHex(cborHex)
           expect(decoded).toEqual(value)
         })
       )
@@ -98,9 +97,9 @@ describe("Data Property Tests", () => {
 
     it("should maintain PlutusBytes through roundtrip using exported generator", () => {
       FastCheck.assert(
-        FastCheck.property(Data.genPlutusBytes(), (value) => {
-          const cborHex = Data.Codec().Encode.cborHex(value)
-          const decoded = Data.Codec().Decode.cborHex(cborHex)
+        FastCheck.property(Data.arbitraryPlutusBytes(), (value) => {
+          const cborHex = Data.toCBORHex(value)
+          const decoded = Data.fromCBORHex(cborHex)
           expect(decoded).toEqual(value)
         })
       )
@@ -109,9 +108,9 @@ describe("Data Property Tests", () => {
     it("should maintain PlutusData through roundtrip using exported generator", () => {
       // Use limited depth to avoid excessive recursion
       FastCheck.assert(
-        FastCheck.property(Data.genPlutusData(2), (value) => {
-          const cborHex = Data.Codec().Encode.cborHex(value)
-          const decoded = Data.Codec().Decode.cborHex(cborHex)
+        FastCheck.property(Data.arbitraryPlutusData(2), (value) => {
+          const cborHex = Data.toCBORHex(value)
+          const decoded = Data.fromCBORHex(cborHex)
           expect(decoded).toEqual(value)
         })
       )
@@ -123,8 +122,8 @@ describe("Data Property Tests", () => {
       FastCheck.assert(
         FastCheck.property(FastCheck.bigInt(), (value) => {
           const plutusBigInt = value
-          const cborHex = Data.Codec().Encode.cborHex(plutusBigInt)
-          const decoded = Data.Codec().Decode.cborHex(cborHex)
+          const cborHex = Data.toCBORHex(plutusBigInt)
+          const decoded = Data.fromCBORHex(cborHex)
 
           expect(decoded).toEqual(plutusBigInt)
 
@@ -144,11 +143,11 @@ describe("Data Property Tests", () => {
       FastCheck.assert(
         FastCheck.property(
           FastCheck.integer({ min: 0, max: 6 }),
-          FastCheck.array(Data.genPlutusBigInt(), { maxLength: 2 }),
+          FastCheck.array(Data.arbitraryPlutusBigInt(), { maxLength: 2 }),
           (index, fields) => {
             const constr = Data.constr(BigInt(index), fields)
-            const cborHex = Data.Codec().Encode.cborHex(constr)
-            const decoded = Data.Codec().Decode.cborHex(cborHex)
+            const cborHex = Data.toCBORHex(constr)
+            const decoded = Data.fromCBORHex(cborHex)
 
             expect(decoded).toEqual(constr)
 
@@ -167,11 +166,11 @@ describe("Data Property Tests", () => {
       FastCheck.assert(
         FastCheck.property(
           FastCheck.bigInt({ min: 7n, max: 2n ** 64n - 1n }),
-          FastCheck.array(Data.genPlutusBigInt(), { maxLength: 2 }),
+          FastCheck.array(Data.arbitraryPlutusBigInt(), { maxLength: 2 }),
           (index, fields) => {
             const constr = Data.constr(index, fields)
-            const cborHex = Data.Codec().Encode.cborHex(constr)
-            const decoded = Data.Codec().Decode.cborHex(cborHex)
+            const cborHex = Data.toCBORHex(constr)
+            const decoded = Data.fromCBORHex(cborHex)
 
             expect(decoded).toEqual(constr)
 
@@ -191,12 +190,12 @@ describe("Data Property Tests", () => {
     it("should successfully transform between CBOR bytes and PlutusData", () => {
       // Use exported generator with limited recursion depth
       FastCheck.assert(
-        FastCheck.property(Data.genPlutusData(1), (value) => {
+        FastCheck.property(Data.arbitraryPlutusData(1), (value) => {
           // PlutusData -> CBOR bytes
-          const cborBytes = Data.Codec().Encode.cborBytes(value)
+          const cborBytes = Data.toCBORBytes(value)
 
           // CBOR bytes -> PlutusData
-          const decoded = Data.Codec().Decode.cborBytes(cborBytes)
+          const decoded = Data.fromCBORBytes(cborBytes)
 
           expect(decoded).toEqual(value)
         })

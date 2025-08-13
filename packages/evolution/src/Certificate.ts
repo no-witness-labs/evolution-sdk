@@ -337,10 +337,10 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
           const anchorCDDL = toA.anchor ? yield* ParseResult.encode(Anchor.FromCDDL)(toA.anchor) : null
           return [18n, credentialCDDL, anchorCDDL] as const
         }
-        default:
-          return yield* ParseResult.fail(
-            new ParseResult.Type(CDDLSchema.ast, toA, `Unsupported certificate type: ${(toA as any)._tag}`)
-          )
+        // default:
+        //   return yield* ParseResult.fail(
+        //     new ParseResult.Type(CDDLSchema.ast, toA, `Unsupported certificate type: ${(toA as any)._tag}`)
+        //   )
       }
     }),
   decode: (fromA) =>
@@ -495,10 +495,10 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
           const anchor = anchorCDDL ? yield* ParseResult.decode(Anchor.FromCDDL)(anchorCDDL) : undefined
           return yield* ParseResult.decode(Certificate)({ _tag: "UpdateDrepCert", drepCredential, anchor })
         }
-        default:
-          return yield* ParseResult.fail(
-            new ParseResult.Type(CDDLSchema.ast, fromA, `Unsupported certificate type ID: ${fromA}`)
-          )
+        // default:
+        //   return yield* ParseResult.fail(
+        //     new ParseResult.Type(CDDLSchema.ast, fromA, `Unsupported certificate type ID: ${fromA}`)
+        //   )
       }
     })
 })

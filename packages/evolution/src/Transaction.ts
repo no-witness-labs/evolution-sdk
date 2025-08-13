@@ -1,8 +1,8 @@
 import { Schema } from "effect"
 
-import * as AuxiliaryData from "./AuxiliaryData.js";
+import * as AuxiliaryData from "./AuxiliaryData.js"
 import * as TransactionBody from "./TransactionBody.js"
-import * as TransactionWitnessSet from "./TransactionWitnessSet.js";
+import * as TransactionWitnessSet from "./TransactionWitnessSet.js"
 
 /**
  * Transaction based on Conway CDDL specification
@@ -17,9 +17,5 @@ export class Transaction extends Schema.TaggedClass<Transaction>()("Transaction"
   body: TransactionBody.TransactionBody,
   witnessSet: TransactionWitnessSet.TransactionWitnessSet,
   isValid: Schema.Boolean,
-  auxiliaryData: Schema.Union(
-    AuxiliaryData.AuxiliaryData,
-    Schema.Null,
-  ),
+  auxiliaryData: Schema.NullOr(AuxiliaryData.AuxiliaryData)
 }) {}
-

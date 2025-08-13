@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 import type { NonEmptyArray } from "effect/Array"
 
 import * as AuxiliaryDataHash from "./AuxiliaryDataHash.js"
@@ -84,41 +84,58 @@ export class TransactionBodyError extends Data.TaggedError("TransactionBodyError
 }> {}
 
 /**
- * CDDL schema for TransactionBody map structure.
+ * CDDL schema for TransactionBody struct structure.
  *
  * Maps the TransactionBody fields to their CDDL field numbers according to Conway spec.
- * Uses MapFromSelf to produce CBOR with integer keys (not string keys) for CML compatibility.
+ * Uses Struct with proper CBOR tags for sets (tag 258) for CML compatibility.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const CDDLSchema = Schema.MapFromSelf({
-  key: CBOR.Integer,
-  value: Schema.Union(
-    Schema.Array(TransactionInput.CDDLSchema), // 0: set<transaction_input>, 13: collateral_inputs, 18: reference_inputs
-    Schema.Array(TransactionOutput.CDDLSchema), // 1: [* transaction_output]
-    CBOR.Integer, // 2: coin (fee), 3: slot_no (ttl), 8: slot_no (validity_interval_start), 15: network_id, 17: coin (total_collateral), 21: coin (current_treasury_value), 22: positive_coin (donation)
-    Schema.Array(Certificate.CDDLSchema), // 4: certificates
-    Withdrawals.CDDLSchema, // 5: withdrawals
-    CBOR.ByteArray, // 7: auxiliary_data_hash, 11: script_data_hash
-    Schema.encodedSchema(Mint.CDDLSchema), // 9: mint
-    Schema.Array(CBOR.ByteArray), // 14: required_signers
-    TransactionOutput.CDDLSchema, // 16: transaction_output (collateral_return)
-    Schema.encodedSchema(VotingProcedures.CDDLSchema), // 19: voting_procedures
-    Schema.encodedSchema(ProposalProcedures.CDDLSchema) // 20: proposal_procedures
-  )
+export const CDDLSchema = Schema.Struct({
+  0: CBOR.tag(258, Schema.Array(TransactionInput.CDDLSchema)), // set<transaction_input> - required
+  1: Schema.Array(TransactionOutput.CDDLSchema), // [* transaction_output] - required
+  2: CBOR.Integer, // coin (fee) - required
+  3: Schema.optional(CBOR.Integer), // slot_no (ttl) - optional
+  4: Schema.optional(Schema.Array(Certificate.CDDLSchema)), // certificates - optional
+  5: Schema.optional(Withdrawals.CDDLSchema), // withdrawals - optional
+  7: Schema.optional(CBOR.ByteArray), // auxiliary_data_hash - optional
+  8: Schema.optional(CBOR.Integer), // slot_no (validity_interval_start) - optional
+  9: Schema.optional(Schema.encodedSchema(Mint.CDDLSchema)), // mint - optional
+  11: Schema.optional(CBOR.ByteArray), // script_data_hash - optional
+  13: Schema.optional(CBOR.tag(258, Schema.Array(TransactionInput.CDDLSchema))), // nonempty_set<transaction_input> (collateral_inputs) - optional
+  14: Schema.optional(Schema.Array(CBOR.ByteArray)), // required_signers - optional
+  15: Schema.optional(CBOR.Integer), // network_id - optional
+  16: Schema.optional(TransactionOutput.CDDLSchema), // transaction_output (collateral_return) - optional
+  17: Schema.optional(CBOR.Integer), // coin (total_collateral) - optional
+  18: Schema.optional(CBOR.tag(258, Schema.Array(TransactionInput.CDDLSchema))), // nonempty_set<transaction_input> (reference_inputs) - optional
+  19: Schema.optional(Schema.encodedSchema(VotingProcedures.CDDLSchema)), // voting_procedures - optional
+  20: Schema.optional(Schema.encodedSchema(ProposalProcedures.CDDLSchema)), // proposal_procedures - optional
+  21: Schema.optional(CBOR.Integer), // coin (current_treasury_value) - optional
+  22: Schema.optional(CBOR.Integer) // positive_coin (donation) - optional
 })
+
+type CDDLSchema = typeof CDDLSchema.Type
 
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(TransactionBody), {
   strict: true,
   encode: (toA) =>
     Eff.gen(function* () {
+      const record = {} as any
+
       // Required fields
+      // 0: inputs - always tagged as set
       const inputs = yield* Eff.all(toA.inputs.map((input) => ParseResult.encode(TransactionInput.FromCDDL)(input)))
+      record[0] = CBOR.Tag.make({ tag: 258, value: inputs })
+
+      // 1: outputs
       const outputs = yield* Eff.all(
         toA.outputs.map((output) => ParseResult.encode(TransactionOutput.FromTransactionOutputCDDLSchema)(output))
       )
-      const fee = toA.fee
+      record[1] = outputs
+
+      // 2: fee
+      record[2] = toA.fee
 
       // Optional fields
       const ttl = toA.ttl
@@ -137,7 +154,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         ? yield* ParseResult.encode(AuxiliaryDataHash.BytesSchema)(toA.auxiliaryDataHash)
         : undefined
       const validityIntervalStart = toA.validityIntervalStart
-      const mint = toA.mint ? (yield* ParseResult.encode(Mint.FromCDDL)(toA.mint)) : undefined 
+      const mint = toA.mint ? yield* ParseResult.encode(Mint.FromCDDL)(toA.mint) : undefined
       const scriptDataHash = toA.scriptDataHash
         ? yield* ParseResult.encode(ScriptDataHash.FromBytes)(toA.scriptDataHash)
         : undefined
@@ -147,7 +164,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       const requiredSigners = toA.requiredSigners
         ? yield* Eff.all(toA.requiredSigners.map((signer) => ParseResult.encode(Hash28.FromBytes)(signer)))
         : undefined
-      const networkId = toA.networkId ? BigInt(toA.networkId) : undefined
+      const networkId = toA.networkId !== undefined ? BigInt(toA.networkId) : undefined
       const collateralReturn = toA.collateralReturn
         ? yield* ParseResult.encode(TransactionOutput.FromTransactionOutputCDDLSchema)(toA.collateralReturn)
         : undefined
@@ -161,56 +178,44 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       const proposalProcedures = toA.proposalProcedures
         ? yield* ParseResult.encode(ProposalProcedures.FromCDDL)(toA.proposalProcedures)
         : undefined
-      const currentTreasuryValue = toA.currentTreasuryValue
-      const donation = toA.donation
-
-      // Create Map with integer keys for CBOR
-      const map = new Map<bigint, any>()
-      
-      // Required fields
-      map.set(0n, inputs)
-      map.set(1n, outputs)
-      map.set(2n, fee)
-      
       // Optional fields (only set if defined)
-      if (ttl !== undefined) map.set(3n, ttl)
-      if (certificates !== undefined) map.set(4n, certificates)
-      if (withdrawals !== undefined) map.set(5n, withdrawals)
-      if (auxiliaryDataHash !== undefined) map.set(7n, auxiliaryDataHash)
-      if (validityIntervalStart !== undefined) map.set(8n, validityIntervalStart)
-      if (mint !== undefined) map.set(9n, mint)
-      if (scriptDataHash !== undefined) map.set(11n, scriptDataHash)
-      if (collateralInputs !== undefined) map.set(13n, collateralInputs)
-      if (requiredSigners !== undefined) map.set(14n, requiredSigners)
-      if (networkId !== undefined) map.set(15n, networkId)
-      if (collateralReturn !== undefined) map.set(16n, collateralReturn)
-      if (totalCollateral !== undefined) map.set(17n, totalCollateral)
-      if (referenceInputs !== undefined) map.set(18n, referenceInputs)
-      if (votingProcedures !== undefined) map.set(19n, votingProcedures)
-      if (proposalProcedures !== undefined) map.set(20n, proposalProcedures)
-      if (currentTreasuryValue !== undefined) map.set(21n, currentTreasuryValue)
-      if (donation !== undefined) map.set(22n, donation)
+      if (ttl !== undefined) record[3] = ttl
+      if (certificates !== undefined) record[4] = certificates
+      if (withdrawals !== undefined) record[5] = withdrawals
+      if (auxiliaryDataHash !== undefined) record[7] = auxiliaryDataHash
+      if (validityIntervalStart !== undefined) record[8] = validityIntervalStart
+      if (mint !== undefined) record[9] = mint
+      if (scriptDataHash !== undefined) record[11] = scriptDataHash
+      if (collateralInputs !== undefined) record[13] = CBOR.Tag.make({ tag: 258, value: collateralInputs })
+      if (requiredSigners !== undefined) record[14] = requiredSigners
+      if (networkId !== undefined) record[15] = networkId
+      if (collateralReturn !== undefined) record[16] = collateralReturn
+      if (totalCollateral !== undefined) record[17] = totalCollateral
+      if (referenceInputs !== undefined) record[18] = CBOR.Tag.make({ tag: 258, value: referenceInputs })
+      if (votingProcedures !== undefined) record[19] = votingProcedures
+      if (proposalProcedures !== undefined) record[20] = proposalProcedures
+      if (toA.currentTreasuryValue !== undefined) record[21] = toA.currentTreasuryValue
+      if (toA.donation !== undefined) record[22] = toA.donation
 
-      return map
+      return record as CDDLSchema
     }),
   decode: (fromA) =>
     Eff.gen(function* () {
-      // Required fields
-      const inputsArray = fromA.get(0n) as Array<any>
-      const inputs = (yield* Eff.all(
-        inputsArray.map((input) => ParseResult.decode(TransactionInput.FromCDDL)(input))
-      )) as NonEmptyArray<TransactionInput.TransactionInput>
+      // Required fields - access as record properties
+      const inputsTag = fromA[0] // This is a CBOR.Tag with tag 258
+      const inputsArray = inputsTag.value
+      const inputs = yield* Eff.all(inputsArray.map((input) => ParseResult.decode(TransactionInput.FromCDDL)(input)))
 
-      const outputsArray = fromA.get(1n) as Array<any>
+      const outputsArray = fromA[1]
       const outputs = yield* Eff.all(
         outputsArray.map((output) => ParseResult.decode(TransactionOutput.FromTransactionOutputCDDLSchema)(output))
       )
-      const fee = fromA.get(2n) as bigint
+      const fee = fromA[2]
 
-      // Optional fields
-      const ttl = fromA.get(3n) as bigint | undefined
+      // Optional fields - access as record properties
+      const ttl = fromA[3]
 
-      const certificatesArray = fromA.get(4n) as Array<any> | undefined
+      const certificatesArray = fromA[4]
       const certificates = certificatesArray
         ? ((yield* Eff.all(
             certificatesArray.map((cert) => ParseResult.decode(Certificate.FromCDDL)(cert))
@@ -218,7 +223,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         : undefined
 
       let withdrawals: Withdrawals.Withdrawals | undefined
-      const withdrawalsMap = fromA.get(5n) as Map<Uint8Array, bigint> | undefined
+      const withdrawalsMap = fromA[5]
       if (withdrawalsMap) {
         const decodedWithdrawals = new Map<RewardAccount.RewardAccount, Coin.Coin>()
         for (const [accountBytes, coinAmount] of withdrawalsMap.entries()) {
@@ -228,52 +233,58 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         withdrawals = new Withdrawals.Withdrawals({ withdrawals: decodedWithdrawals })
       }
 
-      const auxiliaryDataHashBytes = fromA.get(7n) as Uint8Array | undefined
+      const auxiliaryDataHashBytes = fromA[7]
       const auxiliaryDataHash = auxiliaryDataHashBytes
         ? yield* ParseResult.decode(AuxiliaryDataHash.BytesSchema)(auxiliaryDataHashBytes)
         : undefined
-      const validityIntervalStart = fromA.get(8n) as bigint | undefined
-      const mintData = fromA.get(9n) as ReadonlyMap<Uint8Array, ReadonlyMap<Uint8Array, bigint>> | undefined
+      const validityIntervalStart = fromA[8]
+      const mintData = fromA[9]
       const mint = mintData ? yield* ParseResult.decode(Mint.FromCDDL)(mintData) : undefined
-      const scriptDataHashBytes = fromA.get(11n) as Uint8Array | undefined
-      const scriptDataHash = scriptDataHashBytes ? yield* ParseResult.decode(ScriptDataHash.FromBytes)(scriptDataHashBytes) : undefined
+      const scriptDataHashBytes = fromA[11]
+      const scriptDataHash = scriptDataHashBytes
+        ? yield* ParseResult.decode(ScriptDataHash.FromBytes)(scriptDataHashBytes)
+        : undefined
 
-      const collateralInputsArray = fromA.get(13n) as Array<any> | undefined
+      const collateralInputsTag = fromA[13] // This might be a CBOR.Tag with tag 258
+      const collateralInputsArray = collateralInputsTag ? collateralInputsTag.value : undefined
       const collateralInputs = collateralInputsArray
         ? ((yield* Eff.all(
             collateralInputsArray.map((input) => ParseResult.decode(TransactionInput.FromCDDL)(input))
           )) as NonEmptyArray<TransactionInput.TransactionInput>)
         : undefined
 
-      const requiredSignersArray = fromA.get(14n) as Array<Uint8Array> | undefined
+      const requiredSignersArray = fromA[14]
       const requiredSigners = requiredSignersArray
         ? ((yield* Eff.all(
             requiredSignersArray.map((signer) => ParseResult.decode(KeyHash.FromBytes)(signer))
           )) as NonEmptyArray<KeyHash.KeyHash>)
         : undefined
 
-      const networkIdBigInt = fromA.get(15n) as bigint | undefined
+      const networkIdBigInt = fromA[15]
       const networkId = networkIdBigInt ? NetworkId.make(Number(networkIdBigInt)) : undefined
-      const collateralReturnData = fromA.get(16n) as any
+      const collateralReturnData = fromA[16]
       const collateralReturn = collateralReturnData
         ? yield* ParseResult.decode(TransactionOutput.FromTransactionOutputCDDLSchema)(collateralReturnData)
         : undefined
-      const totalCollateral = fromA.get(17n) as bigint | undefined
+      const totalCollateral = fromA[17]
 
-      const referenceInputsArray = fromA.get(18n) as Array<any> | undefined
+      const referenceInputsTag = fromA[18] // This might be a CBOR.Tag with tag 258
+      const referenceInputsArray = referenceInputsTag ? referenceInputsTag.value : undefined
       const referenceInputs = referenceInputsArray
         ? ((yield* Eff.all(
             referenceInputsArray.map((input) => ParseResult.decode(TransactionInput.FromCDDL)(input))
           )) as NonEmptyArray<TransactionInput.TransactionInput>)
         : undefined
-      const votingProceduresData = fromA.get(19n) as any
-      const votingProcedures = votingProceduresData ? yield* ParseResult.decode(VotingProcedures.FromCDDL)(votingProceduresData) : undefined
-      const proposalProceduresData = fromA.get(20n) as any
+      const votingProceduresData = fromA[19]
+      const votingProcedures = votingProceduresData
+        ? yield* ParseResult.decode(VotingProcedures.FromCDDL)(votingProceduresData)
+        : undefined
+      const proposalProceduresData = fromA[20]
       const proposalProcedures = proposalProceduresData
         ? yield* ParseResult.decode(ProposalProcedures.FromCDDL)(proposalProceduresData)
         : undefined
-      const currentTreasuryValue = fromA.get(21n) as bigint | undefined
-      const donation = fromA.get(22n) as bigint | undefined
+      const currentTreasuryValue = fromA[21]
+      const donation = fromA[22]
 
       return new TransactionBody({
         inputs,
@@ -307,7 +318,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
  * @since 2.0.0
  * @category schemas
  */
-export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
   Schema.compose(CBOR.FromBytes(options), FromCDDL).annotations({
     identifier: "TransactionBody.FromCBORBytes",
     title: "TransactionBody from CBOR bytes",
@@ -321,12 +332,13 @@ export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTI
  * @since 2.0.0
  * @category schemas
  */
-export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
   Schema.compose(CBOR.FromHex(options), FromCDDL).annotations({
     identifier: "TransactionBody.FromCBORHex",
     title: "TransactionBody from CBOR hex",
     description: "Decode TransactionBody from CBOR-encoded hex string using Conway CDDL specification"
   })
+
 
 // ============================================================================
 // Root Functions
@@ -338,10 +350,8 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (
-  bytes: Uint8Array,
-  options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-) => Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
 
 /**
  * Decode a TransactionBody from CBOR hex string.
@@ -349,7 +359,7 @@ export const fromCBORBytes = (
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
   Eff.runSync(Effect.fromCBORHex(hex, options))
 
 /**
@@ -358,10 +368,8 @@ export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_D
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (
-  transactionBody: TransactionBody,
-  options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-) => Eff.runSync(Effect.toCBORBytes(transactionBody, options))
+export const toCBORBytes = (transactionBody: TransactionBody, options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
+  Eff.runSync(Effect.toCBORBytes(transactionBody, options))
 
 /**
  * Encode a TransactionBody to CBOR hex string.
@@ -369,10 +377,8 @@ export const toCBORBytes = (
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (
-  transactionBody: TransactionBody,
-  options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-) => Eff.runSync(Effect.toCBORHex(transactionBody, options))
+export const toCBORHex = (transactionBody: TransactionBody, options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
+  Eff.runSync(Effect.toCBORHex(transactionBody, options))
 
 // ============================================================================
 // Effect Namespace
@@ -393,7 +399,7 @@ export namespace Effect {
    */
   export const fromCBORBytes = (
     bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+    options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
   ): Eff.Effect<TransactionBody, TransactionBodyError> =>
     Schema.decode(FromCBORBytes(options))(bytes).pipe(
       Eff.mapError(
@@ -413,7 +419,7 @@ export namespace Effect {
    */
   export const fromCBORHex = (
     hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+    options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
   ): Eff.Effect<TransactionBody, TransactionBodyError> =>
     Schema.decode(FromCBORHex(options))(hex).pipe(
       Eff.mapError(
@@ -433,7 +439,7 @@ export namespace Effect {
    */
   export const toCBORBytes = (
     transactionBody: TransactionBody,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+    options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
   ): Eff.Effect<Uint8Array, TransactionBodyError> =>
     Schema.encode(FromCBORBytes(options))(transactionBody).pipe(
       Eff.mapError(
@@ -453,7 +459,7 @@ export namespace Effect {
    */
   export const toCBORHex = (
     transactionBody: TransactionBody,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+    options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
   ): Eff.Effect<string, TransactionBodyError> =>
     Schema.encode(FromCBORHex(options))(transactionBody).pipe(
       Eff.mapError(
@@ -465,3 +471,56 @@ export namespace Effect {
       )
     )
 }
+
+// ============================================================================
+// FastCheck Arbitrary
+// ============================================================================
+
+/**
+ * FastCheck arbitrary for generating random TransactionBody instances.
+ * Used for property-based testing to generate valid test data.
+ * 
+ * Generates basic TransactionBody instances with required fields (inputs, outputs, fee)
+ * and optionally includes some other common fields.
+ *
+ * @since 2.0.0
+ * @category arbitrary
+ */
+export const arbitrary: FastCheck.Arbitrary<TransactionBody> = FastCheck
+  .record({
+    // Required fields
+    inputs: FastCheck.array(TransactionInput.arbitrary, { minLength: 1, maxLength: 5 }),
+    outputs: FastCheck.array(TransactionOutput.arbitrary(), { minLength: 1, maxLength: 5 }),
+    fee: Coin.arbitrary,
+    
+    // Optional fields - start with some common ones
+    ttl: FastCheck.option(FastCheck.bigInt({ min: 0n, max: 10000000n }), { nil: undefined }),
+    validityIntervalStart: FastCheck.option(FastCheck.bigInt({ min: 0n, max: 10000000n }), { nil: undefined }),
+    networkId: FastCheck.option(
+      FastCheck.integer({ min: 0, max: 1 }).map(NetworkId.make), 
+      { nil: undefined }
+    )
+  })
+  .map((props) => new TransactionBody({
+    inputs: props.inputs,
+    outputs: props.outputs, 
+    fee: props.fee,
+    ttl: props.ttl,
+    certificates: undefined,
+    withdrawals: undefined,
+    auxiliaryDataHash: undefined,
+    validityIntervalStart: props.validityIntervalStart,
+    mint: undefined,
+    scriptDataHash: undefined,
+    collateralInputs: undefined,
+    requiredSigners: undefined,
+    networkId: props.networkId,
+    collateralReturn: undefined,
+    totalCollateral: undefined,
+    referenceInputs: undefined,
+    votingProcedures: undefined,
+    proposalProcedures: undefined,
+    currentTreasuryValue: undefined,
+    donation: undefined
+  }))
+

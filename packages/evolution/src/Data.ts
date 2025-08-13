@@ -537,19 +537,19 @@ export const plutusDataToCBORValue = (data: Data): CBOR.CBOR => {
 
       if (constr.index >= 0n && constr.index <= 6n) {
         // Direct encoding for constructor indices 0-6 (tags 121-127)
-        return new CBOR.Tag({
+        return CBOR.Tag.make({
           tag: Number(121n + constr.index),
           value: fieldsArray
         })
       } else if (constr.index >= 7n && constr.index <= 127n) {
         // Alternative encoding for constructor indices 7-127 (tag 1280+index-7)
-        return new CBOR.Tag({
+        return CBOR.Tag.make({
           tag: Number(1280n + constr.index - 7n),
           value: fieldsArray
         })
       } else {
         // General constructor encoding for any uint value (tag 102)
-        return new CBOR.Tag({
+        return CBOR.Tag.make({
           tag: 102,
           value: [constr.index, fieldsArray]
         })

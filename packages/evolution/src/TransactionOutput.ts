@@ -4,6 +4,7 @@ import * as Address from "./Address.js"
 import * as Bytes from "./Bytes.js"
 import * as Bytes32 from "./Bytes32.js"
 import * as CBOR from "./CBOR.js"
+import * as Coin from "./Coin.js"
 import * as DatumOption from "./DatumOption.js"
 import * as ScriptRef from "./ScriptRef.js"
 import * as Value from "./Value.js"
@@ -320,9 +321,29 @@ export const makeBabbage = (
  * @category FastCheck
  */
 export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
-  FastCheck.constant(
-    // Return a basic instance that will be properly typed by the schema
-    {} as TransactionOutput
+  FastCheck.oneof(
+    // Shelley TransactionOutput
+    FastCheck.record({
+      address: Address.arbitrary,
+      amount: Coin.arbitrary.map((coin) => Value.onlyCoin(coin)),
+      datumHash: FastCheck.option(
+        FastCheck.hexaString({ minLength: 64, maxLength: 64 }).filter(hex => hex.length === 64), 
+        { nil: undefined }
+      )
+    }).map((props) => new ShelleyTransactionOutput(props)),
+    
+    // Babbage TransactionOutput  
+    FastCheck.record({
+      address: Address.arbitrary,
+      amount: Coin.arbitrary.map((coin) => Value.onlyCoin(coin)),
+      datumOption: FastCheck.option(DatumOption.arbitrary, { nil: undefined }),
+      scriptRef: FastCheck.option(
+        FastCheck.hexaString({ minLength: 4, maxLength: 200 }).filter(hex => hex.length % 2 === 0).map((hex) => 
+          Schema.decodeSync(ScriptRef.ScriptRef)(hex)
+        ),
+        { nil: undefined }
+      )
+    }).map((props) => new BabbageTransactionOutput(props))
   )
 
 /**

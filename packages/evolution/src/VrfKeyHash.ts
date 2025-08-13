@@ -69,8 +69,7 @@ export const arbitrary = FastCheck.uint8Array({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): VrfKeyHash => 
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): VrfKeyHash => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse VrfKeyHash from hex string.
@@ -78,8 +77,7 @@ export const fromBytes = (bytes: Uint8Array): VrfKeyHash =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): VrfKeyHash => 
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): VrfKeyHash => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode VrfKeyHash to raw bytes.
@@ -87,8 +85,7 @@ export const fromHex = (hex: string): VrfKeyHash =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (vrfKeyHash: VrfKeyHash): Uint8Array => 
-  Eff.runSync(Effect.toBytes(vrfKeyHash))
+export const toBytes = (vrfKeyHash: VrfKeyHash): Uint8Array => Eff.runSync(Effect.toBytes(vrfKeyHash))
 
 /**
  * Encode VrfKeyHash to hex string.

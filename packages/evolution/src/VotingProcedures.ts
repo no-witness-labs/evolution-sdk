@@ -624,9 +624,9 @@ export const arbitrary = FastCheck.array(
   FastCheck.tuple(
     // Reuse existing voter arbitraries
     FastCheck.oneof(
-      Credential.arbitrary.map(credential => new ConstitutionalCommitteeVoter({ credential })),
-      DRep.arbitrary.map(drep => new DRepVoter({ drep })),
-      PoolKeyHash.arbitrary.map(poolKeyHash => new StakePoolVoter({ poolKeyHash }))
+      Credential.arbitrary.map((credential) => new ConstitutionalCommitteeVoter({ credential })),
+      DRep.arbitrary.map((drep) => new DRepVoter({ drep })),
+      PoolKeyHash.arbitrary.map((poolKeyHash) => new StakePoolVoter({ poolKeyHash }))
     ),
     FastCheck.array(
       FastCheck.tuple(
@@ -634,11 +634,12 @@ export const arbitrary = FastCheck.array(
         FastCheck.tuple(
           FastCheck.hexaString({ minLength: 64, maxLength: 64 }),
           FastCheck.integer({ min: 0, max: 65535 })
-        ).map(([transactionId, govActionIndex]) => 
-          new GovernanceAction.GovActionId({ 
-            transactionId: TransactionHash.make(transactionId), 
-            govActionIndex: TransactionIndex.make(govActionIndex) 
-          })
+        ).map(
+          ([transactionId, govActionIndex]) =>
+            new GovernanceAction.GovActionId({
+              transactionId: TransactionHash.make(transactionId),
+              govActionIndex: TransactionIndex.make(govActionIndex)
+            })
         ),
         FastCheck.tuple(
           FastCheck.oneof(

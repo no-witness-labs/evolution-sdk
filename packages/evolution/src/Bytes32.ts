@@ -17,15 +17,12 @@ export const HEX_LENGTH = 64
  * @since 2.0.0
  * @category schemas
  */
-export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
-  Schema.filter((a) => a.length === BYTES_LENGTH)
-).annotations({
+export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(Schema.filter((a) => a.length === BYTES_LENGTH)).annotations({
   identifier: "Bytes32.Bytes",
   title: "32-byte Array",
   description: "A Uint8Array containing exactly 32 bytes",
-  message: (issue) =>
-    `Bytes32 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
-  examples: [new Uint8Array(32).fill(0)],
+  message: (issue) => `Bytes32 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
+  examples: [new Uint8Array(32).fill(0)]
 })
 
 /**
@@ -34,15 +31,12 @@ export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
  * @since 2.0.0
  * @category schemas
  */
-export const HexSchema = Bytes.HexSchema.pipe(
-  Schema.filter((a) => a.length === HEX_LENGTH)
-).annotations({
+export const HexSchema = Bytes.HexSchema.pipe(Schema.filter((a) => a.length === HEX_LENGTH)).annotations({
   identifier: "Bytes32.Hex",
-  title: "32-byte Hex String", 
+  title: "32-byte Hex String",
   description: "A hexadecimal string representing exactly 32 bytes (64 characters)",
-  message: (issue) =>
-    `Bytes32 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
-  examples: ["a".repeat(64)],
+  message: (issue) => `Bytes32 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
+  examples: ["a".repeat(64)]
 })
 
 /**
@@ -70,8 +64,7 @@ export const VariableBytesSchema = Schema.Uint8ArrayFromSelf.pipe(
 export const VariableHexSchema = Bytes.HexSchema.pipe(
   Schema.filter((a) => a.length >= 0 && a.length <= HEX_LENGTH)
 ).annotations({
-  message: (issue) =>
-    `must be a hex string of length 0 to ${HEX_LENGTH}, but got ${(issue.actual as string).length}`,
+  message: (issue) => `must be a hex string of length 0 to ${HEX_LENGTH}, but got ${(issue.actual as string).length}`,
   identifier: "Bytes32.VariableHex"
 })
 
@@ -147,10 +140,11 @@ export namespace Either {
   export const fromBytes = (bytes: Uint8Array): E.Either<string, Bytes32Error> =>
     E.mapLeft(
       Schema.decodeEither(FromBytes)(bytes),
-      (cause) => new Bytes32Error({
-        message: "Failed to parse Bytes32 from bytes",
-        cause
-      })
+      (cause) =>
+        new Bytes32Error({
+          message: "Failed to parse Bytes32 from bytes",
+          cause
+        })
     )
 
   /**
@@ -159,10 +153,11 @@ export namespace Either {
   export const toBytes = (hex: string): E.Either<Uint8Array, Bytes32Error> =>
     E.mapLeft(
       Schema.encodeEither(FromBytes)(hex),
-      (cause) => new Bytes32Error({
-        message: "Failed to encode Bytes32 to bytes",
-        cause
-      })
+      (cause) =>
+        new Bytes32Error({
+          message: "Failed to encode Bytes32 to bytes",
+          cause
+        })
     )
 
   /**
@@ -171,10 +166,11 @@ export namespace Either {
   export const fromVariableBytes = (bytes: Uint8Array): E.Either<string, Bytes32Error> =>
     E.mapLeft(
       Schema.decodeEither(FromVariableBytes)(bytes),
-      (cause) => new Bytes32Error({
-        message: "Failed to parse variable Bytes32 from bytes",
-        cause
-      })
+      (cause) =>
+        new Bytes32Error({
+          message: "Failed to parse variable Bytes32 from bytes",
+          cause
+        })
     )
 
   /**
@@ -183,17 +179,18 @@ export namespace Either {
   export const toVariableBytes = (hex: string): E.Either<Uint8Array, Bytes32Error> =>
     E.mapLeft(
       Schema.encodeEither(FromVariableBytes)(hex),
-      (cause) => new Bytes32Error({
-        message: "Failed to encode variable Bytes32 to bytes",
-        cause
-      })
+      (cause) =>
+        new Bytes32Error({
+          message: "Failed to encode variable Bytes32 to bytes",
+          cause
+        })
     )
 }
 
 /**
  * Parse Bytes32 from raw bytes (unsafe - throws on error).
  *
- * @since 2.0.0  
+ * @since 2.0.0
  * @category parsing
  */
 export const fromBytes = (bytes: Uint8Array): string => {

@@ -61,36 +61,32 @@ export const CDDLSchema = Schema.Tuple(
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(
-  CDDLSchema,
-  Schema.typeSchema(ProposalProcedure),
-  {
-    strict: true,
-    encode: (procedure) =>
-      Eff.gen(function* () {
-        const depositBigInt = BigInt(procedure.deposit)
-        const rewardAccountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(procedure.rewardAccount)
-        const governanceActionCDDL = yield* ParseResult.encode(GovernanceAction.FromCDDL)(procedure.governanceAction)
-        const anchorCDDL = procedure.anchor ? yield* ParseResult.encode(Anchor.FromCDDL)(procedure.anchor) : null
-        return [depositBigInt, rewardAccountBytes, governanceActionCDDL, anchorCDDL] as const
-      }),
-    decode: (procedureTuple) =>
-      Eff.gen(function* () {
-        const [depositBigInt, rewardAccountBytes, governanceActionCDDL, anchorCDDL] = procedureTuple as any
-        const deposit = Coin.make(depositBigInt)
-        const rewardAccount = yield* ParseResult.decode(RewardAccount.FromBytes)(rewardAccountBytes)
-        const governanceAction = yield* ParseResult.decode(GovernanceAction.FromCDDL)(governanceActionCDDL)
-        const anchor = anchorCDDL ? yield* ParseResult.decode(Anchor.FromCDDL)(anchorCDDL) : null
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(ProposalProcedure), {
+  strict: true,
+  encode: (procedure) =>
+    Eff.gen(function* () {
+      const depositBigInt = BigInt(procedure.deposit)
+      const rewardAccountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(procedure.rewardAccount)
+      const governanceActionCDDL = yield* ParseResult.encode(GovernanceAction.FromCDDL)(procedure.governanceAction)
+      const anchorCDDL = procedure.anchor ? yield* ParseResult.encode(Anchor.FromCDDL)(procedure.anchor) : null
+      return [depositBigInt, rewardAccountBytes, governanceActionCDDL, anchorCDDL] as const
+    }),
+  decode: (procedureTuple) =>
+    Eff.gen(function* () {
+      const [depositBigInt, rewardAccountBytes, governanceActionCDDL, anchorCDDL] = procedureTuple as any
+      const deposit = Coin.make(depositBigInt)
+      const rewardAccount = yield* ParseResult.decode(RewardAccount.FromBytes)(rewardAccountBytes)
+      const governanceAction = yield* ParseResult.decode(GovernanceAction.FromCDDL)(governanceActionCDDL)
+      const anchor = anchorCDDL ? yield* ParseResult.decode(Anchor.FromCDDL)(anchorCDDL) : null
 
-        return new ProposalProcedure({
-          deposit,
-          rewardAccount,
-          governanceAction,
-          anchor
-        })
+      return new ProposalProcedure({
+        deposit,
+        rewardAccount,
+        governanceAction,
+        anchor
       })
-  }
-)
+    })
+})
 
 /**
  * CBOR bytes transformation schema for individual ProposalProcedure.

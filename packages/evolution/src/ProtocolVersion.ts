@@ -34,13 +34,11 @@ export class ProtocolVersion extends Schema.TaggedClass<ProtocolVersion>()("Prot
  * @since 2.0.0
  * @category constructors
  */
-export const make = (props: {
-  major: number
-  minor: number
-}): ProtocolVersion => new ProtocolVersion({
-  major: Numeric.Uint32Make(props.major),
-  minor: Numeric.Uint32Make(props.minor)
-})
+export const make = (props: { major: number; minor: number }): ProtocolVersion =>
+  new ProtocolVersion({
+    major: Numeric.Uint32Make(props.major),
+    minor: Numeric.Uint32Make(props.minor)
+  })
 
 /**
  * Check if two ProtocolVersion instances are equal.
@@ -56,10 +54,9 @@ export const equals = (a: ProtocolVersion, b: ProtocolVersion): boolean => a.maj
  * @since 2.0.0
  * @category testing
  */
-export const arbitrary = FastCheck.tuple(
-  Numeric.Uint32Generator,
-  Numeric.Uint32Generator
-).map(([major, minor]) => make({ major, minor }))
+export const arbitrary = FastCheck.tuple(Numeric.Uint32Generator, Numeric.Uint32Generator).map(([major, minor]) =>
+  make({ major, minor })
+)
 
 /**
  * CDDL schema for ProtocolVersion.

@@ -27,7 +27,7 @@ export const MAX_COIN_VALUE = 18446744073709551615n
  * @category schemas
  */
 export const Coin = Schema.BigIntFromSelf.pipe(
-  Schema.filter((value) => value >= 0n && value <= MAX_COIN_VALUE),
+  Schema.filter((value) => value >= 0n && value <= MAX_COIN_VALUE)
 ).annotations({
   message: (issue) => `Coin must be between 0 and ${MAX_COIN_VALUE}, but got ${issue.actual}`,
   identifier: "Coin"

@@ -21,8 +21,9 @@ export class NetworkError extends Data.TaggedError("NetworkError")<{
  * @category schemas
  */
 export const Network = Schema.String.pipe(
-  Schema.filter((str): str is "Mainnet" | "Preview" | "Preprod" | "Custom" => 
-    str === "Mainnet" || str === "Preview" || str === "Preprod" || str === "Custom"
+  Schema.filter(
+    (str): str is "Mainnet" | "Preview" | "Preprod" | "Custom" =>
+      str === "Mainnet" || str === "Preview" || str === "Preprod" || str === "Custom"
   ),
   Schema.brand("Network")
 ).annotations({
@@ -69,7 +70,7 @@ export const is = (value: unknown): value is Network => Schema.is(Network)(value
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.constantFrom("Mainnet", "Preview", "Preprod", "Custom").map((literal) => 
+export const arbitrary = FastCheck.constantFrom("Mainnet", "Preview", "Preprod", "Custom").map((literal) =>
   make(literal)
 )
 
@@ -119,8 +120,7 @@ export const fromId = (id: NetworkId.NetworkId): Network => {
  * @since 2.0.0
  * @category parsing
  */
-export const fromString = (str: string): Network =>
-  Eff.runSync(Effect.fromString(str))
+export const fromString = (str: string): Network => Eff.runSync(Effect.fromString(str))
 
 /**
  * Encode Network to string.
@@ -128,8 +128,7 @@ export const fromString = (str: string): Network =>
  * @since 2.0.0
  * @category encoding
  */
-export const toString = (network: Network): string =>
-  Eff.runSync(Effect.toString(network))
+export const toString = (network: Network): string => Eff.runSync(Effect.toString(network))
 
 // ============================================================================
 // Effect Namespace

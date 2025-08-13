@@ -63,6 +63,6 @@ export const isRewardAddress = Schema.is(RewardAddress)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.string({ minLength: 50, maxLength: 100 }).filter((str) => 
-  /^(stake|stake_test)[1][a-z0-9]+$/i.test(str)
-).map((str) => make(str))
+export const arbitrary = FastCheck.string({ minLength: 50, maxLength: 100 })
+  .filter((str) => /^(stake|stake_test)[1][a-z0-9]+$/i.test(str))
+  .map((str) => make(str))

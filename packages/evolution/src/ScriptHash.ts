@@ -90,8 +90,7 @@ export const arbitrary = FastCheck.uint8Array({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): ScriptHash => 
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): ScriptHash => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse ScriptHash from hex string.
@@ -99,8 +98,7 @@ export const fromBytes = (bytes: Uint8Array): ScriptHash =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): ScriptHash => 
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): ScriptHash => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode ScriptHash to raw bytes.
@@ -108,8 +106,7 @@ export const fromHex = (hex: string): ScriptHash =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (scriptHash: ScriptHash): Uint8Array => 
-  Eff.runSync(Effect.toBytes(scriptHash))
+export const toBytes = (scriptHash: ScriptHash): Uint8Array => Eff.runSync(Effect.toBytes(scriptHash))
 
 /**
  * Encode ScriptHash to hex string.

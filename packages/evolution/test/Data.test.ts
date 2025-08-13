@@ -2,7 +2,6 @@ import { describe, expect, it } from "@effect/vitest"
 
 import * as Data from "../src/Data.js"
 
-
 describe("Data Module Tests", () => {
   describe("Basic Types", () => {
     describe("PlutusBytes", () => {

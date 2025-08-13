@@ -16,15 +16,12 @@ export const HEX_LENGTH = 160
  * @since 2.0.0
  * @category schemas
  */
-export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
-  Schema.filter((a) => a.length === BYTES_LENGTH)
-).annotations({
+export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(Schema.filter((a) => a.length === BYTES_LENGTH)).annotations({
   identifier: "Bytes80.Bytes",
   title: "80-byte Array",
   description: "A Uint8Array containing exactly 80 bytes",
-  message: (issue) =>
-    `Bytes80 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
-  examples: [new Uint8Array(80).fill(0)],
+  message: (issue) => `Bytes80 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
+  examples: [new Uint8Array(80).fill(0)]
 })
 
 /**
@@ -33,15 +30,12 @@ export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
  * @since 2.0.0
  * @category schemas
  */
-export const HexSchema = Bytes.HexSchema.pipe(
-  Schema.filter((a) => a.length === HEX_LENGTH)
-).annotations({
+export const HexSchema = Bytes.HexSchema.pipe(Schema.filter((a) => a.length === HEX_LENGTH)).annotations({
   identifier: "Bytes80.Hex",
-  title: "80-byte Hex String", 
+  title: "80-byte Hex String",
   description: "A hexadecimal string representing exactly 80 bytes (160 characters)",
-  message: (issue) =>
-    `Bytes80 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
-  examples: ["a".repeat(160)],
+  message: (issue) => `Bytes80 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
+  examples: ["a".repeat(160)]
 })
 
 /**
@@ -85,10 +79,11 @@ export namespace Effect {
   export const fromBytes = (bytes: Uint8Array): Eff.Effect<string, Bytes80Error> =>
     Eff.mapError(
       Schema.decode(FromBytes)(bytes),
-      (cause) => new Bytes80Error({
-        message: "Failed to parse Bytes80 from bytes",
-        cause
-      })
+      (cause) =>
+        new Bytes80Error({
+          message: "Failed to parse Bytes80 from bytes",
+          cause
+        })
     )
 
   /**
@@ -97,21 +92,21 @@ export namespace Effect {
   export const toBytes = (hex: string): Eff.Effect<Uint8Array, Bytes80Error> =>
     Eff.mapError(
       Schema.encode(FromBytes)(hex),
-      (cause) => new Bytes80Error({
-        message: "Failed to encode Bytes80 to bytes",
-        cause
-      })
+      (cause) =>
+        new Bytes80Error({
+          message: "Failed to encode Bytes80 to bytes",
+          cause
+        })
     )
 }
 
 /**
  * Parse Bytes80 from raw bytes (unsafe - throws on error).
  *
- * @since 2.0.0  
+ * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): string =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): string => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Convert Bytes80 hex to raw bytes (unsafe - throws on error).
@@ -119,5 +114,4 @@ export const fromBytes = (bytes: Uint8Array): string =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (hex: string): Uint8Array =>
-  Eff.runSync(Effect.toBytes(hex))
+export const toBytes = (hex: string): Uint8Array => Eff.runSync(Effect.toBytes(hex))

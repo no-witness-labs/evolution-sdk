@@ -327,20 +327,20 @@ export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
       address: Address.arbitrary,
       amount: Coin.arbitrary.map((coin) => Value.onlyCoin(coin)),
       datumHash: FastCheck.option(
-        FastCheck.hexaString({ minLength: 64, maxLength: 64 }).filter(hex => hex.length === 64), 
+        FastCheck.hexaString({ minLength: 64, maxLength: 64 }).filter((hex) => hex.length === 64),
         { nil: undefined }
       )
     }).map((props) => new ShelleyTransactionOutput(props)),
-    
-    // Babbage TransactionOutput  
+
+    // Babbage TransactionOutput
     FastCheck.record({
       address: Address.arbitrary,
       amount: Coin.arbitrary.map((coin) => Value.onlyCoin(coin)),
       datumOption: FastCheck.option(DatumOption.arbitrary, { nil: undefined }),
       scriptRef: FastCheck.option(
-        FastCheck.hexaString({ minLength: 4, maxLength: 200 }).filter(hex => hex.length % 2 === 0).map((hex) => 
-          Schema.decodeSync(ScriptRef.ScriptRef)(hex)
-        ),
+        FastCheck.hexaString({ minLength: 4, maxLength: 200 })
+          .filter((hex) => hex.length % 2 === 0)
+          .map((hex) => Schema.decodeSync(ScriptRef.ScriptRef)(hex)),
         { nil: undefined }
       )
     }).map((props) => new BabbageTransactionOutput(props))

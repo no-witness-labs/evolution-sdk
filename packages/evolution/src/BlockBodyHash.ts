@@ -86,8 +86,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): BlockBodyHash =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): BlockBodyHash => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse BlockBodyHash from hex string.
@@ -95,8 +94,7 @@ export const fromBytes = (bytes: Uint8Array): BlockBodyHash =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): BlockBodyHash =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): BlockBodyHash => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode BlockBodyHash to bytes.
@@ -104,8 +102,7 @@ export const fromHex = (hex: string): BlockBodyHash =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (blockBodyHash: BlockBodyHash): Uint8Array =>
-  Eff.runSync(Effect.toBytes(blockBodyHash))
+export const toBytes = (blockBodyHash: BlockBodyHash): Uint8Array => Eff.runSync(Effect.toBytes(blockBodyHash))
 
 /**
  * Encode BlockBodyHash to hex string.
@@ -113,8 +110,7 @@ export const toBytes = (blockBodyHash: BlockBodyHash): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (blockBodyHash: BlockBodyHash): string =>
-  Eff.runSync(Effect.toHex(blockBodyHash))
+export const toHex = (blockBodyHash: BlockBodyHash): string => Eff.runSync(Effect.toHex(blockBodyHash))
 
 // ============================================================================
 // Effect Namespace

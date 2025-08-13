@@ -21,7 +21,7 @@ export class ScriptError extends Data.TaggedError("ScriptError")<{
  * Script union type following Conway CDDL specification.
  *
  * CDDL:
- * script = 
+ * script =
  *   [ 0, native_script ]
  * / [ 1, plutus_v1_script ]
  * / [ 2, plutus_v2_script ]
@@ -52,7 +52,7 @@ export const ScriptCDDL = Schema.Union(
   Schema.Tuple(Schema.Literal(0n), NativeScripts.CDDLSchema),
   Schema.Tuple(Schema.Literal(1n), CBOR.ByteArray), // plutus_v1_script
   Schema.Tuple(Schema.Literal(2n), CBOR.ByteArray), // plutus_v2_script
-  Schema.Tuple(Schema.Literal(3n), CBOR.ByteArray)  // plutus_v3_script
+  Schema.Tuple(Schema.Literal(3n), CBOR.ByteArray) // plutus_v3_script
 ).annotations({
   identifier: "Script.CDDL",
   description: "CDDL representation of Script as tagged tuples"
@@ -66,60 +66,56 @@ export type ScriptCDDL = typeof ScriptCDDL.Type
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(
-  ScriptCDDL,
-  Script,
-  {
-    strict: true,
-    encode: (value, _, ast) => {
-      // Handle native scripts (no _tag property, has type property)
-      if ("type" in value) {
-        return NativeScripts.internalEncodeCDDL(value as NativeScripts.Native).pipe(
-          Eff.map((nativeCDDL) => [0n, nativeCDDL] as const),
-          Eff.mapError((cause) => new ParseResult.Type(ast, value, `Failed to encode native script: ${cause}`))
-        )
-      }
-      
-      // Handle Plutus scripts (with _tag property)
-      if ("_tag" in value) {
-        const plutusScript = value as PlutusV1.PlutusV1 | PlutusV2.PlutusV2 | PlutusV3.PlutusV3
-        switch (plutusScript._tag) {
-          case "PlutusV1":
-            return Eff.succeed([1n, plutusScript.script] as const)
-          case "PlutusV2":
-            return Eff.succeed([2n, plutusScript.script] as const)
-          case "PlutusV3":
-            return Eff.succeed([3n, plutusScript.script] as const)
-          default:
-            return Eff.fail(new ParseResult.Type(ast, value, `Unknown Plutus script type: ${(plutusScript as any)._tag}`))
-        }
-      }
-      
-      return Eff.fail(new ParseResult.Type(ast, value, "Invalid script structure"))
-    },
-    decode: (tuple, _, ast) => {
-      const [tag, data] = tuple
-      switch (tag) {
-        case 0n:
-          // Native script
-          return NativeScripts.internalDecodeCDDL(data as NativeScripts.NativeCDDL).pipe(
-            Eff.mapError((cause) => new ParseResult.Type(ast, tuple, `Failed to decode native script: ${cause}`))
-          )
-        case 1n:
-          // PlutusV1
-          return Eff.succeed(new PlutusV1.PlutusV1({ script: data as Uint8Array }))
-        case 2n:
-          // PlutusV2
-          return Eff.succeed(new PlutusV2.PlutusV2({ script: data as Uint8Array }))
-        case 3n:
-          // PlutusV3
-          return Eff.succeed(new PlutusV3.PlutusV3({ script: data as Uint8Array }))
+export const FromCDDL = Schema.transformOrFail(ScriptCDDL, Script, {
+  strict: true,
+  encode: (value, _, ast) => {
+    // Handle native scripts (no _tag property, has type property)
+    if ("type" in value) {
+      return NativeScripts.internalEncodeCDDL(value as NativeScripts.Native).pipe(
+        Eff.map((nativeCDDL) => [0n, nativeCDDL] as const),
+        Eff.mapError((cause) => new ParseResult.Type(ast, value, `Failed to encode native script: ${cause}`))
+      )
+    }
+
+    // Handle Plutus scripts (with _tag property)
+    if ("_tag" in value) {
+      const plutusScript = value as PlutusV1.PlutusV1 | PlutusV2.PlutusV2 | PlutusV3.PlutusV3
+      switch (plutusScript._tag) {
+        case "PlutusV1":
+          return Eff.succeed([1n, plutusScript.script] as const)
+        case "PlutusV2":
+          return Eff.succeed([2n, plutusScript.script] as const)
+        case "PlutusV3":
+          return Eff.succeed([3n, plutusScript.script] as const)
         default:
-          return Eff.fail(new ParseResult.Type(ast, tuple, `Unknown script tag: ${tag}`))
+          return Eff.fail(new ParseResult.Type(ast, value, `Unknown Plutus script type: ${(plutusScript as any)._tag}`))
       }
     }
+
+    return Eff.fail(new ParseResult.Type(ast, value, "Invalid script structure"))
+  },
+  decode: (tuple, _, ast) => {
+    const [tag, data] = tuple
+    switch (tag) {
+      case 0n:
+        // Native script
+        return NativeScripts.internalDecodeCDDL(data as NativeScripts.NativeCDDL).pipe(
+          Eff.mapError((cause) => new ParseResult.Type(ast, tuple, `Failed to decode native script: ${cause}`))
+        )
+      case 1n:
+        // PlutusV1
+        return Eff.succeed(new PlutusV1.PlutusV1({ script: data as Uint8Array }))
+      case 2n:
+        // PlutusV2
+        return Eff.succeed(new PlutusV2.PlutusV2({ script: data as Uint8Array }))
+      case 3n:
+        // PlutusV3
+        return Eff.succeed(new PlutusV3.PlutusV3({ script: data as Uint8Array }))
+      default:
+        return Eff.fail(new ParseResult.Type(ast, tuple, `Unknown script tag: ${tag}`))
+    }
   }
-).annotations({
+}).annotations({
   identifier: "Script.FromCDDL",
   title: "Script from CDDL",
   description: "Transforms between CDDL tagged tuple and Script union"
@@ -137,11 +133,11 @@ export const equals = (a: Script, b: Script): boolean => {
     // Simple JSON comparison for native scripts
     return JSON.stringify(a) === JSON.stringify(b)
   }
-  
+
   // Handle Plutus scripts (with _tag property)
   if ("_tag" in a && "_tag" in b) {
     if (a._tag !== b._tag) return false
-    
+
     switch (a._tag) {
       case "PlutusV1":
         return PlutusV1.equals(a, b as PlutusV1.PlutusV1)
@@ -153,7 +149,7 @@ export const equals = (a: Script, b: Script): boolean => {
         return a === b
     }
   }
-  
+
   return false
 }
 
@@ -165,9 +161,9 @@ export const equals = (a: Script, b: Script): boolean => {
  */
 export const arbitrary: FastCheck.Arbitrary<Script> = FastCheck.oneof(
   // Simple native script generator
-  FastCheck.record({ 
+  FastCheck.record({
     type: FastCheck.constant("sig" as const),
-    keyHash: FastCheck.hexaString({ minLength: 56, maxLength: 56 }) 
+    keyHash: FastCheck.hexaString({ minLength: 56, maxLength: 56 })
   }),
   PlutusV1.arbitrary,
   PlutusV2.arbitrary,

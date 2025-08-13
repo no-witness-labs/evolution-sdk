@@ -77,8 +77,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): IPv6 =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): IPv6 => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse IPv6 from hex string.
@@ -86,8 +85,7 @@ export const fromBytes = (bytes: Uint8Array): IPv6 =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): IPv6 =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): IPv6 => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode IPv6 to bytes.
@@ -95,8 +93,7 @@ export const fromHex = (hex: string): IPv6 =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (ipv6: IPv6): Uint8Array =>
-  Eff.runSync(Effect.toBytes(ipv6))
+export const toBytes = (ipv6: IPv6): Uint8Array => Eff.runSync(Effect.toBytes(ipv6))
 
 /**
  * Encode IPv6 to hex string.
@@ -104,8 +101,7 @@ export const toBytes = (ipv6: IPv6): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (ipv6: IPv6): string =>
-  Eff.runSync(Effect.toHex(ipv6))
+export const toHex = (ipv6: IPv6): string => Eff.runSync(Effect.toHex(ipv6))
 
 // ============================================================================
 // Effect Namespace

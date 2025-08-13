@@ -30,11 +30,9 @@ export class Bip32PrivateKeyError extends Data.TaggedError("Bip32PrivateKeyError
  * @since 2.0.0
  * @category schemas
  */
-export const Bip32PrivateKey = Bytes96.HexSchema
-  .pipe(Schema.brand("Bip32PrivateKey"))
-  .annotations({
-    identifier: "Bip32PrivateKey"
-  })
+export const Bip32PrivateKey = Bytes96.HexSchema.pipe(Schema.brand("Bip32PrivateKey")).annotations({
+  identifier: "Bip32PrivateKey"
+})
 
 export type Bip32PrivateKey = typeof Bip32PrivateKey.Type
 
@@ -79,13 +77,12 @@ const clampScalar = (scalar: Uint8Array): Uint8Array => {
 /**
  * Extract the scalar part (first 32 bytes) from the extended key.
  */
-const extractScalar = (extendedKey: Uint8Array): Uint8Array => 
-  extendedKey.slice(SCALAR_INDEX, SCALAR_SIZE)
+const extractScalar = (extendedKey: Uint8Array): Uint8Array => extendedKey.slice(SCALAR_INDEX, SCALAR_SIZE)
 
 /**
  * Extract the chaincode part (bytes 64-95) from the extended key.
  */
-const extractChainCode = (extendedKey: Uint8Array): Uint8Array => 
+const extractChainCode = (extendedKey: Uint8Array): Uint8Array =>
   extendedKey.slice(CHAIN_CODE_INDEX, CHAIN_CODE_INDEX + CHAIN_CODE_SIZE)
 
 /**
@@ -131,7 +128,7 @@ export const fromHex = (hex: string): Bip32PrivateKey => Eff.runSync(Effect.from
  * @since 2.0.0
  * @category bip39
  */
-export const fromBip39Entropy = (entropy: Uint8Array, password: string = ""): Bip32PrivateKey => 
+export const fromBip39Entropy = (entropy: Uint8Array, password: string = ""): Bip32PrivateKey =>
   Eff.runSync(Effect.fromBip39Entropy(entropy, password))
 
 // ============================================================================
@@ -144,8 +141,7 @@ export const fromBip39Entropy = (entropy: Uint8Array, password: string = ""): Bi
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (bip32PrivateKey: Bip32PrivateKey): Uint8Array => 
-  Eff.runSync(Effect.toBytes(bip32PrivateKey))
+export const toBytes = (bip32PrivateKey: Bip32PrivateKey): Uint8Array => Eff.runSync(Effect.toBytes(bip32PrivateKey))
 
 /**
  * Convert a Bip32PrivateKey to a hex string.
@@ -226,8 +222,7 @@ export const to128XPRV = (bip32PrivateKey: Bip32PrivateKey): Uint8Array =>
  * @since 2.0.0
  * @category cml-compatibility
  */
-export const from128XPRV = (bytes: Uint8Array): Bip32PrivateKey =>
-  Eff.runSync(Effect.from_128_xprv(bytes))
+export const from128XPRV = (bytes: Uint8Array): Bip32PrivateKey => Eff.runSync(Effect.from_128_xprv(bytes))
 
 // ============================================================================
 // Public Key Derivation
@@ -284,14 +279,12 @@ export const CardanoPath = {
   /**
    * Payment key indices (role = 0)
    */
-  paymentIndices: (account: number = 0, index: number = 0) => 
-    CardanoPath.indices(account, 0, index),
+  paymentIndices: (account: number = 0, index: number = 0) => CardanoPath.indices(account, 0, index),
 
   /**
    * Stake key indices (role = 2)
    */
-  stakeIndices: (account: number = 0, index: number = 0) => 
-    CardanoPath.indices(account, 2, index)
+  stakeIndices: (account: number = 0, index: number = 0) => CardanoPath.indices(account, 2, index)
 }
 
 // ============================================================================
@@ -316,8 +309,8 @@ export namespace Effect {
     Eff.gen(function* () {
       if (bytes.length !== 96) {
         return yield* Eff.fail(
-          new Bip32PrivateKeyError({ 
-            message: `Expected 96 bytes, got ${bytes.length} bytes` 
+          new Bip32PrivateKeyError({
+            message: `Expected 96 bytes, got ${bytes.length} bytes`
           })
         )
       }
@@ -354,18 +347,18 @@ export namespace Effect {
    * @category bip39
    */
   export const fromBip39Entropy = (
-    entropy: Uint8Array, 
+    entropy: Uint8Array,
     password: string = ""
   ): Eff.Effect<Bip32PrivateKey, Bip32PrivateKeyError> =>
     Eff.gen(function* () {
-      const keyMaterial = yield* Eff.try(() => 
+      const keyMaterial = yield* Eff.try(() =>
         pbkdf2(sha512, password, entropy, { c: PBKDF2_ITERATIONS, dkLen: PBKDF2_KEY_SIZE })
       )
-      
+
       // Clamp the scalar part (first 32 bytes)
       const clamped = new Uint8Array(keyMaterial)
       clamped.set(clampScalar(keyMaterial.slice(0, 32)), 0)
-      
+
       return yield* Schema.decode(FromBytes)(clamped)
     }).pipe(
       Eff.mapError(
@@ -400,34 +393,34 @@ export namespace Effect {
    * @category bip32
    */
   export const deriveChild = (
-    bip32PrivateKey: Bip32PrivateKey, 
+    bip32PrivateKey: Bip32PrivateKey,
     index: number
   ): Eff.Effect<Bip32PrivateKey, Bip32PrivateKeyError> =>
     Eff.gen(function* () {
       const keyBytes = yield* Schema.encode(FromBytes)(bip32PrivateKey)
-      
+
       // For soft derivation, we need the computed public key bytes, not the Bip32PublicKey
       const computedPublicKeyBytes = yield* Eff.try(() => {
         const scalar = extractScalar(keyBytes)
         return sodium.crypto_scalarmult_ed25519_base_noclamp(scalar)
       })
-      
+
       const derivedBytes = yield* Eff.try(() => {
-        const scalar = keyBytes.slice(0, 32)      // First 32 bytes: scalar
-        const iv = keyBytes.slice(32, 64)         // Second 32 bytes: IV  
+        const scalar = keyBytes.slice(0, 32) // First 32 bytes: scalar
+        const iv = keyBytes.slice(32, 64) // Second 32 bytes: IV
         const chainCode = extractChainCode(keyBytes)
-        
+
         // Determine if this is hardened or soft derivation
         const isHardened = index >= 0x80000000
         const actualIndex = index // Use the actual index, don't force hardened
-        
+
         // Serialize index in little-endian (V2 scheme) - CML compatible
         const indexBytes = new Uint8Array(4)
         indexBytes[0] = actualIndex & 0xff
         indexBytes[1] = (actualIndex >>> 8) & 0xff
         indexBytes[2] = (actualIndex >>> 16) & 0xff
         indexBytes[3] = (actualIndex >>> 24) & 0xff
-        
+
         // Create HMAC input for Z - use appropriate tag and key material
         let zInput: Uint8Array
         if (isHardened) {
@@ -439,24 +432,24 @@ export namespace Effect {
           zInput.set(iv, 33)
           zInput.set(indexBytes, 65)
         } else {
-          // Soft derivation: tag(0x02) + public_key(32 bytes) + index(4 bytes)  
+          // Soft derivation: tag(0x02) + public_key(32 bytes) + index(4 bytes)
           const zTag = new Uint8Array([0x02]) // TAG_DERIVE_Z_SOFT - try 0x02
           zInput = new Uint8Array(1 + 32 + 4)
           zInput.set(zTag, 0)
           zInput.set(computedPublicKeyBytes, 1)
           zInput.set(indexBytes, 33)
         }
-        
+
         // HMAC-SHA512 with chain code as key
         const hmacZ = sodium.crypto_auth_hmacsha512(zInput, chainCode)
-        
+
         const z = new Uint8Array(hmacZ)
         const zl = z.slice(0, 32)
         const zr = z.slice(32, 64)
-        
+
         // multiply8_v2: multiply by 8 using DERIVATION_V2 scheme (CML compatible)
         // This implements add_28_mul8_v2(kl, zl) where kl is the scalar (left half)
-        const kl = scalar  // Use the scalar, not the first 32 bytes of 64-byte "private key"
+        const kl = scalar // Use the scalar, not the first 32 bytes of 64-byte "private key"
         const scaledLeft = new Uint8Array(32)
         let carry = 0
         // First 28 bytes: kl[i] + (zl[i] << 3) + carry
@@ -471,12 +464,12 @@ export namespace Effect {
           scaledLeft[i] = r & 0xff
           carry = r >> 8
         }
-        
+
         // scalar_add_no_overflow: The left half is already computed in scaledLeft
         const newKeyMaterial = new Uint8Array(64)
         // Use the computed scaledLeft directly for left half (new scalar)
         newKeyMaterial.set(scaledLeft, 0)
-        
+
         // Add right half (zr + iv) - the IV becomes the new right half
         let carryBit = 0
         for (let i = 0; i < 32; i++) {
@@ -484,7 +477,7 @@ export namespace Effect {
           newKeyMaterial[i + 32] = sum & 0xff
           carryBit = sum > 255 ? 1 : 0
         }
-        
+
         // Derive new chain code: use appropriate tag and key material
         let ccInput: Uint8Array
         if (isHardened) {
@@ -503,14 +496,14 @@ export namespace Effect {
           ccInput.set(computedPublicKeyBytes, 1)
           ccInput.set(indexBytes, 33)
         }
-        
+
         const hmacCC = sodium.crypto_auth_hmacsha512(ccInput, chainCode)
         const newChainCode = new Uint8Array(hmacCC).slice(32, 64) // Take right 32 bytes
-        
+
         // Construct the new key: newKeyMaterial(64 bytes) + newChainCode(32 bytes) = 96 bytes
         return new Uint8Array([...newKeyMaterial, ...newChainCode])
       })
-      
+
       return yield* Schema.decode(FromBytes)(derivedBytes)
     }).pipe(
       Eff.mapError(
@@ -529,16 +522,16 @@ export namespace Effect {
    * @category bip32
    */
   export const derive = (
-    bip32PrivateKey: Bip32PrivateKey, 
+    bip32PrivateKey: Bip32PrivateKey,
     indices: Array<number>
   ): Eff.Effect<Bip32PrivateKey, Bip32PrivateKeyError> =>
     Eff.gen(function* () {
       let currentKey = bip32PrivateKey
-      
+
       for (const index of indices) {
         currentKey = yield* deriveChild(currentKey, index)
       }
-      
+
       return currentKey
     })
 
@@ -552,16 +545,16 @@ export namespace Effect {
     Eff.try(() => {
       const cleanPath = path.startsWith("m/") ? path.slice(2) : path
       const segments = cleanPath.split("/")
-      
-      return segments.map(segment => {
+
+      return segments.map((segment) => {
         const isHardened = segment.endsWith("'") || segment.endsWith("h")
         const indexStr = isHardened ? segment.slice(0, -1) : segment
         const index = parseInt(indexStr, 10)
-        
+
         if (isNaN(index)) {
           throw new Error(`Invalid path segment: ${segment}`)
         }
-        
+
         return isHardened ? 0x80000000 + index : index
       })
     }).pipe(
@@ -581,7 +574,7 @@ export namespace Effect {
    * @category bip32
    */
   export const derivePath = (
-    bip32PrivateKey: Bip32PrivateKey, 
+    bip32PrivateKey: Bip32PrivateKey,
     path: string
   ): Eff.Effect<Bip32PrivateKey, Bip32PrivateKeyError> =>
     Eff.gen(function* () {
@@ -595,11 +588,13 @@ export namespace Effect {
    * @since 2.0.0
    * @category conversion
    */
-  export const toPrivateKey = (bip32PrivateKey: Bip32PrivateKey): Eff.Effect<PrivateKey.PrivateKey, Bip32PrivateKeyError> =>
+  export const toPrivateKey = (
+    bip32PrivateKey: Bip32PrivateKey
+  ): Eff.Effect<PrivateKey.PrivateKey, Bip32PrivateKeyError> =>
     Eff.gen(function* () {
       const keyBytes = yield* toBytes(bip32PrivateKey)
       const privateKeyBytes = keyBytes.slice(0, 64) // scalar + IV
-      
+
       return yield* Eff.mapError(
         Schema.decode(PrivateKey.FromBytes)(privateKeyBytes),
         (cause) =>
@@ -616,17 +611,19 @@ export namespace Effect {
    * @since 2.0.0
    * @category cryptography
    */
-  export const toPublicKey = (bip32PrivateKey: Bip32PrivateKey): Eff.Effect<Bip32PublicKey.Bip32PublicKey, Bip32PrivateKeyError> =>
+  export const toPublicKey = (
+    bip32PrivateKey: Bip32PrivateKey
+  ): Eff.Effect<Bip32PublicKey.Bip32PublicKey, Bip32PrivateKeyError> =>
     Eff.gen(function* () {
       const keyBytes = yield* Schema.encode(FromBytes)(bip32PrivateKey)
-      
+
       const publicKeyBytes = yield* Eff.try(() => {
         const scalar = extractScalar(keyBytes)
         return sodium.crypto_scalarmult_ed25519_base_noclamp(scalar)
       })
-      
+
       const chainCode = extractChainCode(keyBytes)
-      
+
       return yield* Eff.mapError(
         Bip32PublicKey.Effect.fromBytes(publicKeyBytes, chainCode),
         (cause) =>
@@ -668,22 +665,22 @@ export namespace Effect {
         Bip32PublicKey.Effect.toBytes(publicKey),
         (cause) => new Bip32PrivateKeyError({ message: "Failed to get public key bytes", cause })
       )
-      
+
       // Extract components from our 96-byte format: [scalar(32)] + [IV(32)] + [chaincode(32)]
       const scalar = keyBytes.slice(0, 32)
       const iv = keyBytes.slice(32, 64)
       const chaincode = keyBytes.slice(64, 96)
-      
+
       // Extract just the public key part (first 32 bytes) from the public key bytes
       const publicKeyOnly = publicKeyBytes.slice(0, 32)
-      
+
       // Construct CML's 128-byte format: [scalar(32)] + [IV(32)] + [public_key(32)] + [chaincode(32)]
       const cmlFormat = new Uint8Array(128)
-      cmlFormat.set(scalar, 0)        // Bytes 0-31: private key
-      cmlFormat.set(iv, 32)           // Bytes 32-63: IV/extension
+      cmlFormat.set(scalar, 0) // Bytes 0-31: private key
+      cmlFormat.set(iv, 32) // Bytes 32-63: IV/extension
       cmlFormat.set(publicKeyOnly, 64) // Bytes 64-95: public key
-      cmlFormat.set(chaincode, 96)     // Bytes 96-127: chain code
-      
+      cmlFormat.set(chaincode, 96) // Bytes 96-127: chain code
+
       return cmlFormat
     })
 
@@ -692,7 +689,7 @@ export namespace Effect {
    * Format: [private_key(32)] + [IV(32)] + [public_key(32)] + [chain_code(32)]
    * This matches the format returned by CML.Bip32PrivateKey.to_128_xprv()
    *
-   * @since 2.0.0  
+   * @since 2.0.0
    * @category cml-compatibility
    */
   export const from_128_xprv = (bytes: Uint8Array): Eff.Effect<Bip32PrivateKey, Bip32PrivateKeyError> =>
@@ -704,20 +701,18 @@ export namespace Effect {
           })
         )
       }
-      
+
       // Extract components from CML's 128-byte format
-      const scalar = bytes.slice(0, 32)        // Bytes 0-31: private key
-      const iv = bytes.slice(32, 64)          // Bytes 32-63: IV/extension  
-      const chaincode = bytes.slice(96, 128)  // Bytes 96-127: chain code
-      
+      const scalar = bytes.slice(0, 32) // Bytes 0-31: private key
+      const iv = bytes.slice(32, 64) // Bytes 32-63: IV/extension
+      const chaincode = bytes.slice(96, 128) // Bytes 96-127: chain code
+
       // Verify the public key matches the private key
-      const expectedPublicKey = bytes.slice(64, 96)   // Bytes 64-95: public key
-      const derivedPublicKey = yield* Eff.try(() => 
-        sodium.crypto_scalarmult_ed25519_base_noclamp(scalar)
-      ).pipe(
+      const expectedPublicKey = bytes.slice(64, 96) // Bytes 64-95: public key
+      const derivedPublicKey = yield* Eff.try(() => sodium.crypto_scalarmult_ed25519_base_noclamp(scalar)).pipe(
         Eff.mapError((cause) => new Bip32PrivateKeyError({ message: "Failed to derive public key", cause }))
       )
-      
+
       const publicKeyMatches = derivedPublicKey.every((byte, i) => byte === expectedPublicKey[i])
       if (!publicKeyMatches) {
         return yield* Eff.fail(
@@ -726,19 +721,20 @@ export namespace Effect {
           })
         )
       }
-      
+
       // Construct our internal 96-byte format: [scalar(32)] + [IV(32)] + [chaincode(32)]
       const internalFormat = new Uint8Array(96)
-      internalFormat.set(scalar, 0)      // Bytes 0-31: scalar
-      internalFormat.set(iv, 32)         // Bytes 32-63: IV
-      internalFormat.set(chaincode, 64)  // Bytes 64-95: chaincode
-      
+      internalFormat.set(scalar, 0) // Bytes 0-31: scalar
+      internalFormat.set(iv, 32) // Bytes 32-63: IV
+      internalFormat.set(chaincode, 64) // Bytes 64-95: chaincode
+
       return yield* Eff.mapError(
         Schema.decode(FromBytes)(internalFormat),
-        (cause) => new Bip32PrivateKeyError({
-          message: "Failed to decode internal format", 
-          cause
-        })
+        (cause) =>
+          new Bip32PrivateKeyError({
+            message: "Failed to decode internal format",
+            cause
+          })
       )
     })
 }

@@ -27,7 +27,7 @@ export class AuxiliaryDataError extends Data.TaggedError("AuxiliaryDataError")<{
  *   ? 0 => metadata           ; transaction_metadata
  *   ? 1 => [* native_script]  ; native_scripts
  *   ? 2 => [* plutus_v1_script] ; plutus_v1_scripts
- *   ? 3 => [* plutus_v2_script] ; plutus_v2_scripts  
+ *   ? 3 => [* plutus_v2_script] ; plutus_v2_scripts
  *   ? 4 => [* plutus_v3_script] ; plutus_v3_scripts
  * }
  *
@@ -45,161 +45,85 @@ export class AuxiliaryData extends Schema.Class<AuxiliaryData>("AuxiliaryData")(
 }) {}
 
 /**
- * CBOR Schema representing auxiliary data as a Conway-tagged map.
- * Conway era wraps auxiliary data in CBOR tag 259 (0x103).
+ * Tagged CDDL schema for AuxiliaryData (#6.259 wrapping the struct).
  *
  * @since 2.0.0
  * @category schemas
  */
-export const CDDLSchema = Schema.MapFromSelf({
-  key: CBOR.Integer,
-  value: Schema.Union(
-    Metadata.CDDLSchema,
-    Schema.Array(NativeScripts.CDDLSchema),
-    Schema.Array(PlutusV1.CDDLSchema),
-    Schema.Array(PlutusV2.CDDLSchema),
-    Schema.Array(PlutusV3.CDDLSchema)
-  )
-})
+export const CDDLSchema = CBOR.tag(
+  259,
+  Schema.Struct({
+    0: Schema.optional(Metadata.CDDLSchema),
+    1: Schema.optional(Schema.Array(NativeScripts.CDDLSchema)),
+    2: Schema.optional(Schema.Array(PlutusV1.CDDLSchema)),
+    3: Schema.optional(Schema.Array(PlutusV2.CDDLSchema)),
+    4: Schema.optional(Schema.Array(PlutusV3.CDDLSchema))
+  })
+)
 
 /**
- * Transform schema between AuxiliaryData class and Conway-tagged CBOR.
- * Uses CBOR tag 259 to wrap auxiliary data for Conway era compatibility.
- *
- * @since 2.0.0
- * @category schemas
- */
-export const FromConwayTagged = Schema.transformOrFail(
-  Schema.instanceOf(CBOR.Tag),
-  Schema.typeSchema(AuxiliaryData),
-  {
-    strict: true,
-    encode: (auxData: AuxiliaryData) =>
-      Eff.gen(function* () {
-        // First encode to CDDL map
-        const cddlMap = yield* ParseResult.encode(FromCDDL)(auxData)
-        // Then wrap in Conway tag (259)
-        return new CBOR.Tag({ tag: 259, value: cddlMap })
-      }),
-    decode: (conwayTag: CBOR.Tag) =>
-      Eff.gen(function* () {
-        // Extract the map from Conway tag and decode
-        const cddlMap = conwayTag.value as ReadonlyMap<bigint, any>
-        return yield* ParseResult.decode(FromCDDL)(cddlMap)
-      })
-  }
-).annotations({
-  identifier: "AuxiliaryData.FromConwayTagged",
-  title: "AuxiliaryData from Conway tagged CBOR",
-  description: "Transforms Conway-tagged CBOR to AuxiliaryData"
-})
-
-/**
- * Transform schema between CDDL map representation and AuxiliaryData class.
- * Handles Conway-era map format with CBOR tag 259 wrapping.
+ * Transform between tagged CDDL (tag 259) and AuxiliaryData class.
  *
  * @since 2.0.0
  * @category schemas
  */
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(AuxiliaryData), {
   strict: true,
-  encode: (toA: AuxiliaryData) =>
+  encode: (toA) =>
     Eff.gen(function* () {
-      const result = new Map<bigint, any>()
-      
-      // Map class properties to CDDL map keys
-      if (toA.metadata !== undefined) {
-        const encodedMetadata = yield* ParseResult.encode(Metadata.FromCDDL)(toA.metadata)
-        result.set(0n, encodedMetadata)
-      }
-      
-      if (toA.nativeScripts !== undefined) {
-        const encodedNativeScripts = yield* Eff.all(
-          toA.nativeScripts.map((s) => ParseResult.encode(NativeScripts.FromCDDL)(s))
-        )
-        result.set(1n, encodedNativeScripts)
-      }
-      
-      if (toA.plutusV1Scripts !== undefined) {
-        const encodedV1Scripts = yield* Eff.all(
-          toA.plutusV1Scripts.map((s) => ParseResult.encode(PlutusV1.FromCDDL)(s))
-        )
-        result.set(2n, encodedV1Scripts)
-      }
-      
-      if (toA.plutusV2Scripts !== undefined) {
-        const encodedV2Scripts = yield* Eff.all(
-          toA.plutusV2Scripts.map((s) => ParseResult.encode(PlutusV2.FromCDDL)(s))
-        )
-        result.set(3n, encodedV2Scripts)
-      }
-      
-      if (toA.plutusV3Scripts !== undefined) {
-        const encodedV3Scripts = yield* Eff.all(
-          toA.plutusV3Scripts.map((s) => ParseResult.encode(PlutusV3.FromCDDL)(s))
-        )
-        result.set(4n, encodedV3Scripts)
-      }
-      
-      return result
+      const struct: Record<number, any> = {}
+      if (toA.metadata !== undefined) struct[0] = yield* ParseResult.encode(Metadata.FromCDDL)(toA.metadata)
+      if (toA.nativeScripts !== undefined)
+        struct[1] = yield* Eff.all(toA.nativeScripts.map((s) => ParseResult.encode(NativeScripts.FromCDDL)(s)))
+      if (toA.plutusV1Scripts !== undefined)
+        struct[2] = yield* Eff.all(toA.plutusV1Scripts.map((s) => ParseResult.encode(PlutusV1.FromCDDL)(s)))
+      if (toA.plutusV2Scripts !== undefined)
+        struct[3] = yield* Eff.all(toA.plutusV2Scripts.map((s) => ParseResult.encode(PlutusV2.FromCDDL)(s)))
+      if (toA.plutusV3Scripts !== undefined)
+        struct[4] = yield* Eff.all(toA.plutusV3Scripts.map((s) => ParseResult.encode(PlutusV3.FromCDDL)(s)))
+      return { value: struct, tag: 259 as const, _tag: "Tag" as const }
     }),
-  decode: (fromA) =>
+  decode: (tagged) =>
     Eff.gen(function* () {
-      // Extract values from CDDL map and convert to class properties
-      const metadataValue = fromA.get(0n) as ReadonlyMap<bigint, any> | undefined
-      const metadata = metadataValue ? yield* ParseResult.decode(Metadata.FromCDDL)(metadataValue) : undefined
-      
-      const nativeScriptsArray = fromA.get(1n) as ReadonlyArray<any> | undefined
-      const nativeScripts = nativeScriptsArray
-        ? yield* Eff.all(nativeScriptsArray.map((s) => ParseResult.decode(NativeScripts.FromCDDL)(s)))
+      const struct = tagged.value
+      const metadata = struct[0] ? yield* ParseResult.decode(Metadata.FromCDDL)(struct[0]) : undefined
+      const nativeScripts = struct[1]
+        ? yield* Eff.all(struct[1].map((s) => ParseResult.decode(NativeScripts.FromCDDL)(s)))
         : undefined
-        
-      const plutusV1Array = fromA.get(2n) as ReadonlyArray<any> | undefined
-      const plutusV1Scripts = plutusV1Array
-        ? yield* Eff.all(plutusV1Array.map((s) => ParseResult.decode(PlutusV1.FromCDDL)(s)))
+      const plutusV1Scripts = struct[2]
+        ? yield* Eff.all(struct[2].map((s) => ParseResult.decode(PlutusV1.FromCDDL)(s)))
         : undefined
-        
-      const plutusV2Array = fromA.get(3n) as ReadonlyArray<any> | undefined
-      const plutusV2Scripts = plutusV2Array
-        ? yield* Eff.all(plutusV2Array.map((s) => ParseResult.decode(PlutusV2.FromCDDL)(s)))
+      const plutusV2Scripts = struct[3]
+        ? yield* Eff.all(struct[3].map((s) => ParseResult.decode(PlutusV2.FromCDDL)(s)))
         : undefined
-        
-      const plutusV3Array = fromA.get(4n) as ReadonlyArray<any> | undefined
-      const plutusV3Scripts = plutusV3Array
-        ? yield* Eff.all(plutusV3Array.map((s) => ParseResult.decode(PlutusV3.FromCDDL)(s)))
+      const plutusV3Scripts = struct[4]
+        ? yield* Eff.all(struct[4].map((s) => ParseResult.decode(PlutusV3.FromCDDL)(s)))
         : undefined
-      
-      return new AuxiliaryData({
-        metadata,
-        nativeScripts,
-        plutusV1Scripts,
-        plutusV2Scripts,
-        plutusV3Scripts,
-      })
+      return new AuxiliaryData({ metadata, nativeScripts, plutusV1Scripts, plutusV2Scripts, plutusV3Scripts })
     })
 }).annotations({
   identifier: "AuxiliaryData.FromCDDL",
-  title: "AuxiliaryData from CDDL",
-  description: "Transforms CDDL map representation to AuxiliaryData"
+  title: "AuxiliaryData from tagged CDDL",
+  description: "Transforms CBOR tag 259 CDDL structure to AuxiliaryData"
 })
 
 /**
  * CBOR bytes transformation schema for AuxiliaryData.
- * Uses Conway tagged format for CML compatibility.
+ * Transforms between CBOR bytes and AuxiliaryData using CDDL format.
  *
  * @since 2.0.0
  * @category schemas
  */
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-  Schema.compose(CBOR.FromBytes(options), FromConwayTagged).annotations({
+  Schema.compose(CBOR.FromBytes(options), FromCDDL).annotations({
     identifier: "AuxiliaryData.FromCBORBytes",
     title: "AuxiliaryData from CBOR bytes",
-    description: "Decode AuxiliaryData from Conway-tagged CBOR-encoded bytes"
+    description: "Decode AuxiliaryData from CBOR-encoded bytes (tag 259)"
   })
 
 /**
  * CBOR hex transformation schema for AuxiliaryData.
- * Uses Conway tagged format for CML compatibility.
+ * Transforms between CBOR hex string and AuxiliaryData using CDDL format.
  *
  * @since 2.0.0
  * @category schemas
@@ -208,7 +132,7 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
   Schema.compose(Bytes.FromHex, FromCBORBytes(options)).annotations({
     identifier: "AuxiliaryData.FromCBORHex",
     title: "AuxiliaryData from CBOR hex",
-    description: "Decode AuxiliaryData from Conway-tagged CBOR-encoded hex string"
+    description: "Decode AuxiliaryData from CBOR-encoded hex (tag 259)"
   })
 
 /**
@@ -225,13 +149,14 @@ export const make = AuxiliaryData.make
  * @since 2.0.0
  * @category constructors
  */
-export const empty = (): AuxiliaryData => new AuxiliaryData({
-  metadata: undefined,
-  nativeScripts: undefined,
-  plutusV1Scripts: undefined,
-  plutusV2Scripts: undefined,
-  plutusV3Scripts: undefined
-})
+export const empty = (): AuxiliaryData =>
+  new AuxiliaryData({
+    metadata: undefined,
+    nativeScripts: undefined,
+    plutusV1Scripts: undefined,
+    plutusV2Scripts: undefined,
+    plutusV3Scripts: undefined
+  })
 
 /**
  * Check if two AuxiliaryData instances are equal (deep comparison).
@@ -243,10 +168,10 @@ export const equals = (a: AuxiliaryData, b: AuxiliaryData): boolean => {
   if (a.metadata && b.metadata) {
     if (!Metadata.equals(a.metadata, b.metadata)) return false
   } else if (a.metadata || b.metadata) return false
-  
+
   const cmpArray = (x?: ReadonlyArray<any>, y?: ReadonlyArray<any>) =>
     x && y ? x.length === y.length && x.every((v, i) => v === y[i]) : x === y
-    
+
   if (!cmpArray(a.nativeScripts, b.nativeScripts)) return false
   if (!cmpArray(a.plutusV1Scripts, b.plutusV1Scripts)) return false
   if (!cmpArray(a.plutusV2Scripts, b.plutusV2Scripts)) return false

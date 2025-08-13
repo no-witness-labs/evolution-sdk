@@ -709,10 +709,7 @@ export const makeUpdateCommittee = (
  * @since 2.0.0
  * @category constructors
  */
-export const makeNewConstitution = (
-  govActionId: GovActionId | null,
-  constitution: CBOR.CBOR
-): NewConstitutionAction =>
+export const makeNewConstitution = (govActionId: GovActionId | null, constitution: CBOR.CBOR): NewConstitutionAction =>
   new NewConstitutionAction({
     govActionId,
     constitution
@@ -732,10 +729,7 @@ export const makeInfo = (): InfoAction => new InfoAction({})
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.oneof(
-  FastCheck.constant(makeNoConfidence(null)),
-  FastCheck.constant(makeInfo())
-)
+export const arbitrary = FastCheck.oneof(FastCheck.constant(makeNoConfidence(null)), FastCheck.constant(makeInfo()))
 
 /**
  * Check if a value is a valid GovernanceAction.

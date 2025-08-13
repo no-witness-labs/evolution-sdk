@@ -78,8 +78,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): VrfVkey =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): VrfVkey => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse VrfVkey from hex string.
@@ -87,8 +86,7 @@ export const fromBytes = (bytes: Uint8Array): VrfVkey =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): VrfVkey =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): VrfVkey => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode VrfVkey to bytes.
@@ -96,8 +94,7 @@ export const fromHex = (hex: string): VrfVkey =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (vrfVkey: VrfVkey): Uint8Array =>
-  Eff.runSync(Effect.toBytes(vrfVkey))
+export const toBytes = (vrfVkey: VrfVkey): Uint8Array => Eff.runSync(Effect.toBytes(vrfVkey))
 
 /**
  * Encode VrfVkey to hex string.
@@ -105,8 +102,7 @@ export const toBytes = (vrfVkey: VrfVkey): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (vrfVkey: VrfVkey): string =>
-  Eff.runSync(Effect.toHex(vrfVkey))
+export const toHex = (vrfVkey: VrfVkey): string => Eff.runSync(Effect.toHex(vrfVkey))
 
 // ============================================================================
 // Effect Namespace

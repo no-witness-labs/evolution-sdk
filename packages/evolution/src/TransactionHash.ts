@@ -97,8 +97,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): TransactionHash =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): TransactionHash => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse TransactionHash from hex string.
@@ -106,8 +105,7 @@ export const fromBytes = (bytes: Uint8Array): TransactionHash =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): TransactionHash =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): TransactionHash => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode TransactionHash to bytes.
@@ -115,8 +113,7 @@ export const fromHex = (hex: string): TransactionHash =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (txHash: TransactionHash): Uint8Array =>
-  Eff.runSync(Effect.toBytes(txHash))
+export const toBytes = (txHash: TransactionHash): Uint8Array => Eff.runSync(Effect.toBytes(txHash))
 
 /**
  * Encode TransactionHash to hex string.
@@ -124,8 +121,7 @@ export const toBytes = (txHash: TransactionHash): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (txHash: TransactionHash): string =>
-  Eff.runSync(Effect.toHex(txHash))
+export const toHex = (txHash: TransactionHash): string => Eff.runSync(Effect.toHex(txHash))
 
 // ============================================================================
 // Effect Namespace

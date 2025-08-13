@@ -117,9 +117,10 @@ export const toHex = (vkey: VKey): string => vkey // Already a hex string
  * @since 2.0.0
  * @category testing
  */
-export const arbitrary: FastCheck.Arbitrary<VKey> = FastCheck
-  .uint8Array({ minLength: Bytes32.BYTES_LENGTH, maxLength: Bytes32.BYTES_LENGTH })
-  .map(fromBytes)
+export const arbitrary: FastCheck.Arbitrary<VKey> = FastCheck.uint8Array({
+  minLength: Bytes32.BYTES_LENGTH,
+  maxLength: Bytes32.BYTES_LENGTH
+}).map(fromBytes)
 
 // ============================================================================
 // Cryptographic Operations
@@ -204,11 +205,7 @@ const fromPrivateKeyEffect = (privateKey: PrivateKey): Eff.Effect<VKey, VKeyErro
  * @since 2.0.0
  * @category cryptography
  */
-export const verify = (
-  vkey: VKey,
-  message: Uint8Array,
-  signature: Uint8Array
-): boolean => {
+export const verify = (vkey: VKey, message: Uint8Array, signature: Uint8Array): boolean => {
   // Convert VKey to bytes
   const publicKeyBytes = toBytes(vkey)
   return sodium.crypto_sign_verify_detached(signature, message, publicKeyBytes)

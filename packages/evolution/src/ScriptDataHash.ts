@@ -105,8 +105,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): ScriptDataHash =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): ScriptDataHash => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse ScriptDataHash from hex string.
@@ -114,8 +113,7 @@ export const fromBytes = (bytes: Uint8Array): ScriptDataHash =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): ScriptDataHash =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): ScriptDataHash => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode ScriptDataHash to bytes.
@@ -123,8 +121,7 @@ export const fromHex = (hex: string): ScriptDataHash =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (scriptDataHash: ScriptDataHash): Uint8Array =>
-  Eff.runSync(Effect.toBytes(scriptDataHash))
+export const toBytes = (scriptDataHash: ScriptDataHash): Uint8Array => Eff.runSync(Effect.toBytes(scriptDataHash))
 
 /**
  * Encode ScriptDataHash to hex string.
@@ -132,8 +129,7 @@ export const toBytes = (scriptDataHash: ScriptDataHash): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (scriptDataHash: ScriptDataHash): string =>
-  Eff.runSync(Effect.toHex(scriptDataHash))
+export const toHex = (scriptDataHash: ScriptDataHash): string => Eff.runSync(Effect.toHex(scriptDataHash))
 
 // ============================================================================
 // Effect Namespace

@@ -91,8 +91,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): AssetName =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): AssetName => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse AssetName from hex string.
@@ -100,8 +99,7 @@ export const fromBytes = (bytes: Uint8Array): AssetName =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): AssetName =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): AssetName => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode AssetName to bytes.
@@ -109,8 +107,7 @@ export const fromHex = (hex: string): AssetName =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (assetName: AssetName): Uint8Array =>
-  Eff.runSync(Effect.toBytes(assetName))
+export const toBytes = (assetName: AssetName): Uint8Array => Eff.runSync(Effect.toBytes(assetName))
 
 /**
  * Encode AssetName to hex string.
@@ -118,8 +115,7 @@ export const toBytes = (assetName: AssetName): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (assetName: AssetName): string =>
-  Eff.runSync(Effect.toHex(assetName))
+export const toHex = (assetName: AssetName): string => Eff.runSync(Effect.toHex(assetName))
 
 // ============================================================================
 // Effect Namespace

@@ -590,11 +590,13 @@ export const arbitrary = FastCheck.oneof(
   ),
   // StakeVoteRegDelegCert
   FastCheck.tuple(Credential.arbitrary, PoolKeyHash.arbitrary, DRep.arbitrary, Coin.arbitrary).map(
-    ([stakeCredential, poolKeyHash, drep, coin]) => new StakeVoteRegDelegCert({ stakeCredential, poolKeyHash, drep, coin })
+    ([stakeCredential, poolKeyHash, drep, coin]) =>
+      new StakeVoteRegDelegCert({ stakeCredential, poolKeyHash, drep, coin })
   ),
   // AuthCommitteeHotCert
   FastCheck.tuple(Credential.arbitrary, Credential.arbitrary).map(
-    ([committeeColdCredential, committeeHotCredential]) => new AuthCommitteeHotCert({ committeeColdCredential, committeeHotCredential })
+    ([committeeColdCredential, committeeHotCredential]) =>
+      new AuthCommitteeHotCert({ committeeColdCredential, committeeHotCredential })
   ),
   // ResignCommitteeColdCert
   FastCheck.tuple(Credential.arbitrary, FastCheck.option(Anchor.arbitrary, { nil: undefined })).map(

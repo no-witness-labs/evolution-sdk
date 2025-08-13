@@ -1,5 +1,5 @@
 import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
-import { describe, expect,it } from "vitest"
+import { describe, expect, it } from "vitest"
 
 import * as KeyHash from "../src/KeyHash.js"
 import * as NetworkId from "../src/NetworkId.js"
@@ -12,25 +12,25 @@ describe("RewardAccount CML Compatibility", () => {
     for (let i = 0; i < 28; i++) {
       keyHashBytes[i] = (i + 5) % 256 // Deterministic test data
     }
-    const keyHashHex = Buffer.from(keyHashBytes).toString('hex')
-    
+    const keyHashHex = Buffer.from(keyHashBytes).toString("hex")
+
     // Test both networks
     const networks = [0, 1] // testnet, mainnet
-    
+
     networks.forEach((networkValue) => {
       // Create Evolution SDK RewardAccount
       const keyHash = KeyHash.fromBytes(keyHashBytes)
       const networkId = NetworkId.make(networkValue)
-      const evolutionRewardAccount = RewardAccount.make({ 
-        networkId, 
+      const evolutionRewardAccount = RewardAccount.make({
+        networkId,
         stakeCredential: { _tag: "KeyHash", hash: keyHash }
       })
-      
+
       // Create CML RewardAccount - try different API
       const cmlKeyHash = CML.Ed25519KeyHash.from_hex(keyHashHex)
       const cmlCredential = CML.Credential.new_pub_key(cmlKeyHash) // Try this method
       const cmlRewardAccount = CML.RewardAddress.new(networkValue, cmlCredential)
-      
+
       // Get hex from both (RewardAccount uses raw address bytes, not CBOR)
       const evolutionHex = RewardAccount.toHex(evolutionRewardAccount)
       const cmlHex = cmlRewardAccount.to_address().to_hex()

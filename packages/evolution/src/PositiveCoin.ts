@@ -37,7 +37,7 @@ export const MAX_POSITIVE_COIN_VALUE = Coin.MAX_COIN_VALUE
  * @category schemas
  */
 export const PositiveCoinSchema = Schema.BigIntFromSelf.pipe(
-  Schema.filter((value) => value >= MIN_POSITIVE_COIN_VALUE && value <= MAX_POSITIVE_COIN_VALUE),
+  Schema.filter((value) => value >= MIN_POSITIVE_COIN_VALUE && value <= MAX_POSITIVE_COIN_VALUE)
 ).annotations({
   message: (issue) =>
     `PositiveCoin must be between ${MIN_POSITIVE_COIN_VALUE} and ${MAX_POSITIVE_COIN_VALUE}, but got ${issue.actual}`,
@@ -169,8 +169,7 @@ export const arbitrary = FastCheck.bigInt({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBigInt = (value: bigint): PositiveCoin =>
-  Eff.runSync(Effect.fromBigInt(value))
+export const fromBigInt = (value: bigint): PositiveCoin => Eff.runSync(Effect.fromBigInt(value))
 
 /**
  * Convert PositiveCoin to bigint value.
@@ -178,8 +177,7 @@ export const fromBigInt = (value: bigint): PositiveCoin =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBigInt = (positiveCoin: PositiveCoin): bigint =>
-  Eff.runSync(Effect.toBigInt(positiveCoin))
+export const toBigInt = (positiveCoin: PositiveCoin): bigint => Eff.runSync(Effect.toBigInt(positiveCoin))
 
 // ============================================================================
 // Effect Namespace

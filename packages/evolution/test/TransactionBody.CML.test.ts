@@ -9,7 +9,7 @@ import * as TransactionInput from "../src/TransactionInput.js"
 
 /**
  * CML compatibility test for TransactionBody CBOR serialization.
- * 
+ *
  * This test validates that the Evolution SDK produces CBOR that is functionally
  * compatible with the Cardano Multiplatform Library (CML), ensuring byte-for-byte
  * identical encoding for the same transaction body data.
@@ -18,7 +18,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates minimal transaction body CBOR hex compatibility", () => {
     // Create test data for minimal transaction body (inputs, outputs, fee)
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, byte => byte.toString(16).padStart(2, '0')).join('')
+    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
     const fee = 100000n
 
     // Create Evolution SDK TransactionBody
@@ -28,7 +28,7 @@ describe("TransactionBody CML Compatibility", () => {
       index: 0 // Use number instead of bigint
     })
     const evolutionCoin = Coin.make(fee) // Use Coin.make instead of new Coin.Coin
-    
+
     const evolutionTxBody = new TransactionBody.TransactionBody({
       inputs: [evolutionTxInput],
       outputs: [], // Empty outputs array
@@ -38,20 +38,17 @@ describe("TransactionBody CML Compatibility", () => {
     // Create equivalent CML TransactionBody
     const cmlTxHash = CML.TransactionHash.from_raw_bytes(txHashBytes)
     const cmlTxInput = CML.TransactionInput.new(cmlTxHash, BigInt(0))
-    
+
     const cmlInputList = CML.TransactionInputList.new()
     cmlInputList.add(cmlTxInput)
-    
+
     const cmlOutputList = CML.TransactionOutputList.new() // Empty outputs
-    
+
     const cmlTxBody = CML.TransactionBody.new(cmlInputList, cmlOutputList, fee)
 
     // Convert both to CBOR and compare
     const evolutionCbor = TransactionBody.toCBORHex(evolutionTxBody)
     const cmlCbor = cmlTxBody.to_cbor_hex()
-
-    console.log(`Minimal TransactionBody - Evolution CBOR: ${evolutionCbor}`)
-    console.log(`Minimal TransactionBody - CML CBOR: ${cmlCbor}`)
 
     // Check if they're identical
     expect(evolutionCbor).toBe(cmlCbor)
@@ -60,7 +57,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with TTL CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, byte => byte.toString(16).padStart(2, '0')).join('')
+    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
     const fee = 100000n
     const ttl = 1000000n
 
@@ -71,7 +68,7 @@ describe("TransactionBody CML Compatibility", () => {
       index: 0
     })
     const evolutionCoin = Coin.make(fee)
-    
+
     const evolutionTxBody = new TransactionBody.TransactionBody({
       inputs: [evolutionTxInput],
       outputs: [],
@@ -82,21 +79,18 @@ describe("TransactionBody CML Compatibility", () => {
     // Create equivalent CML TransactionBody
     const cmlTxHash = CML.TransactionHash.from_raw_bytes(txHashBytes)
     const cmlTxInput = CML.TransactionInput.new(cmlTxHash, BigInt(0))
-    
+
     const cmlInputList = CML.TransactionInputList.new()
     cmlInputList.add(cmlTxInput)
-    
+
     const cmlOutputList = CML.TransactionOutputList.new()
-    
+
     const cmlTxBody = CML.TransactionBody.new(cmlInputList, cmlOutputList, fee)
     cmlTxBody.set_ttl(ttl)
 
     // Convert both to CBOR and compare
     const evolutionCbor = TransactionBody.toCBORHex(evolutionTxBody)
     const cmlCbor = cmlTxBody.to_cbor_hex()
-
-    console.log(`TTL TransactionBody - Evolution CBOR: ${evolutionCbor}`)
-    console.log(`TTL TransactionBody - CML CBOR: ${cmlCbor}`)
 
     expect(evolutionCbor).toBe(cmlCbor)
   })
@@ -105,8 +99,8 @@ describe("TransactionBody CML Compatibility", () => {
     // Create test data for multiple inputs
     const txHashBytes1 = new Uint8Array(32).fill(1)
     const txHashBytes2 = new Uint8Array(32).fill(2)
-    const txHashHex1 = Array.from(txHashBytes1, byte => byte.toString(16).padStart(2, '0')).join('')
-    const txHashHex2 = Array.from(txHashBytes2, byte => byte.toString(16).padStart(2, '0')).join('')
+    const txHashHex1 = Array.from(txHashBytes1, (byte) => byte.toString(16).padStart(2, "0")).join("")
+    const txHashHex2 = Array.from(txHashBytes2, (byte) => byte.toString(16).padStart(2, "0")).join("")
     const fee = 150000n
 
     // Create Evolution SDK TransactionBody with multiple inputs
@@ -121,7 +115,7 @@ describe("TransactionBody CML Compatibility", () => {
       index: 1
     })
     const evolutionCoin = Coin.make(fee)
-    
+
     const evolutionTxBody = new TransactionBody.TransactionBody({
       inputs: [evolutionTxInput1, evolutionTxInput2],
       outputs: [],
@@ -133,21 +127,18 @@ describe("TransactionBody CML Compatibility", () => {
     const cmlTxHash2 = CML.TransactionHash.from_raw_bytes(txHashBytes2)
     const cmlTxInput1 = CML.TransactionInput.new(cmlTxHash1, BigInt(0))
     const cmlTxInput2 = CML.TransactionInput.new(cmlTxHash2, BigInt(1))
-    
+
     const cmlInputList = CML.TransactionInputList.new()
     cmlInputList.add(cmlTxInput1)
     cmlInputList.add(cmlTxInput2)
-    
+
     const cmlOutputList = CML.TransactionOutputList.new()
-    
+
     const cmlTxBody = CML.TransactionBody.new(cmlInputList, cmlOutputList, fee)
 
     // Convert both to CBOR and compare
     const evolutionCbor = TransactionBody.toCBORHex(evolutionTxBody)
     const cmlCbor = cmlTxBody.to_cbor_hex()
-
-    console.log(`Multiple Inputs TransactionBody - Evolution CBOR: ${evolutionCbor}`)
-    console.log(`Multiple Inputs TransactionBody - CML CBOR: ${cmlCbor}`)
 
     expect(evolutionCbor).toBe(cmlCbor)
   })
@@ -155,7 +146,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with network ID CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, byte => byte.toString(16).padStart(2, '0')).join('')
+    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
     const fee = 100000n
     const networkId = 1 // Mainnet
 
@@ -166,7 +157,7 @@ describe("TransactionBody CML Compatibility", () => {
       index: 0
     })
     const evolutionCoin = Coin.make(fee)
-    
+
     const evolutionTxBody = new TransactionBody.TransactionBody({
       inputs: [evolutionTxInput],
       outputs: [],
@@ -177,12 +168,12 @@ describe("TransactionBody CML Compatibility", () => {
     // Create equivalent CML TransactionBody
     const cmlTxHash = CML.TransactionHash.from_raw_bytes(txHashBytes)
     const cmlTxInput = CML.TransactionInput.new(cmlTxHash, BigInt(0))
-    
+
     const cmlInputList = CML.TransactionInputList.new()
     cmlInputList.add(cmlTxInput)
-    
+
     const cmlOutputList = CML.TransactionOutputList.new()
-    
+
     const cmlTxBody = CML.TransactionBody.new(cmlInputList, cmlOutputList, fee)
     cmlTxBody.set_network_id(CML.NetworkId.mainnet())
 
@@ -190,16 +181,13 @@ describe("TransactionBody CML Compatibility", () => {
     const evolutionCbor = TransactionBody.toCBORHex(evolutionTxBody)
     const cmlCbor = cmlTxBody.to_cbor_hex()
 
-    console.log(`Network ID TransactionBody - Evolution CBOR: ${evolutionCbor}`)
-    console.log(`Network ID TransactionBody - CML CBOR: ${cmlCbor}`)
-
     expect(evolutionCbor).toBe(cmlCbor)
   })
 
   it("validates transaction body with TTL and network ID CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, byte => byte.toString(16).padStart(2, '0')).join('')
+    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
     const fee = 100000n
     const ttl = 2000000n
     const networkId = 0 // Testnet
@@ -211,7 +199,7 @@ describe("TransactionBody CML Compatibility", () => {
       index: 0
     })
     const evolutionCoin = Coin.make(fee)
-    
+
     const evolutionTxBody = new TransactionBody.TransactionBody({
       inputs: [evolutionTxInput],
       outputs: [],
@@ -223,12 +211,12 @@ describe("TransactionBody CML Compatibility", () => {
     // Create equivalent CML TransactionBody
     const cmlTxHash = CML.TransactionHash.from_raw_bytes(txHashBytes)
     const cmlTxInput = CML.TransactionInput.new(cmlTxHash, BigInt(0))
-    
+
     const cmlInputList = CML.TransactionInputList.new()
     cmlInputList.add(cmlTxInput)
-    
+
     const cmlOutputList = CML.TransactionOutputList.new()
-    
+
     const cmlTxBody = CML.TransactionBody.new(cmlInputList, cmlOutputList, fee)
     cmlTxBody.set_ttl(ttl)
     cmlTxBody.set_network_id(CML.NetworkId.testnet())
@@ -237,16 +225,13 @@ describe("TransactionBody CML Compatibility", () => {
     const evolutionCbor = TransactionBody.toCBORHex(evolutionTxBody)
     const cmlCbor = cmlTxBody.to_cbor_hex()
 
-    console.log(`TTL + Network ID TransactionBody - Evolution CBOR: ${evolutionCbor}`)
-    console.log(`TTL + Network ID TransactionBody - CML CBOR: ${cmlCbor}`)
-
     expect(evolutionCbor).toBe(cmlCbor)
   })
 
   it("validates transaction body with different input indices CBOR hex compatibility", () => {
     // Create test data for different input indices
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, byte => byte.toString(16).padStart(2, '0')).join('')
+    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
     const fee = 120000n
 
     // Create Evolution SDK TransactionBody with different input indices
@@ -260,7 +245,7 @@ describe("TransactionBody CML Compatibility", () => {
       index: 10
     })
     const evolutionCoin = Coin.make(fee)
-    
+
     const evolutionTxBody = new TransactionBody.TransactionBody({
       inputs: [evolutionTxInput1, evolutionTxInput2],
       outputs: [],
@@ -271,21 +256,18 @@ describe("TransactionBody CML Compatibility", () => {
     const cmlTxHash = CML.TransactionHash.from_raw_bytes(txHashBytes)
     const cmlTxInput1 = CML.TransactionInput.new(cmlTxHash, BigInt(5))
     const cmlTxInput2 = CML.TransactionInput.new(cmlTxHash, BigInt(10))
-    
+
     const cmlInputList = CML.TransactionInputList.new()
     cmlInputList.add(cmlTxInput1)
     cmlInputList.add(cmlTxInput2)
-    
+
     const cmlOutputList = CML.TransactionOutputList.new()
-    
+
     const cmlTxBody = CML.TransactionBody.new(cmlInputList, cmlOutputList, fee)
 
     // Convert both to CBOR and compare
     const evolutionCbor = TransactionBody.toCBORHex(evolutionTxBody)
     const cmlCbor = cmlTxBody.to_cbor_hex()
-
-    console.log(`Different Input Indices TransactionBody - Evolution CBOR: ${evolutionCbor}`)
-    console.log(`Different Input Indices TransactionBody - CML CBOR: ${cmlCbor}`)
 
     expect(evolutionCbor).toBe(cmlCbor)
   })
@@ -293,7 +275,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with large fee CBOR hex compatibility", () => {
     // Create test data with large fee
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, byte => byte.toString(16).padStart(2, '0')).join('')
+    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
     const largeFee = 10000000000n // 10 billion lovelace
 
     // Create Evolution SDK TransactionBody
@@ -303,7 +285,7 @@ describe("TransactionBody CML Compatibility", () => {
       index: 0
     })
     const evolutionCoin = Coin.make(largeFee)
-    
+
     const evolutionTxBody = new TransactionBody.TransactionBody({
       inputs: [evolutionTxInput],
       outputs: [],
@@ -313,20 +295,17 @@ describe("TransactionBody CML Compatibility", () => {
     // Create equivalent CML TransactionBody
     const cmlTxHash = CML.TransactionHash.from_raw_bytes(txHashBytes)
     const cmlTxInput = CML.TransactionInput.new(cmlTxHash, BigInt(0))
-    
+
     const cmlInputList = CML.TransactionInputList.new()
     cmlInputList.add(cmlTxInput)
-    
+
     const cmlOutputList = CML.TransactionOutputList.new()
-    
+
     const cmlTxBody = CML.TransactionBody.new(cmlInputList, cmlOutputList, largeFee)
 
     // Convert both to CBOR and compare
     const evolutionCbor = TransactionBody.toCBORHex(evolutionTxBody)
     const cmlCbor = cmlTxBody.to_cbor_hex()
-
-    console.log(`Large Fee TransactionBody - Evolution CBOR: ${evolutionCbor}`)
-    console.log(`Large Fee TransactionBody - CML CBOR: ${cmlCbor}`)
 
     expect(evolutionCbor).toBe(cmlCbor)
   })

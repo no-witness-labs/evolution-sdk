@@ -170,54 +170,55 @@ export const encodeVariableLength = (natural: Natural.Natural) =>
 export const decodeVariableLength: (
   bytes: Uint8Array,
   offset?: number | undefined
-) => Eff.Effect<[Natural.Natural, number], PointerAddressError | ParseResult.ParseIssue> = Eff.fnUntraced(
-  function* (bytes: Uint8Array, offset = 0) {
-    // The accumulated decoded value
-    let number = 0
+) => Eff.Effect<[Natural.Natural, number], PointerAddressError | ParseResult.ParseIssue> = Eff.fnUntraced(function* (
+  bytes: Uint8Array,
+  offset = 0
+) {
+  // The accumulated decoded value
+  let number = 0
 
-    // Count of bytes processed so far
-    let bytesRead = 0
+  // Count of bytes processed so far
+  let bytesRead = 0
 
-    // Multiplier for the current byte position (increases by powers of 128)
-    // Starts at 1 because the first 7 bits are multiplied by 1
-    let multiplier = 1
+  // Multiplier for the current byte position (increases by powers of 128)
+  // Starts at 1 because the first 7 bits are multiplied by 1
+  let multiplier = 1
 
-    while (true) {
-      // Check if we've reached the end of the buffer without finding a complete value
-      // This is a safeguard against buffer overruns
-      if (offset + bytesRead >= bytes.length) {
-        yield* new PointerAddressError({
-          message: `Buffer overflow: not enough bytes to decode variable length integer at offset ${offset}`
-        })
-      }
-
-      // Read the current byte
-      const b = bytes[offset + bytesRead]
-      bytesRead++
-
-      // Extract value bits by masking with 0x7F (binary 01111111)
-      // This removes the high continuation bit and keeps only the 7 value bits
-      // Then multiply by the current position multiplier and add to accumulated value
-      number += (b & 0x7f) * multiplier
-
-      // Check if this is the last byte by testing the high bit (0x80, binary 10000000)
-      // If the high bit is 0, we've reached the end of the encoded integer
-      if ((b & 0x80) === 0) {
-        // Return the decoded value and the count of bytes read
-        // const value = yield* Schema.decode(Natural.Natural)({ number });
-        const value = yield* ParseResult.decode(Natural.Natural)(number)
-        return [value, bytesRead] as const
-      }
-
-      // If the high bit is 1, we need to read more bytes
-      // Increase the multiplier for the next byte position (each position is worth 128 times more)
-      // This is because each byte holds 7 bits of value information
-      multiplier *= 128
-
-      // Continue reading bytes until we find one with the high bit set to 0
+  while (true) {
+    // Check if we've reached the end of the buffer without finding a complete value
+    // This is a safeguard against buffer overruns
+    if (offset + bytesRead >= bytes.length) {
+      yield* new PointerAddressError({
+        message: `Buffer overflow: not enough bytes to decode variable length integer at offset ${offset}`
+      })
     }
+
+    // Read the current byte
+    const b = bytes[offset + bytesRead]
+    bytesRead++
+
+    // Extract value bits by masking with 0x7F (binary 01111111)
+    // This removes the high continuation bit and keeps only the 7 value bits
+    // Then multiply by the current position multiplier and add to accumulated value
+    number += (b & 0x7f) * multiplier
+
+    // Check if this is the last byte by testing the high bit (0x80, binary 10000000)
+    // If the high bit is 0, we've reached the end of the encoded integer
+    if ((b & 0x80) === 0) {
+      // Return the decoded value and the count of bytes read
+      // const value = yield* Schema.decode(Natural.Natural)({ number });
+      const value = yield* ParseResult.decode(Natural.Natural)(number)
+      return [value, bytesRead] as const
+    }
+
+    // If the high bit is 1, we need to read more bytes
+    // Increase the multiplier for the next byte position (each position is worth 128 times more)
+    // This is because each byte holds 7 bits of value information
+    multiplier *= 128
+
+    // Continue reading bytes until we find one with the high bit set to 0
   }
-)
+})
 
 /**
  * Smart constructor for creating PointerAddress instances
@@ -260,17 +261,12 @@ export const arbitrary = FastCheck.tuple(
   FastCheck.integer({ min: 1, max: 1000000 }),
   FastCheck.integer({ min: 1, max: 1000000 }),
   FastCheck.integer({ min: 1, max: 1000000 })
-).map(
-  ([networkId, paymentCredential, slot, txIndex, certIndex]) =>
-    make({
-      networkId,
-      paymentCredential,
-      pointer: Pointer.make(
-        Natural.make(slot),
-        Natural.make(txIndex),
-        Natural.make(certIndex)
-      )
-    })
+).map(([networkId, paymentCredential, slot, txIndex, certIndex]) =>
+  make({
+    networkId,
+    paymentCredential,
+    pointer: Pointer.make(Natural.make(slot), Natural.make(txIndex), Natural.make(certIndex))
+  })
 )
 
 /**

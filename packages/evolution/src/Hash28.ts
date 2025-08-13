@@ -17,15 +17,12 @@ export const HEX_LENGTH = 56
  * @since 2.0.0
  * @category schemas
  */
-export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
-  Schema.filter((a) => a.length === BYTES_LENGTH)
-).annotations({
+export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(Schema.filter((a) => a.length === BYTES_LENGTH)).annotations({
   identifier: "Hash28.Bytes",
   title: "28-byte Hash Array",
   description: "A Uint8Array containing exactly 28 bytes",
-  message: (issue) =>
-    `Hash28 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
-  examples: [new Uint8Array(28).fill(0)],
+  message: (issue) => `Hash28 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
+  examples: [new Uint8Array(28).fill(0)]
 })
 
 /**
@@ -34,15 +31,12 @@ export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
  * @since 2.0.0
  * @category schemas
  */
-export const HexSchema = Bytes.HexSchema.pipe(
-  Schema.filter((a) => a.length === HEX_LENGTH)
-).annotations({
+export const HexSchema = Bytes.HexSchema.pipe(Schema.filter((a) => a.length === HEX_LENGTH)).annotations({
   identifier: "Hash28.Hex",
-  title: "28-byte Hash Hex String", 
+  title: "28-byte Hash Hex String",
   description: "A hexadecimal string representing exactly 28 bytes (56 characters)",
-  message: (issue) =>
-    `Hash28 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
-  examples: ["a".repeat(56)],
+  message: (issue) => `Hash28 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
+  examples: ["a".repeat(56)]
 })
 
 /**
@@ -70,8 +64,7 @@ export const VariableBytesSchema = Schema.Uint8ArrayFromSelf.pipe(
 export const VariableHexSchema = Bytes.HexSchema.pipe(
   Schema.filter((a) => a.length >= 0 && a.length <= HEX_LENGTH)
 ).annotations({
-  message: (issue) =>
-    `must be a hex string of length 0 to ${HEX_LENGTH}, but got ${(issue.actual as string).length}`,
+  message: (issue) => `must be a hex string of length 0 to ${HEX_LENGTH}, but got ${(issue.actual as string).length}`,
   identifier: "Hash28.VariableHex"
 })
 
@@ -147,10 +140,11 @@ export namespace Effect {
   export const fromBytes = (bytes: Uint8Array): Eff.Effect<string, Hash28Error> =>
     Eff.mapError(
       Schema.decode(FromBytes)(bytes),
-      (cause) => new Hash28Error({
-        message: "Failed to parse Hash28 from bytes",
-        cause
-      })
+      (cause) =>
+        new Hash28Error({
+          message: "Failed to parse Hash28 from bytes",
+          cause
+        })
     )
 
   /**
@@ -159,10 +153,11 @@ export namespace Effect {
   export const toBytes = (hex: string): Eff.Effect<Uint8Array, Hash28Error> =>
     Eff.mapError(
       Schema.encode(FromBytes)(hex),
-      (cause) => new Hash28Error({
-        message: "Failed to encode Hash28 to bytes",
-        cause
-      })
+      (cause) =>
+        new Hash28Error({
+          message: "Failed to encode Hash28 to bytes",
+          cause
+        })
     )
 
   /**
@@ -171,10 +166,11 @@ export namespace Effect {
   export const fromVariableBytes = (bytes: Uint8Array): Eff.Effect<string, Hash28Error> =>
     Eff.mapError(
       Schema.decode(FromVariableBytes)(bytes),
-      (cause) => new Hash28Error({
-        message: "Failed to parse variable Hash28 from bytes",
-        cause
-      })
+      (cause) =>
+        new Hash28Error({
+          message: "Failed to parse variable Hash28 from bytes",
+          cause
+        })
     )
 
   /**
@@ -183,21 +179,21 @@ export namespace Effect {
   export const toVariableBytes = (hex: string): Eff.Effect<Uint8Array, Hash28Error> =>
     Eff.mapError(
       Schema.encode(FromVariableBytes)(hex),
-      (cause) => new Hash28Error({
-        message: "Failed to encode variable Hash28 to bytes",
-        cause
-      })
+      (cause) =>
+        new Hash28Error({
+          message: "Failed to encode variable Hash28 to bytes",
+          cause
+        })
     )
 }
 
 /**
  * Parse Hash28 from raw bytes (unsafe - throws on error).
  *
- * @since 2.0.0  
+ * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): string =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): string => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Convert Hash28 hex to raw bytes (unsafe - throws on error).
@@ -205,8 +201,7 @@ export const fromBytes = (bytes: Uint8Array): string =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (hex: string): Uint8Array =>
-  Eff.runSync(Effect.toBytes(hex))
+export const toBytes = (hex: string): Uint8Array => Eff.runSync(Effect.toBytes(hex))
 
 /**
  * Parse variable-length data from raw bytes (unsafe - throws on error).
@@ -214,8 +209,7 @@ export const toBytes = (hex: string): Uint8Array =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromVariableBytes = (bytes: Uint8Array): string =>
-  Eff.runSync(Effect.fromVariableBytes(bytes))
+export const fromVariableBytes = (bytes: Uint8Array): string => Eff.runSync(Effect.fromVariableBytes(bytes))
 
 /**
  * Convert variable-length hex to raw bytes (unsafe - throws on error).
@@ -223,5 +217,4 @@ export const fromVariableBytes = (bytes: Uint8Array): string =>
  * @since 2.0.0
  * @category encoding
  */
-export const toVariableBytes = (hex: string): Uint8Array =>
-  Eff.runSync(Effect.toVariableBytes(hex))
+export const toVariableBytes = (hex: string): Uint8Array => Eff.runSync(Effect.toVariableBytes(hex))

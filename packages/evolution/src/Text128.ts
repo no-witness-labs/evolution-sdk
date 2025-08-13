@@ -111,8 +111,7 @@ export const arbitrary = FastCheck.string({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): Text128 =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): Text128 => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse Text128 from hex string.
@@ -120,8 +119,7 @@ export const fromBytes = (bytes: Uint8Array): Text128 =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): Text128 =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): Text128 => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode Text128 to bytes.
@@ -129,8 +127,7 @@ export const fromHex = (hex: string): Text128 =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (text: Text128): Uint8Array =>
-  Eff.runSync(Effect.toBytes(text))
+export const toBytes = (text: Text128): Uint8Array => Eff.runSync(Effect.toBytes(text))
 
 /**
  * Encode Text128 to hex string.
@@ -138,8 +135,7 @@ export const toBytes = (text: Text128): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (text: Text128): string =>
-  Eff.runSync(Effect.toHex(text))
+export const toHex = (text: Text128): string => Eff.runSync(Effect.toHex(text))
 
 // ============================================================================
 // Effect Namespace

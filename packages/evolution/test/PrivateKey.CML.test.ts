@@ -47,7 +47,7 @@ describe("PrivateKey CML Compatibility", () => {
     it("should have toPublic method", () => {
       const privateKey = PrivateKey.fromBytes(sampleBytes32)
       expect(PrivateKey.toBytes(privateKey).length).toBe(32) // Input should be 32 bytes
-      
+
       const publicKey = PrivateKey.toPublicKey(privateKey)
       expect(publicKey).toBeDefined()
 
@@ -59,10 +59,10 @@ describe("PrivateKey CML Compatibility", () => {
   describe("Constructor Methods Compatibility", () => {
     it("should match CML.PrivateKey.from_normal_bytes", () => {
       expect(sampleBytes32.length).toBe(32) // Verify input is 32 bytes
-      
+
       const cmlPrivateKey = CML.PrivateKey.from_normal_bytes(sampleBytes32)
       expect(cmlPrivateKey.to_raw_bytes().length).toBe(32) // CML should return 32 bytes
-      
+
       const evolutionPrivateKey = PrivateKey.fromBytes(sampleBytes32)
 
       // Compare the raw bytes - convert evolution hex string to bytes
@@ -73,10 +73,10 @@ describe("PrivateKey CML Compatibility", () => {
 
     it("should match CML.PrivateKey.from_extended_bytes", () => {
       expect(sampleBytes64.length).toBe(64) // Verify input is 64 bytes
-      
+
       const cmlPrivateKey = CML.PrivateKey.from_extended_bytes(sampleBytes64)
       expect(cmlPrivateKey.to_raw_bytes().length).toBe(64) // CML should return 64 bytes
-      
+
       const evolutionPrivateKey = PrivateKey.fromBytes(sampleBytes64)
 
       // Compare the raw bytes - convert evolution hex string to bytes
@@ -89,10 +89,10 @@ describe("PrivateKey CML Compatibility", () => {
   describe("Output Methods Compatibility", () => {
     it("should generate CML-compatible bytes output", () => {
       expect(sampleBytes32.length).toBe(32) // Verify input is 32 bytes
-      
+
       const cmlPrivateKey = CML.PrivateKey.from_normal_bytes(sampleBytes32)
       expect(cmlPrivateKey.to_raw_bytes().length).toBe(32) // CML output should be 32 bytes
-      
+
       const evolutionPrivateKey = PrivateKey.fromBytes(sampleBytes32)
 
       // Raw bytes should match - convert evolution hex string to bytes
@@ -103,10 +103,10 @@ describe("PrivateKey CML Compatibility", () => {
 
     it("should generate CML-compatible bech32 output", () => {
       expect(sampleBytes32.length).toBe(32) // Verify input is 32 bytes
-      
+
       const cmlPrivateKey = CML.PrivateKey.from_normal_bytes(sampleBytes32)
       expect(cmlPrivateKey.to_raw_bytes().length).toBe(32) // CML should maintain 32 bytes
-      
+
       const evolutionPrivateKey = PrivateKey.fromBytes(sampleBytes32)
 
       // Note: CML and Evolution use different bech32 prefixes:
@@ -123,7 +123,7 @@ describe("PrivateKey CML Compatibility", () => {
       // The original bytes should be identical
       const cmlBytes = cmlPrivateKey.to_raw_bytes()
       expect(cmlBytes.length).toBe(32) // CML bytes should be 32
-      
+
       const evolutionBytes = PrivateKey.toBytes(evolutionPrivateKey)
       expect(evolutionBytes.length).toBe(32) // Evolution bytes should be 32
       expect(Buffer.from(cmlBytes)).toEqual(Buffer.from(evolutionBytes))
@@ -136,16 +136,16 @@ describe("PrivateKey CML Compatibility", () => {
 
     it("should generate CML-compatible hex output", () => {
       expect(sampleBytes32.length).toBe(32) // Verify input is 32 bytes
-      
+
       const cmlPrivateKey = CML.PrivateKey.from_normal_bytes(sampleBytes32)
       expect(cmlPrivateKey.to_raw_bytes().length).toBe(32) // CML should maintain 32 bytes
-      
+
       const evolutionPrivateKey = PrivateKey.fromBytes(sampleBytes32)
 
       // CML doesn't have to_hex method, so compare with raw bytes converted to hex
       const cmlBytes = cmlPrivateKey.to_raw_bytes()
       expect(cmlBytes.length).toBe(32) // Verify CML bytes are 32
-      
+
       const cmlHex = Array.from(cmlBytes as Uint8Array)
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("")
@@ -187,18 +187,18 @@ describe("PrivateKey CML Compatibility", () => {
     it("should generate identical signatures for 32-byte keys", () => {
       expect(sampleBytes32.length).toBe(32) // Verify input is 32 bytes
       expect(testMessage.length).toBe(4) // Verify test message length
-      
+
       // Create identical keys
       const cmlPrivateKey = CML.PrivateKey.from_normal_bytes(sampleBytes32)
       expect(cmlPrivateKey.to_raw_bytes().length).toBe(32) // CML key should be 32 bytes
-      
+
       const evolutionPrivateKey = PrivateKey.fromBytes(sampleBytes32)
       expect(PrivateKey.toBytes(evolutionPrivateKey).length).toBe(32) // Evolution key should be 32 bytes
 
       // Sign the same message
       const cmlSignature = cmlPrivateKey.sign(testMessage)
       expect(cmlSignature.to_raw_bytes().length).toBe(64) // Ed25519 signature is 64 bytes
-      
+
       const evolutionSignature = PrivateKey.sign(evolutionPrivateKey, testMessage)
       expect(evolutionSignature.length).toBe(64) // Evolution signature should also be 64 bytes
 
@@ -230,18 +230,18 @@ describe("PrivateKey CML Compatibility", () => {
     it("should generate identical signatures for 64-byte extended keys", () => {
       expect(sampleBytes64.length).toBe(64) // Verify input is 64 bytes
       expect(testMessage.length).toBe(4) // Verify test message length
-      
+
       // Create identical extended keys
       const cmlPrivateKey = CML.PrivateKey.from_extended_bytes(sampleBytes64)
       expect(cmlPrivateKey.to_raw_bytes().length).toBe(64) // CML extended key should be 64 bytes
-      
+
       const evolutionPrivateKey = PrivateKey.fromBytes(sampleBytes64)
       expect(PrivateKey.toBytes(evolutionPrivateKey).length).toBe(64) // Evolution extended key should be 64 bytes
 
       // Sign the same message
       const cmlSignature = cmlPrivateKey.sign(testMessage)
       expect(cmlSignature.to_raw_bytes().length).toBe(64) // Ed25519 signature is 64 bytes
-      
+
       const evolutionSignature = PrivateKey.sign(evolutionPrivateKey, testMessage)
       expect(evolutionSignature.length).toBe(64) // Evolution signature should also be 64 bytes
 
@@ -274,11 +274,11 @@ describe("PrivateKey CML Compatibility", () => {
   describe("Public Key Derivation Compatibility", () => {
     it("should derive identical public keys from normal private keys", () => {
       expect(sampleBytes32.length).toBe(32) // Verify input is 32 bytes
-      
+
       // Create identical keys
       const cmlPrivateKey = CML.PrivateKey.from_normal_bytes(sampleBytes32)
       expect(cmlPrivateKey.to_raw_bytes().length).toBe(32) // CML private key should be 32 bytes
-      
+
       const evolutionPrivateKey = PrivateKey.fromBytes(sampleBytes32)
       expect(PrivateKey.toBytes(evolutionPrivateKey).length).toBe(32) // Evolution private key should be 32 bytes
 
@@ -288,7 +288,7 @@ describe("PrivateKey CML Compatibility", () => {
 
       const cmlPublicBytes = cmlPublicKey.to_raw_bytes()
       expect(cmlPublicBytes.length).toBe(32) // Ed25519 public key is 32 bytes
-      
+
       const evolutionPublicBytes = VKey.toBytes(evolutionPublicKey)
       expect(evolutionPublicBytes.length).toBe(32) // Evolution public key should also be 32 bytes
 
@@ -297,11 +297,11 @@ describe("PrivateKey CML Compatibility", () => {
 
     it("should derive identical public keys from extended private keys", () => {
       expect(sampleBytes64.length).toBe(64) // Verify input is 64 bytes
-      
+
       // Create identical extended keys
       const cmlExtended = CML.PrivateKey.from_extended_bytes(sampleBytes64)
       expect(cmlExtended.to_raw_bytes().length).toBe(64) // CML extended private key should be 64 bytes
-      
+
       const evolutionExtended = PrivateKey.fromBytes(sampleBytes64)
       expect(PrivateKey.toBytes(evolutionExtended).length).toBe(64) // Evolution extended private key should be 64 bytes
 
@@ -311,7 +311,7 @@ describe("PrivateKey CML Compatibility", () => {
 
       const cmlPublicBytes = cmlPublicKey.to_raw_bytes()
       expect(cmlPublicBytes.length).toBe(32) // Public key should still be 32 bytes
-      
+
       const evolutionPublicBytes = VKey.toBytes(evolutionPublicKey)
       expect(evolutionPublicBytes.length).toBe(32) // Evolution public key should also be 32 bytes
 
@@ -337,10 +337,10 @@ describe("PrivateKey CML Compatibility", () => {
       // Should produce identical signatures
       const message = new Uint8Array([1, 2, 3, 4])
       expect(message.length).toBe(4) // Verify message length
-      
+
       const cmlSignature = cmlPrivateKey.sign(message)
       expect(cmlSignature.to_raw_bytes().length).toBe(64) // Signature should be 64 bytes
-      
+
       const evolutionSignature = PrivateKey.sign(evolutionPrivateKey, message)
       expect(evolutionSignature.length).toBe(64) // Evolution signature should also be 64 bytes
 
@@ -384,7 +384,7 @@ describe("PrivateKey CML Compatibility", () => {
       // due to different extended key handling. Let's verify they're both valid.
       const message = new Uint8Array([1, 2, 3, 4])
       expect(message.length).toBe(4) // Verify message length
-      
+
       const cmlSignature = cmlPrivateKey.sign(message)
       const evolutionSignature = PrivateKey.sign(evolutionPrivateKey, message)
 

@@ -125,8 +125,7 @@ export const fromAddress = (address: Address.Address): AddressDetails => {
  * @since 2.0.0
  * @category parsing
  */
-export const fromBech32 = (bech32: string): AddressDetails =>
-  Eff.runSync(Effect.fromBech32(bech32))
+export const fromBech32 = (bech32: string): AddressDetails => Eff.runSync(Effect.fromBech32(bech32))
 
 /**
  * Parse AddressDetails from hex string.
@@ -134,8 +133,7 @@ export const fromBech32 = (bech32: string): AddressDetails =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): AddressDetails =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): AddressDetails => Eff.runSync(Effect.fromHex(hex))
 
 // ============================================================================
 // Encoding Functions
@@ -147,8 +145,7 @@ export const fromHex = (hex: string): AddressDetails =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBech32 = (details: AddressDetails): string =>
-  Eff.runSync(Effect.toBech32(details))
+export const toBech32 = (details: AddressDetails): string => Eff.runSync(Effect.toBech32(details))
 
 /**
  * Convert AddressDetails to hex string.
@@ -156,8 +153,7 @@ export const toBech32 = (details: AddressDetails): string =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (details: AddressDetails): string =>
-  Eff.runSync(Effect.toHex(details))
+export const toHex = (details: AddressDetails): string => Eff.runSync(Effect.toHex(details))
 
 // ============================================================================
 // Effect Namespace - Effect-based Error Handling

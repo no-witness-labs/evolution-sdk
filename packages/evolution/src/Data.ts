@@ -875,44 +875,36 @@ export namespace Either {
    * @since 2.0.0
    * @category combinators
    */
-  export const withSchema = <A>(schema: Schema.Schema<A, Data>, options: CBOR.CodecOptions = DEFAULT_CBOR_OPTIONS) => {
-    const _FromCBORHex = Schema.compose(FromCBORHex(options), schema)
-    const _FromCBORBytes = Schema.compose(FromCBORBytes(options), schema)
-
+  export const withSchema = <A, I extends Data>(
+    schema: Schema.Schema<A, I>,
+    options: CBOR.CodecOptions = DEFAULT_CBOR_OPTIONS
+  ) => {
     return {
-      /**
-       * Transform A to Data with Either error handling
-       */
       toData: (A: A) => E.mapLeft(Schema.encodeEither(schema)(A), (error) => new DataError({ cause: error })),
-
-      /**
-       * Transform Data to A with Either error handling
-       */
       fromData: (data: Data) =>
-        E.mapLeft(Schema.decodeEither(schema)(data), (error) => new DataError({ cause: error })),
-
-      /**
-       * Transform A to CBOR hex string with Either error handling
-       */
-      toCBORHex: (A: A) => E.mapLeft(Schema.encodeEither(_FromCBORHex)(A), (error) => new DataError({ cause: error })),
-
-      /**
-       * Transform A to CBOR bytes with Either error handling
-       */
+        E.mapLeft(Schema.decodeEither(schema)(data as I), (error) => new DataError({ cause: error })),
+      toCBORHex: (A: A) =>
+        E.mapLeft(
+          Schema.encodeEither(FromCBORHex(options))(Schema.encodeSync(schema)(A) as Data),
+          (error) => new DataError({ cause: error })
+        ),
       toCBORBytes: (A: A) =>
-        E.mapLeft(Schema.encodeEither(_FromCBORBytes)(A), (error) => new DataError({ cause: error })),
-
-      /**
-       * Transform CBOR hex string to A with Either error handling
-       */
-      fromCBORHex: (data: string) =>
-        E.mapLeft(Schema.decodeEither(_FromCBORHex)(data), (error) => new DataError({ cause: error })),
-
-      /**
-       * Transform CBOR bytes to A with Either error handling
-       */
-      fromCBORBytes: (data: Uint8Array) =>
-        E.mapLeft(Schema.decodeEither(_FromCBORBytes)(data), (error) => new DataError({ cause: error }))
+        E.mapLeft(
+          Schema.encodeEither(FromCBORBytes(options))(Schema.encodeSync(schema)(A) as Data),
+          (error) => new DataError({ cause: error })
+        ),
+      fromCBORHex: (hex: string) =>
+        E.mapLeft(Schema.decodeEither(FromCBORHex(options))(hex), (error) => new DataError({ cause: error })).pipe(
+          E.flatMap((data) =>
+            Schema.decodeEither(schema)(data as I).pipe(E.mapLeft((error) => new DataError({ cause: error })))
+          )
+        ),
+      fromCBORBytes: (bytes: Uint8Array) =>
+        E.mapLeft(Schema.decodeEither(FromCBORBytes(options))(bytes), (error) => new DataError({ cause: error })).pipe(
+          E.flatMap((data) =>
+            Schema.decodeEither(schema)(data as I).pipe(E.mapLeft((error) => new DataError({ cause: error })))
+          )
+        )
     }
   }
 }
@@ -1029,17 +1021,11 @@ export const fromData =
  * @since 2.0.0
  * @category combinators
  */
-export const withSchema = <A>(schema: Schema.Schema<A, Data>, options?: CBOR.CodecOptions) => {
-  const _FromCBORHex = Schema.compose(FromCBORHex(options), schema)
-  const _FromCBORBytes = Schema.compose(FromCBORBytes(options), schema)
-
+export const withSchema = <A, I extends Data>(schema: Schema.Schema<A, I>, options?: CBOR.CodecOptions) => {
   return {
-    /**
-     * Transform A to Data
-     */
-    toData: (A: A): Data => {
+    toData: (value: A): Data => {
       try {
-        return Schema.encodeSync(schema)(A)
+        return Schema.encodeSync(schema)(value) as Data
       } catch (cause) {
         throw new DataError({
           message: "Failed to encode to Data",
@@ -1047,13 +1033,9 @@ export const withSchema = <A>(schema: Schema.Schema<A, Data>, options?: CBOR.Cod
         })
       }
     },
-
-    /**
-     * Transform Data to A
-     */
     fromData: (data: Data): A => {
       try {
-        return Schema.decodeSync(schema)(data)
+        return Schema.decodeSync(schema)(data as I)
       } catch (cause) {
         throw new DataError({
           message: "Failed to decode from Data",
@@ -1061,13 +1043,10 @@ export const withSchema = <A>(schema: Schema.Schema<A, Data>, options?: CBOR.Cod
         })
       }
     },
-
-    /**
-     * Transform A to CBOR hex string
-     */
-    toCBORHex: (A: A): string => {
+    toCBORHex: (value: A): string => {
       try {
-        return Schema.encodeSync(_FromCBORHex)(A)
+        const data = Schema.encodeSync(schema)(value) as Data
+        return Schema.encodeSync(FromCBORHex(options))(data)
       } catch (cause) {
         throw new DataError({
           message: "Failed to encode to CBOR hex",
@@ -1075,13 +1054,10 @@ export const withSchema = <A>(schema: Schema.Schema<A, Data>, options?: CBOR.Cod
         })
       }
     },
-
-    /**
-     * Transform A to CBOR bytes
-     */
-    toCBORBytes: (A: A): Uint8Array => {
+    toCBORBytes: (value: A): Uint8Array => {
       try {
-        return Schema.encodeSync(_FromCBORBytes)(A)
+        const data = Schema.encodeSync(schema)(value) as Data
+        return Schema.encodeSync(FromCBORBytes(options))(data)
       } catch (cause) {
         throw new DataError({
           message: "Failed to encode to CBOR bytes",
@@ -1089,13 +1065,10 @@ export const withSchema = <A>(schema: Schema.Schema<A, Data>, options?: CBOR.Cod
         })
       }
     },
-
-    /**
-     * Transform CBOR hex string to A
-     */
-    fromCBORHex: (data: string): A => {
+    fromCBORHex: (hex: string): A => {
       try {
-        return Schema.decodeSync(_FromCBORHex)(data)
+        const data = Schema.decodeSync(FromCBORHex(options))(hex)
+        return Schema.decodeSync(schema)(data as I)
       } catch (cause) {
         throw new DataError({
           message: "Failed to decode from CBOR hex",
@@ -1103,13 +1076,10 @@ export const withSchema = <A>(schema: Schema.Schema<A, Data>, options?: CBOR.Cod
         })
       }
     },
-
-    /**
-     * Transform CBOR bytes to A
-     */
-    fromCBORBytes: (data: Uint8Array): A => {
+    fromCBORBytes: (bytes: Uint8Array): A => {
       try {
-        return Schema.decodeSync(_FromCBORBytes)(data)
+        const data = Schema.decodeSync(FromCBORBytes(options))(bytes)
+        return Schema.decodeSync(schema)(data as I)
       } catch (cause) {
         throw new DataError({
           message: "Failed to decode from CBOR bytes",
@@ -1118,4 +1088,15 @@ export const withSchema = <A>(schema: Schema.Schema<A, Data>, options?: CBOR.Cod
       }
     }
   }
+}
+
+/**
+ * Create a codec for a schema that transforms from a custom type to Data and provides CBOR encoding
+ * This is an alias for withSchema for backward compatibility
+ *
+ * @since 2.0.0
+ * @category combinators
+ */
+export const Codec = <A, I extends Data>(config: { schema: Schema.Schema<A, I>; options?: CBOR.CodecOptions }) => {
+  return withSchema(config.schema, config.options)
 }

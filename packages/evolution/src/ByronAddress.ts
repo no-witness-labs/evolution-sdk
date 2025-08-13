@@ -41,8 +41,7 @@ export class ByronAddress extends Schema.TaggedClass<ByronAddress>("ByronAddress
  */
 export const BytesSchema = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, ByronAddress, {
   strict: true,
-  encode: (_, __, ___, toA) => 
-    ParseResult.decode(Bytes.FromHex)(toA.bytes),
+  encode: (_, __, ___, toA) => ParseResult.decode(Bytes.FromHex)(toA.bytes),
   decode: (_, __, ast, fromA) =>
     Eff.gen(function* () {
       const hexString = yield* ParseResult.encode(Bytes.FromHex)(fromA)

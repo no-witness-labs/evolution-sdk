@@ -1,4 +1,4 @@
-import { FastCheck,Schema } from "effect"
+import { FastCheck, Schema } from "effect"
 
 import * as Natural from "./Natural.js"
 
@@ -57,11 +57,7 @@ export const make = (slot: Natural.Natural, txIndex: Natural.Natural, certIndex:
  * @category equality
  */
 export const equals = (a: Pointer, b: Pointer): boolean => {
-  return (
-    a.slot === b.slot &&
-    a.txIndex === b.txIndex &&
-    a.certIndex === b.certIndex
-  )
+  return a.slot === b.slot && a.txIndex === b.txIndex && a.certIndex === b.certIndex
 }
 
 /**
@@ -70,8 +66,6 @@ export const equals = (a: Pointer, b: Pointer): boolean => {
  * @since 2.0.0
  * @category generators
  */
-export const arbitrary = FastCheck.tuple(
-  Natural.arbitrary,
-  Natural.arbitrary,
-  Natural.arbitrary
-).map(([slot, txIndex, certIndex]) => make(slot, txIndex, certIndex))
+export const arbitrary = FastCheck.tuple(Natural.arbitrary, Natural.arbitrary, Natural.arbitrary).map(
+  ([slot, txIndex, certIndex]) => make(slot, txIndex, certIndex)
+)

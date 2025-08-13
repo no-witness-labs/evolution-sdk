@@ -78,8 +78,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): KESVkey =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): KESVkey => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse KESVkey from hex string.
@@ -87,8 +86,7 @@ export const fromBytes = (bytes: Uint8Array): KESVkey =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): KESVkey =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): KESVkey => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode KESVkey to bytes.
@@ -96,8 +94,7 @@ export const fromHex = (hex: string): KESVkey =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (kesVkey: KESVkey): Uint8Array =>
-  Eff.runSync(Effect.toBytes(kesVkey))
+export const toBytes = (kesVkey: KESVkey): Uint8Array => Eff.runSync(Effect.toBytes(kesVkey))
 
 /**
  * Encode KESVkey to hex string.
@@ -105,8 +102,7 @@ export const toBytes = (kesVkey: KESVkey): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (kesVkey: KESVkey): string =>
-  Eff.runSync(Effect.toHex(kesVkey))
+export const toHex = (kesVkey: KESVkey): string => Eff.runSync(Effect.toHex(kesVkey))
 
 // ============================================================================
 // Effect Namespace

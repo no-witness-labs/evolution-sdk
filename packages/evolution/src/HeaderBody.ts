@@ -73,18 +73,19 @@ export const make = (props: {
   blockBodyHash: BlockBodyHash.BlockBodyHash
   operationalCert: OperationalCert.OperationalCert
   protocolVersion: ProtocolVersion.ProtocolVersion
-}): HeaderBody => new HeaderBody({
-  blockNumber: Natural.make(props.blockNumber),
-  slot: Natural.make(props.slot),
-  prevHash: props.prevHash,
-  issuerVkey: props.issuerVkey,
-  vrfVkey: props.vrfVkey,
-  vrfResult: props.vrfResult,
-  blockBodySize: Natural.make(props.blockBodySize),
-  blockBodyHash: props.blockBodyHash,
-  operationalCert: props.operationalCert,
-  protocolVersion: props.protocolVersion
-})
+}): HeaderBody =>
+  new HeaderBody({
+    blockNumber: Natural.make(props.blockNumber),
+    slot: Natural.make(props.slot),
+    prevHash: props.prevHash,
+    issuerVkey: props.issuerVkey,
+    vrfVkey: props.vrfVkey,
+    vrfResult: props.vrfResult,
+    blockBodySize: Natural.make(props.blockBodySize),
+    blockBodyHash: props.blockBodyHash,
+    operationalCert: props.operationalCert,
+    protocolVersion: props.protocolVersion
+  })
 
 /**
  * Check if two HeaderBody instances are equal.
@@ -124,21 +125,24 @@ export const arbitrary = FastCheck.record({
   blockBodyHash: BlockBodyHash.arbitrary,
   operationalCert: OperationalCert.arbitrary,
   protocolVersion: ProtocolVersion.arbitrary
-}).map((props) => new HeaderBody({
-  blockNumber: props.blockNumber,
-  slot: props.slot,
-  prevHash: props.prevHash,
-  issuerVkey: props.issuerVkey,
-  vrfVkey: props.vrfVkey,
-  vrfResult: new VrfCert.VrfCert({
-    output: props.vrfResult.output as VrfCert.VRFOutput,
-    proof: props.vrfResult.proof as VrfCert.VRFProof
-  }),
-  blockBodySize: props.blockBodySize,
-  blockBodyHash: props.blockBodyHash,
-  operationalCert: props.operationalCert,
-  protocolVersion: props.protocolVersion
-}))
+}).map(
+  (props) =>
+    new HeaderBody({
+      blockNumber: props.blockNumber,
+      slot: props.slot,
+      prevHash: props.prevHash,
+      issuerVkey: props.issuerVkey,
+      vrfVkey: props.vrfVkey,
+      vrfResult: new VrfCert.VrfCert({
+        output: props.vrfResult.output as VrfCert.VRFOutput,
+        proof: props.vrfResult.proof as VrfCert.VRFProof
+      }),
+      blockBodySize: props.blockBodySize,
+      blockBodyHash: props.blockBodyHash,
+      operationalCert: props.operationalCert,
+      protocolVersion: props.protocolVersion
+    })
+)
 
 /**
  * CDDL schema for HeaderBody.

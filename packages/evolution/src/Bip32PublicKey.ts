@@ -26,11 +26,9 @@ export class Bip32PublicKeyError extends Data.TaggedError("Bip32PublicKeyError")
  * @since 2.0.0
  * @category schemas
  */
-export const Bip32PublicKey = Bytes64.HexSchema
-  .pipe(Schema.brand("Bip32PublicKey"))
-  .annotations({
-    identifier: "Bip32PublicKey"
-  })
+export const Bip32PublicKey = Bytes64.HexSchema.pipe(Schema.brand("Bip32PublicKey")).annotations({
+  identifier: "Bip32PublicKey"
+})
 
 export type Bip32PublicKey = typeof Bip32PublicKey.Type
 
@@ -109,11 +107,11 @@ export const fromBytes = (publicKey: Uint8Array, chainCode: Uint8Array): Bip32Pu
   if (chainCode.length !== 32) {
     throw new Error(`Chain code must be 32 bytes, got ${chainCode.length}`)
   }
-  
+
   const result = new Uint8Array(64)
   result.set(publicKey, 0)
   result.set(chainCode, 32)
-  
+
   return Eff.runSync(Schema.decode(FromBytes)(result))
 }
 
@@ -127,8 +125,7 @@ export const fromBytes = (publicKey: Uint8Array, chainCode: Uint8Array): Bip32Pu
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (bip32PublicKey: Bip32PublicKey): Uint8Array =>
-  Eff.runSync(Effect.toBytes(bip32PublicKey))
+export const toBytes = (bip32PublicKey: Bip32PublicKey): Uint8Array => Eff.runSync(Effect.toBytes(bip32PublicKey))
 
 /**
  * Convert a Bip32PublicKey to raw public key bytes (32 bytes only).
@@ -207,7 +204,7 @@ export namespace Effect {
    * @category parsing
    */
   export const fromBytes = (
-    publicKey: Uint8Array, 
+    publicKey: Uint8Array,
     chainCode: Uint8Array
   ): Eff.Effect<Bip32PublicKey, Bip32PublicKeyError> =>
     Eff.gen(function* () {
@@ -225,11 +222,11 @@ export namespace Effect {
           })
         )
       }
-      
+
       const result = new Uint8Array(64)
       result.set(publicKey, 0)
       result.set(chainCode, 32)
-      
+
       return yield* Schema.decode(FromBytes)(result)
     }).pipe(
       Eff.mapError(
@@ -265,7 +262,7 @@ export namespace Effect {
    * @category derivation
    */
   export const deriveChild = (
-    bip32PublicKey: Bip32PublicKey, 
+    bip32PublicKey: Bip32PublicKey,
     index: number
   ): Eff.Effect<Bip32PublicKey, Bip32PublicKeyError> =>
     Eff.gen(function* () {
@@ -289,23 +286,23 @@ export namespace Effect {
         indexBytes[1] = (index >>> 8) & 0xff
         indexBytes[2] = (index >>> 16) & 0xff
         indexBytes[3] = (index >>> 24) & 0xff
-        
+
         // Create HMAC input for Z (soft derivation): tag(0x02) + public_key(32 bytes) + index(4 bytes)
         const zTag = new Uint8Array([0x02]) // TAG_DERIVE_Z_SOFT
         const zInput = new Uint8Array(1 + 32 + 4)
         zInput.set(zTag, 0)
         zInput.set(parentPublicKey, 1)
         zInput.set(indexBytes, 33)
-        
+
         // HMAC-SHA512 with chain code as key
         const hmacZ = sodium.crypto_auth_hmacsha512(zInput, parentChainCode)
         const z = new Uint8Array(hmacZ)
         const zl = z.slice(0, 32)
-        
+
         // For public key derivation, we need to compute: parentPublicKey + mul8(zl)*G
         // where G is the Ed25519 base point and mul8(zl) applies the same 8-multiplication
         // that's used in private key derivation (add_28_mul8_v2 algorithm)
-        
+
         // Apply the same mul8 operation that private key derivation uses
         // This is critical for compatibility - multiply first 28 bytes by 8
         const zl8 = new Uint8Array(32)
@@ -322,23 +319,23 @@ export namespace Effect {
           zl8[i] = r & 0xff
           carry = r >> 8
         }
-        
+
         // Now compute zl8*G (scalar multiplication with base point using processed zl)
         const zl8G = sodium.crypto_scalarmult_ed25519_base_noclamp(zl8)
-        
+
         // Then add parentPublicKey + zl8G (point addition)
         const childPublicKey = sodium.crypto_core_ed25519_add(parentPublicKey, zl8G)
-        
+
         // Derive new chain code: tag(0x03) + public_key(32 bytes) + index(4 bytes)
         const ccTag = new Uint8Array([0x03]) // TAG_DERIVE_CC_SOFT - corrected to 0x03
         const ccInput = new Uint8Array(1 + 32 + 4)
         ccInput.set(ccTag, 0)
         ccInput.set(parentPublicKey, 1)
         ccInput.set(indexBytes, 33)
-        
+
         const hmacCC = sodium.crypto_auth_hmacsha512(ccInput, parentChainCode)
         const newChainCode = new Uint8Array(hmacCC).slice(32, 64) // Take right 32 bytes
-        
+
         return {
           publicKey: childPublicKey,
           chainCode: newChainCode

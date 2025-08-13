@@ -92,7 +92,7 @@ export const equals = (a: PrivateKey, b: PrivateKey): boolean => a === b
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.uint8Array({ minLength: 32, maxLength: 32 }).map((bytes) => 
+export const arbitrary = FastCheck.uint8Array({ minLength: 32, maxLength: 32 }).map((bytes) =>
   Eff.runSync(Effect.fromBytes(bytes))
 )
 

@@ -80,8 +80,7 @@ export const arbitrary = Text128.arbitrary.map((text) => make(text))
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): DnsName =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): DnsName => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse DnsName from hex string.
@@ -89,8 +88,7 @@ export const fromBytes = (bytes: Uint8Array): DnsName =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): DnsName =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): DnsName => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode DnsName to bytes.
@@ -98,8 +96,7 @@ export const fromHex = (hex: string): DnsName =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (dnsName: DnsName): Uint8Array =>
-  Eff.runSync(Effect.toBytes(dnsName))
+export const toBytes = (dnsName: DnsName): Uint8Array => Eff.runSync(Effect.toBytes(dnsName))
 
 /**
  * Encode DnsName to hex string.
@@ -107,8 +104,7 @@ export const toBytes = (dnsName: DnsName): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (dnsName: DnsName): string =>
-  Eff.runSync(Effect.toHex(dnsName))
+export const toHex = (dnsName: DnsName): string => Eff.runSync(Effect.toHex(dnsName))
 
 // ============================================================================
 // Effect Namespace

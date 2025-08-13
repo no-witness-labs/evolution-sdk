@@ -90,9 +90,9 @@ export const fromHex = (hex: string): KeyHash => Eff.runSync(Effect.fromHex(hex)
  * @since 2.0.0
  * @category testing
  */
-export const arbitrary: FastCheck.Arbitrary<KeyHash> = FastCheck
-  .uint8Array({ minLength: 28, maxLength: 28 })
-  .map(fromBytes)
+export const arbitrary: FastCheck.Arbitrary<KeyHash> = FastCheck.uint8Array({ minLength: 28, maxLength: 28 }).map(
+  fromBytes
+)
 
 // ============================================================================
 // Encoding Functions
@@ -125,7 +125,8 @@ export const toHex = (keyHash: KeyHash): string => keyHash // Already a hex stri
  * @since 2.0.0
  * @category cryptography
  */
-export const fromPrivateKey = (privateKey: PrivateKey.PrivateKey): KeyHash => Eff.runSync(Effect.fromPrivateKey(privateKey))
+export const fromPrivateKey = (privateKey: PrivateKey.PrivateKey): KeyHash =>
+  Eff.runSync(Effect.fromPrivateKey(privateKey))
 
 /**
  * Create a KeyHash from a VKey (sync version that throws KeyHashError).

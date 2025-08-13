@@ -306,7 +306,10 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (drep: DRep, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS): Eff.Effect<string, DRepError> =>
+  export const toHex = (
+    drep: DRep,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<string, DRepError> =>
     Schema.encode(FromHex(options))(drep).pipe(
       Eff.mapError(
         (cause) =>

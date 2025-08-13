@@ -70,5 +70,6 @@ export const equals = (a: PlutusV2, b: PlutusV2): boolean => eqBytes(a.script, b
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary: FastCheck.Arbitrary<PlutusV2> = FastCheck.uint8Array({ minLength: 1, maxLength: 512 })
-  .map((script) => new PlutusV2({ script }))
+export const arbitrary: FastCheck.Arbitrary<PlutusV2> = FastCheck.uint8Array({ minLength: 1, maxLength: 512 }).map(
+  (script) => new PlutusV2({ script })
+)

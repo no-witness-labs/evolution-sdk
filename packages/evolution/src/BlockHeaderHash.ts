@@ -86,8 +86,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): BlockHeaderHash =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): BlockHeaderHash => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse BlockHeaderHash from hex string.
@@ -95,8 +94,7 @@ export const fromBytes = (bytes: Uint8Array): BlockHeaderHash =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): BlockHeaderHash =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): BlockHeaderHash => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode BlockHeaderHash to bytes.
@@ -104,8 +102,7 @@ export const fromHex = (hex: string): BlockHeaderHash =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (blockHeaderHash: BlockHeaderHash): Uint8Array =>
-  Eff.runSync(Effect.toBytes(blockHeaderHash))
+export const toBytes = (blockHeaderHash: BlockHeaderHash): Uint8Array => Eff.runSync(Effect.toBytes(blockHeaderHash))
 
 /**
  * Encode BlockHeaderHash to hex string.
@@ -113,8 +110,7 @@ export const toBytes = (blockHeaderHash: BlockHeaderHash): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (blockHeaderHash: BlockHeaderHash): string =>
-  Eff.runSync(Effect.toHex(blockHeaderHash))
+export const toHex = (blockHeaderHash: BlockHeaderHash): string => Eff.runSync(Effect.toHex(blockHeaderHash))
 
 // ============================================================================
 // Effect Namespace

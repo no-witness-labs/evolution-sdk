@@ -16,15 +16,12 @@ export const HEX_LENGTH = 8
  * @since 2.0.0
  * @category schemas
  */
-export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
-  Schema.filter((a) => a.length === BYTES_LENGTH)
-).annotations({
+export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(Schema.filter((a) => a.length === BYTES_LENGTH)).annotations({
   identifier: "Bytes4.Bytes",
   title: "4-byte Array",
   description: "A Uint8Array containing exactly 4 bytes",
-  message: (issue) =>
-    `Bytes4 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
-  examples: [new Uint8Array(4).fill(0)],
+  message: (issue) => `Bytes4 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
+  examples: [new Uint8Array(4).fill(0)]
 })
 
 /**
@@ -33,15 +30,12 @@ export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
  * @since 2.0.0
  * @category schemas
  */
-export const HexSchema = Bytes.HexSchema.pipe(
-  Schema.filter((a) => a.length === HEX_LENGTH)
-).annotations({
+export const HexSchema = Bytes.HexSchema.pipe(Schema.filter((a) => a.length === HEX_LENGTH)).annotations({
   identifier: "Bytes4.Hex",
-  title: "4-byte Hex String", 
+  title: "4-byte Hex String",
   description: "A hexadecimal string representing exactly 4 bytes (8 characters)",
-  message: (issue) =>
-    `Bytes4 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
-  examples: ["a".repeat(8)],
+  message: (issue) => `Bytes4 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
+  examples: ["a".repeat(8)]
 })
 
 /**
@@ -85,10 +79,11 @@ export namespace Either {
   export const fromBytes = (bytes: Uint8Array): E.Either<string, Bytes4Error> =>
     E.mapLeft(
       Schema.decodeEither(FromBytes)(bytes),
-      (cause) => new Bytes4Error({
-        message: "Failed to parse Bytes4 from bytes",
-        cause
-      })
+      (cause) =>
+        new Bytes4Error({
+          message: "Failed to parse Bytes4 from bytes",
+          cause
+        })
     )
 
   /**
@@ -97,17 +92,18 @@ export namespace Either {
   export const toBytes = (hex: string): E.Either<Uint8Array, Bytes4Error> =>
     E.mapLeft(
       Schema.encodeEither(FromBytes)(hex),
-      (cause) => new Bytes4Error({
-        message: "Failed to encode Bytes4 to bytes",
-        cause
-      })
+      (cause) =>
+        new Bytes4Error({
+          message: "Failed to encode Bytes4 to bytes",
+          cause
+        })
     )
 }
 
 /**
  * Parse Bytes4 from raw bytes (unsafe - throws on error).
  *
- * @since 2.0.0  
+ * @since 2.0.0
  * @category parsing
  */
 export const fromBytes = (bytes: Uint8Array): string => {

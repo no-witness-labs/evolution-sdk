@@ -339,7 +339,6 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OP
     description: "Decode TransactionBody from CBOR-encoded hex string using Conway CDDL specification"
   })
 
-
 // ============================================================================
 // Root Functions
 // ============================================================================
@@ -368,8 +367,10 @@ export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.STRUC
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (transactionBody: TransactionBody, options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
-  Eff.runSync(Effect.toCBORBytes(transactionBody, options))
+export const toCBORBytes = (
+  transactionBody: TransactionBody,
+  options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
+) => Eff.runSync(Effect.toCBORBytes(transactionBody, options))
 
 /**
  * Encode a TransactionBody to CBOR hex string.
@@ -377,8 +378,10 @@ export const toCBORBytes = (transactionBody: TransactionBody, options: CBOR.Code
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (transactionBody: TransactionBody, options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
-  Eff.runSync(Effect.toCBORHex(transactionBody, options))
+export const toCBORHex = (
+  transactionBody: TransactionBody,
+  options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
+) => Eff.runSync(Effect.toCBORHex(transactionBody, options))
 
 // ============================================================================
 // Effect Namespace
@@ -479,48 +482,45 @@ export namespace Effect {
 /**
  * FastCheck arbitrary for generating random TransactionBody instances.
  * Used for property-based testing to generate valid test data.
- * 
+ *
  * Generates basic TransactionBody instances with required fields (inputs, outputs, fee)
  * and optionally includes some other common fields.
  *
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary: FastCheck.Arbitrary<TransactionBody> = FastCheck
-  .record({
-    // Required fields
-    inputs: FastCheck.array(TransactionInput.arbitrary, { minLength: 1, maxLength: 5 }),
-    outputs: FastCheck.array(TransactionOutput.arbitrary(), { minLength: 1, maxLength: 5 }),
-    fee: Coin.arbitrary,
-    
-    // Optional fields - start with some common ones
-    ttl: FastCheck.option(FastCheck.bigInt({ min: 0n, max: 10000000n }), { nil: undefined }),
-    validityIntervalStart: FastCheck.option(FastCheck.bigInt({ min: 0n, max: 10000000n }), { nil: undefined }),
-    networkId: FastCheck.option(
-      FastCheck.integer({ min: 0, max: 1 }).map(NetworkId.make), 
-      { nil: undefined }
-    )
-  })
-  .map((props) => new TransactionBody({
-    inputs: props.inputs,
-    outputs: props.outputs, 
-    fee: props.fee,
-    ttl: props.ttl,
-    certificates: undefined,
-    withdrawals: undefined,
-    auxiliaryDataHash: undefined,
-    validityIntervalStart: props.validityIntervalStart,
-    mint: undefined,
-    scriptDataHash: undefined,
-    collateralInputs: undefined,
-    requiredSigners: undefined,
-    networkId: props.networkId,
-    collateralReturn: undefined,
-    totalCollateral: undefined,
-    referenceInputs: undefined,
-    votingProcedures: undefined,
-    proposalProcedures: undefined,
-    currentTreasuryValue: undefined,
-    donation: undefined
-  }))
+export const arbitrary: FastCheck.Arbitrary<TransactionBody> = FastCheck.record({
+  // Required fields
+  inputs: FastCheck.array(TransactionInput.arbitrary, { minLength: 1, maxLength: 5 }),
+  outputs: FastCheck.array(TransactionOutput.arbitrary(), { minLength: 1, maxLength: 5 }),
+  fee: Coin.arbitrary,
 
+  // Optional fields - start with some common ones
+  ttl: FastCheck.option(FastCheck.bigInt({ min: 0n, max: 10000000n }), { nil: undefined }),
+  validityIntervalStart: FastCheck.option(FastCheck.bigInt({ min: 0n, max: 10000000n }), { nil: undefined }),
+  networkId: FastCheck.option(FastCheck.integer({ min: 0, max: 1 }).map(NetworkId.make), { nil: undefined })
+}).map(
+  (props) =>
+    new TransactionBody({
+      inputs: props.inputs,
+      outputs: props.outputs,
+      fee: props.fee,
+      ttl: props.ttl,
+      certificates: undefined,
+      withdrawals: undefined,
+      auxiliaryDataHash: undefined,
+      validityIntervalStart: props.validityIntervalStart,
+      mint: undefined,
+      scriptDataHash: undefined,
+      collateralInputs: undefined,
+      requiredSigners: undefined,
+      networkId: props.networkId,
+      collateralReturn: undefined,
+      totalCollateral: undefined,
+      referenceInputs: undefined,
+      votingProcedures: undefined,
+      proposalProcedures: undefined,
+      currentTreasuryValue: undefined,
+      donation: undefined
+    })
+)

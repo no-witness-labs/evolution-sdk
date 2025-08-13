@@ -226,7 +226,7 @@ export const equals = (a: Address, b: Address): boolean => {
  *
  * @since 2.0.0
  * @category arbitrary
- * 
+ *
  */
 export const arbitrary = FastCheck.oneof(
   BaseAddress.arbitrary,

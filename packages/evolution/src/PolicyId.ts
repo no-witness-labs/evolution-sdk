@@ -101,8 +101,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): PolicyId =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): PolicyId => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse PolicyId from hex string.
@@ -110,8 +109,7 @@ export const fromBytes = (bytes: Uint8Array): PolicyId =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): PolicyId =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): PolicyId => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode PolicyId to bytes.
@@ -119,8 +117,7 @@ export const fromHex = (hex: string): PolicyId =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (policyId: PolicyId): Uint8Array =>
-  Eff.runSync(Effect.toBytes(policyId))
+export const toBytes = (policyId: PolicyId): Uint8Array => Eff.runSync(Effect.toBytes(policyId))
 
 /**
  * Encode PolicyId to hex string.
@@ -128,8 +125,7 @@ export const toBytes = (policyId: PolicyId): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (policyId: PolicyId): string =>
-  Eff.runSync(Effect.toHex(policyId))
+export const toHex = (policyId: PolicyId): string => Eff.runSync(Effect.toHex(policyId))
 
 // ============================================================================
 // Effect Namespace

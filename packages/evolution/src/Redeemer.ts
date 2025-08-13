@@ -144,7 +144,7 @@ export const CDDLSchema = Schema.Tuple(
     description: "Redeemer tag as CBOR integer (0=spend, 1=mint, 2=cert, 3=reward)"
   }),
   CBOR.Integer.annotations({
-    identifier: "Redeemer.CDDL.Index", 
+    identifier: "Redeemer.CDDL.Index",
     title: "Redeemer Index (CBOR)",
     description: "Index into transaction array as CBOR integer"
   }),
@@ -385,7 +385,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Redeemer 
  */
 export const arbitraryRedeemerTag: FastCheck.Arbitrary<RedeemerTag> = FastCheck.constantFrom(
   "spend",
-  "mint", 
+  "mint",
   "cert",
   "reward"
 )
@@ -398,7 +398,7 @@ export const arbitraryRedeemerTag: FastCheck.Arbitrary<RedeemerTag> = FastCheck.
  */
 export const arbitraryExUnits: FastCheck.Arbitrary<ExUnits> = FastCheck.tuple(
   FastCheck.bigInt({ min: 0n, max: 10_000_000n }), // memory
-  FastCheck.bigInt({ min: 0n, max: 10_000_000n })  // steps
+  FastCheck.bigInt({ min: 0n, max: 10_000_000n }) // steps
 )
 
 /**

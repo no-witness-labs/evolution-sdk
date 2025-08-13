@@ -194,7 +194,10 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Eff.Effect<OperationalCert, OperationalCertError> =>
+  export const fromCBORBytes = (
+    bytes: Uint8Array,
+    options?: CBOR.CodecOptions
+  ): Eff.Effect<OperationalCert, OperationalCertError> =>
     Schema.decode(FromCBORBytes(options))(bytes).pipe(
       Eff.mapError(
         (cause) =>
@@ -211,7 +214,10 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Eff.Effect<OperationalCert, OperationalCertError> =>
+  export const fromCBORHex = (
+    hex: string,
+    options?: CBOR.CodecOptions
+  ): Eff.Effect<OperationalCert, OperationalCertError> =>
     Schema.decode(FromCBORHex(options))(hex).pipe(
       Eff.mapError(
         (cause) =>
@@ -228,7 +234,10 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (cert: OperationalCert, options?: CBOR.CodecOptions): Eff.Effect<Uint8Array, OperationalCertError> =>
+  export const toCBORBytes = (
+    cert: OperationalCert,
+    options?: CBOR.CodecOptions
+  ): Eff.Effect<Uint8Array, OperationalCertError> =>
     Schema.encode(FromCBORBytes(options))(cert).pipe(
       Eff.mapError(
         (cause) =>
@@ -245,7 +254,10 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (cert: OperationalCert, options?: CBOR.CodecOptions): Eff.Effect<string, OperationalCertError> =>
+  export const toCBORHex = (
+    cert: OperationalCert,
+    options?: CBOR.CodecOptions
+  ): Eff.Effect<string, OperationalCertError> =>
     Schema.encode(FromCBORHex(options))(cert).pipe(
       Eff.mapError(
         (cause) =>

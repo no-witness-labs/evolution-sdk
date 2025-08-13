@@ -78,8 +78,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): KesSignature =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): KesSignature => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse KesSignature from hex string.
@@ -87,8 +86,7 @@ export const fromBytes = (bytes: Uint8Array): KesSignature =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): KesSignature =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): KesSignature => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode KesSignature to bytes.
@@ -96,8 +94,7 @@ export const fromHex = (hex: string): KesSignature =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (kesSignature: KesSignature): Uint8Array =>
-  Eff.runSync(Effect.toBytes(kesSignature))
+export const toBytes = (kesSignature: KesSignature): Uint8Array => Eff.runSync(Effect.toBytes(kesSignature))
 
 /**
  * Encode KesSignature to hex string.
@@ -105,8 +102,7 @@ export const toBytes = (kesSignature: KesSignature): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (kesSignature: KesSignature): string =>
-  Eff.runSync(Effect.toHex(kesSignature))
+export const toHex = (kesSignature: KesSignature): string => Eff.runSync(Effect.toHex(kesSignature))
 
 // ============================================================================
 // Effect Namespace

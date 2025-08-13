@@ -94,8 +94,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): AuxiliaryDataHash =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): AuxiliaryDataHash => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse AuxiliaryDataHash from hex string.
@@ -103,8 +102,7 @@ export const fromBytes = (bytes: Uint8Array): AuxiliaryDataHash =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): AuxiliaryDataHash =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): AuxiliaryDataHash => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode AuxiliaryDataHash to bytes.
@@ -112,8 +110,7 @@ export const fromHex = (hex: string): AuxiliaryDataHash =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (auxDataHash: AuxiliaryDataHash): Uint8Array =>
-  Eff.runSync(Effect.toBytes(auxDataHash))
+export const toBytes = (auxDataHash: AuxiliaryDataHash): Uint8Array => Eff.runSync(Effect.toBytes(auxDataHash))
 
 /**
  * Encode AuxiliaryDataHash to hex string.
@@ -121,8 +118,7 @@ export const toBytes = (auxDataHash: AuxiliaryDataHash): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (auxDataHash: AuxiliaryDataHash): string =>
-  Eff.runSync(Effect.toHex(auxDataHash))
+export const toHex = (auxDataHash: AuxiliaryDataHash): string => Eff.runSync(Effect.toHex(auxDataHash))
 
 // ============================================================================
 // Effect Namespace

@@ -58,7 +58,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Pro
   decode: (fromA) =>
     Eff.gen(function* () {
       const procedures = yield* Eff.all(
-        fromA.map((procedureTuple ) => ParseResult.decode(ProposalProcedure.FromCDDL)(procedureTuple))
+        fromA.map((procedureTuple) => ParseResult.decode(ProposalProcedure.FromCDDL)(procedureTuple))
       )
 
       return new ProposalProcedures({ procedures })

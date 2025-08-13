@@ -277,9 +277,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       // 1: native_scripts
       if (fromA[1] !== undefined) {
         const nativeScripts = yield* Eff.all(
-          fromA[1].value.map((scriptCBOR) =>
-            ParseResult.decode(NativeScripts.FromCDDL)(scriptCBOR)
-          )
+          fromA[1].value.map((scriptCBOR) => ParseResult.decode(NativeScripts.FromCDDL)(scriptCBOR))
         )
         witnessSet.nativeScripts = nativeScripts
       }

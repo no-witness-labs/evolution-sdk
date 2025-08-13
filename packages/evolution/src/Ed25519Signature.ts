@@ -86,8 +86,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): Ed25519Signature =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): Ed25519Signature => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse Ed25519Signature from hex string.
@@ -95,8 +94,7 @@ export const fromBytes = (bytes: Uint8Array): Ed25519Signature =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): Ed25519Signature =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): Ed25519Signature => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode Ed25519Signature to bytes.
@@ -104,8 +102,7 @@ export const fromHex = (hex: string): Ed25519Signature =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (signature: Ed25519Signature): Uint8Array =>
-  Eff.runSync(Effect.toBytes(signature))
+export const toBytes = (signature: Ed25519Signature): Uint8Array => Eff.runSync(Effect.toBytes(signature))
 
 /**
  * Encode Ed25519Signature to hex string.
@@ -113,8 +110,7 @@ export const toBytes = (signature: Ed25519Signature): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (signature: Ed25519Signature): string =>
-  Eff.runSync(Effect.toHex(signature))
+export const toHex = (signature: Ed25519Signature): string => Eff.runSync(Effect.toHex(signature))
 
 // ============================================================================
 // Effect Namespace

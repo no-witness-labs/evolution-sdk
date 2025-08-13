@@ -204,7 +204,6 @@ const getTestCases = (
   return entries.slice(0, count)
 }
 
-
 /**
  * Golden Tests for Data module
  */
@@ -403,10 +402,10 @@ describe("Data Golden Tests", () => {
         if (!isMapSample(entry.sample)) {
           throw new Error(`Invalid map sample at index ${entry.index}`)
         }
-        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => [
-          reconstructPlutusData(entryObj.key),
-          reconstructPlutusData(entryObj.value)
-        ] as [Data.Data, Data.Data])
+        const plutusDataEntries = entry.sample.entries.map(
+          (entryObj: { key: unknown; value: unknown }) =>
+            [reconstructPlutusData(entryObj.key), reconstructPlutusData(entryObj.value)] as [Data.Data, Data.Data]
+        )
         const plutusData = Data.map(plutusDataEntries)
         const encoded = Data.toCBORHex(plutusData)
         expect(encoded, `Failed at sample index ${entry.index}`).toBe(entry.cborHex)
@@ -420,10 +419,10 @@ describe("Data Golden Tests", () => {
         if (!isMapSample(entry.sample)) {
           throw new Error(`Invalid map sample at index ${entry.index}`)
         }
-        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => [
-          reconstructPlutusData(entryObj.key),
-          reconstructPlutusData(entryObj.value)
-        ] as [Data.Data, Data.Data])
+        const plutusDataEntries = entry.sample.entries.map(
+          (entryObj: { key: unknown; value: unknown }) =>
+            [reconstructPlutusData(entryObj.key), reconstructPlutusData(entryObj.value)] as [Data.Data, Data.Data]
+        )
         const plutusData = Data.map(plutusDataEntries)
         const encoded = Data.toCBORBytes(plutusData)
         expect(Array.from(encoded), `Failed at sample index ${entry.index}`).toEqual(entry.cborBytes)
@@ -455,10 +454,10 @@ describe("Data Golden Tests", () => {
         if (!isMapSample(entry.sample)) {
           throw new Error(`Invalid map sample at index ${entry.index}`)
         }
-        const plutusDataEntries = entry.sample.entries.map((entryObj: { key: unknown; value: unknown }) => [
-          reconstructPlutusData(entryObj.key),
-          reconstructPlutusData(entryObj.value)
-        ] as [Data.Data, Data.Data])
+        const plutusDataEntries = entry.sample.entries.map(
+          (entryObj: { key: unknown; value: unknown }) =>
+            [reconstructPlutusData(entryObj.key), reconstructPlutusData(entryObj.value)] as [Data.Data, Data.Data]
+        )
         const plutusData = Data.map(plutusDataEntries)
         const encoded = Data.toCBORHex(plutusData)
         const decoded = Data.fromCBORHex(encoded)

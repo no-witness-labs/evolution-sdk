@@ -77,8 +77,7 @@ export const arbitrary = FastCheck.uint8Array({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): PoolKeyHash => 
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): PoolKeyHash => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse PoolKeyHash from hex string.
@@ -86,8 +85,7 @@ export const fromBytes = (bytes: Uint8Array): PoolKeyHash =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): PoolKeyHash => 
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): PoolKeyHash => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode PoolKeyHash to raw bytes.
@@ -95,8 +93,7 @@ export const fromHex = (hex: string): PoolKeyHash =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (poolKeyHash: PoolKeyHash): Uint8Array => 
-  Eff.runSync(Effect.toBytes(poolKeyHash))
+export const toBytes = (poolKeyHash: PoolKeyHash): Uint8Array => Eff.runSync(Effect.toBytes(poolKeyHash))
 
 /**
  * Encode PoolKeyHash to hex string.

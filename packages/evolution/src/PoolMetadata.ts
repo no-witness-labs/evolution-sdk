@@ -62,10 +62,7 @@ export const FromCDDL = Schema.transformOrFail(
  * @since 2.0.0
  * @category constructors
  */
-export const make = (props: {
-  url: Url.Url
-  hash: Uint8Array
-}): PoolMetadata => new PoolMetadata(props)
+export const make = (props: { url: Url.Url; hash: Uint8Array }): PoolMetadata => new PoolMetadata(props)
 
 /**
  * Check if two PoolMetadata instances are equal.

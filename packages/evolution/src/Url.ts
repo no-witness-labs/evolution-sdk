@@ -90,8 +90,7 @@ export const arbitrary = Text128.arbitrary.map((text) => Url.make(text))
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): Url =>
-  Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = (bytes: Uint8Array): Url => Eff.runSync(Effect.fromBytes(bytes))
 
 /**
  * Parse Url from hex string.
@@ -99,8 +98,7 @@ export const fromBytes = (bytes: Uint8Array): Url =>
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): Url =>
-  Eff.runSync(Effect.fromHex(hex))
+export const fromHex = (hex: string): Url => Eff.runSync(Effect.fromHex(hex))
 
 /**
  * Encode Url to bytes.
@@ -108,8 +106,7 @@ export const fromHex = (hex: string): Url =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (url: Url): Uint8Array =>
-  Eff.runSync(Effect.toBytes(url))
+export const toBytes = (url: Url): Uint8Array => Eff.runSync(Effect.toBytes(url))
 
 /**
  * Encode Url to hex string.
@@ -117,8 +114,7 @@ export const toBytes = (url: Url): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (url: Url): string =>
-  Eff.runSync(Effect.toHex(url))
+export const toHex = (url: Url): string => Eff.runSync(Effect.toHex(url))
 
 // ============================================================================
 // Effect Namespace

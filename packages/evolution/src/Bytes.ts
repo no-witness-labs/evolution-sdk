@@ -1,7 +1,5 @@
 import { Data, Schema } from "effect"
 
-import * as _Codec from "./Codec.js"
-
 export class BytesError extends Data.TaggedError("BytesError")<{
   message?: string
   cause?: unknown
@@ -193,11 +191,3 @@ export const FromBytesLenient = Schema.transform(Schema.Uint8ArrayFromSelf, HexL
 }).annotations({
   identifier: "Bytes.FromBytesLenient"
 })
-
-export const Codec = _Codec.createEncoders(
-  {
-    bytes: FromBytes,
-    bytesLenient: FromBytesLenient
-  },
-  BytesError
-)

@@ -1,4 +1,4 @@
-import { Data, FastCheck, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Schema } from "effect"
 
 /**
  * Error class for Coin related operations.
@@ -26,7 +26,7 @@ export const MAX_COIN_VALUE = 18446744073709551615n
  * @since 2.0.0
  * @category schemas
  */
-export const CoinSchema = Schema.BigIntFromSelf.pipe(
+export const Coin = Schema.BigIntFromSelf.pipe(
   Schema.filter((value) => value >= 0n && value <= MAX_COIN_VALUE)
 ).annotations({
   message: (issue) => `Coin must be between 0 and ${MAX_COIN_VALUE}, but got ${issue.actual}`,
@@ -40,7 +40,7 @@ export const CoinSchema = Schema.BigIntFromSelf.pipe(
  * @since 2.0.0
  * @category model
  */
-export type Coin = typeof CoinSchema.Type
+export type Coin = typeof Coin.Type
 
 /**
  * Smart constructor for creating Coin values.
@@ -48,7 +48,7 @@ export type Coin = typeof CoinSchema.Type
  * @since 2.0.0
  * @category constructors
  */
-export const make = CoinSchema.make
+export const make = Coin.make
 
 /**
  * Check if a value is a valid Coin.
@@ -56,7 +56,7 @@ export const make = CoinSchema.make
  * @since 2.0.0
  * @category predicates
  */
-export const is = Schema.is(CoinSchema)
+export const is = Schema.is(Coin)
 
 /**
  * Add two coin amounts safely.
@@ -64,15 +64,7 @@ export const is = Schema.is(CoinSchema)
  * @since 2.0.0
  * @category transformation
  */
-export const add = (a: Coin, b: Coin): Coin => {
-  const result = a + b
-  if (result > MAX_COIN_VALUE) {
-    throw new CoinError({
-      message: `Addition overflow: ${a} + ${b} exceeds maximum coin value`
-    })
-  }
-  return result
-}
+export const add = (a: Coin, b: Coin): Coin => Eff.runSync(Effect.add(a, b))
 
 /**
  * Subtract two coin amounts safely.
@@ -80,15 +72,7 @@ export const add = (a: Coin, b: Coin): Coin => {
  * @since 2.0.0
  * @category transformation
  */
-export const subtract = (a: Coin, b: Coin): Coin => {
-  const result = a - b
-  if (result < 0n) {
-    throw new CoinError({
-      message: `Subtraction underflow: ${a} - ${b} results in negative value`
-    })
-  }
-  return result
-}
+export const subtract = (a: Coin, b: Coin): Coin => Eff.runSync(Effect.subtract(a, b))
 
 /**
  * Compare two coin amounts.
@@ -116,7 +100,55 @@ export const equals = (a: Coin, b: Coin): boolean => a === b
  * @since 2.0.0
  * @category generators
  */
-export const generator = FastCheck.bigInt({
+export const arbitrary = FastCheck.bigInt({
   min: 0n,
   max: MAX_COIN_VALUE
-})
+}).map(make)
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Add two coin amounts safely with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category transformation
+   */
+  export const add = (a: Coin, b: Coin): Eff.Effect<Coin, CoinError> => {
+    const result = a + b
+    if (result > MAX_COIN_VALUE) {
+      return Eff.fail(
+        new CoinError({
+          message: `Addition overflow: ${a} + ${b} exceeds maximum coin value`
+        })
+      )
+    }
+    return Eff.succeed(make(result))
+  }
+
+  /**
+   * Subtract two coin amounts safely with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category transformation
+   */
+  export const subtract = (a: Coin, b: Coin): Eff.Effect<Coin, CoinError> => {
+    const result = a - b
+    if (result < 0n) {
+      return Eff.fail(
+        new CoinError({
+          message: `Subtraction underflow: ${a} - ${b} results in negative value`
+        })
+      )
+    }
+    return Eff.succeed(make(result))
+  }
+}

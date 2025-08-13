@@ -1,7 +1,6 @@
-import { Data, FastCheck, pipe, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
-import { createEncoders } from "./Codec.js"
 
 /**
  * Error class for KESVkey related operations.
@@ -22,7 +21,7 @@ export class KESVkeyError extends Data.TaggedError("KESVkeyError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const KESVkey = pipe(Bytes32.HexSchema, Schema.brand("KESVkey")).annotations({
+export const KESVkey = Bytes32.HexSchema.pipe(Schema.brand("KESVkey")).annotations({
   identifier: "KESVkey"
 })
 
@@ -51,26 +50,136 @@ export const FromHex = Schema.compose(
 export const equals = (a: KESVkey, b: KESVkey): boolean => a === b
 
 /**
- * Generate a random KESVkey.
+ * Check if the given value is a valid KESVkey
  *
  * @since 2.0.0
- * @category generators
+ * @category predicates
  */
-export const generator = FastCheck.uint8Array({
-  minLength: Bytes32.Bytes32_BYTES_LENGTH,
-  maxLength: Bytes32.Bytes32_BYTES_LENGTH
-}).map((bytes) => Codec.Decode.bytes(bytes))
+export const isKESVkey = Schema.is(KESVkey)
 
 /**
- * Codec utilities for KESVkey encoding and decoding operations.
+ * FastCheck arbitrary for generating random KESVkey instances.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category arbitrary
  */
-export const Codec = createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  KESVkeyError
-)
+export const arbitrary = FastCheck.hexaString({
+  minLength: Bytes32.HEX_LENGTH,
+  maxLength: Bytes32.HEX_LENGTH
+}).map((hex) => hex as KESVkey)
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse KESVkey from bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array): KESVkey => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse KESVkey from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): KESVkey => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Encode KESVkey to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (kesVkey: KESVkey): Uint8Array => Eff.runSync(Effect.toBytes(kesVkey))
+
+/**
+ * Encode KESVkey to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (kesVkey: KESVkey): string => Eff.runSync(Effect.toHex(kesVkey))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse KESVkey from bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<KESVkey, KESVkeyError> =>
+    Schema.decode(FromBytes)(bytes).pipe(
+      Eff.mapError(
+        (cause) =>
+          new KESVkeyError({
+            message: "Failed to parse KESVkey from bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse KESVkey from hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): Eff.Effect<KESVkey, KESVkeyError> =>
+    Schema.decode(FromHex)(hex).pipe(
+      Eff.mapError(
+        (cause) =>
+          new KESVkeyError({
+            message: "Failed to parse KESVkey from hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode KESVkey to bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (kesVkey: KESVkey): Eff.Effect<Uint8Array, KESVkeyError> =>
+    Schema.encode(FromBytes)(kesVkey).pipe(
+      Eff.mapError(
+        (cause) =>
+          new KESVkeyError({
+            message: "Failed to encode KESVkey to bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode KESVkey to hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (kesVkey: KESVkey): Eff.Effect<string, KESVkeyError> =>
+    Schema.encode(FromHex)(kesVkey).pipe(
+      Eff.mapError(
+        (cause) =>
+          new KESVkeyError({
+            message: "Failed to encode KESVkey to hex",
+            cause
+          })
+      )
+    )
+}

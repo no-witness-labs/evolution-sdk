@@ -1,7 +1,6 @@
-import { Data, FastCheck, pipe, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Schema } from "effect"
 
 import * as Bytes16 from "./Bytes16.js"
-import { createEncoders } from "./Codec.js"
 
 /**
  * Error class for IPv6 related operations.
@@ -21,7 +20,7 @@ export class IPv6Error extends Data.TaggedError("IPv6Error")<{
  * @since 2.0.0
  * @category schemas
  */
-export const IPv6 = pipe(Bytes16.HexSchema, Schema.brand("IPv6")).annotations({
+export const IPv6 = Bytes16.HexSchema.pipe(Schema.brand("IPv6")).annotations({
   identifier: "IPv6"
 })
 
@@ -50,26 +49,136 @@ export const FromHex = Schema.compose(
 export const equals = (a: IPv6, b: IPv6): boolean => a === b
 
 /**
- * Generate a random IPv6.
+ * Check if the given value is a valid IPv6
  *
  * @since 2.0.0
- * @category generators
+ * @category predicates
  */
-export const generator = FastCheck.uint8Array({
-  minLength: Bytes16.BYTES_LENGTH,
-  maxLength: Bytes16.BYTES_LENGTH
-}).map((bytes) => Codec.Decode.bytes(bytes))
+export const isIPv6 = Schema.is(IPv6)
 
 /**
- * Codec utilities for IPv6 encoding and decoding operations.
+ * FastCheck arbitrary for generating random IPv6 instances.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category arbitrary
  */
-export const Codec = createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  IPv6Error
-)
+export const arbitrary = FastCheck.hexaString({
+  minLength: Bytes16.HEX_LENGTH,
+  maxLength: Bytes16.HEX_LENGTH
+}).map((hex) => hex as IPv6)
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse IPv6 from bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array): IPv6 => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse IPv6 from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): IPv6 => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Encode IPv6 to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (ipv6: IPv6): Uint8Array => Eff.runSync(Effect.toBytes(ipv6))
+
+/**
+ * Encode IPv6 to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (ipv6: IPv6): string => Eff.runSync(Effect.toHex(ipv6))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse IPv6 from bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<IPv6, IPv6Error> =>
+    Schema.decode(FromBytes)(bytes).pipe(
+      Eff.mapError(
+        (cause) =>
+          new IPv6Error({
+            message: "Failed to parse IPv6 from bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse IPv6 from hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): Eff.Effect<IPv6, IPv6Error> =>
+    Schema.decode(FromHex)(hex).pipe(
+      Eff.mapError(
+        (cause) =>
+          new IPv6Error({
+            message: "Failed to parse IPv6 from hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode IPv6 to bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (ipv6: IPv6): Eff.Effect<Uint8Array, IPv6Error> =>
+    Schema.encode(FromBytes)(ipv6).pipe(
+      Eff.mapError(
+        (cause) =>
+          new IPv6Error({
+            message: "Failed to encode IPv6 to bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode IPv6 to hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (ipv6: IPv6): Eff.Effect<string, IPv6Error> =>
+    Schema.encode(FromHex)(ipv6).pipe(
+      Eff.mapError(
+        (cause) =>
+          new IPv6Error({
+            message: "Failed to encode IPv6 to hex",
+            cause
+          })
+      )
+    )
+}

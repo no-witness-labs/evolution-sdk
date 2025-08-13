@@ -1,8 +1,7 @@
-import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as KeyHash from "./KeyHash.js"
 import * as ScriptHash from "./ScriptHash.js"
 
@@ -52,7 +51,16 @@ export type Credential = typeof Credential.Type
  */
 export const is = Schema.is(Credential)
 
-export const CDDL = Schema.Tuple(
+/**
+ * Smart constructors for Credential variants.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const makeKeyHash = (hash: KeyHash.KeyHash): Credential => ({ _tag: "KeyHash", hash })
+export const makeScriptHash = (hash: ScriptHash.ScriptHash): Credential => ({ _tag: "ScriptHash", hash })
+
+export const CDDLSchema = Schema.Tuple(
   Schema.Literal(0n, 1n),
   Schema.Uint8ArrayFromSelf // hash bytes
 )
@@ -64,55 +72,46 @@ export const CDDL = Schema.Tuple(
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(CDDL, Schema.typeSchema(Credential), {
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Credential), {
   strict: true,
   encode: (toI) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       switch (toI._tag) {
         case "KeyHash": {
           const keyHashBytes = yield* ParseResult.encode(KeyHash.FromBytes)(toI.hash)
           return [0n, keyHashBytes] as const
         }
         case "ScriptHash": {
-          const scriptHashBytes = yield* ParseResult.encode(ScriptHash.BytesSchema)(toI.hash)
+          const scriptHashBytes = yield* ParseResult.encode(ScriptHash.FromBytes)(toI.hash)
           return [1n, scriptHashBytes] as const
         }
       }
     }),
   decode: ([tag, hashBytes]) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       switch (tag) {
         case 0n: {
           const keyHash = yield* ParseResult.decode(KeyHash.FromBytes)(hashBytes)
           return Credential.members[0].make({ hash: keyHash })
         }
         case 1n: {
-          const scriptHash = yield* ParseResult.decode(ScriptHash.BytesSchema)(hashBytes)
+          const scriptHash = yield* ParseResult.decode(ScriptHash.FromBytes)(hashBytes)
           return Credential.members[1].make({ hash: scriptHash })
         }
       }
     })
 })
 
-export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → Credential
   )
 
-export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
     FromCBORBytes(options) // Uint8Array → Credential
-  )
-
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromCBORBytes(options),
-      cborHex: FromCBORHex(options)
-    },
-    CredentialError
   )
 
 /**
@@ -126,19 +125,119 @@ export const equals = (a: Credential, b: Credential): boolean => {
 }
 
 /**
- * Generate a random Credential.
+ * FastCheck arbitrary for generating random Credential instances.
  * Randomly selects between generating a KeyHash or ScriptHash credential.
  *
  * @since 2.0.0
- * @category generators
+ * @category testing
  */
-export const generator = FastCheck.oneof(
+export const arbitrary = FastCheck.oneof(
   FastCheck.record({
     _tag: FastCheck.constant("KeyHash" as const),
-    hash: KeyHash.generator
+    hash: KeyHash.arbitrary
   }),
   FastCheck.record({
     _tag: FastCheck.constant("ScriptHash" as const),
-    hash: ScriptHash.generator
+    hash: ScriptHash.arbitrary
   })
 )
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse a Credential from CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Credential =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Parse a Credential from CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Credential =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+/**
+ * Convert a Credential to CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = (credential: Credential, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(credential, options))
+
+/**
+ * Convert a Credential to CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = (credential: Credential, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(credential, options))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse a Credential from CBOR bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Eff.mapError(
+      Schema.decode(FromCBORBytes(options))(bytes),
+      (error) => new CredentialError({ message: "Failed to decode Credential from CBOR bytes", cause: error })
+    )
+
+  /**
+   * Parse a Credential from CBOR hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Eff.mapError(
+      Schema.decode(FromCBORHex(options))(hex),
+      (error) => new CredentialError({ message: "Failed to decode Credential from CBOR hex", cause: error })
+    )
+
+  /**
+   * Convert a Credential to CBOR bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = (credential: Credential, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Eff.mapError(
+      Schema.encode(FromCBORBytes(options))(credential),
+      (error) => new CredentialError({ message: "Failed to encode Credential to CBOR bytes", cause: error })
+    )
+
+  /**
+   * Convert a Credential to CBOR hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = (credential: Credential, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Eff.mapError(
+      Schema.encode(FromCBORHex(options))(credential),
+      (error) => new CredentialError({ message: "Failed to encode Credential to CBOR hex", cause: error })
+    )
+}

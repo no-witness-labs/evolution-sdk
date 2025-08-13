@@ -1,8 +1,7 @@
-import { BigDecimal, Data, Effect, FastCheck, ParseResult, Schema } from "effect"
+import { BigDecimal, Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as Coin from "./Coin.js"
 import * as KeyHash from "./KeyHash.js"
 import * as NetworkId from "./NetworkId.js"
@@ -47,8 +46,8 @@ export class PoolParamsError extends Data.TaggedError("PoolParamsError")<{
 export class PoolParams extends Schema.TaggedClass<PoolParams>()("PoolParams", {
   operator: PoolKeyHash.PoolKeyHash,
   vrfKeyhash: VrfKeyHash.VrfKeyHash,
-  pledge: Coin.CoinSchema,
-  cost: Coin.CoinSchema,
+  pledge: Coin.Coin,
+  cost: Coin.Coin,
   margin: UnitInterval.UnitInterval,
   rewardAccount: RewardAccount.RewardAccount,
   poolOwners: Schema.Array(KeyHash.KeyHash),
@@ -56,22 +55,19 @@ export class PoolParams extends Schema.TaggedClass<PoolParams>()("PoolParams", {
   poolMetadata: Schema.optionalWith(PoolMetadata.PoolMetadata, {
     nullable: true
   })
-}) {
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      _tag: "PoolParams",
-      operator: this.operator,
-      vrfKeyhash: this.vrfKeyhash,
-      pledge: this.pledge,
-      cost: this.cost,
-      margin: this.margin,
-      rewardAccount: this.rewardAccount,
-      poolOwners: this.poolOwners,
-      relays: this.relays,
-      poolMetadata: this.poolMetadata
-    }
-  }
-}
+}) {}
+
+export const CDDLSchema = Schema.Tuple(
+  CBOR.ByteArray, // operator (pool_keyhash as bytes)
+  CBOR.ByteArray, // vrf_keyhash (as bytes)
+  CBOR.Integer, // pledge (coin)
+  CBOR.Integer, // cost (coin)
+  UnitInterval.CDDLSchema, // margin using UnitInterval CDDL schema
+  CBOR.ByteArray, // reward_account (bytes)
+  Schema.Array(CBOR.ByteArray), // pool_owners (set<addr_keyhash> as bytes array)
+  Schema.Array(Schema.encodedSchema(Relay.FromCDDL)), // relays using Relay CDDL schema
+  Schema.NullOr(Schema.encodedSchema(PoolMetadata.FromCDDL)) // pool_metadata using PoolMetadata CDDL schema
+)
 
 /**
  * CDDL schema for PoolParams.
@@ -93,95 +89,82 @@ export class PoolParams extends Schema.TaggedClass<PoolParams>()("PoolParams", {
  * @since 2.0.0
  * @category schemas
  */
-export const PoolParamsCDDLSchema = Schema.transformOrFail(
-  Schema.Tuple(
-    Schema.Uint8ArrayFromSelf, // operator (pool_keyhash as bytes)
-    Schema.Uint8ArrayFromSelf, // vrf_keyhash (as bytes)
-    Schema.BigIntFromSelf, // pledge (coin)
-    Schema.BigIntFromSelf, // cost (coin)
-    Schema.encodedSchema(UnitInterval.FromCDDL), // margin using UnitInterval CDDL schema
-    Schema.Uint8ArrayFromSelf, // reward_account (bytes)
-    Schema.Array(Schema.Uint8ArrayFromSelf), // pool_owners (set<addr_keyhash> as bytes array)
-    Schema.Array(Schema.encodedSchema(Relay.FromCDDL)), // relays using Relay CDDL schema
-    Schema.NullOr(Schema.encodedSchema(PoolMetadata.FromCDDL)) // pool_metadata using PoolMetadata CDDL schema
-  ),
-  Schema.typeSchema(PoolParams),
-  {
-    strict: true,
-    encode: (toA) =>
-      Effect.gen(function* () {
-        const operatorBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.operator)
-        const vrfKeyhashBytes = yield* ParseResult.encode(VrfKeyHash.FromBytes)(toA.vrfKeyhash)
-        const marginEncoded = yield* ParseResult.encode(UnitInterval.FromCDDL)(toA.margin)
-        const rewardAccountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(toA.rewardAccount)
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(PoolParams), {
+  strict: true,
+  encode: (toA) =>
+    Eff.gen(function* () {
+      const operatorBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.operator)
+      const vrfKeyhashBytes = yield* ParseResult.encode(VrfKeyHash.FromBytes)(toA.vrfKeyhash)
 
-        const poolOwnersBytes = yield* Effect.all(
-          toA.poolOwners.map((owner) => ParseResult.encode(KeyHash.FromBytes)(owner))
-        )
+      const marginEncoded = yield* ParseResult.encode(UnitInterval.FromCDDL)(toA.margin)
+      const rewardAccountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(toA.rewardAccount)
 
-        const relaysEncoded = yield* Effect.all(toA.relays.map((relay) => ParseResult.encode(Relay.FromCDDL)(relay)))
+      const poolOwnersBytes = yield* Eff.all(
+        toA.poolOwners.map((owner) => ParseResult.encode(KeyHash.FromBytes)(owner))
+      )
 
-        const poolMetadataEncoded = toA.poolMetadata
-          ? yield* ParseResult.encode(PoolMetadata.FromCDDL)(toA.poolMetadata)
-          : null
+      const relaysEncoded = yield* Eff.all(toA.relays.map((relay) => ParseResult.encode(Relay.FromCDDL)(relay)))
 
-        return yield* Effect.succeed([
-          operatorBytes,
-          vrfKeyhashBytes,
-          toA.pledge,
-          toA.cost,
-          marginEncoded,
-          rewardAccountBytes,
-          poolOwnersBytes,
-          relaysEncoded,
-          poolMetadataEncoded
-        ] as const)
-      }),
-    decode: ([
-      operatorBytes,
-      vrfKeyhashBytes,
-      pledge,
-      cost,
-      marginEncoded,
-      rewardAccountBytes,
-      poolOwnersBytes,
-      relaysEncoded,
-      poolMetadataEncoded
-    ]) =>
-      Effect.gen(function* () {
-        const operator = yield* ParseResult.decode(PoolKeyHash.FromBytes)(operatorBytes)
-        const vrfKeyhash = yield* ParseResult.decode(VrfKeyHash.FromBytes)(vrfKeyhashBytes)
-        const margin = yield* ParseResult.decode(UnitInterval.FromCDDL)(marginEncoded)
-        const rewardAccount = yield* ParseResult.decode(RewardAccount.FromBytes)(rewardAccountBytes)
+      const poolMetadataEncoded = toA.poolMetadata
+        ? yield* ParseResult.encode(PoolMetadata.FromCDDL)(toA.poolMetadata)
+        : null
 
-        const poolOwners = yield* Effect.all(
-          poolOwnersBytes.map((ownerBytes) => ParseResult.decode(KeyHash.FromBytes)(ownerBytes))
-        )
+      return [
+        operatorBytes,
+        vrfKeyhashBytes,
+        toA.pledge,
+        toA.cost,
+        marginEncoded,
+        rewardAccountBytes,
+        poolOwnersBytes,
+        relaysEncoded,
+        poolMetadataEncoded
+      ] as const
+    }),
+  decode: ([
+    operatorBytes,
+    vrfKeyhashBytes,
+    pledge,
+    cost,
+    marginEncoded,
+    rewardAccountBytes,
+    poolOwnersBytes,
+    relaysEncoded,
+    poolMetadataEncoded
+  ]) =>
+    Eff.gen(function* () {
+      const operator = yield* ParseResult.decode(PoolKeyHash.FromBytes)(operatorBytes)
+      const vrfKeyhash = yield* ParseResult.decode(VrfKeyHash.FromBytes)(vrfKeyhashBytes)
+      const margin = yield* ParseResult.decode(UnitInterval.FromCDDL)(marginEncoded)
+      const rewardAccount = yield* ParseResult.decode(RewardAccount.FromBytes)(rewardAccountBytes)
 
-        const relays = yield* Effect.all(
-          relaysEncoded.map((relayEncoded) => ParseResult.decode(Relay.FromCDDL)(relayEncoded))
-        )
+      const poolOwners = yield* Eff.all(
+        poolOwnersBytes.map((ownerBytes) => ParseResult.decode(KeyHash.FromBytes)(ownerBytes))
+      )
 
-        const poolMetadata = poolMetadataEncoded
-          ? yield* ParseResult.decode(PoolMetadata.FromCDDL)(poolMetadataEncoded)
-          : undefined
+      const relays = yield* Eff.all(
+        relaysEncoded.map((relayEncoded) => ParseResult.decode(Relay.FromCDDL)(relayEncoded))
+      )
 
-        return yield* Effect.succeed(
-          new PoolParams({
-            operator,
-            vrfKeyhash,
-            pledge,
-            cost,
-            margin,
-            rewardAccount,
-            poolOwners,
-            relays,
-            poolMetadata
-          })
-        )
-      })
-  }
-)
+      const poolMetadata = poolMetadataEncoded
+        ? yield* ParseResult.decode(PoolMetadata.FromCDDL)(poolMetadataEncoded)
+        : undefined
+
+      return yield* Eff.succeed(
+        new PoolParams({
+          operator,
+          vrfKeyhash,
+          pledge,
+          cost,
+          margin,
+          rewardAccount,
+          poolOwners,
+          relays,
+          poolMetadata
+        })
+      )
+    })
+})
 
 /**
  * CBOR bytes transformation schema for PoolParams.
@@ -189,10 +172,10 @@ export const PoolParamsCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    PoolParamsCDDLSchema // CBOR → PoolParams
+    FromCDDL // CBOR → PoolParams
   )
 
 /**
@@ -201,7 +184,7 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
     FromBytes(options) // Uint8Array → PoolParams
@@ -305,17 +288,17 @@ export const hasValidMargin = (params: PoolParams): boolean =>
   params.margin.numerator <= params.margin.denominator && params.margin.denominator > 0n
 
 /**
- * Generate a random PoolParams.
+ * FastCheck arbitrary for generating random PoolParams instances for testing.
  *
  * @since 2.0.0
- * @category generators
+ * @category arbitrary
  */
-export const generator = FastCheck.record({
-  operator: PoolKeyHash.generator,
-  vrfKeyhash: VrfKeyHash.generator,
+export const arbitrary = FastCheck.record({
+  operator: PoolKeyHash.arbitrary,
+  vrfKeyhash: VrfKeyHash.arbitrary,
   pledge: FastCheck.bigInt({ min: 0n, max: 1000000000000n }),
   cost: FastCheck.bigInt({ min: 340000000n, max: 1000000000n }),
-  margin: UnitInterval.generator,
+  margin: UnitInterval.arbitrary,
   rewardAccount: FastCheck.constant(
     new RewardAccount.RewardAccount({
       networkId: NetworkId.make(1),
@@ -325,21 +308,144 @@ export const generator = FastCheck.record({
       }
     })
   ),
-  poolOwners: FastCheck.array(KeyHash.generator, {
+  poolOwners: FastCheck.array(KeyHash.arbitrary, {
     minLength: 1,
     maxLength: 5
   }),
-  relays: FastCheck.array(Relay.generator, { minLength: 0, maxLength: 3 }),
+  relays: FastCheck.array(Relay.arbitrary, { minLength: 0, maxLength: 3 }),
   poolMetadata: FastCheck.option(FastCheck.constant(undefined), {
     nil: undefined
   })
 }).map((params) => new PoolParams(params))
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    PoolParamsError
-  )
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse PoolParams from CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): PoolParams =>
+  Eff.runSync(Effect.fromBytes(bytes, options))
+
+/**
+ * Parse PoolParams from CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string, options?: CBOR.CodecOptions): PoolParams =>
+  Eff.runSync(Effect.fromHex(hex, options))
+
+/**
+ * Encode PoolParams to CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (poolParams: PoolParams, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toBytes(poolParams, options))
+
+/**
+ * Encode PoolParams to CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (poolParams: PoolParams, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toHex(poolParams, options))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse PoolParams from CBOR bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (
+    bytes: Uint8Array,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<PoolParams, PoolParamsError> =>
+    Schema.decode(FromBytes(options))(bytes).pipe(
+      Eff.mapError(
+        (cause) =>
+          new PoolParamsError({
+            message: "Failed to parse PoolParams from bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse PoolParams from CBOR hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (
+    hex: string,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<PoolParams, PoolParamsError> =>
+    Schema.decode(FromHex(options))(hex).pipe(
+      Eff.mapError(
+        (cause) =>
+          new PoolParamsError({
+            message: "Failed to parse PoolParams from hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode PoolParams to CBOR bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (
+    poolParams: PoolParams,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<Uint8Array, PoolParamsError> =>
+    Schema.encode(FromBytes(options))(poolParams).pipe(
+      Eff.mapError(
+        (cause) =>
+          new PoolParamsError({
+            message: "Failed to encode PoolParams to bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode PoolParams to CBOR hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (
+    poolParams: PoolParams,
+    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
+  ): Eff.Effect<string, PoolParamsError> =>
+    Schema.encode(FromHex(options))(poolParams).pipe(
+      Eff.mapError(
+        (cause) =>
+          new PoolParamsError({
+            message: "Failed to encode PoolParams to hex",
+            cause
+          })
+      )
+    )
+}

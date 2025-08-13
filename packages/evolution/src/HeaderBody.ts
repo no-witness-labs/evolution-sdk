@@ -1,13 +1,13 @@
-import { Data, Effect, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as BlockBodyHash from "./BlockBodyHash.js"
 import * as BlockHeaderHash from "./BlockHeaderHash.js"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as Ed25519Signature from "./Ed25519Signature.js"
 import * as KESVkey from "./KESVkey.js"
 import * as Natural from "./Natural.js"
+import * as Numeric from "./Numeric.js"
 import * as OperationalCert from "./OperationalCert.js"
 import * as ProtocolVersion from "./ProtocolVersion.js"
 import * as VKey from "./VKey.js"
@@ -57,6 +57,37 @@ export class HeaderBody extends Schema.TaggedClass<HeaderBody>()("HeaderBody", {
 }) {}
 
 /**
+ * Smart constructor for creating HeaderBody instances
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = (props: {
+  blockNumber: number
+  slot: number
+  prevHash: BlockHeaderHash.BlockHeaderHash | null
+  issuerVkey: VKey.VKey
+  vrfVkey: VrfVkey.VrfVkey
+  vrfResult: VrfCert.VrfCert
+  blockBodySize: number
+  blockBodyHash: BlockBodyHash.BlockBodyHash
+  operationalCert: OperationalCert.OperationalCert
+  protocolVersion: ProtocolVersion.ProtocolVersion
+}): HeaderBody =>
+  new HeaderBody({
+    blockNumber: Natural.make(props.blockNumber),
+    slot: Natural.make(props.slot),
+    prevHash: props.prevHash,
+    issuerVkey: props.issuerVkey,
+    vrfVkey: props.vrfVkey,
+    vrfResult: props.vrfResult,
+    blockBodySize: Natural.make(props.blockBodySize),
+    blockBodyHash: props.blockBodyHash,
+    operationalCert: props.operationalCert,
+    protocolVersion: props.protocolVersion
+  })
+
+/**
  * Check if two HeaderBody instances are equal.
  *
  * @since 2.0.0
@@ -73,6 +104,45 @@ export const equals = (a: HeaderBody, b: HeaderBody): boolean =>
   BlockBodyHash.equals(a.blockBodyHash, b.blockBodyHash) &&
   OperationalCert.equals(a.operationalCert, b.operationalCert) &&
   ProtocolVersion.equals(a.protocolVersion, b.protocolVersion)
+
+/**
+ * FastCheck arbitrary for generating random HeaderBody instances
+ *
+ * @since 2.0.0
+ * @category testing
+ */
+export const arbitrary = FastCheck.record({
+  blockNumber: Natural.arbitrary,
+  slot: Natural.arbitrary,
+  prevHash: FastCheck.option(BlockHeaderHash.arbitrary),
+  issuerVkey: VKey.arbitrary,
+  vrfVkey: VrfVkey.arbitrary,
+  vrfResult: FastCheck.record({
+    output: FastCheck.string(),
+    proof: FastCheck.string()
+  }),
+  blockBodySize: Natural.arbitrary,
+  blockBodyHash: BlockBodyHash.arbitrary,
+  operationalCert: OperationalCert.arbitrary,
+  protocolVersion: ProtocolVersion.arbitrary
+}).map(
+  (props) =>
+    new HeaderBody({
+      blockNumber: props.blockNumber,
+      slot: props.slot,
+      prevHash: props.prevHash,
+      issuerVkey: props.issuerVkey,
+      vrfVkey: props.vrfVkey,
+      vrfResult: new VrfCert.VrfCert({
+        output: props.vrfResult.output as VrfCert.VRFOutput,
+        proof: props.vrfResult.proof as VrfCert.VRFProof
+      }),
+      blockBodySize: props.blockBodySize,
+      blockBodyHash: props.blockBodyHash,
+      operationalCert: props.operationalCert,
+      protocolVersion: props.protocolVersion
+    })
+)
 
 /**
  * CDDL schema for HeaderBody.
@@ -115,7 +185,7 @@ export const FromCDDL = Schema.transformOrFail(
   {
     strict: true,
     encode: (toA) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         const prevHashBytes = toA.prevHash ? yield* ParseResult.encode(BlockHeaderHash.FromBytes)(toA.prevHash) : null
         const issuerVkeyBytes = yield* ParseResult.encode(VKey.FromBytes)(toA.issuerVkey)
         const vrfVkeyBytes = yield* ParseResult.encode(VrfVkey.FromBytes)(toA.vrfVkey)
@@ -155,7 +225,7 @@ export const FromCDDL = Schema.transformOrFail(
       [hotVkeyBytes, sequenceNumber, kesPeriod, sigmaBytes],
       [protocolMajor, protocolMinor]
     ]) =>
-      Effect.gen(function* () {
+      Eff.gen(function* () {
         const prevHash = prevHashBytes ? yield* ParseResult.decode(BlockHeaderHash.FromBytes)(prevHashBytes) : null
         const issuerVkey = yield* ParseResult.decode(VKey.FromBytes)(issuerVkeyBytes)
         const vrfVkey = yield* ParseResult.decode(VrfVkey.FromBytes)(vrfVkeyBytes)
@@ -167,8 +237,8 @@ export const FromCDDL = Schema.transformOrFail(
 
         return yield* ParseResult.decode(HeaderBody)({
           _tag: "HeaderBody",
-          blockNumber: Natural.Natural.make(Number(blockNumber)),
-          slot: Natural.Natural.make(Number(slot)),
+          blockNumber: Natural.make(Number(blockNumber)),
+          slot: Natural.make(Number(slot)),
           prevHash,
           issuerVkey,
           vrfVkey,
@@ -176,22 +246,25 @@ export const FromCDDL = Schema.transformOrFail(
             output: vrfOutput,
             proof: vrfProof
           }),
-          blockBodySize: Natural.Natural.make(Number(blockBodySize)),
+          blockBodySize: Natural.make(Number(blockBodySize)),
           blockBodyHash,
           operationalCert: new OperationalCert.OperationalCert({
             hotVkey,
-            sequenceNumber,
-            kesPeriod,
+            sequenceNumber: Numeric.Uint64Make(sequenceNumber),
+            kesPeriod: Numeric.Uint64Make(kesPeriod),
             sigma
           }),
-          protocolVersion: new ProtocolVersion.ProtocolVersion({
+          protocolVersion: ProtocolVersion.make({
             major: Number(protocolMajor),
             minor: Number(protocolMinor)
           })
         })
       })
   }
-)
+).annotations({
+  identifier: "HeaderBody.FromCDDL",
+  description: "Transforms CBOR structure to HeaderBody"
+})
 
 /**
  * Check if the given value is a valid HeaderBody.
@@ -207,11 +280,14 @@ export const isHeaderBody = Schema.is(HeaderBody)
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → HeaderBody
-  )
+  ).annotations({
+    identifier: "HeaderBody.FromCBORBytes",
+    description: "Transforms CBOR bytes to HeaderBody"
+  })
 
 /**
  * CBOR hex transformation schema for HeaderBody.
@@ -219,17 +295,103 @@ export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → HeaderBody
-  )
+    FromCBORBytes(options) // Uint8Array → HeaderBody
+  ).annotations({
+    identifier: "HeaderBody.FromCBORHex",
+    description: "Transforms CBOR hex string to HeaderBody"
+  })
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    HeaderBodyError
-  )
+/**
+ * Effect namespace for HeaderBody operations that can fail
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Convert CBOR bytes to HeaderBody using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.decode(FromCBORBytes(options))(bytes),
+      (cause) => new HeaderBodyError({ message: "Failed to decode from CBOR bytes", cause })
+    )
+
+  /**
+   * Convert CBOR hex string to HeaderBody using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.decode(FromCBORHex(options))(hex),
+      (cause) => new HeaderBodyError({ message: "Failed to decode from CBOR hex", cause })
+    )
+
+  /**
+   * Convert HeaderBody to CBOR bytes using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toCBORBytes = (headerBody: HeaderBody, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.encode(FromCBORBytes(options))(headerBody),
+      (cause) => new HeaderBodyError({ message: "Failed to encode to CBOR bytes", cause })
+    )
+
+  /**
+   * Convert HeaderBody to CBOR hex string using Effect
+   *
+   * @since 2.0.0
+   * @category conversion
+   */
+  export const toCBORHex = (headerBody: HeaderBody, options?: CBOR.CodecOptions) =>
+    Eff.mapError(
+      Schema.encode(FromCBORHex(options))(headerBody),
+      (cause) => new HeaderBodyError({ message: "Failed to encode to CBOR hex", cause })
+    )
+}
+
+/**
+ * Convert CBOR bytes to HeaderBody (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): HeaderBody =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Convert CBOR hex string to HeaderBody (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): HeaderBody =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+/**
+ * Convert HeaderBody to CBOR bytes (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toCBORBytes = (headerBody: HeaderBody, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(headerBody, options))
+
+/**
+ * Convert HeaderBody to CBOR hex string (unsafe)
+ *
+ * @since 2.0.0
+ * @category conversion
+ */
+export const toCBORHex = (headerBody: HeaderBody, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(headerBody, options))

@@ -1,10 +1,9 @@
-import { Data, Effect, FastCheck, ParseResult, pipe, Schema } from "effect"
+import { bech32 } from "@scure/base"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as BaseAddress from "./BaseAddress.js"
-import * as Bech32 from "./Bech32.js"
 import * as ByronAddress from "./ByronAddress.js"
 import * as Bytes from "./Bytes.js"
-import { createEncoders } from "./Codec.js"
 import * as EnterpriseAddress from "./EnterpriseAddress.js"
 import * as PointerAddress from "./PointerAddress.js"
 import * as RewardAccount from "./RewardAccount.js"
@@ -99,7 +98,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Addre
     }
   },
   decode: (_, __, ast, fromA) =>
-    Effect.gen(function* () {
+    Eff.gen(function* () {
       const header = fromA[0]
       // Extract address type from the upper 4 bits (bits 4-7)
       const addressType = header >> 4
@@ -152,10 +151,10 @@ export const FromHex = Schema.compose(Bytes.FromHex, FromBytes)
  * @since 2.0.0
  * @category schema
  */
-export const FromBech32 = Schema.transformOrFail(Schema.typeSchema(Bech32.Bech32Schema), Address, {
+export const FromBech32 = Schema.transformOrFail(Schema.String, Address, {
   strict: true,
-  encode: (_, __, ___, toA) =>
-    Effect.gen(function* () {
+  encode: (_, __, ast, toA) =>
+    Eff.gen(function* () {
       const bytes = yield* ParseResult.encode(FromBytes)(toA)
       let prefix: string
       switch (toA._tag) {
@@ -168,13 +167,34 @@ export const FromBech32 = Schema.transformOrFail(Schema.typeSchema(Bech32.Bech32
           prefix = toA.networkId === 0 ? "stake_test" : "stake"
           break
         case "ByronAddress":
-          prefix = ""
-          break
+          return yield* ParseResult.fail(
+            new ParseResult.Type(ast, toA, "Byron addresses do not support Bech32 encoding")
+          )
       }
-      const b = yield* ParseResult.decode(Bech32.FromBytes(prefix))(bytes)
-      return b
+      const result = yield* Eff.try({
+        try: () => {
+          const words = bech32.toWords(bytes)
+          return bech32.encode(prefix, words, false)
+        },
+        catch: (error) => new ParseResult.Type(ast, toA, `Failed to encode Bech32: ${(error as Error).message}`)
+      })
+      return result
     }),
-  decode: (fromI) => pipe(ParseResult.encode(Bech32.FromBytes())(fromI), Effect.flatMap(ParseResult.decode(FromBytes)))
+  decode: (fromA, _, ast) =>
+    Eff.gen(function* () {
+      const result = yield* Eff.try({
+        try: () => {
+          const decoded = bech32.decode(fromA as any, false)
+          const bytes = bech32.fromWords(decoded.words)
+          return new Uint8Array(bytes)
+        },
+        catch: (error) => new ParseResult.Type(ast, fromA, `Failed to decode Bech32: ${(error as Error).message}`)
+      })
+      return yield* ParseResult.decode(FromBytes)(result)
+    })
+}).annotations({
+  identifier: "Address.FromBech32",
+  description: "Transforms Bech32 string to Address"
 })
 
 /**
@@ -202,29 +222,156 @@ export const equals = (a: Address, b: Address): boolean => {
 }
 
 /**
- * FastCheck generator for addresses.
+ * FastCheck arbitrary for Address instances.
  *
  * @since 2.0.0
- * @category testing
+ * @category arbitrary
+ *
  */
-export const generator = FastCheck.oneof(
-  BaseAddress.generator,
-  EnterpriseAddress.generator,
-  PointerAddress.generator,
-  RewardAccount.generator
+export const arbitrary = FastCheck.oneof(
+  BaseAddress.arbitrary,
+  EnterpriseAddress.arbitrary,
+  PointerAddress.arbitrary,
+  RewardAccount.arbitrary
 )
 
+// ============================================================================
+// Parsing Functions
+// ============================================================================
+
 /**
- * Codec utilities for addresses.
+ * Parse an Address from bytes.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category parsing
  */
-export const Codec = createEncoders(
-  {
-    bech32: FromBech32,
-    hex: FromHex,
-    bytes: FromBytes
-  },
-  AddressError
-)
+export const fromBytes = (bytes: Uint8Array): Address => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse an Address from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): Address => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Parse an Address from Bech32 string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBech32 = (bech32: string): Address => Eff.runSync(Effect.fromBech32(bech32))
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
+
+/**
+ * Convert an Address to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (address: Address): Uint8Array => Eff.runSync(Effect.toBytes(address))
+
+/**
+ * Convert an Address to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (address: Address): string => Eff.runSync(Effect.toHex(address))
+
+/**
+ * Convert an Address to Bech32 string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBech32 = (address: Address): string => Eff.runSync(Effect.toBech32(address))
+
+// ============================================================================
+// Effect Namespace - Effect-based Error Handling
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ * Returns Effect<Success, Error> for composable error handling.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse an Address from bytes.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array) =>
+    Eff.mapError(
+      Schema.decode(FromBytes)(bytes),
+      (error) => new AddressError({ message: "Failed to decode Address from bytes", cause: error })
+    )
+
+  /**
+   * Parse an Address from hex string.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string) =>
+    Eff.mapError(
+      Schema.decode(FromHex)(hex),
+      (error) => new AddressError({ message: "Failed to decode Address from hex", cause: error })
+    )
+
+  /**
+   * Parse an Address from Bech32 string.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBech32 = (bech32: string) =>
+    Eff.mapError(
+      Schema.decode(FromBech32)(bech32),
+      (error) => new AddressError({ message: "Failed to decode Address from Bech32", cause: error })
+    )
+
+  /**
+   * Convert an Address to bytes.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (address: Address) =>
+    Eff.mapError(
+      Schema.encode(FromBytes)(address),
+      (error) => new AddressError({ message: "Failed to encode Address to bytes", cause: error })
+    )
+
+  /**
+   * Convert an Address to hex string.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (address: Address) =>
+    Eff.mapError(
+      Schema.encode(FromHex)(address),
+      (error) => new AddressError({ message: "Failed to encode Address to hex", cause: error })
+    )
+
+  /**
+   * Convert an Address to Bech32 string.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBech32 = (address: Address) =>
+    Eff.mapError(
+      Schema.encode(FromBech32)(address),
+      (error) => new AddressError({ message: "Failed to encode Address to Bech32", cause: error })
+    )
+}

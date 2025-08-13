@@ -1,6 +1,5 @@
-import { Data, Schema } from "effect"
+import { Data, Effect as Eff, Schema } from "effect"
 
-import * as _Codec from "./Codec.js"
 import * as Text128 from "./Text128.js"
 
 /**
@@ -21,6 +20,7 @@ export const URL_MAX_LENGTH = 128
 export class UrlError extends Data.TaggedError("UrlError")<{
   message?: string
   reason?: "InvalidLength" | "InvalidFormat" | "TooLong"
+  cause?: unknown
 }> {}
 
 /**
@@ -65,17 +65,133 @@ export const FromHex = Schema.compose(
 export const equals = (a: Url, b: Url): boolean => a === b
 
 /**
- * Generate a random Url.
+ * Check if the given value is a valid Url
  *
  * @since 2.0.0
- * @category generators
+ * @category predicates
  */
-export const generator = Text128.generator.map((text) => Url.make(text))
+export const isUrl = Schema.is(Url)
 
-export const Codec = _Codec.createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  UrlError
-)
+/**
+ * FastCheck arbitrary for generating random Url instances.
+ *
+ * @since 2.0.0
+ * @category arbitrary
+ */
+export const arbitrary = Text128.arbitrary.map((text) => Url.make(text))
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse Url from bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array): Url => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse Url from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): Url => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Encode Url to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (url: Url): Uint8Array => Eff.runSync(Effect.toBytes(url))
+
+/**
+ * Encode Url to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (url: Url): string => Eff.runSync(Effect.toHex(url))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse Url from bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<Url, UrlError> =>
+    Schema.decode(FromBytes)(bytes).pipe(
+      Eff.mapError(
+        (cause) =>
+          new UrlError({
+            message: "Failed to parse Url from bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse Url from hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): Eff.Effect<Url, UrlError> =>
+    Schema.decode(FromHex)(hex).pipe(
+      Eff.mapError(
+        (cause) =>
+          new UrlError({
+            message: "Failed to parse Url from hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode Url to bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (url: Url): Eff.Effect<Uint8Array, UrlError> =>
+    Schema.encode(FromBytes)(url).pipe(
+      Eff.mapError(
+        (cause) =>
+          new UrlError({
+            message: "Failed to encode Url to bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode Url to hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (url: Url): Eff.Effect<string, UrlError> =>
+    Schema.encode(FromHex)(url).pipe(
+      Eff.mapError(
+        (cause) =>
+          new UrlError({
+            message: "Failed to encode Url to hex",
+            cause
+          })
+      )
+    )
+}

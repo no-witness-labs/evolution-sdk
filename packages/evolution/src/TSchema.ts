@@ -12,38 +12,21 @@ import * as Data from "./Data.js"
  * 2. CBOR hex => Plutus Data type => TypeScript types
  */
 
-interface ByteArray extends Schema.refine<string, typeof Schema.String> {}
-
 /**
- * Creates a schema for byte arrays using Plutus Data ByteArray transformation
- * The byte array is represented as a hex string
+ * ByteArray schema (hex string) directly re-exported from Data layer.
  *
  * @since 2.0.0
+ * @category schemas
  */
-export const ByteArray: ByteArray = Data.BytesSchema.annotations({
-  identifier: "TSchema.ByteArray"
-})
-// : Schema.Schema<string, typeof Data.BytesSchema.Type> = Schema.transform(
-//   Schema.String,
-//   Data.BytesSchema,
-//   {
-//     strict: true,
-//     encode: (value) => Data.bytearray(value),
-//     decode: (value) => value,
-//   }
-// );
-
-interface Integer extends Schema.SchemaClass<bigint, bigint, never> {}
+export const ByteArray = Data.ByteArray
 
 /**
- * Creates a schema for integers using Plutus Data Integer transformation
- * The integer is represented as a BigInt
+ * Integer schema (bigint) directly re-exported from Data layer.
  *
  * @since 2.0.0
+ * @category schemas
  */
-export const Integer: Integer = Data.IntSchema.annotations({
-  identifier: "TSchema.Integer"
-})
+export const Integer = Data.IntSchema
 
 interface Literal<Literals extends NonEmptyReadonlyArray<SchemaAST.LiteralValue>>
   extends Schema.transform<Schema.SchemaClass<Data.Constr, Data.Constr, never>, Schema.Literal<[...Literals]>> {}

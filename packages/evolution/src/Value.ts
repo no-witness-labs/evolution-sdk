@@ -1,9 +1,8 @@
-import { Data, Effect, FastCheck, Option, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Option, ParseResult, Schema } from "effect"
 
 import * as AssetName from "./AssetName.js"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as Coin from "./Coin.js"
 import * as MultiAsset from "./MultiAsset.js"
 import * as PolicyId from "./PolicyId.js"
@@ -35,12 +34,12 @@ export class ValueError extends Data.TaggedError("ValueError")<{
  * @category schemas
  */
 export class OnlyCoin extends Schema.TaggedClass<OnlyCoin>("OnlyCoin")("OnlyCoin", {
-  coin: Coin.CoinSchema
+  coin: Coin.Coin
 }) {}
 
 export class WithAssets extends Schema.TaggedClass<WithAssets>("WithAssets")("WithAssets", {
-  coin: Coin.CoinSchema,
-  assets: MultiAsset.MultiAssetSchema
+  coin: Coin.Coin,
+  assets: MultiAsset.MultiAsset
 }) {}
 
 export const Value = Schema.Union(OnlyCoin, WithAssets)
@@ -223,16 +222,26 @@ export const is = (value: unknown): value is Value => Schema.is(Value)(value)
  * @since 2.0.0
  * @category generators
  */
-export const generator = FastCheck.oneof(
+export const arbitrary = FastCheck.oneof(
   FastCheck.record({
     _tag: FastCheck.constant("OnlyCoin"),
-    coin: Coin.generator
+    coin: Coin.arbitrary
   }),
   FastCheck.record({
     _tag: FastCheck.constant("WithAssets"),
-    coin: Coin.generator,
-    assets: MultiAsset.generator
+    coin: Coin.arbitrary,
+    assets: MultiAsset.arbitrary
   })
+)
+
+export const CDDLSchema = Schema.Union(
+  CBOR.Integer,
+  Schema.Tuple(
+    CBOR.Integer,
+    Schema.encodedSchema(
+      MultiAsset.MultiAssetCDDLSchema // MultiAsset CDDL structure
+    )
+  )
 )
 
 /**
@@ -249,81 +258,69 @@ export const generator = FastCheck.oneof(
  * @since 2.0.0
  * @category schemas
  */
-export const ValueCDDLSchema = Schema.transformOrFail(
-  Schema.Union(
-    CBOR.Integer,
-    Schema.Tuple(
-      CBOR.Integer,
-      Schema.encodedSchema(
-        MultiAsset.MultiAssetCDDLSchema // MultiAsset CDDL structure
-      )
-    )
-  ),
-  Schema.typeSchema(Value),
-  {
-    strict: true,
-    encode: (toI) =>
-      Effect.gen(function* () {
-        // expected encode result
-        // readonly [bigint, readonly (readonly [Uint8Array<ArrayBufferLike>, readonly (readonly [Uint8Array<ArrayBufferLike>, bigint])[]])[]]
-        if (toI._tag === "OnlyCoin") {
-          // This is OnlyCoin, encode just the coin amount
-          return toI.coin
-        } else {
-          // Value with assets (WithAssets)
-          // Convert MultiAsset to raw Map data for CBOR encoding
-          const outerMap = new Map<Uint8Array, Map<Uint8Array, bigint>>()
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Value), {
+  strict: true,
+  encode: (toI) =>
+    Eff.gen(function* () {
+      // expected encode result
+      // readonly [bigint, readonly (readonly [Uint8Array<ArrayBufferLike>, readonly (readonly [Uint8Array<ArrayBufferLike>, bigint])[]])[]]
+      if (toI._tag === "OnlyCoin") {
+        // This is OnlyCoin, encode just the coin amount
+        return toI.coin
+      } else {
+        // Value with assets (WithAssets)
+        // Convert MultiAsset to raw Map data for CBOR encoding
+        const outerMap = new Map<Uint8Array, Map<Uint8Array, bigint>>()
 
-          for (const [policyId, assetMap] of toI.assets.entries()) {
-            const policyIdBytes = yield* ParseResult.encode(PolicyId.FromBytes)(policyId)
-            const innerMap = new Map<Uint8Array, bigint>()
+        for (const [policyId, assetMap] of toI.assets.entries()) {
+          const policyIdBytes = yield* ParseResult.encode(PolicyId.FromBytes)(policyId)
+          const innerMap = new Map<Uint8Array, bigint>()
 
-            for (const [assetName, amount] of assetMap.entries()) {
-              const assetNameBytes = yield* ParseResult.encode(AssetName.FromBytes)(assetName)
-              innerMap.set(assetNameBytes, amount)
-            }
-
-            outerMap.set(policyIdBytes, innerMap)
+          for (const [assetName, amount] of assetMap.entries()) {
+            const assetNameBytes = yield* ParseResult.encode(AssetName.FromBytes)(assetName)
+            innerMap.set(assetNameBytes, amount)
           }
 
-          return [toI.coin, outerMap] as const // Return as tuple
+          outerMap.set(policyIdBytes, innerMap)
         }
-      }),
-    decode: (fromA) =>
-      Effect.gen(function* () {
-        if (typeof fromA === "bigint") {
-          // ADA-only value - create OnlyCoin instance
-          return new OnlyCoin({
-            coin: fromA
-          })
-        } else {
-          // Value with assets [coin, multiasset]
-          const [coinAmount, multiAssetCddl] = fromA
 
-          // Convert from CDDL format to MultiAsset manually
-          const result = new Map<PolicyId.PolicyId, MultiAsset.AssetMap>()
+        return [toI.coin, outerMap] as const // Return as tuple
+      }
+    }),
+  decode: (fromA) =>
+    Eff.gen(function* () {
+      if (typeof fromA === "bigint") {
+        // ADA-only value - create OnlyCoin instance
+        return new OnlyCoin({
+          coin: Coin.make(fromA)
+        })
+      } else {
+        // Value with assets [coin, multiasset]
+        const [coinAmount, multiAssetCddl] = fromA
 
-          for (const [policyIdBytes, assetMapCddl] of multiAssetCddl.entries()) {
-            const policyId = yield* ParseResult.decode(PolicyId.FromBytes)(policyIdBytes)
+        // Convert from CDDL format to MultiAsset manually
+        const result = new Map<PolicyId.PolicyId, MultiAsset.AssetMap>()
 
-            const assetMap = new Map<AssetName.AssetName, PositiveCoin.PositiveCoin>()
-            for (const [assetNameBytes, amount] of assetMapCddl.entries()) {
-              const assetName = yield* ParseResult.decode(AssetName.FromBytes)(assetNameBytes)
-              const positiveCoin = PositiveCoin.make(amount)
-              assetMap.set(assetName, positiveCoin)
-            }
+        for (const [policyIdBytes, assetMapCddl] of multiAssetCddl.entries()) {
+          const policyId = yield* ParseResult.decode(PolicyId.FromBytes)(policyIdBytes)
 
-            result.set(policyId, assetMap)
+          const assetMap = new Map<AssetName.AssetName, PositiveCoin.PositiveCoin>()
+          for (const [assetNameBytes, amount] of assetMapCddl.entries()) {
+            const assetName = yield* ParseResult.decode(AssetName.FromBytes)(assetNameBytes)
+            const positiveCoin = PositiveCoin.make(amount)
+            assetMap.set(assetName, positiveCoin)
           }
 
-          return new WithAssets({
-            coin: coinAmount,
-            assets: result
-          })
+          result.set(policyId, assetMap)
         }
-      })
-  }
-)
+
+        return new WithAssets({
+          coin: Coin.make(coinAmount),
+          assets: MultiAsset.make(result)
+        })
+      }
+    })
+})
 
 /**
  * TypeScript type for the raw CDDL representation.
@@ -332,37 +329,176 @@ export const ValueCDDLSchema = Schema.transformOrFail(
  * @since 2.0.0
  * @category model
  */
-export type ValueCDDL = typeof ValueCDDLSchema.Type
+export type ValueCDDL = typeof FromCDDL.Type
 
 /**
  * CBOR bytes transformation schema for Value.
+ * Transforms between CBOR bytes and Value using CBOR encoding.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    ValueCDDLSchema // CBOR → Value
-  )
+    FromCDDL // CBOR → Value
+  ).annotations({
+    identifier: "Value.FromCBORBytes",
+    title: "Value from CBOR Bytes",
+    description: "Transforms CBOR bytes to Value"
+  })
 
 /**
  * CBOR hex transformation schema for Value.
+ * Transforms between CBOR hex string and Value using CBOR encoding.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
-    FromBytes(options) // Uint8Array → Value
-  )
+    FromCBORBytes(options) // Uint8Array → Value
+  ).annotations({
+    identifier: "Value.FromCBORHex",
+    title: "Value from CBOR Hex",
+    description: "Transforms CBOR hex string to Value"
+  })
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  _Codec.createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    ValueError
-  )
+/**
+ * Legacy alias for FromCBORBytes - kept for backwards compatibility.
+ *
+ * @since 2.0.0
+ * @category schemas
+ * @deprecated Use FromCBORBytes instead
+ */
+export const FromBytes = FromCBORBytes
+
+/**
+ * Legacy alias for FromCBORHex - kept for backwards compatibility.
+ *
+ * @since 2.0.0
+ * @category schemas
+ * @deprecated Use FromCBORHex instead
+ */
+export const FromHex = FromCBORHex
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse Value from CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Value =>
+  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+
+/**
+ * Parse Value from CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Value =>
+  Eff.runSync(Effect.fromCBORHex(hex, options))
+
+/**
+ * Encode Value to CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = (value: Value, options?: CBOR.CodecOptions): Uint8Array =>
+  Eff.runSync(Effect.toCBORBytes(value, options))
+
+/**
+ * Encode Value to CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = (value: Value, options?: CBOR.CodecOptions): string =>
+  Eff.runSync(Effect.toCBORHex(value, options))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse Value from CBOR bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Eff.Effect<Value, ValueError> =>
+    Schema.decode(FromCBORBytes(options))(bytes).pipe(
+      Eff.mapError(
+        (cause: unknown) =>
+          new ValueError({
+            message: "Failed to parse Value from CBOR bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse Value from CBOR hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Eff.Effect<Value, ValueError> =>
+    Schema.decode(FromCBORHex(options))(hex).pipe(
+      Eff.mapError(
+        (cause: unknown) =>
+          new ValueError({
+            message: "Failed to parse Value from CBOR hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode Value to CBOR bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = (value: Value, options?: CBOR.CodecOptions): Eff.Effect<Uint8Array, ValueError> =>
+    Schema.encode(FromCBORBytes(options))(value).pipe(
+      Eff.mapError(
+        (cause: unknown) =>
+          new ValueError({
+            message: "Failed to encode Value to CBOR bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode Value to CBOR hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = (value: Value, options?: CBOR.CodecOptions): Eff.Effect<string, ValueError> =>
+    Schema.encode(FromCBORHex(options))(value).pipe(
+      Eff.mapError(
+        (cause: unknown) =>
+          new ValueError({
+            message: "Failed to encode Value to CBOR hex",
+            cause
+          })
+      )
+    )
+}

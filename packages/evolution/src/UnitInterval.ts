@@ -62,6 +62,17 @@ export const UnitInterval = Schema.Struct({
 export type UnitInterval = typeof UnitInterval.Type
 
 /**
+ * Smart constructor for creating UnitInterval values.
+ * Validates that denominator > 0 and numerator <= denominator.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = UnitInterval.make
+
+export const CDDLSchema = CBOR.tag(30, Schema.Tuple(CBOR.Integer, CBOR.Integer))
+
+/**
  * CDDL schema for UnitInterval following the Conway specification.
  *
  * ```
@@ -73,15 +84,14 @@ export type UnitInterval = typeof UnitInterval.Type
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(CBOR.Tag, UnitInterval, {
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, UnitInterval, {
   strict: true,
   encode: (_, __, ___, unitInterval) =>
-    Effect.succeed(
-      new CBOR.Tag({
-        tag: 30,
-        value: [unitInterval.numerator, unitInterval.denominator]
-      })
-    ),
+    Effect.succeed({
+      _tag: "Tag" as const,
+      tag: 30 as const,
+      value: [unitInterval.numerator, unitInterval.denominator] as const
+    }),
   decode: (_, __, ___, taggedValue) =>
     Effect.gen(function* () {
       // Validate tag number
@@ -117,7 +127,7 @@ export const FromCDDL = Schema.transformOrFail(CBOR.Tag, UnitInterval, {
  * @since 2.0.0
  * @category schemas
  */
-export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
     FromCDDL // CBOR → UnitInterval
@@ -132,7 +142,7 @@ export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS)
  * @since 2.0.0
  * @category schemas
  */
-export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     Bytes.FromHex, // string → Uint8Array
     FromCBORBytes(options) // Uint8Array → UnitInterval
@@ -173,12 +183,12 @@ export const fromBigDecimal = (value: BigDecimal.BigDecimal): UnitInterval => {
 }
 
 /**
- * Generate a random UnitInterval.
+ * FastCheck arbitrary for generating random UnitInterval instances.
  *
  * @since 2.0.0
- * @category generators
+ * @category arbitrary
  */
-export const generator = FastCheck.bigInt({ min: 1n, max: 1000000n }).chain((denominator) =>
+export const arbitrary = FastCheck.bigInt({ min: 1n, max: 1000000n }).chain((denominator) =>
   FastCheck.bigInt({ min: 0n, max: denominator }).map((numerator) => UnitInterval.make({ numerator, denominator }))
 )
 
@@ -188,7 +198,7 @@ export const generator = FastCheck.bigInt({ min: 1n, max: 1000000n }).chain((den
  * @since 2.0.0
  * @category codecs
  */
-export const CBORCodec = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
+export const CBORCodec = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   createEncoders(
     {
       cborBytes: FromCBORBytes(options),

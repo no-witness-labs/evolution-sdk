@@ -2,7 +2,6 @@ import { describe, expect, it } from "@effect/vitest"
 
 import * as CBOR from "../src/CBOR.js"
 
-const Codec = CBOR.Codec()
 describe("CBOR Implementation Tests", () => {
   describe("Integer Encoding Boundaries", () => {
     const boundaryTestCases = [
@@ -56,8 +55,8 @@ describe("CBOR Implementation Tests", () => {
       // Create a CBOR value from the integer using the helper
       const cborValue = value
 
-      const encoded = Codec.Encode.cborBytes(cborValue)
-      const decoded = Codec.Decode.cborBytes(encoded)
+      const encoded = CBOR.toCBORBytes(cborValue)
+      const decoded = CBOR.fromCBORBytes(encoded)
 
       expect(decoded).toEqual(cborValue)
     })
@@ -100,7 +99,7 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       testCases.forEach(({ expectedMajorType, value }) => {
-        const encoded = Codec.Encode.cborBytes(value)
+        const encoded = CBOR.toCBORBytes(value)
         const firstByte = encoded[0]
         const majorType = firstByte >> 5
 
@@ -122,24 +121,24 @@ describe("CBOR Implementation Tests", () => {
     describe("Array Length Encoding", () => {
       it("should handle arrays with exactly 24 elements (1-byte length threshold)", () => {
         const array24 = Array.from({ length: 24 }, (_, i) => BigInt(i))
-        const encoded = Codec.Encode.cborBytes(array24)
-        const decoded = Codec.Decode.cborBytes(encoded)
+        const encoded = CBOR.toCBORBytes(array24)
+        const decoded = CBOR.fromCBORBytes(encoded)
         expect(decoded).toEqual(array24)
         expect(decoded).toHaveLength(24)
       })
 
       it("should handle arrays with exactly 256 elements (2-byte length threshold)", () => {
         const array256 = Array.from({ length: 256 }, (_, i) => BigInt(i))
-        const encoded = Codec.Encode.cborBytes(array256)
-        const decoded = Codec.Decode.cborBytes(encoded)
+        const encoded = CBOR.toCBORBytes(array256)
+        const decoded = CBOR.fromCBORBytes(encoded)
         expect(decoded).toEqual(array256)
         expect(decoded).toHaveLength(256)
       })
 
       it("should handle arrays with exactly 65536 elements (4-byte length threshold)", () => {
         const array65536 = Array.from({ length: 65536 }, (_, i) => BigInt(i % 1000))
-        const encoded = Codec.Encode.cborBytes(array65536)
-        const decoded = Codec.Decode.cborBytes(encoded) as Array<bigint>
+        const encoded = CBOR.toCBORBytes(array65536)
+        const decoded = CBOR.fromCBORBytes(encoded) as Array<bigint>
         expect(decoded).toEqual(array65536)
         expect(decoded).toHaveLength(65536)
       })
@@ -151,7 +150,7 @@ describe("CBOR Implementation Tests", () => {
         const testArray = Array.from({ length: 100 }, (_, i) => BigInt(i))
 
         expect(() => {
-          Codec.Encode.cborBytes(testArray)
+          CBOR.toCBORBytes(testArray)
         }).not.toThrow()
       })
     })
@@ -159,16 +158,16 @@ describe("CBOR Implementation Tests", () => {
     describe("Map Length Encoding", () => {
       it("should handle maps with exactly 24 entries (1-byte length threshold)", () => {
         const map24 = new Map(Array.from({ length: 24 }, (_, i) => [BigInt(i), `${i.toString(16).padStart(2, "0")}`]))
-        const encoded = Codec.Encode.cborBytes(map24)
-        const decoded = Codec.Decode.cborBytes(encoded) as Map<bigint, string>
+        const encoded = CBOR.toCBORBytes(map24)
+        const decoded = CBOR.fromCBORBytes(encoded) as Map<bigint, string>
         expect(decoded).toEqual(map24)
         expect(decoded.size).toBe(24)
       })
 
       it("should handle maps with exactly 256 entries (2-byte length threshold)", () => {
         const map256 = new Map(Array.from({ length: 256 }, (_, i) => [BigInt(i), `${i.toString(16).padStart(2, "0")}`]))
-        const encoded = Codec.Encode.cborBytes(map256)
-        const decoded = Codec.Decode.cborBytes(encoded) as Map<bigint, string>
+        const encoded = CBOR.toCBORBytes(map256)
+        const decoded = CBOR.fromCBORBytes(encoded) as Map<bigint, string>
         expect(decoded).toEqual(map256)
         expect(decoded.size).toBe(256)
       })
@@ -177,8 +176,8 @@ describe("CBOR Implementation Tests", () => {
         const map65536 = new Map(
           Array.from({ length: 65536 }, (_, i) => [BigInt(i), `${(i % 256).toString(16).padStart(2, "0")}`])
         )
-        const encoded = Codec.Encode.cborBytes(map65536)
-        const decoded = Codec.Decode.cborBytes(encoded) as Map<bigint, string>
+        const encoded = CBOR.toCBORBytes(map65536)
+        const decoded = CBOR.fromCBORBytes(encoded) as Map<bigint, string>
         expect(decoded).toEqual(map65536)
         expect(decoded.size).toBe(65536)
       }, 30000) // 30 second timeout for large map test
@@ -188,8 +187,8 @@ describe("CBOR Implementation Tests", () => {
   describe("CBOR Bounds Check Fixes", () => {
     it("should properly handle 64-bit integer bounds", () => {
       const maxUint64 = 18446744073709551615n // 2^64 - 1
-      const encoded = Codec.Encode.cborBytes(maxUint64)
-      const decoded = Codec.Decode.cborBytes(encoded)
+      const encoded = CBOR.toCBORBytes(maxUint64)
+      const decoded = CBOR.fromCBORBytes(encoded)
       expect(decoded).toBe(maxUint64)
     })
 
@@ -203,8 +202,8 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       testCases.forEach(({ value }) => {
-        const encoded = Codec.Encode.cborBytes(value)
-        const decoded = Codec.Decode.cborBytes(encoded)
+        const encoded = CBOR.toCBORBytes(value)
+        const decoded = CBOR.fromCBORBytes(encoded)
         expect(decoded).toBe(value)
       })
     })
@@ -230,8 +229,8 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       boundaryTestCases.forEach(({ value }) => {
-        const encoded = Codec.Encode.cborBytes(value)
-        const decoded = Codec.Decode.cborBytes(encoded)
+        const encoded = CBOR.toCBORBytes(value)
+        const decoded = CBOR.fromCBORBytes(encoded)
         expect(decoded).toBe(value)
       })
     })
@@ -240,11 +239,11 @@ describe("CBOR Implementation Tests", () => {
       const emptyArray: Array<number> = []
       const emptyMap = new Map()
 
-      const encodedArray = Codec.Encode.cborBytes(emptyArray)
-      const encodedMap = Codec.Encode.cborBytes(emptyMap)
+      const encodedArray = CBOR.toCBORBytes(emptyArray)
+      const encodedMap = CBOR.toCBORBytes(emptyMap)
 
-      const decodedArray = Codec.Decode.cborBytes(encodedArray)
-      const decodedMap = Codec.Decode.cborBytes(encodedMap)
+      const decodedArray = CBOR.fromCBORBytes(encodedArray)
+      const decodedMap = CBOR.fromCBORBytes(encodedMap)
 
       expect(decodedArray).toEqual(emptyArray)
       expect(decodedMap).toEqual(emptyMap)
@@ -261,8 +260,8 @@ describe("CBOR Implementation Tests", () => {
       testNumbers.forEach((num) => {
         if (Number.isInteger(num) && num >= Number.MIN_SAFE_INTEGER && num <= Number.MAX_SAFE_INTEGER) {
           const bigIntValue = BigInt(num)
-          const encoded = Codec.Encode.cborBytes(bigIntValue)
-          const decoded = Codec.Decode.cborBytes(encoded)
+          const encoded = CBOR.toCBORBytes(bigIntValue)
+          const decoded = CBOR.fromCBORBytes(encoded)
           expect(decoded).toBe(bigIntValue)
         }
       })
@@ -274,8 +273,8 @@ describe("CBOR Implementation Tests", () => {
       const testData = [42n, "deadbeef", [1n, 2n], new Map([[1n, "cafe"]]), new Uint8Array([0x42, 0xca, 0xfe])]
 
       testData.forEach((data) => {
-        const encoded1 = Codec.Encode.cborHex(data)
-        const encoded2 = Codec.Encode.cborHex(data)
+        const encoded1 = CBOR.toCBORHex(data)
+        const encoded2 = CBOR.toCBORHex(data)
         expect(encoded1).toBe(encoded2)
       })
     })
@@ -286,8 +285,8 @@ describe("CBOR Implementation Tests", () => {
       const emptyBytes = new Uint8Array([])
 
       ;[emptyList, emptyMap, emptyBytes].forEach((data) => {
-        const encoded = Codec.Encode.cborBytes(data)
-        const decoded = Codec.Decode.cborBytes(encoded)
+        const encoded = CBOR.toCBORBytes(data)
+        const decoded = CBOR.fromCBORBytes(encoded)
         expect(decoded).toEqual(data)
       })
     })
@@ -296,51 +295,51 @@ describe("CBOR Implementation Tests", () => {
   describe("CBOR Format Validation", () => {
     it("should handle invalid CBOR input gracefully", () => {
       expect(() => {
-        Codec.Decode.cborHex("not-valid-cbor-hex")
+        CBOR.fromCBORHex("not-valid-cbor-hex")
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("")
+        CBOR.fromCBORHex("")
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("d8")
+        CBOR.fromCBORHex("d8")
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("01afbb")
+        CBOR.fromCBORHex("01afbb")
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("9f010203ff")
+        CBOR.fromCBORHex("9f010203ff")
       }).not.toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("9f010203")
+        CBOR.fromCBORHex("9f010203")
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("bf6161016162") // map: { "a": 1, "b": ... } missing value and break
+        CBOR.fromCBORHex("bf6161016162") // map: { "a": 1, "b": ... } missing value and break
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("bf6161") // map: { "a": ??? } missing value and break
+        CBOR.fromCBORHex("bf6161") // map: { "a": ??? } missing value and break
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("5f420102") // missing break
+        CBOR.fromCBORHex("5f420102") // missing break
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("7f65737472656164") // missing break
+        CBOR.fromCBORHex("7f65737472656164") // missing break
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("9f9f0102ff") // outer array, inner array missing break
+        CBOR.fromCBORHex("9f9f0102ff") // outer array, inner array missing break
       }).toThrow()
 
       expect(() => {
-        Codec.Decode.cborHex("bf6161ff") // map: { "a": ??? } missing value
+        CBOR.fromCBORHex("bf6161ff") // map: { "a": ??? } missing value
       }).toThrow()
     })
   })
@@ -408,11 +407,11 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(integerTestCases)("should handle $description correctly", ({ decoded, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
         expect(decodedValue).toBe(decoded)
 
-        const reencoded = Codec.Encode.cborHex(decoded)
-        const redecoded = Codec.Decode.cborHex(reencoded)
+        const reencoded = CBOR.toCBORHex(decoded)
+        const redecoded = CBOR.fromCBORHex(reencoded)
         expect(redecoded).toBe(decoded)
       })
     })
@@ -425,11 +424,11 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(booleanNullTestCases)("should handle $description correctly", ({ decoded, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
         expect(decodedValue).toBe(decoded)
 
-        const reencoded = Codec.Encode.cborHex(decoded)
-        const redecoded = Codec.Decode.cborHex(reencoded)
+        const reencoded = CBOR.toCBORHex(decoded)
+        const redecoded = CBOR.fromCBORHex(reencoded)
         expect(redecoded).toBe(decoded)
       })
     })
@@ -466,11 +465,11 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(stringTestCases)("should handle $description correctly", ({ decoded, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
         expect(decodedValue).toBe(decoded)
 
-        const reencoded = Codec.Encode.cborHex(decoded)
-        const redecoded = Codec.Decode.cborHex(reencoded)
+        const reencoded = CBOR.toCBORHex(decoded)
+        const redecoded = CBOR.fromCBORHex(reencoded)
         expect(redecoded).toBe(decoded)
       })
     })
@@ -522,11 +521,11 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(arrayTestCases)("should handle $description correctly", ({ decoded, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
         expect(decodedValue).toEqual(decoded)
 
-        const reencoded = Codec.Encode.cborHex(decoded)
-        const redecoded = Codec.Decode.cborHex(reencoded)
+        const reencoded = CBOR.toCBORHex(decoded)
+        const redecoded = CBOR.fromCBORHex(reencoded)
         expect(redecoded).toEqual(decoded)
       })
     })
@@ -561,11 +560,11 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(objectTestCases)("should handle $description correctly", ({ decoded, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
         expect(decodedValue).toEqual(decoded)
 
-        const reencoded = Codec.Encode.cborHex(decoded)
-        const redecoded = Codec.Decode.cborHex(reencoded)
+        const reencoded = CBOR.toCBORHex(decoded)
+        const redecoded = CBOR.fromCBORHex(reencoded)
         expect(redecoded).toEqual(decoded)
       })
     })
@@ -585,11 +584,11 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(byteStringTestCases)("should handle $description correctly", ({ decoded, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
         expect(decodedValue).toEqual(decoded)
 
-        const reencoded = Codec.Encode.cborHex(decoded)
-        const redecoded = Codec.Decode.cborHex(reencoded)
+        const reencoded = CBOR.toCBORHex(decoded)
+        const redecoded = CBOR.fromCBORHex(reencoded)
         expect(redecoded).toEqual(decoded)
       })
     })
@@ -664,7 +663,7 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(floatTestCases)("should handle $description correctly", ({ decoded, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
         if (Object.is(decoded, -0.0)) {
           expect(Object.is(decodedValue, -0.0)).toBe(true)
         } else if (Object.is(decoded, 0.0)) {
@@ -673,8 +672,8 @@ describe("CBOR Implementation Tests", () => {
           expect(decodedValue).toBeCloseTo(decoded, 10)
         }
 
-        const reencoded = Codec.Encode.cborHex(decoded)
-        const redecoded = Codec.Decode.cborHex(reencoded)
+        const reencoded = CBOR.toCBORHex(decoded)
+        const redecoded = CBOR.fromCBORHex(reencoded)
         expect(typeof redecoded).toBe("number")
         if (Object.is(decoded, -0.0)) {
           expect(Object.is(redecoded, -0.0)).toBe(true)
@@ -703,7 +702,7 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(specialFloatTestCases)("should handle $description correctly", ({ description, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
 
         if (description.includes("Infinity") && !description.includes("-Infinity")) {
           expect(decodedValue).toBe(Infinity)
@@ -742,7 +741,7 @@ describe("CBOR Implementation Tests", () => {
 
       it.each(taggedTestCases)("should handle $description correctly", ({ hex }) => {
         expect(() => {
-          const decodedValue = Codec.Decode.cborHex(hex)
+          const decodedValue = CBOR.fromCBORHex(hex)
           expect(decodedValue).toBeDefined()
         }).not.toThrow()
       })
@@ -832,15 +831,15 @@ describe("CBOR Implementation Tests", () => {
       ]
 
       it.each(indefiniteTestCases)("should handle $description correctly", ({ decoded, hex }) => {
-        const decodedValue = Codec.Decode.cborHex(hex)
+        const decodedValue = CBOR.fromCBORHex(hex)
 
         if (decoded !== undefined) {
           expect(decodedValue).toEqual(decoded)
         }
 
         if (decoded !== undefined) {
-          const reencoded = Codec.Encode.cborHex(decoded)
-          const redecoded = Codec.Decode.cborHex(reencoded)
+          const reencoded = CBOR.toCBORHex(decoded)
+          const redecoded = CBOR.fromCBORHex(reencoded)
           expect(redecoded).toEqual(decoded)
         }
       })
@@ -856,7 +855,7 @@ describe("CBOR Implementation Tests", () => {
 
       it.each(simpleValueTestCases)("should handle $description correctly", ({ description, hex }) => {
         expect(() => {
-          const decodedValue = Codec.Decode.cborHex(hex)
+          const decodedValue = CBOR.fromCBORHex(hex)
           if (description === "Undefined value") {
             expect(decodedValue).toBeUndefined()
           } else {

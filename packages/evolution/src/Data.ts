@@ -1,8 +1,7 @@
-import { Data as EffectData, Effect, FastCheck, ParseResult, pipe, Schema } from "effect"
+import { Data as EffectData, Effect, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as _Codec from "./Codec.js"
 import * as Numeric from "./Numeric.js"
 
 /**
@@ -47,7 +46,7 @@ export class DataError extends EffectData.TaggedError("DataError")<{
  * @since 2.0.0
  * @category model
  */
-export type Data = Constr | MapList | List | Int | ByteArray
+export type Data = Constr | Map | List | Int | ByteArray
 
 /**
  * Constr type for constructor alternatives based on Conway CDDL specification
@@ -77,7 +76,7 @@ export type Data = Constr | MapList | List | Int | ByteArray
 //   readonly fields: readonly Data[];
 // }
 
-export type MapList = Map<Data, Data>
+export type Map = globalThis.Map<Data, Data>
 
 /**
  * PlutusList type for plutus data lists
@@ -99,8 +98,16 @@ export type List = ReadonlyArray<Data>
 //   fields: Schema.Array(Schema.suspend((): Schema.Schema<Data> => DataSchema)),
 // });
 export class Constr extends Schema.Class<Constr>("Constr")({
-  index: Numeric.Uint64Schema,
-  fields: Schema.Array(Schema.suspend((): Schema.Schema<Data> => DataSchema))
+  index: Numeric.Uint64Schema.annotations({
+    identifier: "Data.Constr.Index",
+    title: "Constructor Index",
+    description: "The index of the constructor, must be a non-negative integer"
+  }),
+  fields: Schema.Array(Schema.suspend((): Schema.Schema<Data> => DataSchema)).annotations({
+    identifier: "Data.Constr.Fields",
+    title: "Fields of Constr",
+    description: "A list of PlutusData fields for the constructor"
+  })
 }) {}
 
 /**
@@ -111,10 +118,20 @@ export class Constr extends Schema.Class<Constr>("Constr")({
  * @since 2.0.0
  */
 export const MapSchema = Schema.MapFromSelf({
-  key: Schema.suspend((): Schema.Schema<Data> => DataSchema),
-  value: Schema.suspend((): Schema.Schema<Data> => DataSchema)
+  key: Schema.suspend((): Schema.Schema<Data> => DataSchema).annotations({
+    identifier: "Data.Map.Key",
+    title: "Map Key",
+    description: "The key of the PlutusMap, must be a PlutusData type"
+  }),
+  value: Schema.suspend((): Schema.Schema<Data> => DataSchema).annotations({
+    identifier: "Data.Map.Value",
+    title: "Map Value",
+    description: "The value of the PlutusMap, must be a PlutusData type"
+  })
 }).annotations({
-  identifier: "Data.Map"
+  identifier: "Data.Map",
+  title: "PlutusMap",
+  description: "A map of PlutusData key-value pairs"
 })
 
 /**
@@ -124,7 +141,9 @@ export const MapSchema = Schema.MapFromSelf({
  *
  * @since 2.0.0
  */
-export const ListSchema = Schema.Array(Schema.suspend((): Schema.Schema<Data> => DataSchema))
+export const ListSchema = Schema.Array(Schema.suspend((): Schema.Schema<Data> => DataSchema)).annotations({
+  identifier: "Data.List"
+})
 
 /**
  * Schema for PlutusBigInt data type
@@ -159,10 +178,10 @@ export type Int = typeof IntSchema.Type
  *
  * @since 2.0.0
  */
-export const BytesSchema = Bytes.HexLenientSchema.annotations({
-  identifier: "Data.Bytes"
+export const ByteArray = Bytes.HexLenientSchema.annotations({
+  identifier: "Data.ByteArray"
 })
-export type ByteArray = typeof BytesSchema.Type
+export type ByteArray = typeof ByteArray.Type
 
 /**
  * Combined schema for PlutusData type
@@ -176,7 +195,7 @@ export const DataSchema: Schema.Schema<Data> = Schema.Union(
   Schema.typeSchema(MapSchema),
   ListSchema,
   Schema.typeSchema(IntSchema),
-  BytesSchema
+  ByteArray
 ).annotations({
   identifier: "Data"
 })
@@ -227,7 +246,7 @@ export const isInt = Schema.is(IntSchema)
  *
  * @since 2.0.0
  */
-export const isBytes = Schema.is(BytesSchema)
+export const isBytes = Schema.is(ByteArray)
 
 /**
  * Creates a constructor with the specified index and data
@@ -235,11 +254,12 @@ export const isBytes = Schema.is(BytesSchema)
  * @since 2.0.0
  * @category constructors
  */
-export const constr = (index: bigint, data: Array<Data>): Constr =>
-  new Constr({
-    index,
-    fields: data
-  })
+export const constr = (index: bigint, fields: Array<Data>): Constr => Schema.decodeSync(Constr)({ index, fields })
+
+// new Constr({
+//   index: Numeric.Uint64Make(index),
+//   fields: data
+// })
 
 /**
  * Creates a Plutus map from key-value pairs
@@ -247,8 +267,8 @@ export const constr = (index: bigint, data: Array<Data>): Constr =>
  * @since 2.0.0
  * @category constructors
  */
-export const map = (entries: Array<{ key: Data; value: Data }>): MapList =>
-  new Map(entries.map(({ key, value }) => [key, value]))
+export const map = (entries: Array<[key: Data, value: Data]>) =>
+  Schema.decodeSync(MapSchema)(new globalThis.Map(entries))
 
 /**
  * Creates a Plutus list from items
@@ -256,7 +276,7 @@ export const map = (entries: Array<{ key: Data; value: Data }>): MapList =>
  * @since 2.0.0
  * @category constructors
  */
-export const list = (list: Array<Data>): List => list
+export const list = (list: Array<Data>): List => Schema.decodeSync(ListSchema)(list)
 
 /**
  * Creates Plutus big integer
@@ -264,7 +284,7 @@ export const list = (list: Array<Data>): List => list
  * @since 2.0.0
  * @category constructors
  */
-export const int = (integer: bigint): Int => integer
+export const int = (integer: bigint): Int => Schema.decodeSync(IntSchema)(integer)
 
 /**
  * Creates Plutus bounded bytes from hex string
@@ -272,7 +292,7 @@ export const int = (integer: bigint): Int => integer
  * @since 2.0.0
  * @category constructors
  */
-export const bytearray = (bytes: string): ByteArray => bytes
+export const bytearray = (bytes: string): ByteArray => Schema.decodeSync(ByteArray)(bytes)
 
 /**
  * Pattern matching helper for Constr types
@@ -338,19 +358,19 @@ export const matchData = <T>(
  *
  * @since 2.0.0
  */
-export const genPlutusData = (depth: number = 3): FastCheck.Arbitrary<Data> => {
+export const arbitraryPlutusData = (depth: number = 3): FastCheck.Arbitrary<Data> => {
   if (depth <= 0) {
     // Base cases: PlutusBigInt or PlutusBytes
-    return FastCheck.oneof(genPlutusBigInt(), genPlutusBytes())
+    return FastCheck.oneof(arbitraryPlutusBigInt(), arbitraryPlutusBytes())
   }
 
   // Recursive cases with decreasing depth
   return FastCheck.oneof(
-    genPlutusBigInt(),
-    genPlutusBytes(),
-    genConstr(depth - 1),
-    genPlutusList(depth - 1),
-    genPlutusMap(depth - 1)
+    arbitraryPlutusBigInt(),
+    arbitraryPlutusBytes(),
+    arbitraryConstr(depth - 1),
+    arbitraryPlutusList(depth - 1),
+    arbitraryPlutusMap(depth - 1)
   )
 }
 
@@ -361,11 +381,11 @@ export const genPlutusData = (depth: number = 3): FastCheck.Arbitrary<Data> => {
  *
  * @since 2.0.0
  */
-export const genPlutusBytes = (): FastCheck.Arbitrary<ByteArray> =>
+export const arbitraryPlutusBytes = (): FastCheck.Arbitrary<ByteArray> =>
   FastCheck.uint8Array({
     minLength: 0, // Allow empty arrays (valid for PlutusBytes)
     maxLength: 32 // Max 32 bytes
-  }).map((bytes) => bytearray(Bytes.Codec.Decode.bytesLenient(bytes)))
+  }).map((bytes) => bytearray(Schema.decodeSync(Bytes.FromBytesLenient)(bytes)))
 
 /**
  * Creates an arbitrary that generates PlutusBigInt values
@@ -374,7 +394,7 @@ export const genPlutusBytes = (): FastCheck.Arbitrary<ByteArray> =>
  *
  * @since 2.0.0
  */
-export const genPlutusBigInt = (): FastCheck.Arbitrary<Int> => FastCheck.bigInt().map((value) => int(value))
+export const arbitraryPlutusBigInt = (): FastCheck.Arbitrary<Int> => FastCheck.bigInt().map((value) => int(value))
 
 /**
  * Creates an arbitrary that generates PlutusList values
@@ -383,8 +403,8 @@ export const genPlutusBigInt = (): FastCheck.Arbitrary<Int> => FastCheck.bigInt(
  *
  * @since 2.0.0
  */
-export const genPlutusList = (depth: number): FastCheck.Arbitrary<List> =>
-  FastCheck.array(genPlutusData(depth), {
+export const arbitraryPlutusList = (depth: number): FastCheck.Arbitrary<List> =>
+  FastCheck.array(arbitraryPlutusData(depth), {
     minLength: 0,
     maxLength: 5
   }).map((value) => list(value))
@@ -396,10 +416,10 @@ export const genPlutusList = (depth: number): FastCheck.Arbitrary<List> =>
  *
  * @since 2.0.0
  */
-export const genConstr = (depth: number): FastCheck.Arbitrary<Constr> =>
+export const arbitraryConstr = (depth: number): FastCheck.Arbitrary<Constr> =>
   FastCheck.tuple(
     FastCheck.bigInt({ min: 0n, max: 2n ** 64n - 1n }),
-    FastCheck.array(genPlutusData(depth), {
+    FastCheck.array(arbitraryPlutusData(depth), {
       minLength: 0,
       maxLength: 5
     })
@@ -416,10 +436,10 @@ export const genConstr = (depth: number): FastCheck.Arbitrary<Constr> =>
  *
  * @since 2.0.0
  */
-export const genPlutusMap = (depth: number): FastCheck.Arbitrary<MapList> => {
+export const arbitraryPlutusMap = (depth: number): FastCheck.Arbitrary<Map> => {
   // Helper to create key-value pairs with unique keys
   const uniqueKeyValuePairs = <T extends Data>(keyGen: FastCheck.Arbitrary<T>, maxSize: number) =>
-    FastCheck.uniqueArray(FastCheck.tuple(keyGen, genPlutusData(depth > 0 ? depth - 1 : 0)), {
+    FastCheck.uniqueArray(FastCheck.tuple(keyGen, arbitraryPlutusData(depth > 0 ? depth - 1 : 0)), {
       minLength: 0,
       maxLength: maxSize * 2, // Generate more than needed to increase chance of unique keys
       selector: (pair) => {
@@ -428,50 +448,60 @@ export const genPlutusMap = (depth: number): FastCheck.Arbitrary<MapList> => {
         const keyStr = typeof pair[0] === "bigint" ? String(pair[0]) : JSON.stringify(pair[0])
         return keyStr
       }
-    }).map((pairs) => pairs.map(([key, value]) => ({ key, value })))
+    })
 
   // PlutusBigInt keys (more frequent)
-  const bigIntPairs = uniqueKeyValuePairs(genPlutusBigInt(), 3)
+  const bigIntPairs = uniqueKeyValuePairs(arbitraryPlutusBigInt(), 3)
 
   // PlutusBytes keys (medium frequency)
-  const bytesPairs = uniqueKeyValuePairs(genPlutusBytes(), 3)
+  const bytesPairs = uniqueKeyValuePairs(arbitraryPlutusBytes(), 3)
 
   // Complex keys (less frequent)
-  const complexPairs = uniqueKeyValuePairs(genPlutusData(depth > 1 ? depth - 2 : 0), 2)
+  const complexPairs = uniqueKeyValuePairs(arbitraryPlutusData(depth > 1 ? depth - 2 : 0), 2)
 
   return FastCheck.oneof(bigIntPairs, bytesPairs, complexPairs).map((pairs) => map(pairs))
 }
 
 /**
- * FastCheck generators for PlutusData types
+ * FastCheck arbitrary for PlutusData types
  *
  * @since 2.0.0
  * @category generators
  */
-export const generator = genPlutusData(3)
+export const arbitrary = arbitraryPlutusData(3)
+
+// ============================================================================
+// Transformations
+// ============================================================================
 
 /**
- * CBOR value representation for PlutusData
- * This represents the intermediate CBOR structure that corresponds to PlutusData
+ * Default CBOR options for Data encoding/decoding
  *
  * @since 2.0.0
- * @category model
+ * @category constants
  */
+export const DEFAULT_CBOR_OPTIONS = CBOR.CML_DATA_DEFAULT_OPTIONS
 
-export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  Schema.transformOrFail(Schema.Uint8ArrayFromSelf, DataSchema, {
-    strict: true,
-    encode: (toI) =>
-      pipe(plutusDataToCBORValue(toI), (cborValue) => ParseResult.encode(CBOR.FromBytes(options))(cborValue)),
-    decode: (fromI) => pipe(ParseResult.decode(CBOR.FromBytes(options))(fromI), Effect.map(cborValueToPlutusData))
-  }).annotations({
-    identifier: "Data.FromCBORBytes"
-  })
+/**
+ * Convert a big-endian byte array to a positive bigint
+ * Used for CBOR tag 2/3 decoding
+ */
+const bytesToBigint = (bytes: Uint8Array): bigint => {
+  if (bytes.length === 0) {
+    return 0n
+  }
 
-export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.DEFAULT_OPTIONS) =>
-  Schema.compose(Bytes.FromHex, FromCBORBytes(options)).annotations({
-    identifier: "Data.FromCBORHex"
-  })
+  let result = 0n
+  for (let i = 0; i < bytes.length; i++) {
+    result = (result << 8n) | BigInt(bytes[i])
+  }
+
+  return result
+}
+
+// ============================================================================
+// Combinators
+// ============================================================================
 
 /**
  * Convert PlutusData to CBORValue
@@ -498,7 +528,7 @@ export const plutusDataToCBORValue = (data: Data): CBOR.CBOR => {
       return value
     },
     Bytes: (bytes): CBOR.CBOR => {
-      return Bytes.Codec.Encode.bytesLenient(bytes)
+      return Schema.encodeSync(Bytes.FromBytesLenient)(bytes)
     },
     Constr: (constr): CBOR.CBOR => {
       // PlutusData Constr -> CBOR tags based on index
@@ -507,19 +537,19 @@ export const plutusDataToCBORValue = (data: Data): CBOR.CBOR => {
 
       if (constr.index >= 0n && constr.index <= 6n) {
         // Direct encoding for constructor indices 0-6 (tags 121-127)
-        return new CBOR.Tag({
+        return CBOR.Tag.make({
           tag: Number(121n + constr.index),
           value: fieldsArray
         })
       } else if (constr.index >= 7n && constr.index <= 127n) {
         // Alternative encoding for constructor indices 7-127 (tag 1280+index-7)
-        return new CBOR.Tag({
+        return CBOR.Tag.make({
           tag: Number(1280n + constr.index - 7n),
           value: fieldsArray
         })
       } else {
         // General constructor encoding for any uint value (tag 102)
-        return new CBOR.Tag({
+        return CBOR.Tag.make({
           tag: 102,
           value: [constr.index, fieldsArray]
         })
@@ -546,7 +576,7 @@ export const cborValueToPlutusData = (cborValue: CBOR.CBOR): Data => {
     if (cborValue.length === 0) {
       return ""
     }
-    return Bytes.Codec.Decode.bytes(cborValue)
+    return Schema.decodeSync(Bytes.FromBytes)(cborValue)
   }
 
   // Handle tagged values
@@ -562,7 +592,7 @@ export const cborValueToPlutusData = (cborValue: CBOR.CBOR): Data => {
         })
       }
       const fields = value.map(cborValueToPlutusData)
-      return new Constr({ index: BigInt(tag - 121), fields })
+      return new Constr({ index: Numeric.Uint64Make(BigInt(tag - 121)), fields })
     }
 
     // Handle alternative constructor tags (1280-1400 for indices 7-127)
@@ -573,7 +603,7 @@ export const cborValueToPlutusData = (cborValue: CBOR.CBOR): Data => {
         })
       }
       const fields = value.map(cborValueToPlutusData)
-      return new Constr({ index: BigInt(tag - 1280 + 7), fields })
+      return new Constr({ index: Numeric.Uint64Make(BigInt(tag - 1280 + 7)), fields })
     }
 
     // Handle general constructor tag (102)
@@ -602,7 +632,7 @@ export const cborValueToPlutusData = (cborValue: CBOR.CBOR): Data => {
         }
 
         const fields = fieldsValue.map(cborValueToPlutusData)
-        return new Constr({ index: indexValue, fields })
+        return new Constr({ index: Numeric.Uint64Make(indexValue), fields })
       }
     }
 
@@ -654,76 +684,419 @@ export const cborValueToPlutusData = (cborValue: CBOR.CBOR): Data => {
   })
 }
 
+export const CDDLSchema = CBOR.CBORSchema
+
 /**
- * Convert a big-endian byte array to a positive bigint
- * Used for CBOR tag 2/3 decoding
+ * CDDL schema for PlutusData following the Conway specification.
+ *
+ * ```
+ * plutus_data =
+ *   constr<plutus_data>
+ *   / {* plutus_data => plutus_data}
+ *   / [* plutus_data]
+ *   / big_int
+ *   / bounded_bytes
+ *
+ * constr<a0> =
+ *   #6.121([* a0])    // index 0
+ *   / #6.122([* a0])  // index 1
+ *   / #6.123([* a0])  // index 2
+ *   / #6.124([* a0])  // index 3
+ *   / #6.125([* a0])  // index 4
+ *   / #6.126([* a0])  // index 5
+ *   / #6.127([* a0])  // index 6
+ *   / #6.102([uint, [* a0]])  // general constructor
+ *
+ * big_int = int / big_uint / big_nint
+ * big_uint = #6.2(bounded_bytes)
+ * big_nint = #6.3(bounded_bytes)
+ * ```
+ *
+ * This transforms between CBOR values and PlutusData using the existing
+ * plutusDataToCBORValue and cborValueToPlutusData functions.
+ *
+ * @since 2.0.0
+ * @category schemas
  */
-const bytesToBigint = (bytes: Uint8Array): bigint => {
-  if (bytes.length === 0) {
-    return 0n
-  }
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, DataSchema, {
+  strict: true,
+  encode: (_, __, ___, data) => Effect.succeed(plutusDataToCBORValue(data)),
+  decode: (_, __, ___, cborValue) =>
+    Effect.try({
+      try: () => cborValueToPlutusData(cborValue),
+      catch: (error) => new ParseResult.Type(DataSchema.ast, cborValue, String(error))
+    })
+})
 
-  let result = 0n
-  for (let i = 0; i < bytes.length; i++) {
-    result = (result << 8n) | BigInt(bytes[i])
-  }
+/**
+ * CBOR bytes transformation schema for PlutusData using CDDL.
+ * Transforms between CBOR bytes and Data using CDDL encoding.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DATA_DEFAULT_OPTIONS) =>
+  Schema.compose(
+    CBOR.FromBytes(options), // Uint8Array → CBOR
+    FromCDDL // CBOR → Data
+  ).annotations({
+    identifier: "Data.FromCBORBytes",
+    title: "Data from CBOR Bytes using CDDL",
+    description: "Transforms CBOR bytes to Data using CDDL encoding"
+  })
 
-  return result
+/**
+ * CBOR hex transformation schema for PlutusData using CDDL.
+ * Transforms between CBOR hex string and Data using CDDL encoding.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DATA_DEFAULT_OPTIONS) =>
+  Schema.compose(
+    Bytes.FromHex, // string → Uint8Array
+    FromCBORBytes(options) // Uint8Array → Data
+  ).annotations({
+    identifier: "Data.FromCBORHex",
+    title: "Data from CBOR Hex using CDDL",
+    description: "Transforms CBOR hex string to Data using CDDL encoding"
+  })
+
+// ============================================================================
+// Either Namespace
+// ============================================================================
+
+/**
+ * Either-based variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category either
+ */
+export namespace Either {
+  /**
+   * Encode PlutusData to CBOR bytes with Either error handling
+   *
+   * @since 2.0.0
+   * @category transformation
+   */
+  export const toCBORBytes = (data: Data, options: CBOR.CodecOptions = DEFAULT_CBOR_OPTIONS) =>
+    E.mapLeft(
+      Schema.encodeEither(FromCBORBytes(options))(data),
+      (cause) =>
+        new DataError({
+          message: "Failed to encode to CBOR bytes",
+          cause
+        })
+    )
+
+  /**
+   * Encode PlutusData to CBOR hex string with Either error handling
+   *
+   * @since 2.0.0
+   * @category transformation
+   */
+  export const toCBORHex = (data: Data, options: CBOR.CodecOptions = DEFAULT_CBOR_OPTIONS) =>
+    E.mapLeft(
+      Schema.encodeEither(FromCBORHex(options))(data),
+      (cause) =>
+        new DataError({
+          message: "Failed to encode to CBOR hex",
+          cause
+        })
+    )
+
+  /**
+   * Decode PlutusData from CBOR bytes with Either error handling
+   *
+   * @since 2.0.0
+   * @category transformation
+   */
+  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = DEFAULT_CBOR_OPTIONS) =>
+    E.mapLeft(
+      Schema.decodeEither(FromCBORBytes(options))(bytes),
+      (cause) =>
+        new DataError({
+          message: "Failed to decode CBOR bytes",
+          cause
+        })
+    )
+
+  /**
+   * Decode PlutusData from CBOR hex string with Effect error handling
+   *
+   * @since 2.0.0
+   * @category transformation
+   */
+  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = DEFAULT_CBOR_OPTIONS) =>
+    E.mapLeft(
+      Schema.decodeEither(FromCBORHex(options))(hex),
+      (cause) => new DataError({ message: "Failed to decode CBOR hex", cause })
+    )
+
+  /**
+   * Transform data to Data using a schema with Either error handling
+   *
+   * @since 2.0.0
+   * @category transformation
+   */
+  export const toData =
+    <A>(schema: Schema.Schema<A, Data>) =>
+    (data: A) =>
+      E.mapLeft(
+        Schema.encodeEither(schema)(data),
+        (cause) =>
+          new DataError({
+            message: "Failed to encode to Data",
+            cause
+          })
+      )
+
+  /**
+   * Transform Data back from a schema with Either error handling
+   *
+   * @since 2.0.0
+   * @category transformation
+   */
+  export const fromData =
+    <A>(schema: Schema.Schema<A, Data>) =>
+    (data: Data) =>
+      E.mapLeft(
+        Schema.decodeEither(schema)(data),
+        (cause) =>
+          new DataError({
+            message: "Failed to decode from Data",
+            cause
+          })
+      )
+
+  /**
+   * Create a schema that transforms from a custom type to Data and provides CBOR encoding
+   *
+   * @since 2.0.0
+   * @category combinators
+   */
+  export const withSchema = <A, I extends Data>(
+    schema: Schema.Schema<A, I>,
+    options: CBOR.CodecOptions = DEFAULT_CBOR_OPTIONS
+  ) => {
+    return {
+      toData: (A: A) => E.mapLeft(Schema.encodeEither(schema)(A), (error) => new DataError({ cause: error })),
+      fromData: (data: Data) =>
+        E.mapLeft(Schema.decodeEither(schema)(data as I), (error) => new DataError({ cause: error })),
+      toCBORHex: (A: A) =>
+        E.mapLeft(
+          Schema.encodeEither(FromCBORHex(options))(Schema.encodeSync(schema)(A) as Data),
+          (error) => new DataError({ cause: error })
+        ),
+      toCBORBytes: (A: A) =>
+        E.mapLeft(
+          Schema.encodeEither(FromCBORBytes(options))(Schema.encodeSync(schema)(A) as Data),
+          (error) => new DataError({ cause: error })
+        ),
+      fromCBORHex: (hex: string) =>
+        E.mapLeft(Schema.decodeEither(FromCBORHex(options))(hex), (error) => new DataError({ cause: error })).pipe(
+          E.flatMap((data) =>
+            Schema.decodeEither(schema)(data as I).pipe(E.mapLeft((error) => new DataError({ cause: error })))
+          )
+        ),
+      fromCBORBytes: (bytes: Uint8Array) =>
+        E.mapLeft(Schema.decodeEither(FromCBORBytes(options))(bytes), (error) => new DataError({ cause: error })).pipe(
+          E.flatMap((data) =>
+            Schema.decodeEither(schema)(data as I).pipe(E.mapLeft((error) => new DataError({ cause: error })))
+          )
+        )
+    }
+  }
 }
 
-// Function overloads for better type inference
-export function Codec<A, B extends Data>(params: {
-  schema: Schema.Schema<A, B>
-  options?: CBOR.CodecOptions
-}): ReturnType<
-  typeof _Codec.createEncoders<
-    {
-      toData: Schema.Schema<A, B>
-      cborHex: Schema.Schema<A, string>
-      cborBytes: Schema.Schema<A, Uint8Array>
-    },
-    typeof DataError
-  >
->
+/**
+ * Encode PlutusData to CBOR bytes
+ *
+ * @since 2.0.0
+ * @category transformation
+ */
+export const toCBORBytes = (data: Data, options?: CBOR.CodecOptions): Uint8Array => {
+  try {
+    return Schema.encodeSync(FromCBORBytes(options))(data)
+  } catch (cause) {
+    throw new DataError({
+      message: "Failed to encode to CBOR bytes",
+      cause
+    })
+  }
+}
 
-export function Codec(params?: { options?: CBOR.CodecOptions }): ReturnType<
-  typeof _Codec.createEncoders<
-    {
-      cborHex: Schema.Schema<Data, string>
-      cborBytes: Schema.Schema<Data, Uint8Array>
-    },
-    typeof DataError
-  >
->
+/**
+ * Encode PlutusData to CBOR hex string
+ *
+ * @since 2.0.0
+ * @category transformation
+ */
+export const toCBORHex = (data: Data, options?: CBOR.CodecOptions): string => {
+  try {
+    return Schema.encodeSync(FromCBORHex(options))(data)
+  } catch (cause) {
+    throw new DataError({
+      message: "Failed to encode to CBOR hex",
+      cause
+    })
+  }
+}
 
-export function Codec<A, B extends Data>(params?: { schema?: Schema.Schema<A, B>; options?: CBOR.CodecOptions }) {
-  const schema = params?.schema
-  const codecOptions = params?.options || CBOR.DEFAULT_OPTIONS
+/**
+ * Decode PlutusData from CBOR bytes
+ *
+ * @since 2.0.0
+ * @category transformation
+ */
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Data => {
+  try {
+    return Schema.decodeSync(FromCBORBytes(options))(bytes)
+  } catch (cause) {
+    throw new DataError({
+      message: "Failed to decode CBOR bytes",
+      cause
+    })
+  }
+}
 
-  const FromHex = FromCBORHex(codecOptions)
-  const FromBytes = FromCBORBytes(codecOptions)
+/**
+ * Decode PlutusData from CBOR hex string
+ *
+ * @since 2.0.0
+ * @category transformation
+ */
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Data => {
+  try {
+    return Schema.decodeSync(FromCBORHex(options))(hex)
+  } catch (cause) {
+    throw new DataError({
+      message: "Failed to decode CBOR hex",
+      cause
+    })
+  }
+}
 
-  if (schema) {
-    // With schema: type A -> Data B -> CBOR
-    const schemaToHex = Schema.compose(FromHex, schema)
-    const schemaToBytes = Schema.compose(FromBytes, schema)
-
-    return _Codec.createEncoders(
-      {
-        toData: schema,
-        cborHex: schemaToHex,
-        cborBytes: schemaToBytes
-      },
-      DataError
-    )
+/**
+ * Transform data to Data using a schema
+ *
+ * @since 2.0.0
+ * @category transformation
+ */
+export const toData =
+  <A>(schema: Schema.Schema<A, Data>) =>
+  (data: A): Data => {
+    try {
+      return Schema.encodeSync(schema)(data)
+    } catch (cause) {
+      throw new DataError({
+        message: "Failed to encode to Data",
+        cause
+      })
+    }
   }
 
-  // Without schema: Data -> CBOR directly
-  return _Codec.createEncoders(
-    {
-      cborHex: FromHex,
-      cborBytes: FromBytes
+/**
+ * Transform Data back from a schema
+ *
+ * @since 2.0.0
+ * @category transformation
+ */
+export const fromData =
+  <A>(schema: Schema.Schema<A, Data>) =>
+  (data: Data): A => {
+    try {
+      return Schema.decodeSync(schema)(data)
+    } catch (cause) {
+      throw new DataError({
+        message: "Failed to decode from Data",
+        cause
+      })
+    }
+  }
+
+/**
+ * Create a schema that transforms from a custom type to Data and provides CBOR encoding
+ *
+ * @since 2.0.0
+ * @category combinators
+ */
+export const withSchema = <A, I extends Data>(schema: Schema.Schema<A, I>, options?: CBOR.CodecOptions) => {
+  return {
+    toData: (value: A): Data => {
+      try {
+        return Schema.encodeSync(schema)(value) as Data
+      } catch (cause) {
+        throw new DataError({
+          message: "Failed to encode to Data",
+          cause
+        })
+      }
     },
-    DataError
-  )
+    fromData: (data: Data): A => {
+      try {
+        return Schema.decodeSync(schema)(data as I)
+      } catch (cause) {
+        throw new DataError({
+          message: "Failed to decode from Data",
+          cause
+        })
+      }
+    },
+    toCBORHex: (value: A): string => {
+      try {
+        const data = Schema.encodeSync(schema)(value) as Data
+        return Schema.encodeSync(FromCBORHex(options))(data)
+      } catch (cause) {
+        throw new DataError({
+          message: "Failed to encode to CBOR hex",
+          cause
+        })
+      }
+    },
+    toCBORBytes: (value: A): Uint8Array => {
+      try {
+        const data = Schema.encodeSync(schema)(value) as Data
+        return Schema.encodeSync(FromCBORBytes(options))(data)
+      } catch (cause) {
+        throw new DataError({
+          message: "Failed to encode to CBOR bytes",
+          cause
+        })
+      }
+    },
+    fromCBORHex: (hex: string): A => {
+      try {
+        const data = Schema.decodeSync(FromCBORHex(options))(hex)
+        return Schema.decodeSync(schema)(data as I)
+      } catch (cause) {
+        throw new DataError({
+          message: "Failed to decode from CBOR hex",
+          cause
+        })
+      }
+    },
+    fromCBORBytes: (bytes: Uint8Array): A => {
+      try {
+        const data = Schema.decodeSync(FromCBORBytes(options))(bytes)
+        return Schema.decodeSync(schema)(data as I)
+      } catch (cause) {
+        throw new DataError({
+          message: "Failed to decode from CBOR bytes",
+          cause
+        })
+      }
+    }
+  }
+}
+
+/**
+ * Create a codec for a schema that transforms from a custom type to Data and provides CBOR encoding
+ * This is an alias for withSchema for backward compatibility
+ *
+ * @since 2.0.0
+ * @category combinators
+ */
+export const Codec = <A, I extends Data>(config: { schema: Schema.Schema<A, I>; options?: CBOR.CodecOptions }) => {
+  return withSchema(config.schema, config.options)
 }

@@ -1,6 +1,5 @@
-import { Data, FastCheck, pipe, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, pipe, Schema } from "effect"
 
-import { createEncoders } from "./Codec.js"
 import * as Hash28 from "./Hash28.js"
 
 /**
@@ -42,6 +41,14 @@ export const FromHex = Schema.compose(
 })
 
 /**
+ * Smart constructor for PoolKeyHash that validates and applies branding.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = PoolKeyHash.make
+
+/**
  * Check if two PoolKeyHash instances are equal.
  *
  * @since 2.0.0
@@ -50,26 +57,108 @@ export const FromHex = Schema.compose(
 export const equals = (a: PoolKeyHash, b: PoolKeyHash): boolean => a === b
 
 /**
- * Generate a random PoolKeyHash.
+ * FastCheck arbitrary for generating random PoolKeyHash instances.
  *
  * @since 2.0.0
- * @category generators
+ * @category arbitrary
  */
-export const generator = FastCheck.uint8Array({
-  minLength: Hash28.HASH28_BYTES_LENGTH,
-  maxLength: Hash28.HASH28_BYTES_LENGTH
-}).map((bytes) => Codec.Decode.bytes(bytes))
+export const arbitrary = FastCheck.uint8Array({
+  minLength: Hash28.BYTES_LENGTH,
+  maxLength: Hash28.BYTES_LENGTH
+}).map((bytes) => Eff.runSync(Effect.fromBytes(bytes)))
+
+// ============================================================================
+// Root Functions
+// ============================================================================
 
 /**
- * Codec utilities for PoolKeyHash encoding and decoding operations.
+ * Parse PoolKeyHash from raw bytes.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category parsing
  */
-export const Codec = createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  PoolKeyHashError
-)
+export const fromBytes = (bytes: Uint8Array): PoolKeyHash => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse PoolKeyHash from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): PoolKeyHash => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Encode PoolKeyHash to raw bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (poolKeyHash: PoolKeyHash): Uint8Array => Eff.runSync(Effect.toBytes(poolKeyHash))
+
+/**
+ * Encode PoolKeyHash to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (poolKeyHash: PoolKeyHash): string => poolKeyHash // Already a hex string
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse PoolKeyHash from raw bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<PoolKeyHash, PoolKeyHashError> =>
+    Eff.mapError(
+      Schema.decode(FromBytes)(bytes),
+      (cause) =>
+        new PoolKeyHashError({
+          message: "Failed to parse PoolKeyHash from bytes",
+          cause
+        })
+    )
+
+  /**
+   * Parse PoolKeyHash from hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): Eff.Effect<PoolKeyHash, PoolKeyHashError> =>
+    Eff.mapError(
+      Schema.decode(PoolKeyHash)(hex),
+      (cause) =>
+        new PoolKeyHashError({
+          message: "Failed to parse PoolKeyHash from hex",
+          cause
+        })
+    )
+
+  /**
+   * Encode PoolKeyHash to raw bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (poolKeyHash: PoolKeyHash): Eff.Effect<Uint8Array, PoolKeyHashError> =>
+    Eff.mapError(
+      Schema.encode(FromBytes)(poolKeyHash),
+      (cause) =>
+        new PoolKeyHashError({
+          message: "Failed to encode PoolKeyHash to bytes",
+          cause
+        })
+    )
+}

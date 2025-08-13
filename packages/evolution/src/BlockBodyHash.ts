@@ -1,7 +1,6 @@
-import { Data, FastCheck, pipe, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
-import { createEncoders } from "./Codec.js"
 
 /**
  * Error class for BlockBodyHash related operations.
@@ -22,7 +21,7 @@ export class BlockBodyHashError extends Data.TaggedError("BlockBodyHashError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const BlockBodyHash = pipe(Bytes32.HexSchema, Schema.brand("BlockBodyHash")).annotations({
+export const BlockBodyHash = Bytes32.HexSchema.pipe(Schema.brand("BlockBodyHash")).annotations({
   identifier: "BlockBodyHash"
 })
 
@@ -43,6 +42,14 @@ export const FromHex = Schema.compose(
 })
 
 /**
+ * Smart constructor for BlockBodyHash that validates and applies branding.
+ *
+ * @since 2.0.0
+ * @category constructors
+ */
+export const make = BlockBodyHash.make
+
+/**
  * Check if two BlockBodyHash instances are equal.
  *
  * @since 2.0.0
@@ -51,26 +58,136 @@ export const FromHex = Schema.compose(
 export const equals = (a: BlockBodyHash, b: BlockBodyHash): boolean => a === b
 
 /**
- * Generate a random BlockBodyHash.
+ * Check if the given value is a valid BlockBodyHash
  *
  * @since 2.0.0
- * @category generators
+ * @category predicates
  */
-export const generator = FastCheck.uint8Array({
-  minLength: Bytes32.Bytes32_BYTES_LENGTH,
-  maxLength: Bytes32.Bytes32_BYTES_LENGTH
-}).map((bytes) => Codec.Decode.bytes(bytes))
+export const isBlockBodyHash = Schema.is(BlockBodyHash)
 
 /**
- * Codec utilities for BlockBodyHash encoding and decoding operations.
+ * FastCheck arbitrary for generating random BlockBodyHash instances.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category arbitrary
  */
-export const Codec = createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  BlockBodyHashError
-)
+export const arbitrary = FastCheck.hexaString({
+  minLength: Bytes32.HEX_LENGTH,
+  maxLength: Bytes32.HEX_LENGTH
+}).map((hex) => hex as BlockBodyHash)
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse BlockBodyHash from bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array): BlockBodyHash => Eff.runSync(Effect.fromBytes(bytes))
+
+/**
+ * Parse BlockBodyHash from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): BlockBodyHash => Eff.runSync(Effect.fromHex(hex))
+
+/**
+ * Encode BlockBodyHash to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (blockBodyHash: BlockBodyHash): Uint8Array => Eff.runSync(Effect.toBytes(blockBodyHash))
+
+/**
+ * Encode BlockBodyHash to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (blockBodyHash: BlockBodyHash): string => Eff.runSync(Effect.toHex(blockBodyHash))
+
+// ============================================================================
+// Effect Namespace
+// ============================================================================
+
+/**
+ * Effect-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category effect
+ */
+export namespace Effect {
+  /**
+   * Parse BlockBodyHash from bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): Eff.Effect<BlockBodyHash, BlockBodyHashError> =>
+    Schema.decode(FromBytes)(bytes).pipe(
+      Eff.mapError(
+        (cause) =>
+          new BlockBodyHashError({
+            message: "Failed to parse BlockBodyHash from bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Parse BlockBodyHash from hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): Eff.Effect<BlockBodyHash, BlockBodyHashError> =>
+    Schema.decode(FromHex)(hex).pipe(
+      Eff.mapError(
+        (cause) =>
+          new BlockBodyHashError({
+            message: "Failed to parse BlockBodyHash from hex",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode BlockBodyHash to bytes with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (blockBodyHash: BlockBodyHash): Eff.Effect<Uint8Array, BlockBodyHashError> =>
+    Schema.encode(FromBytes)(blockBodyHash).pipe(
+      Eff.mapError(
+        (cause) =>
+          new BlockBodyHashError({
+            message: "Failed to encode BlockBodyHash to bytes",
+            cause
+          })
+      )
+    )
+
+  /**
+   * Encode BlockBodyHash to hex string with Effect error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (blockBodyHash: BlockBodyHash): Eff.Effect<string, BlockBodyHashError> =>
+    Schema.encode(FromHex)(blockBodyHash).pipe(
+      Eff.mapError(
+        (cause) =>
+          new BlockBodyHashError({
+            message: "Failed to encode BlockBodyHash to hex",
+            cause
+          })
+      )
+    )
+}

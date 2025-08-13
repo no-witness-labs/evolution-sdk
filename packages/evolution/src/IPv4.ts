@@ -1,7 +1,6 @@
-import { Data, FastCheck, pipe, Schema } from "effect"
+import { Data, Either as E, FastCheck, Schema } from "effect"
 
 import * as Bytes4 from "./Bytes4.js"
-import { createEncoders } from "./Codec.js"
 
 /**
  * Error class for IPv4 related operations.
@@ -21,7 +20,7 @@ export class IPv4Error extends Data.TaggedError("IPv4Error")<{
  * @since 2.0.0
  * @category schemas
  */
-export const IPv4 = pipe(Bytes4.HexSchema, Schema.brand("IPv4")).annotations({
+export const IPv4 = Bytes4.HexSchema.pipe(Schema.brand("IPv4")).annotations({
   identifier: "IPv4"
 })
 
@@ -50,26 +49,168 @@ export const FromHex = Schema.compose(
 export const equals = (a: IPv4, b: IPv4): boolean => a === b
 
 /**
- * Generate a random IPv4.
+ * Check if the given value is a valid IPv4
  *
  * @since 2.0.0
- * @category generators
+ * @category predicates
  */
-export const generator = FastCheck.uint8Array({
-  minLength: Bytes4.BYTES_LENGTH,
-  maxLength: Bytes4.BYTES_LENGTH
-}).map((bytes) => Codec.Decode.bytes(bytes))
+export const isIPv4 = Schema.is(IPv4)
 
 /**
- * Codec utilities for IPv4 encoding and decoding operations.
+ * FastCheck arbitrary for generating random IPv4 instances.
  *
  * @since 2.0.0
- * @category encoding/decoding
+ * @category arbitrary
  */
-export const Codec = createEncoders(
-  {
-    bytes: FromBytes,
-    hex: FromHex
-  },
-  IPv4Error
-)
+export const arbitrary = FastCheck.hexaString({
+  minLength: Bytes4.HEX_LENGTH,
+  maxLength: Bytes4.HEX_LENGTH
+}).map((hex) => hex as IPv4)
+
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse IPv4 from bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBytes = (bytes: Uint8Array): IPv4 => {
+  try {
+    return Schema.decodeSync(FromBytes)(bytes)
+  } catch (cause) {
+    throw new IPv4Error({
+      message: "Failed to parse IPv4 from bytes",
+      cause
+    })
+  }
+}
+
+/**
+ * Parse IPv4 from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = (hex: string): IPv4 => {
+  try {
+    return Schema.decodeSync(FromHex)(hex)
+  } catch (cause) {
+    throw new IPv4Error({
+      message: "Failed to parse IPv4 from hex",
+      cause
+    })
+  }
+}
+
+/**
+ * Encode IPv4 to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = (ipv4: IPv4): Uint8Array => {
+  try {
+    return Schema.encodeSync(FromBytes)(ipv4)
+  } catch (cause) {
+    throw new IPv4Error({
+      message: "Failed to encode IPv4 to bytes",
+      cause
+    })
+  }
+}
+
+/**
+ * Encode IPv4 to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = (ipv4: IPv4): string => {
+  try {
+    return Schema.encodeSync(FromHex)(ipv4)
+  } catch (cause) {
+    throw new IPv4Error({
+      message: "Failed to encode IPv4 to hex",
+      cause
+    })
+  }
+}
+
+// ============================================================================
+// Either Namespace
+// ============================================================================
+
+/**
+ * Either-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category either
+ */
+export namespace Either {
+  /**
+   * Parse IPv4 from bytes with Either error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBytes = (bytes: Uint8Array): E.Either<IPv4, IPv4Error> =>
+    E.mapLeft(
+      Schema.decodeEither(FromBytes)(bytes),
+      (cause) =>
+        new IPv4Error({
+          message: "Failed to parse IPv4 from bytes",
+          cause
+        })
+    )
+
+  /**
+   * Parse IPv4 from hex string with Either error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = (hex: string): E.Either<IPv4, IPv4Error> =>
+    E.mapLeft(
+      Schema.decodeEither(FromHex)(hex),
+      (cause) =>
+        new IPv4Error({
+          message: "Failed to parse IPv4 from hex",
+          cause
+        })
+    )
+
+  /**
+   * Encode IPv4 to bytes with Either error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBytes = (ipv4: IPv4): E.Either<Uint8Array, IPv4Error> =>
+    E.mapLeft(
+      Schema.encodeEither(FromBytes)(ipv4),
+      (cause) =>
+        new IPv4Error({
+          message: "Failed to encode IPv4 to bytes",
+          cause
+        })
+    )
+
+  /**
+   * Encode IPv4 to hex string with Either error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = (ipv4: IPv4): E.Either<string, IPv4Error> =>
+    E.mapLeft(
+      Schema.encodeEither(FromHex)(ipv4),
+      (cause) =>
+        new IPv4Error({
+          message: "Failed to encode IPv4 to hex",
+          cause
+        })
+    )
+}

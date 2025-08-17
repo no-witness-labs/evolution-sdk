@@ -2,6 +2,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as Numeric from "./Numeric.js"
 
 /**
@@ -114,59 +115,47 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
   })
 
 /**
- * Effect namespace for ProtocolVersion operations that can fail
+ * Either namespace for ProtocolVersion operations that can fail
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Convert CBOR bytes to ProtocolVersion using Effect
+   * Convert CBOR bytes to ProtocolVersion using Either
    *
    * @since 2.0.0
    * @category conversion
    */
   export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.decode(FromCBORBytes(options))(bytes),
-      (cause) => new ProtocolVersionError({ message: "Failed to decode from CBOR bytes", cause })
-    )
+    Function.makeDecodeEither(FromCBORBytes(options), ProtocolVersionError)(bytes)
 
   /**
-   * Convert CBOR hex string to ProtocolVersion using Effect
+   * Convert CBOR hex string to ProtocolVersion using Either
    *
    * @since 2.0.0
    * @category conversion
    */
   export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.decode(FromCBORHex(options))(hex),
-      (cause) => new ProtocolVersionError({ message: "Failed to decode from CBOR hex", cause })
-    )
+    Function.makeDecodeEither(FromCBORHex(options), ProtocolVersionError)(hex)
 
   /**
-   * Convert ProtocolVersion to CBOR bytes using Effect
+   * Convert ProtocolVersion to CBOR bytes using Either
    *
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORBytes = (version: ProtocolVersion, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.encode(FromCBORBytes(options))(version),
-      (cause) => new ProtocolVersionError({ message: "Failed to encode to CBOR bytes", cause })
-    )
+  export const toCBORBytes = (value: ProtocolVersion, options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORBytes(options), ProtocolVersionError)(value)
 
   /**
-   * Convert ProtocolVersion to CBOR hex string using Effect
+   * Convert ProtocolVersion to CBOR hex string using Either
    *
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORHex = (version: ProtocolVersion, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.encode(FromCBORHex(options))(version),
-      (cause) => new ProtocolVersionError({ message: "Failed to encode to CBOR hex", cause })
-    )
+  export const toCBORHex = (value: ProtocolVersion, options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORHex(options), ProtocolVersionError)(value)
 }
 
 /**
@@ -176,7 +165,7 @@ export namespace Effect {
  * @category conversion
  */
 export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): ProtocolVersion =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+  Function.makeDecodeSync(FromCBORBytes(options), ProtocolVersionError, "ProtocolVersion.fromCBORBytes")(bytes)
 
 /**
  * Convert CBOR hex string to ProtocolVersion (unsafe)
@@ -185,7 +174,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): P
  * @category conversion
  */
 export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): ProtocolVersion =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+  Function.makeDecodeSync(FromCBORHex(options), ProtocolVersionError, "ProtocolVersion.fromCBORHex")(hex)
 
 /**
  * Convert ProtocolVersion to CBOR bytes (unsafe)
@@ -193,8 +182,8 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): ProtocolV
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORBytes = (version: ProtocolVersion, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(version, options))
+export const toCBORBytes = (value: ProtocolVersion, options?: CBOR.CodecOptions): Uint8Array =>
+  Function.makeEncodeSync(FromCBORBytes(options), ProtocolVersionError, "ProtocolVersion.toCBORBytes")(value)
 
 /**
  * Convert ProtocolVersion to CBOR hex string (unsafe)
@@ -202,5 +191,5 @@ export const toCBORBytes = (version: ProtocolVersion, options?: CBOR.CodecOption
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORHex = (version: ProtocolVersion, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(version, options))
+export const toCBORHex = (value: ProtocolVersion, options?: CBOR.CodecOptions): string =>
+  Function.makeEncodeSync(FromCBORHex(options), ProtocolVersionError, "ProtocolVersion.toCBORHex")(value)

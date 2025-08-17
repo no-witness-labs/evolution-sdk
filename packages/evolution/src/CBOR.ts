@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, Either as E, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 
@@ -145,6 +145,18 @@ const DEFAULT_OPTIONS: CodecOptions = {
   useMinimalEncoding: true,
   mapsAsObjects: false
 } as const
+
+// Shared text codec singletons to avoid per-call allocations in hot paths
+const TEXT_ENCODER = new TextEncoder()
+const TEXT_DECODER = new TextDecoder("utf-8", { fatal: true })
+
+// Shared float encoding buffers to reduce allocations in hot paths
+const FLOAT32_BUF = new ArrayBuffer(4)
+const FLOAT32_VIEW = new DataView(FLOAT32_BUF)
+const FLOAT32_BYTES = new Uint8Array(FLOAT32_BUF)
+const FLOAT64_BUF = new ArrayBuffer(8)
+const FLOAT64_VIEW = new DataView(FLOAT64_BUF)
+const FLOAT64_BYTES = new Uint8Array(FLOAT64_BUF)
 
 /**
  * Type representing a CBOR value with simplified, non-tagged structure
@@ -570,7 +582,7 @@ const encodeBytes = (value: Uint8Array, options: CodecOptions): Eff.Effect<Uint8
 
 const encodeText = (value: string, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
   Eff.gen(function* () {
-    const utf8Bytes = new TextEncoder().encode(value)
+    const utf8Bytes = TEXT_ENCODER.encode(value)
     const length = utf8Bytes.length
     let headerBytes: Uint8Array
     const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
@@ -850,34 +862,30 @@ const encodeFloat = (value: number, options: CodecOptions): Eff.Effect<Uint8Arra
   Eff.succeed(
     (() => {
       if (Number.isNaN(value)) {
-        return new Uint8Array([0xf9, 0x7e, 0x00]) // Half-precision NaN
+        return new Uint8Array([0xf9, 0x7e, 0x00])
       } else if (value === Infinity) {
-        return new Uint8Array([0xf9, 0x7c, 0x00]) // Half-precision Infinity
+        return new Uint8Array([0xf9, 0x7c, 0x00])
       } else if (value === -Infinity) {
-        return new Uint8Array([0xf9, 0xfc, 0x00]) // Half-precision -Infinity
+        return new Uint8Array([0xf9, 0xfc, 0x00])
       } else {
-        // For canonical CBOR, use smallest representation that preserves the value
         if (options.mode === "canonical") {
-          // Try half precision first
           const half = encodeFloat16(value)
           if (decodeFloat16(half) === value) {
             return new Uint8Array([0xf9, (half >> 8) & 0xff, half & 0xff])
           }
-
-          // Try single precision
-          const buffer32 = new ArrayBuffer(4)
-          const view32 = new DataView(buffer32)
-          view32.setFloat32(0, value, false)
-          if (view32.getFloat32(0, false) === value) {
-            return new Uint8Array([0xfa, ...new Uint8Array(buffer32)])
+          FLOAT32_VIEW.setFloat32(0, value, false)
+          if (FLOAT32_VIEW.getFloat32(0, false) === value) {
+            const out = new Uint8Array(1 + 4)
+            out[0] = 0xfa
+            out.set(FLOAT32_BYTES, 1)
+            return out
           }
         }
-
-        // Encode as double-precision float
-        const buffer = new ArrayBuffer(8)
-        const view = new DataView(buffer)
-        view.setFloat64(0, value, false) // big-endian
-        return new Uint8Array([0xfb, ...new Uint8Array(buffer)])
+        FLOAT64_VIEW.setFloat64(0, value, false)
+        const out = new Uint8Array(1 + 8)
+        out[0] = 0xfb
+        out.set(FLOAT64_BYTES, 1)
+        return out
       }
     })()
   )
@@ -1087,7 +1095,7 @@ const decodeTextWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesC
         const chunkBytes = data.slice(offset + bytesRead, offset + bytesRead + chunkLength)
 
         try {
-          const chunkText = new TextDecoder("utf-8", { fatal: true }).decode(chunkBytes)
+          const chunkText = TEXT_DECODER.decode(chunkBytes)
           chunks.push(chunkText)
         } catch (error) {
           return yield* new CBORError({
@@ -1119,7 +1127,7 @@ const decodeTextWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesC
 
       const textBytes = data.slice(bytesRead, bytesRead + length)
       try {
-        const text = new TextDecoder("utf-8", { fatal: true }).decode(textBytes)
+        const text = TEXT_DECODER.decode(textBytes)
         return { item: text, bytesConsumed: bytesRead + length }
       } catch (error) {
         return yield* new CBORError({
@@ -1687,25 +1695,25 @@ export const FromBytes = (options: CodecOptions) =>
   Schema.transformOrFail(Schema.Uint8ArrayFromSelf, CBORValueSchema, {
     strict: true,
     decode: (fromA, _, ast) =>
-      Eff.mapError(
-        internalDecode(fromA, options),
-        (error) =>
+      E.try({
+        try: () => internalDecodeSync(fromA, options),
+        catch: (error) =>
           new ParseResult.Type(
             ast,
             fromA,
             `Failed to decode CBOR value: ${error instanceof CBORError ? error.message : String(error)}`
           )
-      ),
+      }),
     encode: (toA, _, ast) =>
-      Eff.mapError(
-        internalEncode(toA, options),
-        (error) =>
+      E.try({
+        try: () => internalEncodeSync(toA, options),
+        catch: (error) =>
           new ParseResult.Type(
             ast,
             toA,
             `Failed to encode CBOR value: ${error instanceof CBORError ? error.message : String(error)}`
           )
-      )
+      })
   })
 
 export const FromHex = (options: CodecOptions) => Schema.compose(Bytes.FromHex, FromBytes(options))
@@ -1783,6 +1791,51 @@ export namespace Effect {
 }
 
 // ============================================================================
+// Either-based API (Step 1)
+// Thin wrappers around existing Effect API using Either.try
+// ============================================================================
+
+export namespace Either {
+  /** Decode CBOR bytes to a CBOR value, returning Either */
+  export const fromCBORBytes = (
+    bytes: Uint8Array,
+    options: CodecOptions = CML_DEFAULT_OPTIONS
+  ): E.Either<CBOR, CBORError> =>
+    E.try({
+      try: () => internalDecodeSync(bytes, options),
+      catch: (e) => (e instanceof CBORError ? e : new CBORError({ message: String(e), cause: e }))
+    })
+
+  /** Decode CBOR hex string to a CBOR value, returning Either */
+  export const fromCBORHex = (hex: string, options: CodecOptions = CML_DEFAULT_OPTIONS): E.Either<CBOR, CBORError> =>
+    E.try({
+      try: () => {
+        if (!Bytes.isHex(hex)) throw new CBORError({ message: "Invalid hex input" })
+        const bytes = Bytes.fromHexUnsafe(hex)
+        return internalDecodeSync(bytes, options)
+      },
+      catch: (e) => (e instanceof CBORError ? e : new CBORError({ message: String(e), cause: e }))
+    })
+
+  /** Encode a CBOR value to bytes, returning Either */
+  export const toCBORBytes = (
+    value: CBOR,
+    options: CodecOptions = CML_DEFAULT_OPTIONS
+  ): E.Either<Uint8Array, CBORError> =>
+    E.try({
+      try: () => internalEncodeSync(value, options),
+      catch: (e) => (e instanceof CBORError ? e : new CBORError({ message: String(e), cause: e }))
+    })
+
+  /** Encode a CBOR value to hex string, returning Either */
+  export const toCBORHex = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS): E.Either<string, CBORError> =>
+    E.try({
+      try: () => Bytes.toHexUnsafe(internalEncodeSync(value, options)),
+      catch: (e) => (e instanceof CBORError ? e : new CBORError({ message: String(e), cause: e }))
+    })
+}
+
+// ============================================================================
 // Parsing Functions
 // ============================================================================
 
@@ -1792,8 +1845,8 @@ export namespace Effect {
  * @since 1.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CodecOptions): CBOR =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = (bytes: Uint8Array, options: CodecOptions = CML_DEFAULT_OPTIONS): CBOR =>
+  internalDecodeSync(bytes, options)
 
 /**
  * Parse a CBOR value from CBOR hex string.
@@ -1801,7 +1854,11 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CodecOptions): CBOR =
  * @since 1.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CodecOptions): CBOR => Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = (hex: string, options: CodecOptions = CML_DEFAULT_OPTIONS): CBOR => {
+  if (!Bytes.isHex(hex)) throw new CBORError({ message: "Invalid hex input" })
+  const bytes = Bytes.fromHexUnsafe(hex)
+  return internalDecodeSync(bytes, options)
+}
 
 // ============================================================================
 // Encoding Functions
@@ -1813,8 +1870,8 @@ export const fromCBORHex = (hex: string, options?: CodecOptions): CBOR => Eff.ru
  * @since 1.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: CBOR, options?: CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(value, options))
+export const toCBORBytes = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS): Uint8Array =>
+  internalEncodeSync(value, options)
 
 /**
  * Convert a CBOR value to CBOR hex string.
@@ -1822,4 +1879,1168 @@ export const toCBORBytes = (value: CBOR, options?: CodecOptions): Uint8Array =>
  * @since 1.0.0
  * @category encoding
  */
-export const toCBORHex = (value: CBOR, options?: CodecOptions): string => Eff.runSync(Effect.toCBORHex(value, options))
+export const toCBORHex = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS): string =>
+  Bytes.toHexUnsafe(internalEncodeSync(value, options))
+
+// ============================================================================
+// Sync core (Step 2): fast, exception-based encode/decode with no Effect
+// These functions throw CBORError on failure and are used by Either and direct APIs.
+// ============================================================================
+
+// Encode (sync)
+export const internalEncodeSync = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS): Uint8Array => {
+  if (typeof value === "bigint") {
+    if (value >= 0n) return encodeUintSync(value, options)
+    return encodeNintSync(value, options)
+  }
+  if (value instanceof Uint8Array) return encodeBytesSync(value, options)
+  if (typeof value === "string") return encodeTextSync(value, options)
+  if (Array.isArray(value)) return encodeArraySync(value, options)
+  if (value instanceof Map) return encodeMapSync(value, options)
+  if (isTag(value)) return encodeTagSync(value.tag, value.value, options)
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !(value instanceof Map) &&
+    !(value instanceof Uint8Array) &&
+    !(value instanceof Tag)
+  ) {
+    return encodeRecordSync(value as { readonly [key: string | number]: CBOR }, options)
+  }
+  if (typeof value === "boolean" || value === null || value === undefined) return encodeSimpleSync(value)
+  if (typeof value === "number") return encodeFloatSync(value, options)
+  throw new CBORError({ message: `Unsupported CBOR value type: ${typeof value}` })
+}
+
+const encodeUintSync = (value: bigint, options: CodecOptions): Uint8Array => {
+  if (value < 0n) throw new CBORError({ message: `Cannot encode negative value ${value} as unsigned integer` })
+  const maxUint64 = 18446744073709551615n
+  if (value > maxUint64) {
+    const bytes = bigintToBytes(value)
+    return encodeTagSync(2, bytes, options)
+  }
+  const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
+
+  // Fast path for very small integers using pre-allocated arrays
+  if (value < 24n) {
+    return SMALL_INTS[Number(value)]
+  } else if (value < 256n && useMinimal) {
+    return new Uint8Array([24, Number(value)])
+  } else if (value < 65536n && useMinimal) {
+    const num = Number(value)
+    return new Uint8Array([25, num >> 8, num & 0xff])
+  } else if (value < 4294967296n && useMinimal) {
+    const num = Number(value)
+    return new Uint8Array([26, (num >> 24) & 0xff, (num >> 16) & 0xff, (num >> 8) & 0xff, num & 0xff])
+  } else {
+    // Use more efficient bit operations for 64-bit values
+    const low = Number(value & 0xffffffffn)
+    const high = Number(value >> 32n)
+    return new Uint8Array([
+      27,
+      (high >> 24) & 0xff,
+      (high >> 16) & 0xff,
+      (high >> 8) & 0xff,
+      high & 0xff,
+      (low >> 24) & 0xff,
+      (low >> 16) & 0xff,
+      (low >> 8) & 0xff,
+      low & 0xff
+    ])
+  }
+}
+
+const encodeNintSync = (value: bigint, options: CodecOptions): Uint8Array => {
+  if (value >= 0n) throw new CBORError({ message: `Cannot encode non-negative value ${value} as negative integer` })
+  const minInt64 = -18446744073709551615n
+  if (value < minInt64) {
+    const positiveValue = -(value + 1n)
+    const bytes = bigintToBytes(positiveValue)
+    return encodeTagSync(3, bytes, options)
+  }
+  const positiveValue = -value - 1n
+  const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
+  if (positiveValue < 24n) {
+    return new Uint8Array([0x20 + Number(positiveValue)])
+  } else if (positiveValue < 256n && useMinimal) {
+    return new Uint8Array([0x38, Number(positiveValue)])
+  } else if (positiveValue < 65536n && useMinimal) {
+    return new Uint8Array([0x39, Number(positiveValue >> 8n), Number(positiveValue & 0xffn)])
+  } else if (positiveValue < 4294967296n && useMinimal) {
+    return new Uint8Array([
+      0x3a,
+      Number((positiveValue >> 24n) & 0xffn),
+      Number((positiveValue >> 16n) & 0xffn),
+      Number((positiveValue >> 8n) & 0xffn),
+      Number(positiveValue & 0xffn)
+    ])
+  } else {
+    return new Uint8Array([
+      0x3b,
+      Number((positiveValue >> 56n) & 0xffn),
+      Number((positiveValue >> 48n) & 0xffn),
+      Number((positiveValue >> 40n) & 0xffn),
+      Number((positiveValue >> 32n) & 0xffn),
+      Number((positiveValue >> 24n) & 0xffn),
+      Number((positiveValue >> 16n) & 0xffn),
+      Number((positiveValue >> 8n) & 0xffn),
+      Number(positiveValue & 0xffn)
+    ])
+  }
+}
+
+const encodeBytesSync = (value: Uint8Array, options: CodecOptions): Uint8Array => {
+  const length = value.length
+  const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
+
+  // Fast path for empty bytes
+  if (length === 0) {
+    return new Uint8Array([0x40])
+  }
+
+  // Optimize header encoding with direct buffer creation
+  let headerBytes: Uint8Array
+  if (length < 24) {
+    headerBytes = new Uint8Array([0x40 + length])
+  } else if (length < 256 && useMinimal) {
+    headerBytes = new Uint8Array([0x58, length])
+  } else if (length < 65536 && useMinimal) {
+    headerBytes = new Uint8Array([0x59, length >> 8, length & 0xff])
+  } else if (length < 4294967296 && useMinimal) {
+    headerBytes = new Uint8Array([
+      0x5a,
+      (length >> 24) & 0xff,
+      (length >> 16) & 0xff,
+      (length >> 8) & 0xff,
+      length & 0xff
+    ])
+  } else {
+    throw new CBORError({ message: `Byte string too long: ${length} bytes` })
+  }
+
+  const result = new Uint8Array(headerBytes.length + length)
+  result.set(headerBytes, 0)
+  result.set(value, headerBytes.length)
+  return result
+}
+
+const encodeTextSync = (value: string, options: CodecOptions): Uint8Array => {
+  // Fast path for empty strings
+  if (value.length === 0) {
+    return new Uint8Array([0x60])
+  }
+
+  const utf8Bytes = TEXT_ENCODER.encode(value)
+  const length = utf8Bytes.length
+  const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
+
+  // Optimize header encoding
+  let headerBytes: Uint8Array
+  if (length < 24) {
+    headerBytes = new Uint8Array([0x60 + length])
+  } else if (length < 256 && useMinimal) {
+    headerBytes = new Uint8Array([0x78, length])
+  } else if (length < 65536 && useMinimal) {
+    headerBytes = new Uint8Array([0x79, length >> 8, length & 0xff])
+  } else if (length < 4294967296 && useMinimal) {
+    headerBytes = new Uint8Array([
+      0x7a,
+      (length >> 24) & 0xff,
+      (length >> 16) & 0xff,
+      (length >> 8) & 0xff,
+      length & 0xff
+    ])
+  } else {
+    throw new CBORError({ message: `Text string too long: ${length} bytes` })
+  }
+
+  const result = new Uint8Array(headerBytes.length + length)
+  result.set(headerBytes, 0)
+  result.set(utf8Bytes, headerBytes.length)
+  return result
+}
+
+const encodeArraySync = (value: ReadonlyArray<CBOR>, options: CodecOptions): Uint8Array => {
+  const length = value.length
+  const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
+  const useIndefinite = options.mode === "custom" && options.useIndefiniteArrays && length > 0
+
+  // Fast path for empty arrays
+  if (length === 0) {
+    return new Uint8Array([0x80])
+  }
+
+  // Pre-encode items and compute payload size
+  const encodedItems = new Array<Uint8Array>(length)
+  let payloadSize = 0
+  for (let i = 0; i < length; i++) {
+    const bytes = internalEncodeSync(value[i], options)
+    encodedItems[i] = bytes
+    payloadSize += bytes.length
+  }
+
+  // Compute header size and write header
+  if (useIndefinite) {
+    const totalSize = 1 + payloadSize + 1 // start + payload + break
+    const out = new Uint8Array(totalSize)
+    let off = 0
+    out[off++] = 0x9f
+    for (let i = 0; i < length; i++) {
+      const bytes = encodedItems[i]
+      out.set(bytes, off)
+      off += bytes.length
+    }
+    out[off] = 0xff
+    return out
+  } else {
+    // Optimize header encoding with fewer branches
+    let headerSize: number
+    let headerBytes: Uint8Array
+    if (length < 24) {
+      headerSize = 1
+      headerBytes = new Uint8Array([0x80 + length])
+    } else if (length < 256 && useMinimal) {
+      headerSize = 2
+      headerBytes = new Uint8Array([0x98, length])
+    } else if (length < 65536 && useMinimal) {
+      headerSize = 3
+      headerBytes = new Uint8Array([0x99, length >> 8, length & 0xff])
+    } else if (length < 4294967296 && useMinimal) {
+      headerSize = 5
+      headerBytes = new Uint8Array([
+        0x9a,
+        (length >> 24) & 0xff,
+        (length >> 16) & 0xff,
+        (length >> 8) & 0xff,
+        length & 0xff
+      ])
+    } else {
+      throw new CBORError({ message: `Array too long: ${length} elements` })
+    }
+
+    const totalSize = headerSize + payloadSize
+    const out = new Uint8Array(totalSize)
+
+    // Copy header
+    out.set(headerBytes, 0)
+
+    // Copy payload items
+    let off = headerSize
+    for (let i = 0; i < length; i++) {
+      const bytes = encodedItems[i]
+      out.set(bytes, off)
+      off += bytes.length
+    }
+    return out
+  }
+}
+
+const encodeMapEntriesSync = (pairs: Array<[CBOR, CBOR]>, options: CodecOptions): Uint8Array => {
+  const length = pairs.length
+  const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
+  const sortKeys = options.mode === "canonical" || (options.mode === "custom" && options.sortMapKeys)
+  const useIndefinite = options.mode === "custom" && options.useIndefiniteMaps && length > 0
+
+  // Fast path for empty maps
+  if (length === 0) {
+    return new Uint8Array([0xa0])
+  }
+
+  // Pre-encode pairs
+  let encodedPairs: Array<{ encodedKey: Uint8Array; encodedValue: Uint8Array }>
+  if (sortKeys) {
+    encodedPairs = pairs.map(([key, val]) => ({
+      encodedKey: internalEncodeSync(key, options),
+      encodedValue: internalEncodeSync(val, options)
+    }))
+    encodedPairs.sort((a, b) => a.encodedKey.length - b.encodedKey.length)
+  } else {
+    encodedPairs = new Array(length)
+    for (let i = 0; i < length; i++) {
+      const [key, val] = pairs[i]
+      const ek = internalEncodeSync(key, options)
+      const ev = internalEncodeSync(val, options)
+      encodedPairs[i] = { encodedKey: ek, encodedValue: ev }
+    }
+  }
+
+  // Compute payload size
+  let payloadSize = 0
+  for (let i = 0; i < encodedPairs.length; i++) {
+    const p = encodedPairs[i]
+    payloadSize += p.encodedKey.length + p.encodedValue.length
+  }
+
+  // Compute header
+  if (useIndefinite) {
+    const totalSize = 1 + payloadSize + 1
+    const out = new Uint8Array(totalSize)
+    let off = 0
+    out[off++] = 0xbf
+    for (let i = 0; i < encodedPairs.length; i++) {
+      const p = encodedPairs[i]
+      out.set(p.encodedKey, off)
+      off += p.encodedKey.length
+      out.set(p.encodedValue, off)
+      off += p.encodedValue.length
+    }
+    out[off] = 0xff
+    return out
+  } else {
+    // Optimize header encoding
+    let headerSize: number
+    let headerBytes: Uint8Array
+    if (length < 24) {
+      headerSize = 1
+      headerBytes = new Uint8Array([0xa0 + length])
+    } else if (length < 256 && useMinimal) {
+      headerSize = 2
+      headerBytes = new Uint8Array([0xb8, length])
+    } else if (length < 65536 && useMinimal) {
+      headerSize = 3
+      headerBytes = new Uint8Array([0xb9, length >> 8, length & 0xff])
+    } else if (length < 4294967296 && useMinimal) {
+      headerSize = 5
+      headerBytes = new Uint8Array([
+        0xba,
+        (length >> 24) & 0xff,
+        (length >> 16) & 0xff,
+        (length >> 8) & 0xff,
+        length & 0xff
+      ])
+    } else {
+      throw new CBORError({ message: `Map too long: ${length} entries` })
+    }
+
+    const totalSize = headerSize + payloadSize
+    const out = new Uint8Array(totalSize)
+
+    // Copy header
+    out.set(headerBytes, 0)
+
+    // Copy payload pairs
+    let off = headerSize
+    for (let i = 0; i < encodedPairs.length; i++) {
+      const p = encodedPairs[i]
+      out.set(p.encodedKey, off)
+      off += p.encodedKey.length
+      out.set(p.encodedValue, off)
+      off += p.encodedValue.length
+    }
+    return out
+  }
+}
+
+const encodeMapSync = (value: ReadonlyMap<CBOR, CBOR>, options: CodecOptions): Uint8Array => {
+  return encodeMapEntriesSync(Array.from(value.entries()), options)
+}
+
+const encodeRecordSync = (value: { readonly [key: string | number]: CBOR }, options: CodecOptions): Uint8Array => {
+  // Optimize by avoiding Object.entries() and map() allocation
+  const mapEntries: Array<[CBOR, CBOR]> = []
+  for (const key in value) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      const val = value[key]
+      const numKey = Number(key)
+      if (Number.isInteger(numKey) && !Number.isNaN(numKey) && key === String(numKey)) {
+        mapEntries.push([BigInt(numKey), val])
+      } else {
+        mapEntries.push([key, val])
+      }
+    }
+  }
+  return encodeMapEntriesSync(mapEntries, options)
+}
+
+const encodeTagSync = (tag: number, value: CBOR, options: CodecOptions): Uint8Array => {
+  const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
+  let headerSize = 0
+  let h0 = 0,
+    h1 = 0,
+    h2 = 0
+  if (tag < 24) {
+    headerSize = 1
+    h0 = 0xc0 + tag
+  } else if (tag < 256 && useMinimal) {
+    headerSize = 2
+    h0 = 0xd8
+    h1 = tag & 0xff
+  } else if (tag < 65536 && useMinimal) {
+    headerSize = 3
+    h0 = 0xd9
+    h1 = (tag >> 8) & 0xff
+    h2 = tag & 0xff
+  } else {
+    throw new CBORError({ message: `Tag ${tag} too large` })
+  }
+  const body = internalEncodeSync(value, options)
+  const out = new Uint8Array(headerSize + body.length)
+  let off = 0
+  out[off++] = h0
+  if (headerSize > 1) out[off++] = h1
+  if (headerSize > 2) out[off++] = h2
+  out.set(body, off)
+  return out
+}
+
+// Pre-allocated arrays for common simple values
+const SIMPLE_FALSE = new Uint8Array([0xf4])
+const SIMPLE_TRUE = new Uint8Array([0xf5])
+const SIMPLE_NULL = new Uint8Array([0xf6])
+const SIMPLE_UNDEFINED = new Uint8Array([0xf7])
+
+// Pre-allocated arrays for small common integers (0-23)
+const SMALL_INTS = Array.from({ length: 24 }, (_, i) => new Uint8Array([i]))
+
+const encodeSimpleSync = (value: boolean | null | undefined): Uint8Array => {
+  if (value === false) return SIMPLE_FALSE
+  if (value === true) return SIMPLE_TRUE
+  if (value === null) return SIMPLE_NULL
+  if (value === undefined) return SIMPLE_UNDEFINED
+  throw new CBORError({ message: `Invalid simple value: ${value}` })
+}
+
+const encodeFloatSync = (value: number, options: CodecOptions): Uint8Array => {
+  if (Number.isNaN(value)) {
+    return new Uint8Array([0xf9, 0x7e, 0x00])
+  } else if (value === Infinity) {
+    return new Uint8Array([0xf9, 0x7c, 0x00])
+  } else if (value === -Infinity) {
+    return new Uint8Array([0xf9, 0xfc, 0x00])
+  } else {
+    if (options.mode === "canonical") {
+      const half = encodeFloat16(value)
+      if (decodeFloat16(half) === value) return new Uint8Array([0xf9, (half >> 8) & 0xff, half & 0xff])
+      FLOAT32_VIEW.setFloat32(0, value, false)
+      if (FLOAT32_VIEW.getFloat32(0, false) === value) {
+        const out = new Uint8Array(1 + 4)
+        out[0] = 0xfa
+        out.set(FLOAT32_BYTES, 1)
+        return out
+      }
+    }
+    FLOAT64_VIEW.setFloat64(0, value, false)
+    const out = new Uint8Array(1 + 8)
+    out[0] = 0xfb
+    out.set(FLOAT64_BYTES, 1)
+    return out
+  }
+}
+
+// Decode (sync)
+export const internalDecodeSync = (data: Uint8Array, options: CodecOptions = DEFAULT_OPTIONS): CBOR => {
+  if (data.length === 0) throw new CBORError({ message: "Empty CBOR data" })
+  const { item, newOffset } = decodeItemAt(data, 0, options)
+  if (newOffset !== data.length) {
+    throw new CBORError({
+      message: `Invalid CBOR: expected to consume ${data.length} bytes, but consumed ${newOffset}`
+    })
+  }
+  return item
+}
+
+// Fast, offset-based decode helpers (no slicing or copying of input buffer)
+type DecodeAtResult<T = CBOR> = { item: T; newOffset: number }
+
+const decodeItemAt = (data: Uint8Array, offset: number, options: CodecOptions): DecodeAtResult => {
+  const firstByte = data[offset]
+  const majorType = (firstByte >> 5) & 0x07
+  switch (majorType) {
+    case CBOR_MAJOR_TYPE.UNSIGNED_INTEGER: {
+      return decodeUintAt(data, offset)
+    }
+    case CBOR_MAJOR_TYPE.NEGATIVE_INTEGER: {
+      return decodeNintAt(data, offset)
+    }
+    case CBOR_MAJOR_TYPE.BYTE_STRING: {
+      return decodeBytesAt(data, offset)
+    }
+    case CBOR_MAJOR_TYPE.TEXT_STRING: {
+      return decodeTextAt(data, offset)
+    }
+    case CBOR_MAJOR_TYPE.ARRAY: {
+      return decodeArrayAt(data, offset, options)
+    }
+    case CBOR_MAJOR_TYPE.MAP: {
+      return decodeMapAt(data, offset, options)
+    }
+    case CBOR_MAJOR_TYPE.TAG: {
+      return decodeTagAt(data, offset, options)
+    }
+    case CBOR_MAJOR_TYPE.SIMPLE_FLOAT: {
+      return decodeSimpleOrFloatAt(data, offset)
+    }
+    default:
+      throw new CBORError({ message: `Unsupported major type: ${majorType}` })
+  }
+}
+
+const decodeUintAt = (data: Uint8Array, offset: number): DecodeAtResult => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo < 24) {
+    return { item: BigInt(additionalInfo), newOffset: offset + 1 }
+  } else if (additionalInfo === 24) {
+    if (data.length < offset + 2) throw new CBORError({ message: "Insufficient data for 1-byte unsigned integer" })
+    return { item: BigInt(data[offset + 1]), newOffset: offset + 2 }
+  } else if (additionalInfo === 25) {
+    if (data.length < offset + 3) throw new CBORError({ message: "Insufficient data for 2-byte unsigned integer" })
+    return { item: BigInt(data[offset + 1]) * 256n + BigInt(data[offset + 2]), newOffset: offset + 3 }
+  } else if (additionalInfo === 26) {
+    if (data.length < offset + 5) throw new CBORError({ message: "Insufficient data for 4-byte unsigned integer" })
+    const v =
+      BigInt(data[offset + 1]) * 16777216n +
+      BigInt(data[offset + 2]) * 65536n +
+      BigInt(data[offset + 3]) * 256n +
+      BigInt(data[offset + 4])
+    return { item: v, newOffset: offset + 5 }
+  } else if (additionalInfo === 27) {
+    if (data.length < offset + 9) throw new CBORError({ message: "Insufficient data for 8-byte unsigned integer" })
+    let result = 0n
+    for (let i = 1; i <= 8; i++) result = result * 256n + BigInt(data[offset + i])
+    return { item: result, newOffset: offset + 9 }
+  }
+  throw new CBORError({ message: `Unsupported additional info for unsigned integer: ${additionalInfo}` })
+}
+
+const decodeNintAt = (data: Uint8Array, offset: number): DecodeAtResult => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo < 24) {
+    return { item: -1n - BigInt(additionalInfo), newOffset: offset + 1 }
+  } else if (additionalInfo === 24) {
+    if (data.length < offset + 2) throw new CBORError({ message: "Insufficient data for 1-byte negative integer" })
+    return { item: -1n - BigInt(data[offset + 1]), newOffset: offset + 2 }
+  } else if (additionalInfo === 25) {
+    if (data.length < offset + 3) throw new CBORError({ message: "Insufficient data for 2-byte negative integer" })
+    const v = BigInt(data[offset + 1]) * 256n + BigInt(data[offset + 2])
+    return { item: -1n - v, newOffset: offset + 3 }
+  } else if (additionalInfo === 26) {
+    if (data.length < offset + 5) throw new CBORError({ message: "Insufficient data for 4-byte negative integer" })
+    const v =
+      BigInt(data[offset + 1]) * 16777216n +
+      BigInt(data[offset + 2]) * 65536n +
+      BigInt(data[offset + 3]) * 256n +
+      BigInt(data[offset + 4])
+    return { item: -1n - v, newOffset: offset + 5 }
+  } else if (additionalInfo === 27) {
+    if (data.length < offset + 9) throw new CBORError({ message: "Insufficient data for 8-byte negative integer" })
+    let result = 0n
+    for (let i = 1; i <= 8; i++) result = result * 256n + BigInt(data[offset + i])
+    return { item: -1n - result, newOffset: offset + 9 }
+  }
+  throw new CBORError({ message: `Unsupported additional info for negative integer: ${additionalInfo}` })
+}
+
+const decodeLengthAt = (data: Uint8Array, offset: number): { length: number; bytesRead: number } => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo < 24) {
+    return { length: additionalInfo, bytesRead: 1 }
+  } else if (additionalInfo === 24) {
+    if (data.length < offset + 2) throw new CBORError({ message: "Insufficient data for 1-byte length" })
+    return { length: data[offset + 1], bytesRead: 2 }
+  } else if (additionalInfo === 25) {
+    if (data.length < offset + 3) throw new CBORError({ message: "Insufficient data for 2-byte length" })
+    return { length: (data[offset + 1] << 8) | data[offset + 2], bytesRead: 3 }
+  } else if (additionalInfo === 26) {
+    if (data.length < offset + 5) throw new CBORError({ message: "Insufficient data for 4-byte length" })
+    return {
+      length: (data[offset + 1] << 24) | (data[offset + 2] << 16) | (data[offset + 3] << 8) | data[offset + 4],
+      bytesRead: 5
+    }
+  }
+  throw new CBORError({ message: `Unsupported length encoding: ${additionalInfo}` })
+}
+
+const decodeBytesAt = (data: Uint8Array, offset: number): DecodeAtResult => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
+    let cur = offset + 1
+    const chunks: Array<Uint8Array> = []
+    let foundBreak = false
+    while (cur < data.length) {
+      const b = data[cur]
+      if (b === 0xff) {
+        cur += 1
+        foundBreak = true
+        break
+      }
+      const major = (b >> 5) & 0x07
+      if (major !== CBOR_MAJOR_TYPE.BYTE_STRING) throw new CBORError({ message: "Expected byte string chunk" })
+      const { bytesRead, length } = decodeLengthAt(data, cur)
+      const start = cur + bytesRead
+      const end = start + length
+      if (end > data.length) throw new CBORError({ message: "Insufficient data for byte string chunk" })
+      chunks.push(data.subarray(start, end))
+      cur = end
+    }
+    if (!foundBreak) {
+      throw new CBORError({ message: "Indefinite byte string missing break byte (0xff)" })
+    }
+    let total = 0
+    for (let i = 0; i < chunks.length; i++) total += chunks[i].length
+    const out = new Uint8Array(total)
+    let pos = 0
+    for (const ch of chunks) {
+      out.set(ch, pos)
+      pos += ch.length
+    }
+    return { item: out, newOffset: cur }
+  } else {
+    const { bytesRead, length } = decodeLengthAt(data, offset)
+    const start = offset + bytesRead
+    const end = start + length
+    if (end > data.length) throw new CBORError({ message: "Insufficient data for byte string" })
+    return { item: data.subarray(start, end), newOffset: end }
+  }
+}
+
+const decodeTextAt = (data: Uint8Array, offset: number): DecodeAtResult => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
+    let cur = offset + 1
+    const parts: Array<string> = []
+    let foundBreak = false
+    while (cur < data.length) {
+      const b = data[cur]
+      if (b === 0xff) {
+        cur += 1
+        foundBreak = true
+        break
+      }
+      const major = (b >> 5) & 0x07
+      if (major !== CBOR_MAJOR_TYPE.TEXT_STRING) throw new CBORError({ message: "Expected text string chunk" })
+      const { bytesRead, length } = decodeLengthAt(data, cur)
+      const start = cur + bytesRead
+      const end = start + length
+      if (end > data.length) throw new CBORError({ message: "Insufficient data for text string chunk" })
+      const str = TEXT_DECODER.decode(data.subarray(start, end))
+      parts.push(str)
+      cur = end
+    }
+    if (!foundBreak) {
+      throw new CBORError({ message: "Indefinite text string missing break byte (0xff)" })
+    }
+    return { item: parts.join(""), newOffset: cur }
+  } else {
+    const { bytesRead, length } = decodeLengthAt(data, offset)
+    const start = offset + bytesRead
+    const end = start + length
+    if (end > data.length) throw new CBORError({ message: "Insufficient data for text string" })
+    const str = TEXT_DECODER.decode(data.subarray(start, end))
+    return { item: str, newOffset: end }
+  }
+}
+
+const decodeArrayAt = (data: Uint8Array, offset: number, options: CodecOptions): DecodeAtResult => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
+    const arr: Array<CBOR> = []
+    let cur = offset + 1
+    let foundBreak = false
+    while (cur < data.length) {
+      if (data[cur] === 0xff) {
+        cur += 1
+        foundBreak = true
+        break
+      }
+      const { item, newOffset } = decodeItemAt(data, cur, options)
+      arr.push(item)
+      cur = newOffset
+    }
+    if (!foundBreak) {
+      throw new CBORError({ message: "Indefinite array missing break byte (0xff)" })
+    }
+    return { item: arr, newOffset: cur }
+  } else {
+    const { bytesRead, length } = decodeLengthAt(data, offset)
+    let cur = offset + bytesRead
+    const arr: Array<CBOR> = new Array(length)
+    for (let i = 0; i < length; i++) {
+      const { item, newOffset } = decodeItemAt(data, cur, options)
+      arr[i] = item
+      cur = newOffset
+    }
+    return { item: arr, newOffset: cur }
+  }
+}
+
+const decodeMapAt = (data: Uint8Array, offset: number, options: CodecOptions): DecodeAtResult => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
+    const isObj = options.mode === "custom" && options.mapsAsObjects
+    const map = isObj ? ({} as Record<string, CBOR>) : new Map<CBOR, CBOR>()
+    let cur = offset + 1
+    let foundBreak = false
+    while (cur < data.length) {
+      if (data[cur] === 0xff) {
+        cur += 1
+        foundBreak = true
+        break
+      }
+      const k = decodeItemAt(data, cur, options)
+      cur = k.newOffset
+      const v = decodeItemAt(data, cur, options)
+      cur = v.newOffset
+      if (map instanceof Map) map.set(k.item, v.item)
+      else map[String(k.item as any)] = v.item
+    }
+    if (!foundBreak) {
+      throw new CBORError({ message: "Indefinite map missing break byte (0xff)" })
+    }
+    return { item: map, newOffset: cur }
+  } else {
+    const { bytesRead, length } = decodeLengthAt(data, offset)
+    let cur = offset + bytesRead
+    const isObj = options.mode === "custom" && options.mapsAsObjects
+    const map = isObj ? ({} as Record<string, CBOR>) : new Map<CBOR, CBOR>()
+    for (let i = 0; i < length; i++) {
+      const k = decodeItemAt(data, cur, options)
+      cur = k.newOffset
+      const v = decodeItemAt(data, cur, options)
+      cur = v.newOffset
+      if (map instanceof Map) map.set(k.item, v.item)
+      else map[String(k.item as any)] = v.item
+    }
+    return { item: map, newOffset: cur }
+  }
+}
+
+const decodeTagAt = (data: Uint8Array, offset: number, options: CodecOptions): DecodeAtResult => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  let tagValue: number
+  let cur = offset
+  if (additionalInfo < 24) {
+    tagValue = additionalInfo
+    cur += 1
+  } else if (additionalInfo === 24) {
+    if (data.length < offset + 2) throw new CBORError({ message: "Insufficient data for 1-byte tag" })
+    tagValue = data[offset + 1]
+    cur += 2
+  } else if (additionalInfo === 25) {
+    if (data.length < offset + 3) throw new CBORError({ message: "Insufficient data for 2-byte tag" })
+    tagValue = (data[offset + 1] << 8) | data[offset + 2]
+    cur += 3
+  } else {
+    throw new CBORError({ message: `Unsupported tag encoding: ${additionalInfo}` })
+  }
+  const inner = decodeItemAt(data, cur, options)
+  cur = inner.newOffset
+  if (tagValue === 2 || tagValue === 3) {
+    if (!(inner.item instanceof Uint8Array))
+      throw new CBORError({ message: `Expected bytes for bigint tag ${tagValue}` })
+    let result = 0n
+    for (let i = 0; i < inner.item.length; i++) result = (result << 8n) | BigInt(inner.item[i])
+    return { item: tagValue === 2 ? result : -1n - result, newOffset: cur }
+  }
+  return { item: { _tag: "Tag", tag: tagValue, value: inner.item }, newOffset: cur }
+}
+
+const decodeSimpleOrFloatAt = (data: Uint8Array, offset: number): DecodeAtResult => {
+  const firstByte = data[offset]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_SIMPLE.FALSE) return { item: false, newOffset: offset + 1 }
+  if (additionalInfo === CBOR_SIMPLE.TRUE) return { item: true, newOffset: offset + 1 }
+  if (additionalInfo === CBOR_SIMPLE.NULL) return { item: null, newOffset: offset + 1 }
+  if (additionalInfo === CBOR_SIMPLE.UNDEFINED) return { item: undefined, newOffset: offset + 1 }
+  if (additionalInfo < 24) {
+    // Unassigned simple values (0..19). Preserve as number for compatibility? Current sync path returned undefined.
+    return { item: additionalInfo, newOffset: offset + 1 }
+  }
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.DIRECT) {
+    if (data.length < offset + 2) throw new CBORError({ message: "Insufficient data for 1-byte simple value" })
+    return { item: data[offset + 1], newOffset: offset + 2 }
+  }
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.UINT16) {
+    if (data.length < offset + 3) throw new CBORError({ message: "Insufficient data for half-precision float" })
+    const value = (data[offset + 1] << 8) | data[offset + 2]
+    return { item: decodeFloat16(value), newOffset: offset + 3 }
+  }
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.UINT32) {
+    if (data.length < offset + 5) throw new CBORError({ message: "Insufficient data for single-precision float" })
+    const view = new DataView(data.buffer, data.byteOffset + offset + 1, 4)
+    return { item: view.getFloat32(0, false), newOffset: offset + 5 }
+  }
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.UINT64) {
+    if (data.length < offset + 9) throw new CBORError({ message: "Insufficient data for double-precision float" })
+    const view = new DataView(data.buffer, data.byteOffset + offset + 1, 8)
+    return { item: view.getFloat64(0, false), newOffset: offset + 9 }
+  }
+  throw new CBORError({ message: `Unsupported simple/float encoding: ${additionalInfo}` })
+}
+
+const decodeUintSync = (data: Uint8Array): CBOR => {
+  const firstByte = data[0]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo < 24) {
+    return BigInt(additionalInfo)
+  } else if (additionalInfo === 24) {
+    if (data.length < 2) throw new CBORError({ message: "Insufficient data for 1-byte unsigned integer" })
+    return BigInt(data[1])
+  } else if (additionalInfo === 25) {
+    if (data.length < 3) throw new CBORError({ message: "Insufficient data for 2-byte unsigned integer" })
+    return BigInt(data[1]) * 256n + BigInt(data[2])
+  } else if (additionalInfo === 26) {
+    if (data.length < 5) throw new CBORError({ message: "Insufficient data for 4-byte unsigned integer" })
+    return BigInt(data[1]) * 16777216n + BigInt(data[2]) * 65536n + BigInt(data[3]) * 256n + BigInt(data[4])
+  } else if (additionalInfo === 27) {
+    if (data.length < 9) throw new CBORError({ message: "Insufficient data for 8-byte unsigned integer" })
+    let result = 0n
+    for (let i = 1; i <= 8; i++) result = result * 256n + BigInt(data[i])
+    return result
+  } else {
+    throw new CBORError({ message: `Unsupported additional info for unsigned integer: ${additionalInfo}` })
+  }
+}
+
+const decodeNintSync = (data: Uint8Array): CBOR => {
+  const firstByte = data[0]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo < 24) {
+    return -1n - BigInt(additionalInfo)
+  } else if (additionalInfo === 24) {
+    if (data.length < 2) throw new CBORError({ message: "Insufficient data for 1-byte negative integer" })
+    return -1n - BigInt(data[1])
+  } else if (additionalInfo === 25) {
+    if (data.length < 3) throw new CBORError({ message: "Insufficient data for 2-byte negative integer" })
+    return -1n - (BigInt(data[1]) * 256n + BigInt(data[2]))
+  } else if (additionalInfo === 26) {
+    if (data.length < 5) throw new CBORError({ message: "Insufficient data for 4-byte negative integer" })
+    return -1n - (BigInt(data[1]) * 16777216n + BigInt(data[2]) * 65536n + BigInt(data[3]) * 256n + BigInt(data[4]))
+  } else if (additionalInfo === 27) {
+    if (data.length < 9) throw new CBORError({ message: "Insufficient data for 8-byte negative integer" })
+    let result = 0n
+    for (let i = 1; i <= 8; i++) result = result * 256n + BigInt(data[i])
+    return -1n - result
+  } else {
+    throw new CBORError({ message: `Unsupported additional info for negative integer: ${additionalInfo}` })
+  }
+}
+
+const decodeBytesWithLengthSync = (data: Uint8Array): { item: CBOR; bytesConsumed: number } => {
+  const firstByte = data[0]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
+    let offset = 1
+    const chunks: Array<Uint8Array> = []
+    let foundBreak = false
+    while (offset < data.length) {
+      if (data[offset] === 0xff) {
+        offset++
+        foundBreak = true
+        break
+      }
+      const chunkFirstByte = data[offset]
+      const chunkMajorType = (chunkFirstByte >> 5) & 0x07
+      if (chunkMajorType !== CBOR_MAJOR_TYPE.BYTE_STRING) {
+        throw new CBORError({ message: `Invalid chunk in indefinite byte string: major type ${chunkMajorType}` })
+      }
+      const { bytesRead, length: chunkLength } = decodeLengthSync(data, offset)
+      offset += bytesRead
+      if (data.length < offset + chunkLength)
+        throw new CBORError({ message: "Insufficient data for byte string chunk" })
+      const chunk = data.slice(offset, offset + chunkLength)
+      chunks.push(chunk)
+      offset += chunkLength
+    }
+    if (!foundBreak) throw new CBORError({ message: "Missing break in indefinite-length byte string" })
+    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+    const bytes = new Uint8Array(totalLength)
+    let pos = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, pos)
+      pos += chunk.length
+    }
+    return { item: bytes, bytesConsumed: offset }
+  } else {
+    const { bytesRead, length } = decodeLengthSync(data, 0)
+    if (data.length < bytesRead + length) throw new CBORError({ message: "Insufficient data for byte string" })
+    const bytes = data.slice(bytesRead, bytesRead + length)
+    return { item: bytes, bytesConsumed: bytesRead + length }
+  }
+}
+
+const decodeTextWithLengthSync = (data: Uint8Array): { item: CBOR; bytesConsumed: number } => {
+  const firstByte = data[0]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
+    let offset = 1
+    const parts: Array<string> = []
+    let foundBreak = false
+    while (offset < data.length) {
+      if (data[offset] === 0xff) {
+        offset++
+        foundBreak = true
+        break
+      }
+      const chunkFirstByte = data[offset]
+      const chunkMajorType = (chunkFirstByte >> 5) & 0x07
+      if (chunkMajorType !== CBOR_MAJOR_TYPE.TEXT_STRING) {
+        throw new CBORError({ message: `Invalid chunk in indefinite text string: major type ${chunkMajorType}` })
+      }
+      const { bytesRead, length: chunkLength } = decodeLengthSync(data, offset)
+      offset += bytesRead
+      if (data.length < offset + chunkLength)
+        throw new CBORError({ message: "Insufficient data for text string chunk" })
+      const chunkBytes = data.slice(offset, offset + chunkLength)
+      const chunkText = TEXT_DECODER.decode(chunkBytes)
+      parts.push(chunkText)
+      offset += chunkLength
+    }
+    if (!foundBreak) throw new CBORError({ message: "Missing break in indefinite-length text string" })
+    return { item: parts.join(""), bytesConsumed: offset }
+  } else {
+    const { bytesRead, length } = decodeLengthSync(data, 0)
+    if (data.length < bytesRead + length) throw new CBORError({ message: "Insufficient data for text string" })
+    const textBytes = data.slice(bytesRead, bytesRead + length)
+    const text = TEXT_DECODER.decode(textBytes)
+    return { item: text, bytesConsumed: bytesRead + length }
+  }
+}
+
+// Decode an item and return both the item and bytes consumed (sync)
+const decodeItemWithLengthSync = (data: Uint8Array, options: CodecOptions): { item: CBOR; bytesConsumed: number } => {
+  const firstByte = data[0]
+  const majorType = (firstByte >> 5) & 0x07
+  let item: CBOR
+  let bytesConsumed: number
+  switch (majorType) {
+    case CBOR_MAJOR_TYPE.UNSIGNED_INTEGER: {
+      item = decodeUintSync(data)
+      const additionalInfo = firstByte & 0x1f
+      bytesConsumed =
+        additionalInfo < 24 ? 1 : additionalInfo === 24 ? 2 : additionalInfo === 25 ? 3 : additionalInfo === 26 ? 5 : 9
+      break
+    }
+    case CBOR_MAJOR_TYPE.NEGATIVE_INTEGER: {
+      item = decodeNintSync(data)
+      const additionalInfo = firstByte & 0x1f
+      bytesConsumed =
+        additionalInfo < 24 ? 1 : additionalInfo === 24 ? 2 : additionalInfo === 25 ? 3 : additionalInfo === 26 ? 5 : 9
+      break
+    }
+    case CBOR_MAJOR_TYPE.BYTE_STRING: {
+      const { bytesConsumed: b, item: it } = decodeBytesWithLengthSync(data)
+      item = it
+      bytesConsumed = b
+      break
+    }
+    case CBOR_MAJOR_TYPE.TEXT_STRING: {
+      const { bytesConsumed: b, item: it } = decodeTextWithLengthSync(data)
+      item = it
+      bytesConsumed = b
+      break
+    }
+    case CBOR_MAJOR_TYPE.ARRAY: {
+      const { bytesConsumed: b, item: it } = decodeArrayWithLengthSync(data, options)
+      item = it
+      bytesConsumed = b
+      break
+    }
+    case CBOR_MAJOR_TYPE.MAP: {
+      const { bytesConsumed: b, item: it } = decodeMapWithLengthSync(data, options)
+      item = it
+      bytesConsumed = b
+      break
+    }
+    case CBOR_MAJOR_TYPE.TAG: {
+      const { bytesConsumed: b, item: it } = decodeTagWithLengthSync(data, options)
+      item = it
+      bytesConsumed = b
+      break
+    }
+    case CBOR_MAJOR_TYPE.SIMPLE_FLOAT: {
+      item = decodeSimpleOrFloatSync(data)
+      const additionalInfo = firstByte & 0x1f
+      bytesConsumed =
+        additionalInfo < 24 ? 1 : additionalInfo === 24 ? 2 : additionalInfo === 25 ? 3 : additionalInfo === 26 ? 5 : 9
+      break
+    }
+    default:
+      throw new CBORError({ message: `Unsupported major type: ${majorType}` })
+  }
+  return { item, bytesConsumed }
+}
+
+const decodeArrayWithLengthSync = (data: Uint8Array, options: CodecOptions): { item: CBOR; bytesConsumed: number } => {
+  const firstByte = data[0]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
+    const result: Array<CBOR> = []
+    let offset = 1
+    while (offset < data.length) {
+      if (data[offset] === 0xff) {
+        offset++
+        break
+      }
+      const { bytesConsumed, item } = decodeItemWithLengthSync(data.slice(offset), options)
+      result.push(item)
+      offset += bytesConsumed
+    }
+    return { item: result, bytesConsumed: offset }
+  } else {
+    const { bytesRead, length } = decodeLengthSync(data, 0)
+    const result: Array<CBOR> = []
+    let offset = bytesRead
+    for (let i = 0; i < length; i++) {
+      const { bytesConsumed, item } = decodeItemWithLengthSync(data.slice(offset), options)
+      result.push(item)
+      offset += bytesConsumed
+    }
+    return { item: result, bytesConsumed: offset }
+  }
+}
+
+const decodeMapWithLengthSync = (data: Uint8Array, options: CodecOptions): { item: CBOR; bytesConsumed: number } => {
+  const firstByte = data[0]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
+    const result =
+      options.mode === "custom" && options.mapsAsObjects ? ({} as Record<string, CBOR>) : new Map<CBOR, CBOR>()
+    let offset = 1
+    while (offset < data.length) {
+      if (data[offset] === 0xff) {
+        offset++
+        break
+      }
+      const { bytesConsumed: keyBytes, item: key } = decodeItemWithLengthSync(data.slice(offset), options)
+      offset += keyBytes
+      const { bytesConsumed: valueBytes, item: value } = decodeItemWithLengthSync(data.slice(offset), options)
+      offset += valueBytes
+      if (result instanceof Map) {
+        result.set(key, value)
+      } else {
+        result[String(key as any)] = value
+      }
+    }
+    return { item: result, bytesConsumed: offset }
+  } else {
+    const { bytesRead, length } = decodeLengthSync(data, 0)
+    const result =
+      options.mode === "custom" && options.mapsAsObjects ? ({} as Record<string, CBOR>) : new Map<CBOR, CBOR>()
+    let offset = bytesRead
+    for (let i = 0; i < length; i++) {
+      const { bytesConsumed: keyBytes, item: key } = decodeItemWithLengthSync(data.slice(offset), options)
+      offset += keyBytes
+      const { bytesConsumed: valueBytes, item: value } = decodeItemWithLengthSync(data.slice(offset), options)
+      offset += valueBytes
+      if (result instanceof Map) {
+        result.set(key, value)
+      } else {
+        result[String(key as any)] = value
+      }
+    }
+    return { item: result, bytesConsumed: offset }
+  }
+}
+
+const decodeTagWithLengthSync = (data: Uint8Array, options: CodecOptions): { item: CBOR; bytesConsumed: number } => {
+  const firstByte = data[0]
+  const additionalInfo = firstByte & 0x1f
+  let tag: number
+  let dataOffset: number
+  if (additionalInfo < 24) {
+    tag = additionalInfo
+    dataOffset = 1
+  } else if (additionalInfo === 24) {
+    if (data.length < 2) throw new CBORError({ message: "Insufficient data for 1-byte tag" })
+    tag = data[1]
+    dataOffset = 2
+  } else if (additionalInfo === 25) {
+    if (data.length < 3) throw new CBORError({ message: "Insufficient data for 2-byte tag" })
+    tag = data[1] * 256 + data[2]
+    dataOffset = 3
+  } else {
+    throw new CBORError({ message: `Unsupported additional info for tag: ${additionalInfo}` })
+  }
+  const { bytesConsumed, item: innerValue } = decodeItemWithLengthSync(data.slice(dataOffset), options)
+  if (tag === 2 || tag === 3) {
+    if (!(innerValue instanceof Uint8Array)) throw new CBORError({ message: `Invalid value for bigint tag ${tag}` })
+    const bigintValue = (() => {
+      let result = 0n
+      for (let i = 0; i < innerValue.length; i++) result = (result << 8n) + BigInt(innerValue[i])
+      return tag === 2 ? result : -1n - result
+    })()
+    return { item: bigintValue, bytesConsumed: dataOffset + bytesConsumed }
+  }
+  return { item: { _tag: "Tag", tag, value: innerValue }, bytesConsumed: dataOffset + bytesConsumed }
+}
+
+const decodeSimpleOrFloatSync = (data: Uint8Array): CBOR => {
+  const firstByte = data[0]
+  const additionalInfo = firstByte & 0x1f
+  if (additionalInfo < 20) {
+    // Return unassigned simple values as numbers
+    return additionalInfo
+  } else if (additionalInfo === CBOR_SIMPLE.FALSE) {
+    return false
+  } else if (additionalInfo === CBOR_SIMPLE.TRUE) {
+    return true
+  } else if (additionalInfo === CBOR_SIMPLE.NULL) {
+    return null
+  } else if (additionalInfo === CBOR_SIMPLE.UNDEFINED) {
+    return undefined
+  } else if (additionalInfo === CBOR_ADDITIONAL_INFO.DIRECT) {
+    if (data.length < 2) throw new CBORError({ message: "Insufficient data for simple value (one byte)" })
+    const simpleValue = data[1]
+    return simpleValue
+  } else if (additionalInfo === CBOR_ADDITIONAL_INFO.UINT16) {
+    if (data.length < 3) throw new CBORError({ message: "Insufficient data for half-precision float" })
+    const value = (data[1] << 8) | data[2]
+    const float = decodeFloat16(value)
+    return float
+  } else if (additionalInfo === CBOR_ADDITIONAL_INFO.UINT32) {
+    if (data.length < 5) throw new CBORError({ message: "Insufficient data for single-precision float" })
+    const buffer = data.slice(1, 5)
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+    return view.getFloat32(0, false)
+  } else if (additionalInfo === CBOR_ADDITIONAL_INFO.UINT64) {
+    if (data.length < 9) throw new CBORError({ message: "Insufficient data for double-precision float" })
+    const buffer = data.slice(1, 9)
+    const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+    return view.getFloat64(0, false)
+  }
+  throw new CBORError({ message: `Unsupported additional info for simple/float: ${additionalInfo}` })
+}
+
+const decodeLengthSync = (data: Uint8Array, offset: number): { length: number; bytesRead: number } => {
+  const firstByte = data[offset]
+  const majorType = (firstByte >> 5) & 0x07
+  const additionalInfo = firstByte & 0x1f
+  let length = 0
+  let bytesRead = 0
+  if (
+    majorType !== CBOR_MAJOR_TYPE.BYTE_STRING &&
+    majorType !== CBOR_MAJOR_TYPE.TEXT_STRING &&
+    majorType !== CBOR_MAJOR_TYPE.ARRAY &&
+    majorType !== CBOR_MAJOR_TYPE.MAP
+  ) {
+    throw new CBORError({ message: `Invalid major type for length decoding: ${majorType}` })
+  }
+  if (additionalInfo < 24) {
+    length = additionalInfo
+    bytesRead = 1
+  } else if (additionalInfo === 24) {
+    if (data.length < offset + 2) throw new CBORError({ message: "Insufficient data for 1-byte length" })
+    length = data[offset + 1]
+    bytesRead = 2
+  } else if (additionalInfo === 25) {
+    if (data.length < offset + 3) throw new CBORError({ message: "Insufficient data for 2-byte length" })
+    length = data[offset + 1] * 256 + data[offset + 2]
+    bytesRead = 3
+  } else if (additionalInfo === 26) {
+    if (data.length < offset + 5) throw new CBORError({ message: "Insufficient data for 4-byte length" })
+    length = (data[offset + 1] << 24) | (data[offset + 2] << 16) | (data[offset + 3] << 8) | data[offset + 4]
+    bytesRead = 5
+  } else {
+    throw new CBORError({ message: `Unsupported additional info for length: ${additionalInfo}` })
+  }
+  return { length, bytesRead }
+}

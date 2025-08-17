@@ -1,6 +1,6 @@
 ---
 title: ScriptRef.ts
-nav_order: 79
+nav_order: 95
 parent: Modules
 ---
 
@@ -10,73 +10,120 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [ScriptRefError (class)](#scriptreferror-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+  - [fromHex](#fromhex)
 - [schemas](#schemas)
-  - [FromBytes](#frombytes)
-  - [FromCBORBytes](#fromcborbytes)
-  - [FromCBORHex](#fromcborhex)
+  - [FromBytes](#frombytes-1)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
-  - [FromHex](#fromhex)
-  - [ScriptRef](#scriptref)
-- [utils](#utils)
-  - [ScriptRef (type alias)](#scriptref-type-alias)
+  - [FromHex](#fromhex-1)
+  - [ScriptRef (class)](#scriptref-class)
+    - [toJSON (method)](#tojson-method)
+    - [toString (method)](#tostring-method)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Extended Codec with CBOR support for ScriptRef.
+FastCheck arbitrary for generating random ScriptRef instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: {
-    bytes: (input: string & Brand<"ScriptRef">) => any
-    hex: (input: string & Brand<"ScriptRef">) => string
-    cborBytes: (input: string & Brand<"ScriptRef">) => any
-    cborHex: (input: string & Brand<"ScriptRef">) => string
-  }
-  Decode: {
-    bytes: (input: any) => string & Brand<"ScriptRef">
-    hex: (input: string) => string & Brand<"ScriptRef">
-    cborBytes: (input: any) => string & Brand<"ScriptRef">
-    cborHex: (input: string) => string & Brand<"ScriptRef">
-  }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"ScriptRef">) => Effect.Effect<any, InstanceType<typeof ScriptRefError>>
-    hex: (input: string & Brand<"ScriptRef">) => Effect.Effect<string, InstanceType<typeof ScriptRefError>>
-    cborBytes: (input: string & Brand<"ScriptRef">) => Effect.Effect<any, InstanceType<typeof ScriptRefError>>
-    cborHex: (input: string & Brand<"ScriptRef">) => Effect.Effect<string, InstanceType<typeof ScriptRefError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect.Effect<string & Brand<"ScriptRef">, InstanceType<typeof ScriptRefError>>
-    hex: (input: string) => Effect.Effect<string & Brand<"ScriptRef">, InstanceType<typeof ScriptRefError>>
-    cborBytes: (input: any) => Effect.Effect<string & Brand<"ScriptRef">, InstanceType<typeof ScriptRefError>>
-    cborHex: (input: string) => Effect.Effect<string & Brand<"ScriptRef">, InstanceType<typeof ScriptRefError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"ScriptRef">) => Either<any, InstanceType<typeof ScriptRefError>>
-    hex: (input: string & Brand<"ScriptRef">) => Either<string, InstanceType<typeof ScriptRefError>>
-    cborBytes: (input: string & Brand<"ScriptRef">) => Either<any, InstanceType<typeof ScriptRefError>>
-    cborHex: (input: string & Brand<"ScriptRef">) => Either<string, InstanceType<typeof ScriptRefError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"ScriptRef">, InstanceType<typeof ScriptRefError>>
-    hex: (input: string) => Either<string & Brand<"ScriptRef">, InstanceType<typeof ScriptRefError>>
-    cborBytes: (input: any) => Either<string & Brand<"ScriptRef">, InstanceType<typeof ScriptRefError>>
-    cborHex: (input: string) => Either<string & Brand<"ScriptRef">, InstanceType<typeof ScriptRefError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<ScriptRef>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for ScriptRef.
+
+**Signature**
+
+```ts
+export declare const make: (props: { readonly bytes: any }, options?: Schema.MakeOptions | undefined) => ScriptRef
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode ScriptRef to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: ScriptRef) => any
+```
+
+Added in v2.0.0
+
+## toCBORBytes
+
+Encode ScriptRef to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: ScriptRef, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Encode ScriptRef to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: ScriptRef, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode ScriptRef to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: ScriptRef) => string
 ```
 
 Added in v2.0.0
@@ -109,16 +156,52 @@ export declare class ScriptRefError
 
 Added in v2.0.0
 
-# generators
+# parsing
 
-## generator
+## fromBytes
 
-Generate a random ScriptRef.
+Parse ScriptRef from bytes.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"ScriptRef">>
+export declare const fromBytes: (input: any) => ScriptRef
+```
+
+Added in v2.0.0
+
+## fromCBORBytes
+
+Parse ScriptRef from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => ScriptRef
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse ScriptRef from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => ScriptRef
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse ScriptRef from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => ScriptRef
 ```
 
 Added in v2.0.0
@@ -132,10 +215,7 @@ Schema for transforming from bytes to ScriptRef.
 **Signature**
 
 ```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<typeof Schema.Uint8ArrayFromSelf, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, typeof Schema.String>, "ScriptRef">
->
+export declare const FromBytes: Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof ScriptRef>
 ```
 
 Added in v2.0.0
@@ -155,7 +235,11 @@ export declare const FromCBORBytes: (
     Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
     never
   >,
-  Schema.transformOrFail<typeof CBOR.Tag, Schema.brand<Schema.refine<string, typeof Schema.String>, "ScriptRef">, never>
+  Schema.transformOrFail<
+    Schema.TaggedStruct<"Tag", { tag: Schema.Literal<[24]>; value: typeof Schema.Uint8ArrayFromSelf }>,
+    typeof ScriptRef,
+    never
+  >
 >
 ```
 
@@ -171,7 +255,7 @@ CBOR hex transformation schema for ScriptRef.
 export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -179,8 +263,8 @@ export declare const FromCBORHex: (
       never
     >,
     Schema.transformOrFail<
-      typeof CBOR.Tag,
-      Schema.brand<Schema.refine<string, typeof Schema.String>, "ScriptRef">,
+      Schema.TaggedStruct<"Tag", { tag: Schema.Literal<[24]>; value: typeof Schema.Uint8ArrayFromSelf }>,
+      typeof ScriptRef,
       never
     >
   >
@@ -203,8 +287,8 @@ This transforms between CBOR tag 24 structure and ScriptRef model.
 
 ```ts
 export declare const FromCDDL: Schema.transformOrFail<
-  typeof CBOR.Tag,
-  Schema.brand<Schema.refine<string, typeof Schema.String>, "ScriptRef">,
+  Schema.TaggedStruct<"Tag", { tag: Schema.Literal<[24]>; value: typeof Schema.Uint8ArrayFromSelf }>,
+  typeof ScriptRef,
   never
 >
 ```
@@ -219,14 +303,14 @@ Schema for transforming from hex to ScriptRef.
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.refine<string, typeof Schema.String>,
-  Schema.brand<Schema.refine<string, typeof Schema.String>, "ScriptRef">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof ScriptRef>
 >
 ```
 
 Added in v2.0.0
 
-## ScriptRef
+## ScriptRef (class)
 
 Schema for ScriptRef representing a reference to a script in a transaction output.
 
@@ -234,23 +318,29 @@ Schema for ScriptRef representing a reference to a script in a transaction outpu
 CDDL: script_ref = #6.24(bytes .cbor script)
 ```
 
-This is a branded hex string that represents the CBOR-encoded script bytes.
+This represents the CBOR-encoded script bytes.
 The script_ref uses CBOR tag 24 to indicate it contains CBOR-encoded script data.
 
 **Signature**
 
 ```ts
-export declare const ScriptRef: Schema.brand<Schema.refine<string, typeof Schema.String>, "ScriptRef">
+export declare class ScriptRef
 ```
 
 Added in v2.0.0
 
-# utils
-
-## ScriptRef (type alias)
+### toJSON (method)
 
 **Signature**
 
 ```ts
-export type ScriptRef = typeof ScriptRef.Type
+toJSON(): string
+```
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
 ```

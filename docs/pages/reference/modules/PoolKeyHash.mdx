@@ -1,6 +1,6 @@
 ---
 title: PoolKeyHash.ts
-nav_order: 67
+nav_order: 79
 parent: Modules
 ---
 
@@ -10,58 +10,90 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [PoolKeyHashError (class)](#poolkeyhasherror-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [model](#model)
+  - [PoolKeyHash (class)](#poolkeyhash-class)
+    - [toJSON (method)](#tojson-method)
+    - [toString (method)](#tostring-method)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
 - [schemas](#schemas)
-  - [PoolKeyHash](#poolkeyhash)
-- [utils](#utils)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-  - [PoolKeyHash (type alias)](#poolkeyhash-type-alias)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for PoolKeyHash encoding and decoding operations.
+FastCheck arbitrary for generating random PoolKeyHash instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: {
-    bytes: (input: string & Brand<"PoolKeyHash">) => any
-    hex: (input: string & Brand<"PoolKeyHash">) => string
-  }
-  Decode: {
-    bytes: (input: any) => string & Brand<"PoolKeyHash">
-    hex: (input: string) => string & Brand<"PoolKeyHash">
-  }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"PoolKeyHash">) => Effect<any, InstanceType<typeof PoolKeyHashError>>
-    hex: (input: string & Brand<"PoolKeyHash">) => Effect<string, InstanceType<typeof PoolKeyHashError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"PoolKeyHash">, InstanceType<typeof PoolKeyHashError>>
-    hex: (input: string) => Effect<string & Brand<"PoolKeyHash">, InstanceType<typeof PoolKeyHashError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"PoolKeyHash">) => Either<any, InstanceType<typeof PoolKeyHashError>>
-    hex: (input: string & Brand<"PoolKeyHash">) => Either<string, InstanceType<typeof PoolKeyHashError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"PoolKeyHash">, InstanceType<typeof PoolKeyHashError>>
-    hex: (input: string) => Either<string & Brand<"PoolKeyHash">, InstanceType<typeof PoolKeyHashError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<PoolKeyHash>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for PoolKeyHash that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const make: (props: { readonly hash: any }, options?: Schema.MakeOptions | undefined) => PoolKeyHash
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode PoolKeyHash to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: PoolKeyHash) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode PoolKeyHash to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: PoolKeyHash) => string
 ```
 
 Added in v2.0.0
@@ -94,69 +126,88 @@ export declare class PoolKeyHashError
 
 Added in v2.0.0
 
-# generators
+# model
 
-## generator
+## PoolKeyHash (class)
 
-Generate a random PoolKeyHash.
+PoolKeyHash as a TaggedClass representing a stake pool's verification key hash.
+pool_keyhash = hash28
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"PoolKeyHash">>
+export declare class PoolKeyHash
+```
+
+Added in v2.0.0
+
+### toJSON (method)
+
+**Signature**
+
+```ts
+toJSON(): string
+```
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+# parsing
+
+## fromBytes
+
+Parse PoolKeyHash from bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => PoolKeyHash
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse PoolKeyHash from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => PoolKeyHash
 ```
 
 Added in v2.0.0
 
 # schemas
 
-## PoolKeyHash
+## FromBytes
 
-PoolKeyHash is a 28-byte hash representing a stake pool's verification key.
-pool_keyhash = hash28
+Schema transformer from bytes to PoolKeyHash.
 
 **Signature**
 
 ```ts
-export declare const PoolKeyHash: Schema.brand<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  "PoolKeyHash"
->
+export declare const FromBytes: Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof PoolKeyHash>
 ```
 
 Added in v2.0.0
 
-# utils
-
-## FromBytes
-
-**Signature**
-
-```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PoolKeyHash">
->
-```
-
 ## FromHex
+
+Schema transformer from hex string to PoolKeyHash.
 
 **Signature**
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PoolKeyHash">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof PoolKeyHash>
 >
 ```
 
-## PoolKeyHash (type alias)
-
-**Signature**
-
-```ts
-export type PoolKeyHash = typeof PoolKeyHash.Type
-```
+Added in v2.0.0

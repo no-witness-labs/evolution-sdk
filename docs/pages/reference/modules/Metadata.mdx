@@ -1,0 +1,524 @@
+---
+title: Metadata.ts
+nav_order: 60
+parent: Modules
+---
+
+## Metadata overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [constructors](#constructors)
+  - [empty](#empty)
+  - [fromEntries](#fromentries)
+  - [make](#make)
+  - [remove](#remove)
+  - [set](#set)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [errors](#errors)
+  - [MetadataError (class)](#metadataerror-class)
+- [model](#model)
+  - [MetadataLabel (type alias)](#metadatalabel-type-alias)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+- [schemas](#schemas)
+  - [CDDLSchema](#cddlschema)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
+  - [FromCDDL](#fromcddl)
+  - [Metadata](#metadata)
+  - [MetadataLabel](#metadatalabel)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
+- [utilities](#utilities)
+  - [entries](#entries)
+  - [equals](#equals)
+  - [get](#get)
+  - [has](#has)
+  - [labels](#labels)
+  - [size](#size)
+  - [values](#values)
+- [utils](#utils)
+  - [Metadata (type alias)](#metadata-type-alias)
+
+---
+
+# constructors
+
+## empty
+
+Create an empty Metadata map.
+
+**Signature**
+
+```ts
+export declare const empty: () => Metadata
+```
+
+Added in v2.0.0
+
+## fromEntries
+
+Create Metadata from an array of label-metadatum pairs.
+
+**Signature**
+
+```ts
+export declare const fromEntries: (
+  entries: Array<[MetadataLabel, TransactionMetadatum.TransactionMetadatum]>
+) => Metadata
+```
+
+Added in v2.0.0
+
+## make
+
+Smart constructor for Metadata that validates and applies typing.
+
+**Signature**
+
+```ts
+export declare const make: (map: Map<MetadataLabel, TransactionMetadatum.TransactionMetadatum>) => Metadata
+```
+
+Added in v2.0.0
+
+## remove
+
+Remove a metadata entry by label.
+
+**Signature**
+
+```ts
+export declare const remove: (metadata: Metadata, label: MetadataLabel) => Metadata
+```
+
+Added in v2.0.0
+
+## set
+
+Add or update a metadata entry.
+
+**Signature**
+
+```ts
+export declare const set: (
+  metadata: Metadata,
+  label: MetadataLabel,
+  metadatum: TransactionMetadatum.TransactionMetadatum
+) => Metadata
+```
+
+Added in v2.0.0
+
+# effect
+
+## Effect (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert Metadata to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (metadata: Metadata, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert Metadata to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (metadata: Metadata, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# errors
+
+## MetadataError (class)
+
+Error class for Metadata related operations.
+
+**Signature**
+
+```ts
+export declare class MetadataError
+```
+
+Added in v2.0.0
+
+# model
+
+## MetadataLabel (type alias)
+
+Type representing a transaction metadatum label (uint .size 8).
+
+**Signature**
+
+```ts
+export type MetadataLabel = typeof MetadataLabel.Type
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromCBORBytes
+
+Parse Metadata from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Metadata
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse Metadata from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Metadata
+```
+
+Added in v2.0.0
+
+# schemas
+
+## CDDLSchema
+
+Schema for CDDL-compatible metadata format.
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.MapFromSelf<
+  typeof Schema.BigIntFromSelf,
+  Schema.Schema<TransactionMetadatum.CDDLSchema, TransactionMetadatum.CDDLSchema, never>
+>
+```
+
+Added in v2.0.0
+
+## FromCBORBytes
+
+Schema transformer for Metadata from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const FromCBORBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.MapFromSelf<
+      typeof Schema.BigIntFromSelf,
+      Schema.Schema<TransactionMetadatum.CDDLSchema, TransactionMetadatum.CDDLSchema, never>
+    >,
+    Schema.SchemaClass<
+      Map<
+        bigint,
+        | TransactionMetadatum.TextMetadatum
+        | TransactionMetadatum.IntMetadatum
+        | TransactionMetadatum.BytesMetadatum
+        | TransactionMetadatum.ArrayMetadatum
+        | TransactionMetadatum.MetadatumMap
+      >,
+      Map<
+        bigint,
+        | TransactionMetadatum.TextMetadatum
+        | TransactionMetadatum.IntMetadatum
+        | TransactionMetadatum.BytesMetadatum
+        | TransactionMetadatum.ArrayMetadatum
+        | TransactionMetadatum.MetadatumMap
+      >,
+      never
+    >,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCBORHex
+
+Schema transformer for Metadata from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const FromCBORHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<
+    Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >
+  >,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.MapFromSelf<
+        typeof Schema.BigIntFromSelf,
+        Schema.Schema<TransactionMetadatum.CDDLSchema, TransactionMetadatum.CDDLSchema, never>
+      >,
+      Schema.SchemaClass<
+        Map<
+          bigint,
+          | TransactionMetadatum.TextMetadatum
+          | TransactionMetadatum.IntMetadatum
+          | TransactionMetadatum.BytesMetadatum
+          | TransactionMetadatum.ArrayMetadatum
+          | TransactionMetadatum.MetadatumMap
+        >,
+        Map<
+          bigint,
+          | TransactionMetadatum.TextMetadatum
+          | TransactionMetadatum.IntMetadatum
+          | TransactionMetadatum.BytesMetadatum
+          | TransactionMetadatum.ArrayMetadatum
+          | TransactionMetadatum.MetadatumMap
+        >,
+        never
+      >,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+Transform schema from CDDL to Metadata.
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.MapFromSelf<
+    typeof Schema.BigIntFromSelf,
+    Schema.Schema<TransactionMetadatum.CDDLSchema, TransactionMetadatum.CDDLSchema, never>
+  >,
+  Schema.SchemaClass<
+    Map<
+      bigint,
+      | TransactionMetadatum.TextMetadatum
+      | TransactionMetadatum.IntMetadatum
+      | TransactionMetadatum.BytesMetadatum
+      | TransactionMetadatum.ArrayMetadatum
+      | TransactionMetadatum.MetadatumMap
+    >,
+    Map<
+      bigint,
+      | TransactionMetadatum.TextMetadatum
+      | TransactionMetadatum.IntMetadatum
+      | TransactionMetadatum.BytesMetadatum
+      | TransactionMetadatum.ArrayMetadatum
+      | TransactionMetadatum.MetadatumMap
+    >,
+    never
+  >,
+  never
+>
+```
+
+Added in v2.0.0
+
+## Metadata
+
+Schema for transaction metadata (map from labels to metadata).
+
+```
+Represents: metadata = {* transaction_metadatum_label => transaction_metadatum}
+```
+
+**Signature**
+
+```ts
+export declare const Metadata: Schema.MapFromSelf<
+  Schema.refine<bigint, typeof Schema.BigIntFromSelf>,
+  Schema.Union<
+    [
+      typeof TransactionMetadatum.TextMetadatum,
+      typeof TransactionMetadatum.IntMetadatum,
+      typeof TransactionMetadatum.BytesMetadatum,
+      typeof TransactionMetadatum.ArrayMetadatum,
+      typeof TransactionMetadatum.MetadatumMap
+    ]
+  >
+>
+```
+
+Added in v2.0.0
+
+## MetadataLabel
+
+Schema for transaction metadatum label (uint .size 8).
+
+**Signature**
+
+```ts
+export declare const MetadataLabel: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+```
+
+Added in v2.0.0
+
+# testing
+
+## arbitrary
+
+FastCheck arbitrary for generating random Metadata instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<
+  Map<
+    bigint,
+    | TransactionMetadatum.TextMetadatum
+    | TransactionMetadatum.IntMetadatum
+    | TransactionMetadatum.BytesMetadatum
+    | TransactionMetadatum.ArrayMetadatum
+    | TransactionMetadatum.MetadatumMap
+  >
+>
+```
+
+Added in v2.0.0
+
+# utilities
+
+## entries
+
+Get all entries in the metadata.
+
+**Signature**
+
+```ts
+export declare const entries: (metadata: Metadata) => Array<[MetadataLabel, TransactionMetadatum.TransactionMetadatum]>
+```
+
+Added in v2.0.0
+
+## equals
+
+Check if two Metadata instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: Metadata, b: Metadata) => boolean
+```
+
+Added in v2.0.0
+
+## get
+
+Get a metadata entry by label.
+
+**Signature**
+
+```ts
+export declare const get: (
+  metadata: Metadata,
+  label: MetadataLabel
+) => TransactionMetadatum.TransactionMetadatum | undefined
+```
+
+Added in v2.0.0
+
+## has
+
+Check if a label exists in the metadata.
+
+**Signature**
+
+```ts
+export declare const has: (metadata: Metadata, label: MetadataLabel) => boolean
+```
+
+Added in v2.0.0
+
+## labels
+
+Get all labels in the metadata.
+
+**Signature**
+
+```ts
+export declare const labels: (metadata: Metadata) => Array<MetadataLabel>
+```
+
+Added in v2.0.0
+
+## size
+
+Get the size (number of entries) of the metadata.
+
+**Signature**
+
+```ts
+export declare const size: (metadata: Metadata) => number
+```
+
+Added in v2.0.0
+
+## values
+
+Get all metadata values in the metadata.
+
+**Signature**
+
+```ts
+export declare const values: (metadata: Metadata) => Array<TransactionMetadatum.TransactionMetadatum>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Metadata (type alias)
+
+**Signature**
+
+```ts
+export type Metadata = typeof Metadata.Type
+```

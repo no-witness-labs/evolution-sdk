@@ -1,6 +1,6 @@
 ---
 title: DataJson.ts
-nav_order: 33
+nav_order: 38
 parent: Modules
 ---
 
@@ -23,21 +23,12 @@ parent: Modules
   - [List (interface)](#list-interface)
   - [Map](#map)
   - [Map (type alias)](#map-type-alias)
-  - [fromCBOR](#fromcbor)
-  - [fromData](#fromdata)
   - [isByteArray](#isbytearray)
   - [isConstr](#isconstr)
   - [isInteger](#isinteger)
   - [isList](#islist)
   - [isMap](#ismap)
-  - [mkByteArray](#mkbytearray)
-  - [mkConstr](#mkconstr)
   - [mkConstr (interface)](#mkconstr-interface)
-  - [mkInteger](#mkinteger)
-  - [mkMap](#mkmap)
-  - [resolveCBOR](#resolvecbor)
-  - [toCBOR](#tocbor)
-  - [toData](#todata)
 
 ---
 
@@ -156,38 +147,6 @@ export type Map = {
 }
 ```
 
-## fromCBOR
-
-Decodes a CBOR hex string to a TypeScript type
-
-**Signature**
-
-```ts
-export declare function fromCBOR(input: string): Data
-export declare function fromCBOR<Source, Target extends Data>(
-  input: string,
-  schema: Schema.Schema<Source, Target>
-): Source
-```
-
-Added in v1.0.0
-
-## fromData
-
-Decodes an unknown value from Plutus Data Constructor to a TypeScript type
-
-**Signature**
-
-```ts
-export declare const fromData: <Source, Target extends Data>(
-  input: unknown,
-  schema: Schema.Schema<Source, Target>,
-  options?: SchemaAST.ParseOptions
-) => Source
-```
-
-Added in v1.0.0
-
 ## isByteArray
 
 **Signature**
@@ -195,7 +154,7 @@ Added in v1.0.0
 ```ts
 export declare const isByteArray: (
   u: unknown,
-  overrideOptions?: SchemaAST.ParseOptions | number
+  overrideOptions?: ParseOptions | number
 ) => u is { readonly bytes: string }
 ```
 
@@ -206,7 +165,7 @@ export declare const isByteArray: (
 ```ts
 export declare const isConstr: (
   u: unknown,
-  overrideOptions?: SchemaAST.ParseOptions | number
+  overrideOptions?: ParseOptions | number
 ) => u is { readonly fields: readonly Data[]; readonly constructor: number }
 ```
 
@@ -215,10 +174,7 @@ export declare const isConstr: (
 **Signature**
 
 ```ts
-export declare const isInteger: (
-  u: unknown,
-  overrideOptions?: SchemaAST.ParseOptions | number
-) => u is { readonly int: number }
+export declare const isInteger: (u: unknown, overrideOptions?: ParseOptions | number) => u is { readonly int: number }
 ```
 
 ## isList
@@ -226,7 +182,7 @@ export declare const isInteger: (
 **Signature**
 
 ```ts
-export declare const isList: (u: unknown, overrideOptions?: SchemaAST.ParseOptions | number) => u is readonly Data[]
+export declare const isList: (u: unknown, overrideOptions?: ParseOptions | number) => u is readonly Data[]
 ```
 
 ## isMap
@@ -234,29 +190,7 @@ export declare const isList: (u: unknown, overrideOptions?: SchemaAST.ParseOptio
 **Signature**
 
 ```ts
-export declare const isMap: (
-  u: unknown,
-  overrideOptions?: SchemaAST.ParseOptions | number
-) => u is { readonly [x: string]: Data }
-```
-
-## mkByteArray
-
-**Signature**
-
-```ts
-export declare const mkByteArray: (bytes: string) => ByteArray
-```
-
-## mkConstr
-
-**Signature**
-
-```ts
-export declare const mkConstr: <T extends Data>(
-  constructor: number,
-  fields: ReadonlyArray<T>
-) => { readonly constructor: number; readonly fields: ReadonlyArray<T> }
+export declare const isMap: (u: unknown, overrideOptions?: ParseOptions | number) => u is { readonly [x: string]: Data }
 ```
 
 ## mkConstr (interface)
@@ -269,59 +203,3 @@ export interface mkConstr<T extends Data> {
   readonly fields: ReadonlyArray<T>
 }
 ```
-
-## mkInteger
-
-**Signature**
-
-```ts
-export declare const mkInteger: (int: number) => Integer
-```
-
-## mkMap
-
-**Signature**
-
-```ts
-export declare const mkMap: (map: Record<string, Data>) => Readonly<Map>
-```
-
-## resolveCBOR
-
-**Signature**
-
-```ts
-export declare const resolveCBOR: (input: string) => Data
-```
-
-## toCBOR
-
-Converts TypeScript data into CBOR hex string
-
-**Signature**
-
-```ts
-export declare const toCBOR: <Source, Target extends Data>(
-  input: unknown,
-  schema?: Schema.Schema<Source, Target>,
-  options?: { canonical?: boolean; parseOptions?: SchemaAST.ParseOptions }
-) => string
-```
-
-Added in v1.0.0
-
-## toData
-
-Encodes a TypeScript value to Plutus Data Constructor
-
-**Signature**
-
-```ts
-export declare const toData: <Source, Target extends Data>(
-  input: unknown,
-  schema: Schema.Schema<Source, Target>,
-  options?: SchemaAST.ParseOptions
-) => Target
-```
-
-Added in v1.0.0

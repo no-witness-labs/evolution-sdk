@@ -1,6 +1,6 @@
 ---
 title: StakeReference.ts
-nav_order: 82
+nav_order: 98
 parent: Modules
 ---
 
@@ -42,23 +42,7 @@ Schema for stake reference that can be either a credential or a pointer
 
 ```ts
 export declare const StakeReference: Schema.UndefinedOr<
-  Schema.Union<
-    [
-      Schema.Union<
-        [
-          Schema.TaggedStruct<
-            "KeyHash",
-            { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash"> }
-          >,
-          Schema.TaggedStruct<
-            "ScriptHash",
-            { hash: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "ScriptHash"> }
-          >
-        ]
-      >,
-      typeof Pointer.Pointer
-    ]
-  >
+  Schema.Union<[Schema.Union<[typeof KeyHash, typeof ScriptHash]>, typeof Pointer.Pointer]>
 >
 ```
 

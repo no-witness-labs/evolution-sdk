@@ -1,6 +1,6 @@
 ---
 title: SingleHostName.ts
-nav_order: 81
+nav_order: 97
 parent: Modules
 ---
 
@@ -25,9 +25,9 @@ parent: Modules
 - [predicates](#predicates)
   - [hasPort](#hasport)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
-  - [SingleHostNameCDDLSchema](#singlehostnamecddlschema)
+  - [FromBytes](#frombytes)
+  - [FromCDDL](#fromcddl)
+  - [FromHex](#fromhex)
 - [transformation](#transformation)
   - [getDnsName](#getdnsname)
   - [getPort](#getport)
@@ -170,6 +170,23 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
+## FromCDDL
+
+CDDL schema for SingleHostName.
+single_host_name = (1, port / nil, dns_name)
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.Tuple<[Schema.Literal<[1n]>, Schema.NullOr<typeof Schema.BigIntFromSelf>, typeof Schema.String]>,
+  Schema.SchemaClass<SingleHostName, SingleHostName, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
 ## FromHex
 
 CBOR hex transformation schema for SingleHostName.
@@ -180,7 +197,7 @@ CBOR hex transformation schema for SingleHostName.
 export declare const FromHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -193,23 +210,6 @@ export declare const FromHex: (
       never
     >
   >
->
-```
-
-Added in v2.0.0
-
-## SingleHostNameCDDLSchema
-
-CDDL schema for SingleHostName.
-single_host_name = (1, port / nil, dns_name)
-
-**Signature**
-
-```ts
-export declare const SingleHostNameCDDLSchema: Schema.transformOrFail<
-  Schema.Tuple<[Schema.Literal<[1n]>, Schema.NullOr<typeof Schema.BigIntFromSelf>, typeof Schema.String]>,
-  Schema.SchemaClass<SingleHostName, SingleHostName, never>,
-  never
 >
 ```
 

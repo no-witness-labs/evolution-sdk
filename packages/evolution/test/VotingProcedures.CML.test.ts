@@ -27,7 +27,9 @@ describe("VotingProcedures CML Compatibility", () => {
     // Create Evolution SDK VotingProcedures
     const drepVoter = VotingProcedures.makeDRepVoter(drep)
     const govActionId = new GovernanceAction.GovActionId({
-      transactionId: TransactionHash.make("a".repeat(64)),
+      transactionId: TransactionHash.make({
+        bytes: new Uint8Array(32).fill(1) // Deterministic test data
+      }),
       govActionIndex: TransactionIndex.make(0)
     })
     const votingProcedure = VotingProcedures.makeProcedure(VotingProcedures.yes(), anchor)
@@ -68,7 +70,9 @@ describe("VotingProcedures CML Compatibility", () => {
     // Create Evolution SDK VotingProcedures with anchor
     const drepVoter = VotingProcedures.makeDRepVoter(drep)
     const govActionId = new GovernanceAction.GovActionId({
-      transactionId: TransactionHash.make("b".repeat(64)),
+      transactionId: TransactionHash.make({
+        bytes: new Uint8Array(32).fill(1) // Deterministic test data
+      }),
       govActionIndex: TransactionIndex.make(1)
     })
     const votingProcedure = VotingProcedures.makeProcedure(VotingProcedures.no(), anchor)

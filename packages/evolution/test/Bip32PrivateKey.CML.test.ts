@@ -257,7 +257,10 @@ describe("Bip32PrivateKey CML Compatibility", () => {
       // Get the raw bytes from the account public key
       const evolutionAccountPubKeyRaw = Bip32PublicKey.toRawBytes(evolutionAccountPubKey)
 
-      const evolutionAccountBip32Pub = Bip32PublicKey.fromBytes(evolutionAccountPubKeyRaw, evolutionAccountChainCode)
+      const combined = new Uint8Array(64)
+      combined.set(evolutionAccountPubKeyRaw, 0)
+      combined.set(evolutionAccountChainCode, 32)
+      const evolutionAccountBip32Pub = Bip32PublicKey.fromBytes(combined)
 
       // Derive payment key via public key derivation
       const paymentRoleKey = Bip32PublicKey.deriveChild(evolutionAccountBip32Pub, 0)

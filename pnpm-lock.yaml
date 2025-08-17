@@ -166,6 +166,9 @@ importers:
       '@types/libsodium-wrappers-sumo':
         specifier: ^0.7.8
         version: 0.7.8
+      tinybench:
+        specifier: ^2.6.0
+        version: 2.9.0
       tsx:
         specifier: ^4.20.3
         version: 4.20.3

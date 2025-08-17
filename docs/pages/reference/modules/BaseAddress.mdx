@@ -1,6 +1,6 @@
 ---
 title: BaseAddress.ts
-nav_order: 7
+nav_order: 8
 parent: Modules
 ---
 
@@ -10,20 +10,102 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
-- [generators](#generators)
-  - [generator](#generator)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
 - [schemas](#schemas)
   - [BaseAddress (class)](#baseaddress-class)
-    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
 - [utils](#utils)
   - [BaseAddressError (class)](#baseaddresserror-class)
-  - [Codec](#codec)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for BaseAddress instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<BaseAddress>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for BaseAddress.
+
+**Signature**
+
+```ts
+export declare const make: (
+  i: {
+    readonly networkId: number
+    readonly stakeCredential:
+      | { readonly hash: any; readonly _tag: "KeyHash" }
+      | { readonly hash: any; readonly _tag: "ScriptHash" }
+    readonly _tag: "BaseAddress"
+    readonly paymentCredential:
+      | { readonly hash: any; readonly _tag: "KeyHash" }
+      | { readonly hash: any; readonly _tag: "ScriptHash" }
+  },
+  overrideOptions?: ParseOptions
+) => BaseAddress
+```
+
+Added in v2.0.0
+
+# effect
+
+## Either (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Convert a BaseAddress to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: BaseAddress) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert a BaseAddress to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: BaseAddress) => string
+```
+
+Added in v2.0.0
 
 # equality
 
@@ -39,16 +121,28 @@ export declare const equals: (a: BaseAddress, b: BaseAddress) => boolean
 
 Added in v2.0.0
 
-# generators
+# parsing
 
-## generator
+## fromBytes
 
-Generate a random BaseAddress.
+Parse a BaseAddress from bytes.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<BaseAddress>
+export declare const fromBytes: (input: any) => BaseAddress
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse a BaseAddress from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => BaseAddress
 ```
 
 Added in v2.0.0
@@ -67,14 +161,6 @@ export declare class BaseAddress
 
 Added in v2.0.0
 
-### [Symbol.for("nodejs.util.inspect.custom")] (method)
-
-**Signature**
-
-```ts
-;[Symbol.for("nodejs.util.inspect.custom")]()
-```
-
 # utils
 
 ## BaseAddressError (class)
@@ -83,33 +169,6 @@ Added in v2.0.0
 
 ```ts
 export declare class BaseAddressError
-```
-
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: {
-  Encode: { hex: (input: BaseAddress) => string; bytes: (input: BaseAddress) => any }
-  Decode: { hex: (input: string) => BaseAddress; bytes: (input: any) => BaseAddress }
-  EncodeEffect: {
-    hex: (input: BaseAddress) => Effect.Effect<string, InstanceType<typeof BaseAddressError>>
-    bytes: (input: BaseAddress) => Effect.Effect<any, InstanceType<typeof BaseAddressError>>
-  }
-  DecodeEffect: {
-    hex: (input: string) => Effect.Effect<BaseAddress, InstanceType<typeof BaseAddressError>>
-    bytes: (input: any) => Effect.Effect<BaseAddress, InstanceType<typeof BaseAddressError>>
-  }
-  EncodeEither: {
-    hex: (input: BaseAddress) => Either<string, InstanceType<typeof BaseAddressError>>
-    bytes: (input: BaseAddress) => Either<any, InstanceType<typeof BaseAddressError>>
-  }
-  DecodeEither: {
-    hex: (input: string) => Either<BaseAddress, InstanceType<typeof BaseAddressError>>
-    bytes: (input: any) => Either<BaseAddress, InstanceType<typeof BaseAddressError>>
-  }
-}
 ```
 
 ## FromBytes
@@ -130,7 +189,7 @@ export declare const FromBytes: Schema.transformOrFail<
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transformOrFail<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof BaseAddress, never>
 >
 ```

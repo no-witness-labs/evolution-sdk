@@ -3,6 +3,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Ed25519Signature from "./Ed25519Signature.js"
+import * as Function from "./Function.js"
 import * as KESVkey from "./KESVkey.js"
 import * as Numeric from "./Numeric.js"
 
@@ -20,12 +21,15 @@ export class OperationalCertError extends Data.TaggedError("OperationalCertError
 /**
  * OperationalCert class based on Conway CDDL specification
  *
- * CDDL: operational_cert = [
+ * CDDL:
+ * ```
+ * operational_cert = [
  *   hot_vkey : kes_vkey,
  *   sequence_number : uint64,
  *   kes_period : uint64,
  *   sigma : ed25519_signature
  * ]
+ * ```
  *
  * @since 2.0.0
  * @category model
@@ -148,7 +152,7 @@ export const arbitrary = FastCheck.record({
  * @category parsing
  */
 export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): OperationalCert =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+  Function.makeDecodeSync(FromCBORBytes(options), OperationalCertError, "OperationalCert.fromCBORBytes")(bytes)
 
 /**
  * Parse OperationalCert from CBOR hex string.
@@ -157,7 +161,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): O
  * @category parsing
  */
 export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): OperationalCert =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+  Function.makeDecodeSync(FromCBORHex(options), OperationalCertError, "OperationalCert.fromCBORHex")(hex)
 
 /**
  * Encode OperationalCert to CBOR bytes.
@@ -165,8 +169,8 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Operation
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (cert: OperationalCert, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(cert, options))
+export const toCBORBytes = (value: OperationalCert, options?: CBOR.CodecOptions): Uint8Array =>
+  Function.makeEncodeSync(FromCBORBytes(options), OperationalCertError, "OperationalCert.toCBORBytes")(value)
 
 /**
  * Encode OperationalCert to CBOR hex string.
@@ -174,97 +178,53 @@ export const toCBORBytes = (cert: OperationalCert, options?: CBOR.CodecOptions):
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (cert: OperationalCert, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(cert, options))
+export const toCBORHex = (value: OperationalCert, options?: CBOR.CodecOptions): string =>
+  Function.makeEncodeSync(FromCBORHex(options), OperationalCertError, "OperationalCert.toCBORHex")(value)
 
 // ============================================================================
 // Effect Namespace
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Parse OperationalCert from CBOR bytes with Effect error handling.
+   * Parse OperationalCert from CBOR bytes with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<OperationalCert, OperationalCertError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new OperationalCertError({
-            message: "Failed to parse OperationalCert from CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Function.makeDecodeEither(FromCBORBytes(options), OperationalCertError)(bytes)
 
   /**
-   * Parse OperationalCert from CBOR hex string with Effect error handling.
+   * Parse OperationalCert from CBOR hex string with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (
-    hex: string,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<OperationalCert, OperationalCertError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new OperationalCertError({
-            message: "Failed to parse OperationalCert from CBOR hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Function.makeDecodeEither(FromCBORHex(options), OperationalCertError)(hex)
 
   /**
-   * Encode OperationalCert to CBOR bytes with Effect error handling.
+   * Encode OperationalCert to CBOR bytes with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    cert: OperationalCert,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<Uint8Array, OperationalCertError> =>
-    Schema.encode(FromCBORBytes(options))(cert).pipe(
-      Eff.mapError(
-        (cause) =>
-          new OperationalCertError({
-            message: "Failed to encode OperationalCert to CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = (value: OperationalCert, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Function.makeEncodeEither(FromCBORBytes(options), OperationalCertError)(value)
 
   /**
-   * Encode OperationalCert to CBOR hex string with Effect error handling.
+   * Encode OperationalCert to CBOR hex string with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (
-    cert: OperationalCert,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<string, OperationalCertError> =>
-    Schema.encode(FromCBORHex(options))(cert).pipe(
-      Eff.mapError(
-        (cause) =>
-          new OperationalCertError({
-            message: "Failed to encode OperationalCert to CBOR hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = (value: OperationalCert, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Function.makeEncodeEither(FromCBORHex(options), OperationalCertError)(value)
 }

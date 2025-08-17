@@ -1,6 +1,6 @@
 ---
 title: DnsName.ts
-nav_order: 37
+nav_order: 43
 parent: Modules
 ---
 
@@ -10,24 +10,46 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
 - [constructors](#constructors)
   - [make](#make)
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [DnsNameError (class)](#dnsnameerror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [DnsName](#dnsname)
   - [DnsName (type alias)](#dnsname-type-alias)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [predicates](#predicates)
+  - [isDnsName](#isdnsname)
 - [utils](#utils)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for generating random DnsName instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: Arbitrary<string & Brand<"DnsName">>
+```
+
+Added in v2.0.0
 
 # constructors
 
@@ -43,35 +65,36 @@ export declare const make: (a: string, options?: Schema.MakeOptions) => string &
 
 Added in v2.0.0
 
-# encoding/decoding
+# either
 
-## Codec
+## Either (namespace)
 
-Codec utilities for DnsName encoding and decoding operations.
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode DnsName to bytes.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string & Brand<"DnsName">) => any; hex: (input: string & Brand<"DnsName">) => string }
-  Decode: { bytes: (input: any) => string & Brand<"DnsName">; hex: (input: string) => string & Brand<"DnsName"> }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"DnsName">) => Effect<any, InstanceType<typeof DnsNameError>>
-    hex: (input: string & Brand<"DnsName">) => Effect<string, InstanceType<typeof DnsNameError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"DnsName">, InstanceType<typeof DnsNameError>>
-    hex: (input: string) => Effect<string & Brand<"DnsName">, InstanceType<typeof DnsNameError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"DnsName">) => Either<any, InstanceType<typeof DnsNameError>>
-    hex: (input: string & Brand<"DnsName">) => Either<string, InstanceType<typeof DnsNameError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"DnsName">, InstanceType<typeof DnsNameError>>
-    hex: (input: string) => Either<string & Brand<"DnsName">, InstanceType<typeof DnsNameError>>
-  }
-}
+export declare const toBytes: (input: string & Brand<"DnsName">) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode DnsName to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: string & Brand<"DnsName">) => string
 ```
 
 Added in v2.0.0
@@ -104,20 +127,6 @@ export declare class DnsNameError
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-Generate a random DnsName.
-
-**Signature**
-
-```ts
-export declare const generator: Arbitrary<string & Brand<"DnsName">>
-```
-
-Added in v2.0.0
-
 # model
 
 ## DnsName
@@ -132,7 +141,7 @@ export declare const DnsName: Schema.brand<
   Schema.refine<
     string,
     Schema.transform<
-      Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
       Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
     >
   >,
@@ -154,6 +163,46 @@ export type DnsName = typeof DnsName.Type
 
 Added in v2.0.0
 
+# parsing
+
+## fromBytes
+
+Parse DnsName from bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => string & Brand<"DnsName">
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse DnsName from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => string & Brand<"DnsName">
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isDnsName
+
+Check if the given value is a valid DnsName
+
+**Signature**
+
+```ts
+export declare const isDnsName: (u: unknown, overrideOptions?: ParseOptions | number) => u is string & Brand<"DnsName">
+```
+
+Added in v2.0.0
+
 # utils
 
 ## FromBytes
@@ -167,7 +216,7 @@ export declare const FromBytes: Schema.transform<
     Schema.refine<
       string,
       Schema.transform<
-        Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
         Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
       >
     >,
@@ -185,7 +234,7 @@ export declare const FromHex: Schema.transform<
   Schema.refine<
     string,
     Schema.transform<
-      Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
       Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
     >
   >,
@@ -193,7 +242,7 @@ export declare const FromHex: Schema.transform<
     Schema.refine<
       string,
       Schema.transform<
-        Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
         Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
       >
     >,

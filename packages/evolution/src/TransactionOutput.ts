@@ -1,11 +1,11 @@
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Address from "./Address.js"
 import * as Bytes from "./Bytes.js"
-import * as Bytes32 from "./Bytes32.js"
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
 import * as DatumOption from "./DatumOption.js"
+import * as Function from "./Function.js"
 import * as ScriptRef from "./ScriptRef.js"
 import * as Value from "./Value.js"
 
@@ -13,6 +13,17 @@ export class TransactionOutputError extends Data.TaggedError("TransactionOutputE
   message?: string
   cause?: unknown
 }> {}
+
+// Pre-bind frequently used ParseResult helpers for hot paths
+const encAddress = ParseResult.encodeEither(Address.FromBytes)
+const decAddress = ParseResult.decodeEither(Address.FromBytes)
+const encValue = ParseResult.encodeEither(Value.FromCDDL)
+const decValue = ParseResult.decodeEither(Value.FromCDDL)
+const encDatumOption = ParseResult.encodeEither(DatumOption.DatumOptionCDDLSchema)
+const decDatumOption = ParseResult.decodeEither(DatumOption.DatumOptionCDDLSchema)
+const decDatumHash = ParseResult.decodeEither(DatumOption.DatumHashFromBytes)
+const encScriptRef = ParseResult.encodeEither(ScriptRef.FromCDDL)
+const decScriptRef = ParseResult.decodeEither(ScriptRef.FromCDDL)
 
 /**
  * TransactionOutput types based on Conway CDDL specification
@@ -45,7 +56,7 @@ export class ShelleyTransactionOutput extends Schema.TaggedClass<ShelleyTransact
   {
     address: Address.Address,
     amount: Value.Value,
-    datumHash: Schema.optional(Bytes32.HexSchema)
+    datumHash: Schema.optional(DatumOption.DatumHash)
   }
 ) {}
 
@@ -86,7 +97,7 @@ export type TransactionOutput = typeof TransactionOutput.Type
 
 export const ShelleyTransactionOutputCDDL = Schema.Tuple(
   Schema.Uint8ArrayFromSelf, // address as bytes
-  Schema.encodedSchema(Value.FromCDDL), // value
+  Value.CDDLSchema, // value
   Schema.optionalElement(Schema.Uint8ArrayFromSelf) // optional datum_hash as bytes
 )
 
@@ -106,34 +117,35 @@ export const FromShelleyTransactionOutputCDDLSchema = Schema.transformOrFail(
   {
     strict: true,
     encode: (toI) =>
-      Eff.gen(function* () {
-        const addressBytes = yield* ParseResult.encode(Address.FromBytes)(toI.address)
-        const valueBytes = yield* ParseResult.encode(Value.FromCDDL)(toI.amount)
+      E.gen(function* () {
+        const addressBytes = yield* encAddress(toI.address)
+        const valueBytes = yield* encValue(toI.amount)
 
         if (toI.datumHash !== undefined) {
-          const hashBytes = yield* ParseResult.encode(Bytes.FromBytes)(toI.datumHash)
-          return [addressBytes, valueBytes, hashBytes] as const
+          return [addressBytes, valueBytes, toI.datumHash.hash] as const
         }
 
         return [addressBytes, valueBytes] as const
       }),
     decode: (fromI) =>
-      Eff.gen(function* () {
+      E.gen(function* () {
         const [addressBytes, valueBytes, datumHashBytes] = fromI
 
-        const address = yield* ParseResult.decode(Address.FromBytes)(addressBytes)
-        const amount = yield* ParseResult.decode(Value.FromCDDL)(valueBytes)
-
-        let datumHash: string | undefined
+        const address = yield* decAddress(addressBytes)
+        const amount = yield* decValue(valueBytes)
+        let datumHash: DatumOption.DatumHash | undefined
         if (datumHashBytes !== undefined) {
-          datumHash = yield* ParseResult.decode(Bytes.FromBytes)(datumHashBytes)
+          datumHash = yield* decDatumHash(datumHashBytes)
         }
 
-        return new ShelleyTransactionOutput({
-          address,
-          amount,
-          datumHash
-        })
+        return new ShelleyTransactionOutput(
+          {
+            address,
+            amount,
+            datumHash
+          },
+          { disableValidation: true }
+        )
       })
   }
 )
@@ -161,18 +173,14 @@ export const FromBabbageTransactionOutputCDDLSchema = Schema.transformOrFail(
   {
     strict: true,
     encode: (toI) =>
-      Eff.gen(function* () {
-        const addressBytes = yield* ParseResult.encode(Address.FromBytes)(toI.address)
-        const valueBytes = yield* ParseResult.encode(Value.FromCDDL)(toI.amount)
+      E.gen(function* () {
+        const addressBytes = yield* encAddress(toI.address)
+        const valueBytes = yield* encValue(toI.amount)
 
         // Prepare optional fields
-        const datumOptionBytes =
-          toI.datumOption !== undefined
-            ? yield* ParseResult.encode(DatumOption.DatumOptionCDDLSchema)(toI.datumOption)
-            : undefined
+        const datumOptionBytes = toI.datumOption !== undefined ? yield* encDatumOption(toI.datumOption) : undefined
 
-        const scriptRefBytes =
-          toI.scriptRef !== undefined ? yield* ParseResult.encode(ScriptRef.FromCDDL)(toI.scriptRef) : undefined
+        const scriptRefBytes = toI.scriptRef !== undefined ? yield* encScriptRef(toI.scriptRef) : undefined
 
         // Build result object with conditional properties
         return {
@@ -183,35 +191,39 @@ export const FromBabbageTransactionOutputCDDLSchema = Schema.transformOrFail(
         }
       }),
     decode: (fromI) =>
-      Eff.gen(function* () {
+      E.gen(function* () {
         const addressBytes = fromI[0]
         const valueBytes = fromI[1]
         const datumOptionBytes = fromI[2]
         const scriptRefBytes = fromI[3]
 
         if (addressBytes === undefined || valueBytes === undefined) {
-          return yield* ParseResult.fail(new ParseResult.Type(BabbageTransactionOutput.ast, fromI))
+          // return yield* ParseResult.fail(new ParseResult.Type(BabbageTransactionOutput.ast, fromI))
+          return yield* E.left(new ParseResult.Type(BabbageTransactionOutput.ast, fromI))
         }
 
-        const address = yield* ParseResult.decode(Address.FromBytes)(addressBytes)
-        const amount = yield* ParseResult.decode(Value.FromCDDL)(valueBytes)
+        const address = yield* decAddress(addressBytes)
+        const amount = yield* decValue(valueBytes)
 
         let datumOption: DatumOption.DatumOption | undefined
         if (datumOptionBytes !== undefined) {
-          datumOption = yield* ParseResult.decode(DatumOption.DatumOptionCDDLSchema)(datumOptionBytes)
+          datumOption = yield* decDatumOption(datumOptionBytes)
         }
 
         let scriptRef: ScriptRef.ScriptRef | undefined
         if (scriptRefBytes !== undefined) {
-          scriptRef = yield* ParseResult.decode(ScriptRef.FromCDDL)(scriptRefBytes)
+          scriptRef = yield* decScriptRef(scriptRefBytes)
         }
 
-        return new BabbageTransactionOutput({
-          address,
-          amount,
-          datumOption,
-          scriptRef
-        })
+        return new BabbageTransactionOutput(
+          {
+            address,
+            amount,
+            datumOption,
+            scriptRef
+          },
+          { disableValidation: true }
+        )
       })
   }
 )
@@ -300,7 +312,7 @@ export const equals = (a: TransactionOutput, b: TransactionOutput): boolean => {
 export const makeShelley = (
   address: Address.Address,
   amount: Value.Value,
-  datumHash?: string
+  datumHash?: DatumOption.DatumHash
 ): ShelleyTransactionOutput => new ShelleyTransactionOutput({ address, amount, datumHash })
 
 /**
@@ -326,10 +338,7 @@ export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
     FastCheck.record({
       address: Address.arbitrary,
       amount: Coin.arbitrary.map((coin) => Value.onlyCoin(coin)),
-      datumHash: FastCheck.option(
-        FastCheck.hexaString({ minLength: 64, maxLength: 64 }).filter((hex) => hex.length === 64),
-        { nil: undefined }
-      )
+      datumHash: FastCheck.option(DatumOption.datumHashArbitrary, { nil: undefined })
     }).map((props) => new ShelleyTransactionOutput(props)),
 
     // Babbage TransactionOutput
@@ -337,81 +346,52 @@ export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
       address: Address.arbitrary,
       amount: Coin.arbitrary.map((coin) => Value.onlyCoin(coin)),
       datumOption: FastCheck.option(DatumOption.arbitrary, { nil: undefined }),
-      scriptRef: FastCheck.option(
-        FastCheck.hexaString({ minLength: 4, maxLength: 200 })
-          .filter((hex) => hex.length % 2 === 0)
-          .map((hex) => Schema.decodeSync(ScriptRef.ScriptRef)(hex)),
-        { nil: undefined }
-      )
+      scriptRef: FastCheck.option(ScriptRef.arbitrary, { nil: undefined })
     }).map((props) => new BabbageTransactionOutput(props))
   )
 
 /**
- * Effect namespace containing schema decode and encode operations.
+ * Either namespace containing schema decode and encode operations.
  *
  * @since 2.0.0
- * @category Effect
+ * @category Either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Parse a TransactionOutput from CBOR bytes using Effect error handling.
+   * Parse a TransactionOutput from CBOR bytes using Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    input: Uint8Array,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<TransactionOutput, TransactionOutputError> =>
-    Eff.mapError(
-      Schema.decode(FromCBORBytes(options))(input),
-      (cause) => new TransactionOutputError({ message: "Failed to decode TransactionOutput from CBOR bytes", cause })
-    )
+  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Function.makeDecodeEither(FromCBORBytes(options), TransactionOutputError)(bytes)
 
   /**
-   * Parse a TransactionOutput from CBOR hex using Effect error handling.
+   * Parse a TransactionOutput from CBOR hex using Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (
-    input: string,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<TransactionOutput, TransactionOutputError> =>
-    Eff.mapError(
-      Schema.decode(FromCBORHex(options))(input),
-      (cause) => new TransactionOutputError({ message: "Failed to decode TransactionOutput from CBOR hex", cause })
-    )
+  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Function.makeDecodeEither(FromCBORHex(options), TransactionOutputError)(hex)
 
   /**
-   * Convert a TransactionOutput to CBOR bytes using Effect error handling.
+   * Convert a TransactionOutput to CBOR bytes using Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    value: TransactionOutput,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<Uint8Array, TransactionOutputError> =>
-    Eff.mapError(
-      Schema.encode(FromCBORBytes(options))(value),
-      (cause) => new TransactionOutputError({ message: "Failed to encode TransactionOutput to CBOR bytes", cause })
-    )
+  export const toCBORBytes = (value: TransactionOutput, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Function.makeEncodeEither(FromCBORBytes(options), TransactionOutputError)(value)
 
   /**
-   * Convert a TransactionOutput to CBOR hex using Effect error handling.
+   * Convert a TransactionOutput to CBOR hex using Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (
-    value: TransactionOutput,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<string, TransactionOutputError> =>
-    Eff.mapError(
-      Schema.encode(FromCBORHex(options))(value),
-      (cause) => new TransactionOutputError({ message: "Failed to encode TransactionOutput to CBOR hex", cause })
-    )
+  export const toCBORHex = (value: TransactionOutput, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+    Function.makeEncodeEither(FromCBORHex(options), TransactionOutputError)(value)
 }
 
 /**
@@ -421,7 +401,7 @@ export namespace Effect {
  * @category encoding
  */
 export const toCBORBytes = (value: TransactionOutput, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(value, options))
+  Function.makeEncodeSync(FromCBORBytes(options), TransactionOutputError, "TransactionOutput.toCBORBytes")(value)
 
 /**
  * Convert TransactionOutput to CBOR hex (unsafe).
@@ -430,7 +410,7 @@ export const toCBORBytes = (value: TransactionOutput, options?: CBOR.CodecOption
  * @category encoding
  */
 export const toCBORHex = (value: TransactionOutput, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(value, options))
+  Function.makeEncodeSync(FromCBORHex(options), TransactionOutputError, "TransactionOutput.toCBORHex")(value)
 
 /**
  * Parse TransactionOutput from CBOR bytes (unsafe).
@@ -438,8 +418,8 @@ export const toCBORHex = (value: TransactionOutput, options?: CBOR.CodecOptions)
  * @since 2.0.0
  * @category decoding
  */
-export const fromCBORBytes = (value: Uint8Array, options?: CBOR.CodecOptions): TransactionOutput =>
-  Eff.runSync(Effect.fromCBORBytes(value, options))
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): TransactionOutput =>
+  Function.makeDecodeSync(FromCBORBytes(options), TransactionOutputError, "TransactionOutput.fromCBORBytes")(bytes)
 
 /**
  * Parse TransactionOutput from CBOR hex (unsafe).
@@ -447,5 +427,5 @@ export const fromCBORBytes = (value: Uint8Array, options?: CBOR.CodecOptions): T
  * @since 2.0.0
  * @category decoding
  */
-export const fromCBORHex = (value: string, options?: CBOR.CodecOptions): TransactionOutput =>
-  Eff.runSync(Effect.fromCBORHex(value, options))
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): TransactionOutput =>
+  Function.makeDecodeSync(FromCBORHex(options), TransactionOutputError, "TransactionOutput.fromCBORHex")(hex)

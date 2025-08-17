@@ -1,0 +1,123 @@
+---
+title: PlutusV3.ts
+nav_order: 75
+parent: Modules
+---
+
+## PlutusV3 overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [PlutusV3Error (class)](#plutusv3error-class)
+- [model](#model)
+  - [PlutusV3 (class)](#plutusv3-class)
+- [schemas](#schemas)
+  - [CDDLSchema](#cddlschema)
+  - [FromCDDL](#fromcddl)
+
+---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for PlutusV3.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<PlutusV3>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for PlutusV3.
+
+**Signature**
+
+```ts
+export declare const make: <C>(this: C, ...args: ConstructorParameters<C>) => InstanceType<C>
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two PlutusV3 instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: PlutusV3, b: PlutusV3) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## PlutusV3Error (class)
+
+Error class for PlutusV3 related operations.
+
+**Signature**
+
+```ts
+export declare class PlutusV3Error
+```
+
+Added in v2.0.0
+
+# model
+
+## PlutusV3 (class)
+
+Plutus V3 script wrapper (raw bytes).
+
+**Signature**
+
+```ts
+export declare class PlutusV3
+```
+
+Added in v2.0.0
+
+# schemas
+
+## CDDLSchema
+
+CDDL schema for PlutusV3 scripts as raw bytes.
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: typeof Schema.Uint8ArrayFromSelf
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+CDDL transformation schema for PlutusV3.
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof PlutusV3>
+```
+
+Added in v2.0.0

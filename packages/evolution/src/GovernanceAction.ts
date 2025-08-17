@@ -2,10 +2,13 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
+import * as CommiteeColdCredential from "./CommitteeColdCredential.js"
+import * as CommiteeHotCredential from "./CommitteeHotCredential.js"
 import * as RewardAccount from "./RewardAccount.js"
 import * as ScriptHash from "./ScriptHash.js"
 import * as TransactionHash from "./TransactionHash.js"
 import * as TransactionIndex from "./TransactionIndex.js"
+import * as UnitInterval from "./UnitInterval.js"
 
 /**
  * Error class for GovernanceAction related operations.
@@ -20,7 +23,9 @@ export class GovernanceActionError extends Data.TaggedError("GovernanceActionErr
 
 /**
  * GovActionId schema representing a governance action identifier.
+ * ```
  * According to Conway CDDL: gov_action_id = [transaction_id : transaction_id, gov_action_index : uint .size 2]
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -32,7 +37,9 @@ export class GovActionId extends Schema.TaggedClass<GovActionId>()("GovActionId"
 
 /**
  * CDDL schema for GovActionId tuple structure.
+ * ```
  * For CBOR encoding: [transaction_id: bytes, gov_action_index: uint]
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -69,8 +76,10 @@ export const GovActionIdFromCDDL = Schema.transformOrFail(GovActionIdCDDL, GovAc
 
 /**
  * Parameter change governance action schema.
+ * ```
  * According to Conway CDDL: parameter_change_action =
  *   (0, gov_action_id/ nil, protocol_param_update, policy_hash/ nil)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -134,8 +143,10 @@ export const ParameterChangeActionFromCDDL = Schema.transformOrFail(
 
 /**
  * Hard fork initiation governance action schema.
+ * ```
  * According to Conway CDDL: hard_fork_initiation_action =
  *   (1, gov_action_id/ nil, protocol_version, policy_hash/ nil)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -151,7 +162,9 @@ export class HardForkInitiationAction extends Schema.TaggedClass<HardForkInitiat
 
 /**
  * CDDL schema for HardForkInitiationAction tuple structure.
+ * ```
  * Maps to: (1, gov_action_id/ nil, protocol_version, policy_hash/ nil)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -206,8 +219,10 @@ export const HardForkInitiationActionFromCDDL = Schema.transformOrFail(
 
 /**
  * Treasury withdrawals governance action schema.
+ * ```
  * According to Conway CDDL: treasury_withdrawals_action =
  *   (2, { * reward_account => coin }, policy_hash/ nil)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -225,7 +240,9 @@ export class TreasuryWithdrawalsAction extends Schema.TaggedClass<TreasuryWithdr
 
 /**
  * CDDL schema for TreasuryWithdrawalsAction tuple structure.
+ * ```
  * Maps to: (2, { * reward_account => coin }, policy_hash/ nil)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -282,8 +299,10 @@ export const TreasuryWithdrawalsActionFromCDDL = Schema.transformOrFail(
 
 /**
  * No confidence governance action schema.
+ * ```
  * According to Conway CDDL: no_confidence =
  *   (3, gov_action_id/ nil)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -338,22 +357,29 @@ export const NoConfidenceActionFromCDDL = Schema.transformOrFail(
 
 /**
  * Update committee governance action schema.
+ * ```
  * According to Conway CDDL: update_committee =
  *   (4, gov_action_id/ nil, set<committee_cold_credential>, { * committee_cold_credential => committee_hot_credential }, unit_interval)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
  */
 export class UpdateCommitteeAction extends Schema.TaggedClass<UpdateCommitteeAction>()("UpdateCommitteeAction", {
   govActionId: Schema.NullOr(GovActionId), // gov_action_id / nil
-  membersToRemove: Schema.Array(CBOR.CBORSchema), // set<committee_cold_credential>
-  membersToAdd: CBOR.MapSchema, // { * committee_cold_credential => committee_hot_credential }
-  threshold: CBOR.CBORSchema // unit_interval
+  membersToRemove: Schema.Array(CommiteeColdCredential.CommitteeColdCredential.Credential), // set<committee_cold_credential>
+  membersToAdd: Schema.MapFromSelf({
+    key: CommiteeColdCredential.CommitteeColdCredential.Credential, // committee_cold_credential
+    value: CommiteeHotCredential.CommitteeHotCredential.Credential // committee_hot_credential
+  }),
+  threshold: UnitInterval.UnitInterval
 }) {}
 
 /**
  * CDDL schema for UpdateCommitteeAction tuple structure.
+ * ```
  * Maps to: (4, gov_action_id/ nil, set<committee_cold_credential>, { * committee_cold_credential => committee_hot_credential }, unit_interval)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -361,9 +387,12 @@ export class UpdateCommitteeAction extends Schema.TaggedClass<UpdateCommitteeAct
 export const UpdateCommitteeActionCDDL = Schema.Tuple(
   Schema.Literal(4n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
-  Schema.Array(CBOR.CBORSchema), // set<committee_cold_credential>
-  CBOR.MapSchema, // { * committee_cold_credential => committee_hot_credential }
-  CBOR.CBORSchema // unit_interval
+  Schema.Array(CommiteeColdCredential.CommitteeColdCredential.CDDLSchema), // set<committee_cold_credential>
+  Schema.MapFromSelf({
+    key: CommiteeColdCredential.CommitteeColdCredential.CDDLSchema, // committee_cold_credential
+    value: CommiteeHotCredential.CommitteeHotCredential.CDDLSchema // committee_hot_credential
+  }),
+  UnitInterval.CDDLSchema // unit_interval
 )
 
 /**
@@ -382,17 +411,49 @@ export const UpdateCommitteeActionFromCDDL = Schema.transformOrFail(
         const govActionId = action.govActionId
           ? yield* ParseResult.encode(GovActionIdFromCDDL)(action.govActionId)
           : null
-        const membersToRemove = yield* ParseResult.encode(Schema.Array(CBOR.CBORSchema))(action.membersToRemove)
-        const membersToAdd = yield* ParseResult.encode(CBOR.MapSchema)(action.membersToAdd)
-        const threshold = yield* ParseResult.encode(CBOR.CBORSchema)(action.threshold)
+        const membersToRemove = (yield* Eff.all(
+          action.membersToRemove.map((cred) =>
+            ParseResult.encode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(cred)
+          )
+        )) as ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.CDDLSchema.Type>
+        const membersToAdd = new Map<
+          typeof CommiteeColdCredential.CommitteeColdCredential.CDDLSchema.Type,
+          typeof CommiteeHotCredential.CommitteeHotCredential.CDDLSchema.Type
+        >()
+        for (const [coldCred, hotCred] of action.membersToAdd) {
+          const coldCredBytes = yield* ParseResult.encode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(
+            coldCred
+          )
+          const hotCredBytes = yield* ParseResult.encode(CommiteeHotCredential.CommitteeHotCredential.FromCDDL)(hotCred)
+          membersToAdd.set(coldCredBytes, hotCredBytes)
+        }
+        // Encode threshold as UnitInterval
+        const threshold = yield* ParseResult.encode(UnitInterval.FromCDDL)(action.threshold)
 
         // Return as CBOR tuple
         return [4n, govActionId, membersToRemove, membersToAdd, threshold] as const
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
-        const [, govActionIdCDDL, membersToRemove, membersToAdd, threshold] = cddl
+        const [, govActionIdCDDL, membersToRemoveCDDL, membersToAddCDDL, thresholdCDDL] = cddl
         const govActionId = govActionIdCDDL ? yield* ParseResult.decode(GovActionIdFromCDDL)(govActionIdCDDL) : null
+        const threshold = yield* ParseResult.decode(UnitInterval.FromCDDL)(thresholdCDDL)
+        const membersToRemove = yield* Eff.all(
+          membersToRemoveCDDL.map((cred) =>
+            ParseResult.decode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(cred)
+          )
+        )
+        const membersToAdd = new Map<
+          typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
+          typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
+        >()
+        for (const [coldCredCDDL, hotCredCDDL] of membersToAddCDDL) {
+          const coldCred = yield* ParseResult.decode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(
+            coldCredCDDL
+          )
+          const hotCred = yield* ParseResult.decode(CommiteeHotCredential.CommitteeHotCredential.FromCDDL)(hotCredCDDL)
+          membersToAdd.set(coldCred, hotCred)
+        }
 
         return new UpdateCommitteeAction({
           govActionId,
@@ -419,7 +480,9 @@ export class NewConstitutionAction extends Schema.TaggedClass<NewConstitutionAct
 
 /**
  * CDDL schema for NewConstitutionAction tuple structure.
+ * ```
  * Maps to: (5, gov_action_id/ nil, constitution)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -466,7 +529,9 @@ export const NewConstitutionActionFromCDDL = Schema.transformOrFail(
 
 /**
  * Info governance action schema.
+ * ```
  * According to Conway CDDL: info_action = (6)
+ * ```
  *
  * @since 2.0.0
  * @category schemas
@@ -692,9 +757,12 @@ export const makeNoConfidence = (govActionId: GovActionId | null): NoConfidenceA
  */
 export const makeUpdateCommittee = (
   govActionId: GovActionId | null,
-  membersToRemove: ReadonlyArray<CBOR.CBOR>,
-  membersToAdd: ReadonlyMap<CBOR.CBOR, CBOR.CBOR>,
-  threshold: CBOR.CBOR
+  membersToRemove: ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type>,
+  membersToAdd: Map<
+    typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
+    typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
+  >,
+  threshold: UnitInterval.UnitInterval
 ): UpdateCommitteeAction =>
   new UpdateCommitteeAction({
     govActionId,
@@ -791,9 +859,12 @@ export const match = <R>(
     NoConfidenceAction: (govActionId: GovActionId | null) => R
     UpdateCommitteeAction: (
       govActionId: GovActionId | null,
-      membersToRemove: ReadonlyArray<CBOR.CBOR>,
-      membersToAdd: ReadonlyMap<CBOR.CBOR, CBOR.CBOR>,
-      threshold: CBOR.CBOR
+      membersToRemove: ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type>,
+      membersToAdd: ReadonlyMap<
+        typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
+        typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
+      >,
+      threshold: UnitInterval.UnitInterval
     ) => R
     NewConstitutionAction: (govActionId: GovActionId | null, constitution: CBOR.CBOR) => R
     InfoAction: () => R

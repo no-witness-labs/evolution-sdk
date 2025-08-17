@@ -1,6 +1,7 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for AssetName related operations.
@@ -20,11 +21,16 @@ export class AssetNameError extends Data.TaggedError("AssetNameError")<{
  * @since 2.0.0
  * @category model
  */
-export const AssetName = Bytes32.VariableHexSchema.pipe(Schema.brand("AssetName")).annotations({
-  identifier: "AssetName"
-})
-
-export type AssetName = typeof AssetName.Type
+export class AssetName extends Schema.TaggedClass<AssetName>()("AssetName", {
+  bytes: Bytes32.VariableBytes
+}) {
+  toJSON(): string {
+    return toHex(this)
+  }
+  toString(): string {
+    return toHex(this)
+  }
+}
 
 /**
  * Schema for encoding/decoding AssetName as bytes.
@@ -32,8 +38,12 @@ export type AssetName = typeof AssetName.Type
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.compose(Bytes32.FromVariableBytes, AssetName).annotations({
-  identifier: "AssetName.Bytes"
+export const FromBytes = Schema.transform(Bytes32.VariableBytes, AssetName, {
+  strict: true,
+  decode: (bytes) => new AssetName({ bytes }, { disableValidation: true }),
+  encode: (assetName) => assetName.bytes
+}).annotations({
+  identifier: "AssetName.FromBytes"
 })
 
 /**
@@ -42,8 +52,11 @@ export const FromBytes = Schema.compose(Bytes32.FromVariableBytes, AssetName).an
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = Schema.compose(Bytes32.VariableHexSchema, AssetName).annotations({
-  identifier: "AssetName.Hex"
+export const FromHex = Schema.compose(
+  Bytes32.VariableBytesFromHex, // string -> Bytes32
+  FromBytes // Bytes32 -> AssetName
+).annotations({
+  identifier: "AssetName.FromHex"
 })
 
 /**
@@ -52,7 +65,7 @@ export const FromHex = Schema.compose(Bytes32.VariableHexSchema, AssetName).anno
  * @since 2.0.0
  * @category constructors
  */
-export const make = AssetName.make
+export const make = (...args: ConstructorParameters<typeof AssetName>) => new AssetName(...args)
 
 /**
  * Check if two AssetName instances are equal.
@@ -60,7 +73,7 @@ export const make = AssetName.make
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: AssetName, b: AssetName): boolean => a === b
+export const equals = (a: AssetName, b: AssetName): boolean => Bytes32.equals(a.bytes, b.bytes)
 
 /**
  * Check if the given value is a valid AssetName
@@ -76,10 +89,10 @@ export const isAssetName = Schema.is(AssetName)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.hexaString({
+export const arbitrary = FastCheck.uint8Array({
   minLength: 0,
-  maxLength: Bytes32.HEX_LENGTH
-}).map((hex) => fromHex(hex))
+  maxLength: 32
+}).map((bytes) => new AssetName({ bytes }, { disableValidation: true }))
 
 // ============================================================================
 // Root Functions
@@ -91,7 +104,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): AssetName => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, AssetNameError, "AssetName.fromBytes")
 
 /**
  * Parse AssetName from hex string.
@@ -99,7 +112,7 @@ export const fromBytes = (bytes: Uint8Array): AssetName => Eff.runSync(Effect.fr
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): AssetName => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, AssetNameError, "AssetName.fromHex")
 
 /**
  * Encode AssetName to bytes.
@@ -107,7 +120,7 @@ export const fromHex = (hex: string): AssetName => Eff.runSync(Effect.fromHex(he
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (assetName: AssetName): Uint8Array => Eff.runSync(Effect.toBytes(assetName))
+export const toBytes = Function.makeEncodeSync(FromBytes, AssetNameError, "AssetName.toBytes")
 
 /**
  * Encode AssetName to hex string.
@@ -115,7 +128,7 @@ export const toBytes = (assetName: AssetName): Uint8Array => Eff.runSync(Effect.
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (assetName: AssetName): string => Eff.runSync(Effect.toHex(assetName))
+export const toHex = Function.makeEncodeSync(FromHex, AssetNameError, "AssetName.toHex")
 
 // ============================================================================
 // Effect Namespace
@@ -127,23 +140,14 @@ export const toHex = (assetName: AssetName): string => Eff.runSync(Effect.toHex(
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse AssetName from bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<AssetName, AssetNameError> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new AssetNameError({
-            message: "Failed to parse AssetName from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, AssetNameError)
 
   /**
    * Parse AssetName from hex string with Effect error handling.
@@ -151,16 +155,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<AssetName, AssetNameError> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new AssetNameError({
-            message: "Failed to parse AssetName from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, AssetNameError)
 
   /**
    * Encode AssetName to bytes with Effect error handling.
@@ -168,16 +163,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (assetName: AssetName): Eff.Effect<Uint8Array, AssetNameError> =>
-    Schema.encode(FromBytes)(assetName).pipe(
-      Eff.mapError(
-        (cause) =>
-          new AssetNameError({
-            message: "Failed to encode AssetName to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, AssetNameError)
 
   /**
    * Encode AssetName to hex string with Effect error handling.
@@ -185,14 +171,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (assetName: AssetName): Eff.Effect<string, AssetNameError> =>
-    Schema.encode(FromHex)(assetName).pipe(
-      Eff.mapError(
-        (cause) =>
-          new AssetNameError({
-            message: "Failed to encode AssetName to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, AssetNameError)
 }

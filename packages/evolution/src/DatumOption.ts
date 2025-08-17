@@ -24,8 +24,16 @@ export class DatumOptionError extends Data.TaggedError("DatumOptionError")<{
  * @category schemas
  */
 export class DatumHash extends Schema.TaggedClass<DatumHash>()("DatumHash", {
-  hash: Bytes32.HexSchema
+  hash: Bytes32.BytesSchema
 }) {}
+
+export const DatumHashFromBytes = Schema.transform(Bytes32.BytesSchema, DatumHash, {
+  strict: true,
+  decode: (bytes) => new DatumHash({ hash: bytes }, { disableValidation: true }),
+  encode: (dh) => dh.hash
+}).annotations({
+  identifier: "DatumOption.DatumHashFromBytes"
+})
 
 /**
  * Schema for InlineDatum variant of DatumOption.
@@ -69,7 +77,7 @@ export type DatumOption = typeof DatumOptionSchema.Type
  * @since 2.0.0
  * @category constructors
  */
-export const fromHash = (hash: string): DatumOption => new DatumHash({ hash })
+export const makeDatumHash = (...args: ConstructorParameters<typeof DatumHash>) => new DatumHash(...args)
 
 /**
  * Create a DatumOption with inline data.
@@ -77,7 +85,7 @@ export const fromHash = (hash: string): DatumOption => new DatumHash({ hash })
  * @since 2.0.0
  * @category constructors
  */
-export const fromInlineData = (data: PlutusData.Data): DatumOption => new InlineDatum({ data })
+export const makeInlineDatum = (...args: ConstructorParameters<typeof InlineDatum>) => new InlineDatum(...args)
 
 /**
  * Check if a DatumOption is a datum hash.
@@ -85,7 +93,7 @@ export const fromInlineData = (data: PlutusData.Data): DatumOption => new Inline
  * @since 2.0.0
  * @category predicates
  */
-export const isDatumHash = (datumOption: DatumOption): datumOption is DatumHash => datumOption._tag === "DatumHash"
+export const isDatumHash = Schema.is(DatumHash)
 
 /**
  * Check if a DatumOption is inline data.
@@ -93,26 +101,7 @@ export const isDatumHash = (datumOption: DatumOption): datumOption is DatumHash 
  * @since 2.0.0
  * @category predicates
  */
-export const isInlineDatum = (datumOption: DatumOption): datumOption is InlineDatum =>
-  datumOption._tag === "InlineDatum"
-
-/**
- * Get the hash from a DatumHash, or undefined if it's not a DatumHash.
- *
- * @since 2.0.0
- * @category transformation
- */
-export const getHash = (datumOption: DatumOption): string | undefined =>
-  isDatumHash(datumOption) ? datumOption.hash : undefined
-
-/**
- * Get the data from an InlineDatum, or undefined if it's not an InlineDatum.
- *
- * @since 2.0.0
- * @category transformation
- */
-export const getData = (datumOption: DatumOption): PlutusData.Data | undefined =>
-  isInlineDatum(datumOption) ? datumOption.data : undefined
+export const isInlineDatum = Schema.is(InlineDatum)
 
 /**
  * Check if two DatumOption instances are equal.
@@ -123,7 +112,7 @@ export const getData = (datumOption: DatumOption): PlutusData.Data | undefined =
 export const equals = (a: DatumOption, b: DatumOption): boolean => {
   if (a._tag !== b._tag) return false
   if (a._tag === "DatumHash" && b._tag === "DatumHash") {
-    return a.hash === b.hash
+    return Bytes32.equals(a.hash, b.hash)
   }
   if (a._tag === "InlineDatum" && b._tag === "InlineDatum") {
     return a.data === b.data
@@ -131,22 +120,18 @@ export const equals = (a: DatumOption, b: DatumOption): boolean => {
   return false
 }
 
+export const datumHashArbitrary = FastCheck.uint8Array({ minLength: 32, maxLength: 32 }).map(
+  (hash) => new DatumHash({ hash })
+)
+export const inlineDatumArbitrary = PlutusData.arbitrary.map((data) => new InlineDatum({ data }))
+
 /**
  * FastCheck arbitrary for generating random DatumOption instances
  *
  * @since 2.0.0
  * @category testing
  */
-export const arbitrary = FastCheck.oneof(
-  FastCheck.record({
-    _tag: FastCheck.constant("DatumHash" as const),
-    hash: FastCheck.hexaString({ minLength: 64, maxLength: 64 })
-  }).map((props) => new DatumHash(props)),
-  FastCheck.record({
-    _tag: FastCheck.constant("InlineDatum" as const),
-    data: PlutusData.arbitrary
-  }).map((props) => new InlineDatum(props))
-)
+export const arbitrary = FastCheck.oneof(datumHashArbitrary, inlineDatumArbitrary)
 
 /**
  * CDDL schema for DatumOption.
@@ -171,7 +156,7 @@ export const DatumOptionCDDLSchema = Schema.transformOrFail(
       Eff.gen(function* () {
         const result =
           toA._tag === "DatumHash"
-            ? ([0n, yield* ParseResult.encode(Bytes.FromBytes)(toA.hash)] as const) // Encode as [0, Bytes32]
+            ? ([0n, toA.hash] as const) // Encode as [0, Bytes32]
             : ([1n, PlutusData.plutusDataToCBORValue(toA.data)] as const) // Encode as [1, data]
         return result
       }),
@@ -179,8 +164,7 @@ export const DatumOptionCDDLSchema = Schema.transformOrFail(
       Eff.gen(function* () {
         if (tag === 0n) {
           // Decode as DatumHash
-          const hash = yield* ParseResult.decode(Bytes.FromBytes)(value)
-          return new DatumHash({ hash })
+          return new DatumHash({ hash: value })
         } else if (tag === 1n) {
           // Decode as InlineDatum
           return new InlineDatum({

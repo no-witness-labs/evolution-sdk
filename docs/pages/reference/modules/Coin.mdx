@@ -1,6 +1,6 @@
 ---
 title: Coin.ts
-nav_order: 27
+nav_order: 32
 parent: Modules
 ---
 
@@ -14,12 +14,14 @@ parent: Modules
   - [MAX_COIN_VALUE](#max_coin_value)
 - [constructors](#constructors)
   - [make](#make)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [CoinError (class)](#coinerror-class)
 - [generators](#generators)
-  - [generator](#generator)
+  - [arbitrary](#arbitrary)
 - [model](#model)
   - [Coin (type alias)](#coin-type-alias)
 - [ordering](#ordering)
@@ -27,7 +29,7 @@ parent: Modules
 - [predicates](#predicates)
   - [is](#is)
 - [schemas](#schemas)
-  - [CoinSchema](#coinschema)
+  - [Coin](#coin)
 - [transformation](#transformation)
   - [add](#add)
   - [subtract](#subtract)
@@ -62,6 +64,14 @@ export declare const make: (a: bigint, options?: Schema.MakeOptions) => bigint
 
 Added in v2.0.0
 
+# effect
+
+## Effect (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
 # equality
 
 ## equals
@@ -92,14 +102,14 @@ Added in v2.0.0
 
 # generators
 
-## generator
+## arbitrary
 
 Generate a random Coin value.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<bigint>
+export declare const arbitrary: FastCheck.Arbitrary<bigint>
 ```
 
 Added in v2.0.0
@@ -114,7 +124,7 @@ Type alias for Coin representing ADA amounts in lovelace.
 **Signature**
 
 ```ts
-export type Coin = typeof CoinSchema.Type
+export type Coin = typeof Coin.Type
 ```
 
 Added in v2.0.0
@@ -149,7 +159,7 @@ Added in v2.0.0
 
 # schemas
 
-## CoinSchema
+## Coin
 
 Schema for validating coin amounts as unsigned 64-bit integers.
 coin = uint
@@ -157,7 +167,7 @@ coin = uint
 **Signature**
 
 ```ts
-export declare const CoinSchema: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+export declare const Coin: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
 ```
 
 Added in v2.0.0

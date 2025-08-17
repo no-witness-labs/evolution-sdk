@@ -1,0 +1,1031 @@
+---
+title: GovernanceAction.ts
+nav_order: 51
+parent: Modules
+---
+
+## GovernanceAction overview
+
+---
+
+<h2 class="text-delta">Table of contents</h2>
+
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [makeHardForkInitiation](#makehardforkinitiation)
+  - [makeInfo](#makeinfo)
+  - [makeNewConstitution](#makenewconstitution)
+  - [makeNoConfidence](#makenoconfidence)
+  - [makeParameterChange](#makeparameterchange)
+  - [makeTreasuryWithdrawals](#maketreasurywithdrawals)
+  - [makeUpdateCommittee](#makeupdatecommittee)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [GovernanceActionError (class)](#governanceactionerror-class)
+- [model](#model)
+  - [GovernanceAction (type alias)](#governanceaction-type-alias)
+- [pattern matching](#pattern-matching)
+  - [match](#match)
+- [predicates](#predicates)
+  - [is](#is)
+- [schemas](#schemas)
+  - [CDDLSchema](#cddlschema)
+  - [FromCDDL](#fromcddl)
+  - [GovActionId (class)](#govactionid-class)
+  - [GovActionIdCDDL](#govactionidcddl)
+  - [GovActionIdFromCDDL](#govactionidfromcddl)
+  - [GovernanceAction](#governanceaction)
+  - [HardForkInitiationAction (class)](#hardforkinitiationaction-class)
+  - [HardForkInitiationActionCDDL](#hardforkinitiationactioncddl)
+  - [HardForkInitiationActionFromCDDL](#hardforkinitiationactionfromcddl)
+  - [InfoAction (class)](#infoaction-class)
+  - [InfoActionCDDL](#infoactioncddl)
+  - [InfoActionFromCDDL](#infoactionfromcddl)
+  - [NewConstitutionAction (class)](#newconstitutionaction-class)
+  - [NewConstitutionActionCDDL](#newconstitutionactioncddl)
+  - [NewConstitutionActionFromCDDL](#newconstitutionactionfromcddl)
+  - [NoConfidenceAction (class)](#noconfidenceaction-class)
+  - [NoConfidenceActionCDDL](#noconfidenceactioncddl)
+  - [NoConfidenceActionFromCDDL](#noconfidenceactionfromcddl)
+  - [ParameterChangeAction (class)](#parameterchangeaction-class)
+  - [ParameterChangeActionCDDL](#parameterchangeactioncddl)
+  - [ParameterChangeActionFromCDDL](#parameterchangeactionfromcddl)
+  - [TreasuryWithdrawalsAction (class)](#treasurywithdrawalsaction-class)
+  - [TreasuryWithdrawalsActionCDDL](#treasurywithdrawalsactioncddl)
+  - [TreasuryWithdrawalsActionFromCDDL](#treasurywithdrawalsactionfromcddl)
+  - [UpdateCommitteeAction (class)](#updatecommitteeaction-class)
+  - [UpdateCommitteeActionCDDL](#updatecommitteeactioncddl)
+  - [UpdateCommitteeActionFromCDDL](#updatecommitteeactionfromcddl)
+- [type guards](#type-guards)
+  - [isParameterChangeAction](#isparameterchangeaction)
+- [utils](#utils)
+  - [isHardForkInitiationAction](#ishardforkinitiationaction)
+  - [isInfoAction](#isinfoaction)
+  - [isNewConstitutionAction](#isnewconstitutionaction)
+  - [isNoConfidenceAction](#isnoconfidenceaction)
+  - [isTreasuryWithdrawalsAction](#istreasurywithdrawalsaction)
+  - [isUpdateCommitteeAction](#isupdatecommitteeaction)
+
+---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for GovernanceAction.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<NoConfidenceAction | InfoAction>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## makeHardForkInitiation
+
+Create a hard fork initiation governance action.
+
+**Signature**
+
+```ts
+export declare const makeHardForkInitiation: (
+  govActionId: GovActionId | null,
+  protocolVersion: readonly [number, number],
+  policyHash?: ScriptHash.ScriptHash | null
+) => HardForkInitiationAction
+```
+
+Added in v2.0.0
+
+## makeInfo
+
+Create an info governance action.
+
+**Signature**
+
+```ts
+export declare const makeInfo: () => InfoAction
+```
+
+Added in v2.0.0
+
+## makeNewConstitution
+
+Create a new constitution governance action.
+
+**Signature**
+
+```ts
+export declare const makeNewConstitution: (
+  govActionId: GovActionId | null,
+  constitution: CBOR.CBOR
+) => NewConstitutionAction
+```
+
+Added in v2.0.0
+
+## makeNoConfidence
+
+Create a no confidence governance action.
+
+**Signature**
+
+```ts
+export declare const makeNoConfidence: (govActionId: GovActionId | null) => NoConfidenceAction
+```
+
+Added in v2.0.0
+
+## makeParameterChange
+
+Create a parameter change governance action.
+
+**Signature**
+
+```ts
+export declare const makeParameterChange: (
+  govActionId: GovActionId | null,
+  protocolParamUpdate: Record<string, CBOR.CBOR>,
+  policyHash?: ScriptHash.ScriptHash | null
+) => ParameterChangeAction
+```
+
+Added in v2.0.0
+
+## makeTreasuryWithdrawals
+
+Create a treasury withdrawals governance action.
+
+**Signature**
+
+```ts
+export declare const makeTreasuryWithdrawals: (
+  withdrawals: Map<RewardAccount.RewardAccount, Coin.Coin>,
+  policyHash?: ScriptHash.ScriptHash | null
+) => TreasuryWithdrawalsAction
+```
+
+Added in v2.0.0
+
+## makeUpdateCommittee
+
+Create an update committee governance action.
+
+**Signature**
+
+```ts
+export declare const makeUpdateCommittee: (
+  govActionId: GovActionId | null,
+  membersToRemove: ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type>,
+  membersToAdd: Map<
+    typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
+    typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
+  >,
+  threshold: UnitInterval.UnitInterval
+) => UpdateCommitteeAction
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two GovernanceAction instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: GovernanceAction, b: GovernanceAction) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## GovernanceActionError (class)
+
+Error class for GovernanceAction related operations.
+
+**Signature**
+
+```ts
+export declare class GovernanceActionError
+```
+
+Added in v2.0.0
+
+# model
+
+## GovernanceAction (type alias)
+
+Type alias for GovernanceAction.
+
+**Signature**
+
+```ts
+export type GovernanceAction = Schema.Schema.Type<typeof GovernanceAction>
+```
+
+Added in v2.0.0
+
+# pattern matching
+
+## match
+
+Pattern matching utility for GovernanceAction.
+
+**Signature**
+
+```ts
+export declare const match: <R>(
+  action: GovernanceAction,
+  patterns: {
+    ParameterChangeAction: (
+      govActionId: GovActionId | null,
+      protocolParams: Record<string, CBOR.CBOR>,
+      policyHash: ScriptHash.ScriptHash | null
+    ) => R
+    HardForkInitiationAction: (
+      govActionId: GovActionId | null,
+      protocolVersion: readonly [number, number],
+      policyHash: ScriptHash.ScriptHash | null
+    ) => R
+    TreasuryWithdrawalsAction: (
+      withdrawals: Map<RewardAccount.RewardAccount, Coin.Coin>,
+      policyHash: ScriptHash.ScriptHash | null
+    ) => R
+    NoConfidenceAction: (govActionId: GovActionId | null) => R
+    UpdateCommitteeAction: (
+      govActionId: GovActionId | null,
+      membersToRemove: ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type>,
+      membersToAdd: ReadonlyMap<
+        typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
+        typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
+      >,
+      threshold: UnitInterval.UnitInterval
+    ) => R
+    NewConstitutionAction: (govActionId: GovActionId | null, constitution: CBOR.CBOR) => R
+    InfoAction: () => R
+  }
+) => R
+```
+
+Added in v2.0.0
+
+# predicates
+
+## is
+
+Check if a value is a valid GovernanceAction.
+
+**Signature**
+
+```ts
+export declare const is: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is
+  | ParameterChangeAction
+  | HardForkInitiationAction
+  | TreasuryWithdrawalsAction
+  | NoConfidenceAction
+  | UpdateCommitteeAction
+  | NewConstitutionAction
+  | InfoAction
+```
+
+Added in v2.0.0
+
+# schemas
+
+## CDDLSchema
+
+CDDL schema for GovernanceAction tuple structure.
+Maps action types to their data according to Conway specification.
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.Union<
+  [
+    Schema.Tuple<
+      [
+        Schema.Literal<[0n]>,
+        Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+        Schema.Record$<typeof Schema.String, Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+        Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+      ]
+    >,
+    Schema.Tuple<
+      [
+        Schema.Literal<[1n]>,
+        Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+        Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
+        Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+      ]
+    >,
+    Schema.Tuple<
+      [
+        Schema.Literal<[2n]>,
+        Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
+        Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+      ]
+    >,
+    Schema.Tuple2<
+      Schema.Literal<[3n]>,
+      Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>
+    >,
+    Schema.Tuple<
+      [
+        Schema.Literal<[4n]>,
+        Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+        Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
+        Schema.MapFromSelf<
+          Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
+        >,
+        Schema.TaggedStruct<
+          "Tag",
+          {
+            tag: Schema.Literal<[30]>
+            value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
+          }
+        >
+      ]
+    >,
+    Schema.Tuple<
+      [
+        Schema.Literal<[5n]>,
+        Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+        Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+      ]
+    >,
+    Schema.Tuple<[Schema.Literal<[6n]>]>
+  ]
+>
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+CDDL transformation schema for GovernanceAction.
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.Union<
+  [
+    Schema.transformOrFail<
+      Schema.Tuple<
+        [
+          Schema.Literal<[0n]>,
+          Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+          Schema.Record$<typeof Schema.String, Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+          Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+        ]
+      >,
+      Schema.SchemaClass<ParameterChangeAction, ParameterChangeAction, never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple<
+        [
+          Schema.Literal<[1n]>,
+          Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+          Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
+          Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+        ]
+      >,
+      Schema.SchemaClass<HardForkInitiationAction, HardForkInitiationAction, never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple<
+        [
+          Schema.Literal<[2n]>,
+          Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
+          Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+        ]
+      >,
+      Schema.SchemaClass<TreasuryWithdrawalsAction, TreasuryWithdrawalsAction, never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple2<
+        Schema.Literal<[3n]>,
+        Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>
+      >,
+      Schema.SchemaClass<NoConfidenceAction, NoConfidenceAction, never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple<
+        [
+          Schema.Literal<[4n]>,
+          Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+          Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
+          Schema.MapFromSelf<
+            Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>,
+            Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
+          >,
+          Schema.TaggedStruct<
+            "Tag",
+            {
+              tag: Schema.Literal<[30]>
+              value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
+            }
+          >
+        ]
+      >,
+      Schema.SchemaClass<UpdateCommitteeAction, UpdateCommitteeAction, never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple<
+        [
+          Schema.Literal<[5n]>,
+          Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+          Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+        ]
+      >,
+      Schema.SchemaClass<NewConstitutionAction, NewConstitutionAction, never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple<[Schema.Literal<[6n]>]>,
+      Schema.SchemaClass<InfoAction, InfoAction, never>,
+      never
+    >
+  ]
+>
+```
+
+Added in v2.0.0
+
+## GovActionId (class)
+
+GovActionId schema representing a governance action identifier.
+
+```
+According to Conway CDDL: gov_action_id = [transaction_id : transaction_id, gov_action_index : uint .size 2]
+```
+
+**Signature**
+
+```ts
+export declare class GovActionId
+```
+
+Added in v2.0.0
+
+## GovActionIdCDDL
+
+CDDL schema for GovActionId tuple structure.
+
+```
+For CBOR encoding: [transaction_id: bytes, gov_action_index: uint]
+```
+
+**Signature**
+
+```ts
+export declare const GovActionIdCDDL: Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
+```
+
+Added in v2.0.0
+
+## GovActionIdFromCDDL
+
+CDDL transformation schema for GovActionId.
+
+**Signature**
+
+```ts
+export declare const GovActionIdFromCDDL: Schema.transformOrFail<
+  Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
+  typeof GovActionId,
+  never
+>
+```
+
+Added in v2.0.0
+
+## GovernanceAction
+
+GovernanceAction union schema based on Conway CDDL specification.
+
+```
+governance_action =
+  [ 0, parameter_change_action ]
+/ [ 1, hard_fork_initiation_action ]
+/ [ 2, treasury_withdrawals_action ]
+/ [ 3, no_confidence ]
+/ [ 4, update_committee ]
+/ [ 5, new_constitution ]
+/ [ 6, info_action ]
+```
+
+**Signature**
+
+```ts
+export declare const GovernanceAction: Schema.Union<
+  [
+    typeof ParameterChangeAction,
+    typeof HardForkInitiationAction,
+    typeof TreasuryWithdrawalsAction,
+    typeof NoConfidenceAction,
+    typeof UpdateCommitteeAction,
+    typeof NewConstitutionAction,
+    typeof InfoAction
+  ]
+>
+```
+
+Added in v2.0.0
+
+## HardForkInitiationAction (class)
+
+Hard fork initiation governance action schema.
+
+```
+According to Conway CDDL: hard_fork_initiation_action =
+  (1, gov_action_id/ nil, protocol_version, policy_hash/ nil)
+```
+
+**Signature**
+
+```ts
+export declare class HardForkInitiationAction
+```
+
+Added in v2.0.0
+
+## HardForkInitiationActionCDDL
+
+CDDL schema for HardForkInitiationAction tuple structure.
+
+```
+Maps to: (1, gov_action_id/ nil, protocol_version, policy_hash/ nil)
+```
+
+**Signature**
+
+```ts
+export declare const HardForkInitiationActionCDDL: Schema.Tuple<
+  [
+    Schema.Literal<[1n]>,
+    Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+    Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
+    Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+  ]
+>
+```
+
+Added in v2.0.0
+
+## HardForkInitiationActionFromCDDL
+
+CDDL transformation schema for HardForkInitiationAction.
+
+**Signature**
+
+```ts
+export declare const HardForkInitiationActionFromCDDL: Schema.transformOrFail<
+  Schema.Tuple<
+    [
+      Schema.Literal<[1n]>,
+      Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+      Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
+      Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+    ]
+  >,
+  Schema.SchemaClass<HardForkInitiationAction, HardForkInitiationAction, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+## InfoAction (class)
+
+Info governance action schema.
+
+```
+According to Conway CDDL: info_action = (6)
+```
+
+**Signature**
+
+```ts
+export declare class InfoAction
+```
+
+Added in v2.0.0
+
+## InfoActionCDDL
+
+CDDL schema for InfoAction tuple structure.
+Maps to: (6)
+
+**Signature**
+
+```ts
+export declare const InfoActionCDDL: Schema.Tuple<[Schema.Literal<[6n]>]>
+```
+
+Added in v2.0.0
+
+## InfoActionFromCDDL
+
+CDDL transformation schema for InfoAction.
+
+**Signature**
+
+```ts
+export declare const InfoActionFromCDDL: Schema.transformOrFail<
+  Schema.Tuple<[Schema.Literal<[6n]>]>,
+  Schema.SchemaClass<InfoAction, InfoAction, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+## NewConstitutionAction (class)
+
+New constitution governance action schema.
+According to Conway CDDL: new_constitution =
+(5, gov_action_id/ nil, constitution)
+
+**Signature**
+
+```ts
+export declare class NewConstitutionAction
+```
+
+Added in v2.0.0
+
+## NewConstitutionActionCDDL
+
+CDDL schema for NewConstitutionAction tuple structure.
+
+```
+Maps to: (5, gov_action_id/ nil, constitution)
+```
+
+**Signature**
+
+```ts
+export declare const NewConstitutionActionCDDL: Schema.Tuple<
+  [
+    Schema.Literal<[5n]>,
+    Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+    Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+  ]
+>
+```
+
+Added in v2.0.0
+
+## NewConstitutionActionFromCDDL
+
+CDDL transformation schema for NewConstitutionAction.
+
+**Signature**
+
+```ts
+export declare const NewConstitutionActionFromCDDL: Schema.transformOrFail<
+  Schema.Tuple<
+    [
+      Schema.Literal<[5n]>,
+      Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+      Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+    ]
+  >,
+  Schema.SchemaClass<NewConstitutionAction, NewConstitutionAction, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+## NoConfidenceAction (class)
+
+No confidence governance action schema.
+
+```
+According to Conway CDDL: no_confidence =
+  (3, gov_action_id/ nil)
+```
+
+**Signature**
+
+```ts
+export declare class NoConfidenceAction
+```
+
+Added in v2.0.0
+
+## NoConfidenceActionCDDL
+
+CDDL schema for NoConfidenceAction tuple structure.
+Maps to: (3, gov_action_id/ nil)
+
+**Signature**
+
+```ts
+export declare const NoConfidenceActionCDDL: Schema.Tuple2<
+  Schema.Literal<[3n]>,
+  Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>
+>
+```
+
+Added in v2.0.0
+
+## NoConfidenceActionFromCDDL
+
+CDDL transformation schema for NoConfidenceAction.
+
+**Signature**
+
+```ts
+export declare const NoConfidenceActionFromCDDL: Schema.transformOrFail<
+  Schema.Tuple2<
+    Schema.Literal<[3n]>,
+    Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>
+  >,
+  Schema.SchemaClass<NoConfidenceAction, NoConfidenceAction, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+## ParameterChangeAction (class)
+
+Parameter change governance action schema.
+
+```
+According to Conway CDDL: parameter_change_action =
+  (0, gov_action_id/ nil, protocol_param_update, policy_hash/ nil)
+```
+
+**Signature**
+
+```ts
+export declare class ParameterChangeAction
+```
+
+Added in v2.0.0
+
+## ParameterChangeActionCDDL
+
+CDDL schema for ParameterChangeAction tuple structure.
+Maps to: (0, gov_action_id/ nil, protocol_param_update, policy_hash/ nil)
+
+**Signature**
+
+```ts
+export declare const ParameterChangeActionCDDL: Schema.Tuple<
+  [
+    Schema.Literal<[0n]>,
+    Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+    Schema.Record$<typeof Schema.String, Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+    Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+  ]
+>
+```
+
+Added in v2.0.0
+
+## ParameterChangeActionFromCDDL
+
+CDDL transformation schema for ParameterChangeAction.
+
+**Signature**
+
+```ts
+export declare const ParameterChangeActionFromCDDL: Schema.transformOrFail<
+  Schema.Tuple<
+    [
+      Schema.Literal<[0n]>,
+      Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+      Schema.Record$<typeof Schema.String, Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+      Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+    ]
+  >,
+  Schema.SchemaClass<ParameterChangeAction, ParameterChangeAction, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+## TreasuryWithdrawalsAction (class)
+
+Treasury withdrawals governance action schema.
+
+```
+According to Conway CDDL: treasury_withdrawals_action =
+  (2, { * reward_account => coin }, policy_hash/ nil)
+```
+
+**Signature**
+
+```ts
+export declare class TreasuryWithdrawalsAction
+```
+
+Added in v2.0.0
+
+## TreasuryWithdrawalsActionCDDL
+
+CDDL schema for TreasuryWithdrawalsAction tuple structure.
+
+```
+Maps to: (2, { * reward_account => coin }, policy_hash/ nil)
+```
+
+**Signature**
+
+```ts
+export declare const TreasuryWithdrawalsActionCDDL: Schema.Tuple<
+  [
+    Schema.Literal<[2n]>,
+    Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
+    Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+  ]
+>
+```
+
+Added in v2.0.0
+
+## TreasuryWithdrawalsActionFromCDDL
+
+CDDL transformation schema for TreasuryWithdrawalsAction.
+
+**Signature**
+
+```ts
+export declare const TreasuryWithdrawalsActionFromCDDL: Schema.transformOrFail<
+  Schema.Tuple<
+    [
+      Schema.Literal<[2n]>,
+      Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
+      Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+    ]
+  >,
+  Schema.SchemaClass<TreasuryWithdrawalsAction, TreasuryWithdrawalsAction, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+## UpdateCommitteeAction (class)
+
+Update committee governance action schema.
+
+```
+According to Conway CDDL: update_committee =
+  (4, gov_action_id/ nil, set<committee_cold_credential>, { * committee_cold_credential => committee_hot_credential }, unit_interval)
+```
+
+**Signature**
+
+```ts
+export declare class UpdateCommitteeAction
+```
+
+Added in v2.0.0
+
+## UpdateCommitteeActionCDDL
+
+CDDL schema for UpdateCommitteeAction tuple structure.
+
+```
+Maps to: (4, gov_action_id/ nil, set<committee_cold_credential>, { * committee_cold_credential => committee_hot_credential }, unit_interval)
+```
+
+**Signature**
+
+```ts
+export declare const UpdateCommitteeActionCDDL: Schema.Tuple<
+  [
+    Schema.Literal<[4n]>,
+    Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+    Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
+    Schema.MapFromSelf<
+      Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
+    >,
+    Schema.TaggedStruct<
+      "Tag",
+      { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+    >
+  ]
+>
+```
+
+Added in v2.0.0
+
+## UpdateCommitteeActionFromCDDL
+
+CDDL transformation schema for UpdateCommitteeAction.
+
+**Signature**
+
+```ts
+export declare const UpdateCommitteeActionFromCDDL: Schema.transformOrFail<
+  Schema.Tuple<
+    [
+      Schema.Literal<[4n]>,
+      Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
+      Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
+      Schema.MapFromSelf<
+        Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
+      >,
+      Schema.TaggedStruct<
+        "Tag",
+        { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+      >
+    ]
+  >,
+  Schema.SchemaClass<UpdateCommitteeAction, UpdateCommitteeAction, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+# type guards
+
+## isParameterChangeAction
+
+Type guards for each governance action variant.
+
+**Signature**
+
+```ts
+export declare const isParameterChangeAction: (action: GovernanceAction) => action is ParameterChangeAction
+```
+
+Added in v2.0.0
+
+# utils
+
+## isHardForkInitiationAction
+
+**Signature**
+
+```ts
+export declare const isHardForkInitiationAction: (action: GovernanceAction) => action is HardForkInitiationAction
+```
+
+## isInfoAction
+
+**Signature**
+
+```ts
+export declare const isInfoAction: (action: GovernanceAction) => action is InfoAction
+```
+
+## isNewConstitutionAction
+
+**Signature**
+
+```ts
+export declare const isNewConstitutionAction: (action: GovernanceAction) => action is NewConstitutionAction
+```
+
+## isNoConfidenceAction
+
+**Signature**
+
+```ts
+export declare const isNoConfidenceAction: (action: GovernanceAction) => action is NoConfidenceAction
+```
+
+## isTreasuryWithdrawalsAction
+
+**Signature**
+
+```ts
+export declare const isTreasuryWithdrawalsAction: (action: GovernanceAction) => action is TreasuryWithdrawalsAction
+```
+
+## isUpdateCommitteeAction
+
+**Signature**
+
+```ts
+export declare const isUpdateCommitteeAction: (action: GovernanceAction) => action is UpdateCommitteeAction
+```

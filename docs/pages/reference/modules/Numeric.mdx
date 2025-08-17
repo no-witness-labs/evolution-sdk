@@ -1,6 +1,6 @@
 ---
 title: Numeric.ts
-nav_order: 61
+nav_order: 70
 parent: Modules
 ---
 
@@ -10,6 +10,23 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [Uint8Generator](#uint8generator)
+- [constructors](#constructors)
+  - [Int16Make](#int16make)
+  - [Int32Make](#int32make)
+  - [Int64Make](#int64make)
+  - [Int8Make](#int8make)
+  - [Uint16Make](#uint16make)
+  - [Uint32Make](#uint32make)
+  - [Uint64Make](#uint64make)
+  - [Uint8Make](#uint8make)
+- [errors](#errors)
+  - [NumericError (class)](#numericerror-class)
+- [model](#model)
+  - [Uint8 (type alias)](#uint8-type-alias)
+- [schemas](#schemas)
+  - [Uint8Schema](#uint8schema)
 - [utils](#utils)
   - [INT16_MAX](#int16_max)
   - [INT16_MIN](#int16_min)
@@ -40,7 +57,7 @@ parent: Modules
   - [UINT8_MAX](#uint8_max)
   - [UINT8_MIN](#uint8_min)
   - [Uint16 (type alias)](#uint16-type-alias)
-  - [Uint16Generator](#uint16generator)
+  - [Uint16Arbitrary](#uint16arbitrary)
   - [Uint16Schema](#uint16schema)
   - [Uint32 (type alias)](#uint32-type-alias)
   - [Uint32Generator](#uint32generator)
@@ -48,11 +65,162 @@ parent: Modules
   - [Uint64 (type alias)](#uint64-type-alias)
   - [Uint64Generator](#uint64generator)
   - [Uint64Schema](#uint64schema)
-  - [Uint8 (type alias)](#uint8-type-alias)
-  - [Uint8Generator](#uint8generator)
-  - [Uint8Schema](#uint8schema)
 
 ---
+
+# arbitrary
+
+## Uint8Generator
+
+FastCheck arbitrary for generating random Uint8 instances.
+
+**Signature**
+
+```ts
+export declare const Uint8Generator: FastCheck.Arbitrary<bigint>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## Int16Make
+
+Smart constructor for Int16 that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const Int16Make: (a: number, options?: Schema.MakeOptions) => number
+```
+
+Added in v2.0.0
+
+## Int32Make
+
+Smart constructor for Int32 that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const Int32Make: (a: number, options?: Schema.MakeOptions) => number
+```
+
+Added in v2.0.0
+
+## Int64Make
+
+Smart constructor for Int64 that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const Int64Make: (a: bigint, options?: Schema.MakeOptions) => bigint
+```
+
+Added in v2.0.0
+
+## Int8Make
+
+Smart constructor for Int8 that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const Int8Make: (a: number, options?: Schema.MakeOptions) => number
+```
+
+Added in v2.0.0
+
+## Uint16Make
+
+Smart constructor for Uint16 that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const Uint16Make: (a: number, options?: Schema.MakeOptions) => number
+```
+
+Added in v2.0.0
+
+## Uint32Make
+
+Smart constructor for Uint32 that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const Uint32Make: (a: number, options?: Schema.MakeOptions) => number
+```
+
+Added in v2.0.0
+
+## Uint64Make
+
+Smart constructor for Uint64 that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const Uint64Make: (a: bigint, options?: Schema.MakeOptions) => bigint
+```
+
+Added in v2.0.0
+
+## Uint8Make
+
+Smart constructor for Uint8 that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const Uint8Make: (a: bigint, options?: Schema.MakeOptions) => bigint
+```
+
+Added in v2.0.0
+
+# errors
+
+## NumericError (class)
+
+Error class for Numeric related operations.
+
+**Signature**
+
+```ts
+export declare class NumericError
+```
+
+Added in v2.0.0
+
+# model
+
+## Uint8 (type alias)
+
+Type alias for 8-bit unsigned integers.
+
+**Signature**
+
+```ts
+export type Uint8 = typeof Uint8Schema.Type
+```
+
+Added in v2.0.0
+
+# schemas
+
+## Uint8Schema
+
+Schema for 8-bit unsigned integers.
+
+**Signature**
+
+```ts
+export declare const Uint8Schema: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+```
+
+Added in v2.0.0
 
 # utils
 
@@ -269,7 +437,7 @@ export declare const UINT64_MIN: 0n
 **Signature**
 
 ```ts
-export declare const UINT8_MAX: 255
+export declare const UINT8_MAX: 255n
 ```
 
 ## UINT8_MIN
@@ -277,7 +445,7 @@ export declare const UINT8_MAX: 255
 **Signature**
 
 ```ts
-export declare const UINT8_MIN: 0
+export declare const UINT8_MIN: 0n
 ```
 
 ## Uint16 (type alias)
@@ -288,12 +456,12 @@ export declare const UINT8_MIN: 0
 export type Uint16 = typeof Uint16Schema.Type
 ```
 
-## Uint16Generator
+## Uint16Arbitrary
 
 **Signature**
 
 ```ts
-export declare const Uint16Generator: FastCheck.Arbitrary<number>
+export declare const Uint16Arbitrary: FastCheck.Arbitrary<number>
 ```
 
 ## Uint16Schema
@@ -350,28 +518,4 @@ export declare const Uint64Generator: FastCheck.Arbitrary<bigint>
 
 ```ts
 export declare const Uint64Schema: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
-```
-
-## Uint8 (type alias)
-
-**Signature**
-
-```ts
-export type Uint8 = typeof Uint8Schema.Type
-```
-
-## Uint8Generator
-
-**Signature**
-
-```ts
-export declare const Uint8Generator: FastCheck.Arbitrary<number>
-```
-
-## Uint8Schema
-
-**Signature**
-
-```ts
-export declare const Uint8Schema: Schema.refine<number, typeof Schema.Number>
 ```

@@ -1,6 +1,6 @@
 ---
 title: ProtocolVersion.ts
-nav_order: 73
+nav_order: 87
 parent: Modules
 ---
 
@@ -10,6 +10,15 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [constructors](#constructors)
+  - [make](#make)
+- [conversion](#conversion)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -17,13 +26,85 @@ parent: Modules
 - [model](#model)
   - [ProtocolVersion (class)](#protocolversion-class)
 - [schemas](#schemas)
-  - [FromCBORBytes](#fromcborbytes)
-  - [FromCBORHex](#fromcborhex)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
-- [utils](#utils)
-  - [Codec](#codec)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 
 ---
+
+# constructors
+
+## make
+
+Smart constructor for creating ProtocolVersion instances
+
+**Signature**
+
+```ts
+export declare const make: (props: { major: number; minor: number }) => ProtocolVersion
+```
+
+Added in v2.0.0
+
+# conversion
+
+## fromCBORBytes
+
+Convert CBOR bytes to ProtocolVersion (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => ProtocolVersion
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Convert CBOR hex string to ProtocolVersion (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => ProtocolVersion
+```
+
+Added in v2.0.0
+
+## toCBORBytes
+
+Convert ProtocolVersion to CBOR bytes (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: ProtocolVersion, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert ProtocolVersion to CBOR hex string (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: ProtocolVersion, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either namespace for ProtocolVersion operations that can fail
+
+Added in v2.0.0
 
 # equality
 
@@ -106,7 +187,7 @@ CBOR hex transformation schema for ProtocolVersion.
 export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -141,31 +222,16 @@ export declare const FromCDDL: Schema.transformOrFail<
 
 Added in v2.0.0
 
-# utils
+# testing
 
-## Codec
+## arbitrary
+
+FastCheck arbitrary for generating random ProtocolVersion instances
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { bytes: (input: ProtocolVersion) => any; variableBytes: (input: ProtocolVersion) => string }
-  Decode: { bytes: (input: any) => ProtocolVersion; variableBytes: (input: string) => ProtocolVersion }
-  EncodeEffect: {
-    bytes: (input: ProtocolVersion) => Effect.Effect<any, InstanceType<typeof ProtocolVersionError>>
-    variableBytes: (input: ProtocolVersion) => Effect.Effect<string, InstanceType<typeof ProtocolVersionError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect.Effect<ProtocolVersion, InstanceType<typeof ProtocolVersionError>>
-    variableBytes: (input: string) => Effect.Effect<ProtocolVersion, InstanceType<typeof ProtocolVersionError>>
-  }
-  EncodeEither: {
-    bytes: (input: ProtocolVersion) => Either<any, InstanceType<typeof ProtocolVersionError>>
-    variableBytes: (input: ProtocolVersion) => Either<string, InstanceType<typeof ProtocolVersionError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<ProtocolVersion, InstanceType<typeof ProtocolVersionError>>
-    variableBytes: (input: string) => Either<ProtocolVersion, InstanceType<typeof ProtocolVersionError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<ProtocolVersion>
 ```
+
+Added in v2.0.0

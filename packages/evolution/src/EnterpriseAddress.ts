@@ -3,6 +3,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 import * as Bytes from "./Bytes.js"
 import * as Bytes29 from "./Bytes29.js"
 import * as Credential from "./Credential.js"
+import * as Function from "./Function.js"
 import * as KeyHash from "./KeyHash.js"
 import * as NetworkId from "./NetworkId.js"
 import * as ScriptHash from "./ScriptHash.js"
@@ -33,7 +34,7 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseA
       const result = new Uint8Array(29)
       result[0] = header
 
-      const paymentCredentialBytes = yield* ParseResult.decode(Bytes.FromHex)(toA.paymentCredential.hash)
+      const paymentCredentialBytes = toA.paymentCredential.hash
       result.set(paymentCredentialBytes, 1)
 
       return yield* ParseResult.succeed(result)
@@ -49,14 +50,12 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseA
       // Script payment
       const isPaymentKey = (addressType & 0b0001) === 0
       const paymentCredential: Credential.Credential = isPaymentKey
-        ? {
-            _tag: "KeyHash",
-            hash: yield* ParseResult.decode(KeyHash.FromBytes)(fromA.slice(1, 29))
-          }
-        : {
-            _tag: "ScriptHash",
-            hash: yield* ParseResult.decode(ScriptHash.FromBytes)(fromA.slice(1, 29))
-          }
+        ? new KeyHash.KeyHash({
+            hash: fromA.slice(1, 29)
+          })
+        : new ScriptHash.ScriptHash({
+            hash: fromA.slice(1, 29)
+          })
       return yield* ParseResult.decode(EnterpriseAddress)({
         _tag: "EnterpriseAddress",
         networkId,
@@ -77,15 +76,12 @@ export const FromHex = Schema.compose(
 })
 
 /**
- * Smart constructor for creating EnterpriseAddress instances
+ * Smart constructor for EnterpriseAddress.
  *
  * @since 2.0.0
  * @category constructors
  */
-export const make = (props: {
-  networkId: NetworkId.NetworkId
-  paymentCredential: Credential.Credential
-}): EnterpriseAddress => new EnterpriseAddress(props)
+export const make = Schema.decodeSync(EnterpriseAddress)
 
 /**
  * Check if two EnterpriseAddress instances are equal.
@@ -104,93 +100,89 @@ export const equals = (a: EnterpriseAddress, b: EnterpriseAddress): boolean => {
  * @category testing
  */
 export const arbitrary = FastCheck.tuple(NetworkId.arbitrary, Credential.arbitrary).map(
-  ([networkId, paymentCredential]) => make({ networkId, paymentCredential })
+  ([networkId, paymentCredential]) => new EnterpriseAddress({ networkId, paymentCredential })
 )
 
+// ============================================================================
+// Parsing Functions
+// ============================================================================
+
 /**
- * Effect namespace for EnterpriseAddress operations that can fail
+ * Parse a EnterpriseAddress from bytes.
  *
  * @since 2.0.0
- * @category effect
+ * @category parsing
  */
-export namespace Effect {
+export const fromBytes = Function.makeDecodeSync(FromBytes, EnterpriseAddressError, "EnterpriseAddress.fromBytes")
+
+/**
+ * Parse a EnterpriseAddress from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = Function.makeDecodeSync(FromHex, EnterpriseAddressError, "EnterpriseAddress.fromHex")
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
+
+/**
+ * Convert a EnterpriseAddress to bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBytes = Function.makeEncodeSync(FromBytes, EnterpriseAddressError, "EnterpriseAddress.toBytes")
+
+/**
+ * Convert a EnterpriseAddress to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = Function.makeEncodeSync(FromHex, EnterpriseAddressError, "EnterpriseAddress.toHex")
+
+// ============================================================================
+// Either Namespace - Either-based Error Handling
+// ============================================================================
+
+/**
+ * Either-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category either
+ */
+export namespace Either {
   /**
-   * Convert bytes to EnterpriseAddress using Effect
+   * Parse a EnterpriseAddress from bytes.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array) =>
-    Eff.mapError(
-      Schema.decode(FromBytes)(bytes),
-      (cause) => new EnterpriseAddressError({ message: "Failed to decode from bytes", cause })
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, EnterpriseAddressError)
 
   /**
-   * Convert hex string to EnterpriseAddress using Effect
+   * Parse a EnterpriseAddress from hex string.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category parsing
    */
-  export const fromHex = (hex: string) =>
-    Eff.mapError(
-      Schema.decode(FromHex)(hex),
-      (cause) => new EnterpriseAddressError({ message: "Failed to decode from hex", cause })
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, EnterpriseAddressError)
 
   /**
-   * Convert EnterpriseAddress to bytes using Effect
+   * Convert a EnterpriseAddress to bytes.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category encoding
    */
-  export const toBytes = (address: EnterpriseAddress) =>
-    Eff.mapError(
-      Schema.encode(FromBytes)(address),
-      (cause) => new EnterpriseAddressError({ message: "Failed to encode to bytes", cause })
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, EnterpriseAddressError)
 
   /**
-   * Convert EnterpriseAddress to hex string using Effect
+   * Convert a EnterpriseAddress to hex string.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category encoding
    */
-  export const toHex = (address: EnterpriseAddress) =>
-    Eff.mapError(
-      Schema.encode(FromHex)(address),
-      (cause) => new EnterpriseAddressError({ message: "Failed to encode to hex", cause })
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, EnterpriseAddressError)
 }
-
-/**
- * Convert bytes to EnterpriseAddress (unsafe)
- *
- * @since 2.0.0
- * @category conversion
- */
-export const fromBytes = (bytes: Uint8Array): EnterpriseAddress => Eff.runSync(Effect.fromBytes(bytes))
-
-/**
- * Convert hex string to EnterpriseAddress (unsafe)
- *
- * @since 2.0.0
- * @category conversion
- */
-export const fromHex = (hex: string): EnterpriseAddress => Eff.runSync(Effect.fromHex(hex))
-
-/**
- * Convert EnterpriseAddress to bytes (unsafe)
- *
- * @since 2.0.0
- * @category conversion
- */
-export const toBytes = (address: EnterpriseAddress): Uint8Array => Eff.runSync(Effect.toBytes(address))
-
-/**
- * Convert EnterpriseAddress to hex string (unsafe)
- *
- * @since 2.0.0
- * @category conversion
- */
-export const toHex = (address: EnterpriseAddress): string => Eff.runSync(Effect.toHex(address))

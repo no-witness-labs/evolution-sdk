@@ -1,6 +1,6 @@
 ---
 title: KesSignature.ts
-nav_order: 49
+nav_order: 57
 parent: Modules
 ---
 
@@ -10,58 +10,76 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [KesSignatureError (class)](#kessignatureerror-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [predicates](#predicates)
+  - [isKesSignature](#iskessignature)
 - [schemas](#schemas)
-  - [KesSignature](#kessignature)
+  - [KesSignature (class)](#kessignature-class)
+    - [toJSON (method)](#tojson-method)
+    - [toString (method)](#tostring-method)
 - [utils](#utils)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-  - [KesSignature (type alias)](#kessignature-type-alias)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for KesSignature encoding and decoding operations.
+FastCheck arbitrary for generating random KesSignature instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: {
-    bytes: (input: string & Brand<"KesSignature">) => any
-    hex: (input: string & Brand<"KesSignature">) => string
-  }
-  Decode: {
-    bytes: (input: any) => string & Brand<"KesSignature">
-    hex: (input: string) => string & Brand<"KesSignature">
-  }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"KesSignature">) => Effect<any, InstanceType<typeof KesSignatureError>>
-    hex: (input: string & Brand<"KesSignature">) => Effect<string, InstanceType<typeof KesSignatureError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"KesSignature">, InstanceType<typeof KesSignatureError>>
-    hex: (input: string) => Effect<string & Brand<"KesSignature">, InstanceType<typeof KesSignatureError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"KesSignature">) => Either<any, InstanceType<typeof KesSignatureError>>
-    hex: (input: string & Brand<"KesSignature">) => Either<string, InstanceType<typeof KesSignatureError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"KesSignature">, InstanceType<typeof KesSignatureError>>
-    hex: (input: string) => Either<string & Brand<"KesSignature">, InstanceType<typeof KesSignatureError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<KesSignature>
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode KesSignature to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: KesSignature) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode KesSignature to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: KesSignature) => string
 ```
 
 Added in v2.0.0
@@ -70,7 +88,7 @@ Added in v2.0.0
 
 ## equals
 
-Check if two KesSignature instances are equal.
+Equality on bytes
 
 **Signature**
 
@@ -94,38 +112,76 @@ export declare class KesSignatureError
 
 Added in v2.0.0
 
-# generators
+# parsing
 
-## generator
+## fromBytes
 
-Generate a random KesSignature.
+Parse KesSignature from bytes.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"KesSignature">>
+export declare const fromBytes: (input: any) => KesSignature
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse KesSignature from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => KesSignature
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isKesSignature
+
+Predicate for KesSignature instances
+
+**Signature**
+
+```ts
+export declare const isKesSignature: (u: unknown, overrideOptions?: ParseOptions | number) => u is KesSignature
 ```
 
 Added in v2.0.0
 
 # schemas
 
-## KesSignature
+## KesSignature (class)
 
-Schema for KesSignature representing a KES signature.
+KesSignature model stored as 448 raw bytes.
 kes_signature = bytes .size 448
-Follows the Conway-era CDDL specification.
 
 **Signature**
 
 ```ts
-export declare const KesSignature: Schema.brand<
-  Schema.filter<Schema.refine<string, typeof Schema.String>>,
-  "KesSignature"
->
+export declare class KesSignature
 ```
 
 Added in v2.0.0
+
+### toJSON (method)
+
+**Signature**
+
+```ts
+toJSON(): string
+```
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
 
 # utils
 
@@ -134,13 +190,7 @@ Added in v2.0.0
 **Signature**
 
 ```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
-    Schema.filter<Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "KesSignature">
->
+export declare const FromBytes: Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof KesSignature>
 ```
 
 ## FromHex
@@ -149,15 +199,7 @@ export declare const FromBytes: Schema.transform<
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.filter<Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "KesSignature">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof KesSignature>
 >
-```
-
-## KesSignature (type alias)
-
-**Signature**
-
-```ts
-export type KesSignature = typeof KesSignature.Type
 ```

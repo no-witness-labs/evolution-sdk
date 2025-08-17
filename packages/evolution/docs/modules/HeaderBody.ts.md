@@ -1,6 +1,6 @@
 ---
 title: HeaderBody.ts
-nav_order: 46
+nav_order: 54
 parent: Modules
 ---
 
@@ -10,6 +10,15 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [constructors](#constructors)
+  - [make](#make)
+- [conversion](#conversion)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -19,13 +28,96 @@ parent: Modules
 - [predicates](#predicates)
   - [isHeaderBody](#isheaderbody)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
-- [utils](#utils)
-  - [Codec](#codec)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 
 ---
+
+# constructors
+
+## make
+
+Smart constructor for creating HeaderBody instances
+
+**Signature**
+
+```ts
+export declare const make: (props: {
+  blockNumber: number
+  slot: number
+  prevHash: BlockHeaderHash.BlockHeaderHash | null
+  issuerVkey: VKey.VKey
+  vrfVkey: VrfVkey.VrfVkey
+  vrfResult: VrfCert.VrfCert
+  blockBodySize: number
+  blockBodyHash: BlockBodyHash.BlockBodyHash
+  operationalCert: OperationalCert.OperationalCert
+  protocolVersion: ProtocolVersion.ProtocolVersion
+}) => HeaderBody
+```
+
+Added in v2.0.0
+
+# conversion
+
+## fromCBORBytes
+
+Convert CBOR bytes to HeaderBody (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => HeaderBody
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Convert CBOR hex string to HeaderBody (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => HeaderBody
+```
+
+Added in v2.0.0
+
+## toCBORBytes
+
+Convert HeaderBody to CBOR bytes (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (headerBody: HeaderBody, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert HeaderBody to CBOR hex string (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (headerBody: HeaderBody, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# effect
+
+## Effect (namespace)
+
+Effect namespace for HeaderBody operations that can fail
+
+Added in v2.0.0
 
 # equality
 
@@ -97,14 +189,14 @@ Added in v2.0.0
 
 # schemas
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for HeaderBody.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -135,17 +227,17 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for HeaderBody.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -217,31 +309,16 @@ export declare const FromCDDL: Schema.transformOrFail<
 
 Added in v2.0.0
 
-# utils
+# testing
 
-## Codec
+## arbitrary
+
+FastCheck arbitrary for generating random HeaderBody instances
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: HeaderBody) => any; cborHex: (input: HeaderBody) => string }
-  Decode: { cborBytes: (input: any) => HeaderBody; cborHex: (input: string) => HeaderBody }
-  EncodeEffect: {
-    cborBytes: (input: HeaderBody) => Effect.Effect<any, InstanceType<typeof HeaderBodyError>>
-    cborHex: (input: HeaderBody) => Effect.Effect<string, InstanceType<typeof HeaderBodyError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<HeaderBody, InstanceType<typeof HeaderBodyError>>
-    cborHex: (input: string) => Effect.Effect<HeaderBody, InstanceType<typeof HeaderBodyError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: HeaderBody) => Either<any, InstanceType<typeof HeaderBodyError>>
-    cborHex: (input: HeaderBody) => Either<string, InstanceType<typeof HeaderBodyError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<HeaderBody, InstanceType<typeof HeaderBodyError>>
-    cborHex: (input: string) => Either<HeaderBody, InstanceType<typeof HeaderBodyError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<HeaderBody>
 ```
+
+Added in v2.0.0

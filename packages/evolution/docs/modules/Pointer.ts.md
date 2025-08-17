@@ -1,6 +1,6 @@
 ---
 title: Pointer.ts
-nav_order: 64
+nav_order: 76
 parent: Modules
 ---
 
@@ -12,6 +12,10 @@ parent: Modules
 
 - [constructors](#constructors)
   - [make](#make)
+- [equality](#equality)
+  - [equals](#equals)
+- [generators](#generators)
+  - [arbitrary](#arbitrary)
 - [predicates](#predicates)
   - [isPointer](#ispointer)
 - [schemas](#schemas)
@@ -30,6 +34,34 @@ Create a new Pointer instance
 
 ```ts
 export declare const make: (slot: Natural.Natural, txIndex: Natural.Natural, certIndex: Natural.Natural) => Pointer
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two Pointer instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: Pointer, b: Pointer) => boolean
+```
+
+Added in v2.0.0
+
+# generators
+
+## arbitrary
+
+FastCheck arbitrary for generating random Pointer instances
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<Pointer>
 ```
 
 Added in v2.0.0

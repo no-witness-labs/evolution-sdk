@@ -1,6 +1,6 @@
 ---
 title: TransactionOutput.ts
-nav_order: 91
+nav_order: 108
 parent: Modules
 ---
 
@@ -10,22 +10,159 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Either](#either)
+  - [Either (namespace)](#either-namespace)
+- [FastCheck](#fastcheck)
+  - [arbitrary](#arbitrary)
+- [constructors](#constructors)
+  - [makeBabbage](#makebabbage)
+  - [makeShelley](#makeshelley)
+- [decoding](#decoding)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [equality](#equality)
+  - [equals](#equals)
 - [model](#model)
   - [BabbageTransactionOutput (class)](#babbagetransactionoutput-class)
   - [ShelleyTransactionOutput (class)](#shelleytransactionoutput-class)
 - [schemas](#schemas)
-  - [BabbageTransactionOutputCDDLSchema](#babbagetransactionoutputcddlschema)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
-  - [ShelleyTransactionOutputCDDLSchema](#shelleytransactionoutputcddlschema)
+  - [FromBabbageTransactionOutputCDDLSchema](#frombabbagetransactionoutputcddlschema)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
+  - [FromShelleyTransactionOutputCDDLSchema](#fromshelleytransactionoutputcddlschema)
+  - [FromTransactionOutputCDDLSchema](#fromtransactionoutputcddlschema)
   - [TransactionOutput](#transactionoutput)
-  - [TransactionOutputCDDLSchema](#transactionoutputcddlschema)
 - [utils](#utils)
-  - [Codec](#codec)
+  - [CDDLSchema](#cddlschema)
+  - [ShelleyTransactionOutputCDDL](#shelleytransactionoutputcddl)
   - [TransactionOutput (type alias)](#transactionoutput-type-alias)
   - [TransactionOutputError (class)](#transactionoutputerror-class)
 
 ---
+
+# Either
+
+## Either (namespace)
+
+Either namespace containing schema decode and encode operations.
+
+Added in v2.0.0
+
+# FastCheck
+
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: () => FastCheck.Arbitrary<TransactionOutput>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## makeBabbage
+
+Create a Babbage transaction output.
+
+**Signature**
+
+```ts
+export declare const makeBabbage: (
+  address: Address.Address,
+  amount: Value.Value,
+  datumOption?: DatumOption.DatumOption,
+  scriptRef?: ScriptRef.ScriptRef
+) => BabbageTransactionOutput
+```
+
+Added in v2.0.0
+
+## makeShelley
+
+Create a Shelley transaction output.
+
+**Signature**
+
+```ts
+export declare const makeShelley: (
+  address: Address.Address,
+  amount: Value.Value,
+  datumHash?: DatumOption.DatumHash
+) => ShelleyTransactionOutput
+```
+
+Added in v2.0.0
+
+# decoding
+
+## fromCBORBytes
+
+Parse TransactionOutput from CBOR bytes (unsafe).
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => TransactionOutput
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse TransactionOutput from CBOR hex (unsafe).
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => TransactionOutput
+```
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert TransactionOutput to CBOR bytes (unsafe).
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: TransactionOutput, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert TransactionOutput to CBOR hex (unsafe).
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: TransactionOutput, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two TransactionOutput instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: TransactionOutput, b: TransactionOutput) => boolean
+```
+
+Added in v2.0.0
 
 # model
 
@@ -64,7 +201,7 @@ Added in v2.0.0
 
 # schemas
 
-## BabbageTransactionOutputCDDLSchema
+## FromBabbageTransactionOutputCDDLSchema
 
 CDDL schema for Babbage transaction outputs
 
@@ -75,7 +212,7 @@ CDDL: babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, 
 **Signature**
 
 ```ts
-export declare const BabbageTransactionOutputCDDLSchema: Schema.transformOrFail<
+export declare const FromBabbageTransactionOutputCDDLSchema: Schema.transformOrFail<
   Schema.Struct<{
     0: typeof Schema.Uint8ArrayFromSelf
     1: Schema.SchemaClass<
@@ -92,8 +229,8 @@ export declare const BabbageTransactionOutputCDDLSchema: Schema.transformOrFail<
     >
     3: Schema.optional<
       Schema.SchemaClass<
-        { readonly tag: number; readonly value: CBOR.CBOR; readonly _tag: "Tag" },
-        { readonly tag: number; readonly value: CBOR.CBOR; readonly _tag: "Tag" },
+        { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
+        { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
         never
       >
     >
@@ -105,15 +242,15 @@ export declare const BabbageTransactionOutputCDDLSchema: Schema.transformOrFail<
 
 Added in v2.0.0
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for TransactionOutput.
-Transforms between Uint8Array and TransactionOutput using CBOR encoding.
+Transforms between CBOR bytes and TransactionOutput.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -127,10 +264,18 @@ export declare const FromBytes: (
         Schema.Tuple<
           [
             typeof Schema.Uint8ArrayFromSelf,
-            Schema.SchemaClass<
-              bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
-              bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
-              never
+            Schema.Union<
+              [
+                typeof Schema.BigIntFromSelf,
+                Schema.Tuple2<
+                  typeof Schema.BigIntFromSelf,
+                  Schema.SchemaClass<
+                    ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+                    ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+                    never
+                  >
+                >
+              ]
             >,
             Schema.Element<typeof Schema.Uint8ArrayFromSelf, "?">
           ]
@@ -155,8 +300,8 @@ export declare const FromBytes: (
           >
           3: Schema.optional<
             Schema.SchemaClass<
-              { readonly tag: number; readonly value: CBOR.CBOR; readonly _tag: "Tag" },
-              { readonly tag: number; readonly value: CBOR.CBOR; readonly _tag: "Tag" },
+              { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
+              { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
               never
             >
           >
@@ -171,18 +316,18 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for TransactionOutput.
-Transforms between hex string and TransactionOutput using CBOR encoding.
+Transforms between CBOR hex string and TransactionOutput.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -195,10 +340,18 @@ export declare const FromHex: (
           Schema.Tuple<
             [
               typeof Schema.Uint8ArrayFromSelf,
-              Schema.SchemaClass<
-                bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
-                bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
-                never
+              Schema.Union<
+                [
+                  typeof Schema.BigIntFromSelf,
+                  Schema.Tuple2<
+                    typeof Schema.BigIntFromSelf,
+                    Schema.SchemaClass<
+                      ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+                      ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+                      never
+                    >
+                  >
+                ]
               >,
               Schema.Element<typeof Schema.Uint8ArrayFromSelf, "?">
             ]
@@ -223,8 +376,8 @@ export declare const FromHex: (
             >
             3: Schema.optional<
               Schema.SchemaClass<
-                { readonly tag: number; readonly value: CBOR.CBOR; readonly _tag: "Tag" },
-                { readonly tag: number; readonly value: CBOR.CBOR; readonly _tag: "Tag" },
+                { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
+                { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
                 never
               >
             >
@@ -240,7 +393,7 @@ export declare const FromHex: (
 
 Added in v2.0.0
 
-## ShelleyTransactionOutputCDDLSchema
+## FromShelleyTransactionOutputCDDLSchema
 
 CDDL schema for Shelley transaction outputs
 
@@ -251,14 +404,22 @@ CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
 **Signature**
 
 ```ts
-export declare const ShelleyTransactionOutputCDDLSchema: Schema.transformOrFail<
+export declare const FromShelleyTransactionOutputCDDLSchema: Schema.transformOrFail<
   Schema.Tuple<
     [
       typeof Schema.Uint8ArrayFromSelf,
-      Schema.SchemaClass<
-        bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
-        bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
-        never
+      Schema.Union<
+        [
+          typeof Schema.BigIntFromSelf,
+          Schema.Tuple2<
+            typeof Schema.BigIntFromSelf,
+            Schema.SchemaClass<
+              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+              never
+            >
+          >
+        ]
       >,
       Schema.Element<typeof Schema.Uint8ArrayFromSelf, "?">
     ]
@@ -270,23 +431,7 @@ export declare const ShelleyTransactionOutputCDDLSchema: Schema.transformOrFail<
 
 Added in v2.0.0
 
-## TransactionOutput
-
-Union type for transaction outputs
-
-```
-CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
-```
-
-**Signature**
-
-```ts
-export declare const TransactionOutput: Schema.Union<[typeof ShelleyTransactionOutput, typeof BabbageTransactionOutput]>
-```
-
-Added in v2.0.0
-
-## TransactionOutputCDDLSchema
+## FromTransactionOutputCDDLSchema
 
 CDDL schema for transaction outputs
 
@@ -299,16 +444,24 @@ babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, ? 3 : 
 **Signature**
 
 ```ts
-export declare const TransactionOutputCDDLSchema: Schema.Union<
+export declare const FromTransactionOutputCDDLSchema: Schema.Union<
   [
     Schema.transformOrFail<
       Schema.Tuple<
         [
           typeof Schema.Uint8ArrayFromSelf,
-          Schema.SchemaClass<
-            bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
-            bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
-            never
+          Schema.Union<
+            [
+              typeof Schema.BigIntFromSelf,
+              Schema.Tuple2<
+                typeof Schema.BigIntFromSelf,
+                Schema.SchemaClass<
+                  ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+                  ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+                  never
+                >
+              >
+            ]
           >,
           Schema.Element<typeof Schema.Uint8ArrayFromSelf, "?">
         ]
@@ -333,8 +486,8 @@ export declare const TransactionOutputCDDLSchema: Schema.Union<
         >
         3: Schema.optional<
           Schema.SchemaClass<
-            { readonly tag: number; readonly value: CBOR.CBOR; readonly _tag: "Tag" },
-            { readonly tag: number; readonly value: CBOR.CBOR; readonly _tag: "Tag" },
+            { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
+            { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
             never
           >
         >
@@ -348,55 +501,100 @@ export declare const TransactionOutputCDDLSchema: Schema.Union<
 
 Added in v2.0.0
 
-# utils
+## TransactionOutput
 
-## Codec
+Union type for transaction outputs
+
+```
+CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
+```
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: {
-    cborBytes: (input: ShelleyTransactionOutput | BabbageTransactionOutput) => any
-    cborHex: (input: ShelleyTransactionOutput | BabbageTransactionOutput) => string
-  }
-  Decode: {
-    cborBytes: (input: any) => ShelleyTransactionOutput | BabbageTransactionOutput
-    cborHex: (input: string) => ShelleyTransactionOutput | BabbageTransactionOutput
-  }
-  EncodeEffect: {
-    cborBytes: (
-      input: ShelleyTransactionOutput | BabbageTransactionOutput
-    ) => Effect.Effect<any, InstanceType<typeof TransactionOutputError>>
-    cborHex: (
-      input: ShelleyTransactionOutput | BabbageTransactionOutput
-    ) => Effect.Effect<string, InstanceType<typeof TransactionOutputError>>
-  }
-  DecodeEffect: {
-    cborBytes: (
-      input: any
-    ) => Effect.Effect<ShelleyTransactionOutput | BabbageTransactionOutput, InstanceType<typeof TransactionOutputError>>
-    cborHex: (
-      input: string
-    ) => Effect.Effect<ShelleyTransactionOutput | BabbageTransactionOutput, InstanceType<typeof TransactionOutputError>>
-  }
-  EncodeEither: {
-    cborBytes: (
-      input: ShelleyTransactionOutput | BabbageTransactionOutput
-    ) => Either<any, InstanceType<typeof TransactionOutputError>>
-    cborHex: (
-      input: ShelleyTransactionOutput | BabbageTransactionOutput
-    ) => Either<string, InstanceType<typeof TransactionOutputError>>
-  }
-  DecodeEither: {
-    cborBytes: (
-      input: any
-    ) => Either<ShelleyTransactionOutput | BabbageTransactionOutput, InstanceType<typeof TransactionOutputError>>
-    cborHex: (
-      input: string
-    ) => Either<ShelleyTransactionOutput | BabbageTransactionOutput, InstanceType<typeof TransactionOutputError>>
-  }
-}
+export declare const TransactionOutput: Schema.Union<[typeof ShelleyTransactionOutput, typeof BabbageTransactionOutput]>
+```
+
+Added in v2.0.0
+
+# utils
+
+## CDDLSchema
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.Union<
+  [
+    Schema.Tuple<
+      [
+        typeof Schema.Uint8ArrayFromSelf,
+        Schema.Union<
+          [
+            typeof Schema.BigIntFromSelf,
+            Schema.Tuple2<
+              typeof Schema.BigIntFromSelf,
+              Schema.SchemaClass<
+                ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+                ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+                never
+              >
+            >
+          ]
+        >,
+        Schema.Element<typeof Schema.Uint8ArrayFromSelf, "?">
+      ]
+    >,
+    Schema.Struct<{
+      0: typeof Schema.Uint8ArrayFromSelf
+      1: Schema.SchemaClass<
+        bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
+        bigint | readonly [bigint, ReadonlyMap<any, ReadonlyMap<any, bigint>>],
+        never
+      >
+      2: Schema.optional<
+        Schema.SchemaClass<
+          readonly [0n, any] | readonly [1n, CBOR.CBOR],
+          readonly [0n, any] | readonly [1n, CBOR.CBOR],
+          never
+        >
+      >
+      3: Schema.optional<
+        Schema.SchemaClass<
+          { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
+          { readonly _tag: "Tag"; readonly tag: 24; readonly value: any },
+          never
+        >
+      >
+    }>
+  ]
+>
+```
+
+## ShelleyTransactionOutputCDDL
+
+**Signature**
+
+```ts
+export declare const ShelleyTransactionOutputCDDL: Schema.Tuple<
+  [
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.Union<
+      [
+        typeof Schema.BigIntFromSelf,
+        Schema.Tuple2<
+          typeof Schema.BigIntFromSelf,
+          Schema.SchemaClass<
+            ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+            ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+            never
+          >
+        >
+      ]
+    >,
+    Schema.Element<typeof Schema.Uint8ArrayFromSelf, "?">
+  ]
+>
 ```
 
 ## TransactionOutput (type alias)
@@ -404,7 +602,7 @@ export declare const Codec: (options?: CBOR.CodecOptions) => {
 **Signature**
 
 ```ts
-export type TransactionOutput = Schema.Schema.Type<typeof TransactionOutput>
+export type TransactionOutput = typeof TransactionOutput.Type
 ```
 
 ## TransactionOutputError (class)

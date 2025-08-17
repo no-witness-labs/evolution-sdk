@@ -2,6 +2,7 @@ import { Data, Effect as Eff, ParseResult, Schema } from "effect"
 
 import * as Address from "./Address.js"
 import * as Bytes from "./Bytes.js"
+import * as Function from "./Function.js"
 import * as NetworkId from "./NetworkId.js"
 
 export class AddressDetailsError extends Data.TaggedError("AddressDetailsError")<{
@@ -125,7 +126,7 @@ export const fromAddress = (address: Address.Address): AddressDetails => {
  * @since 2.0.0
  * @category parsing
  */
-export const fromBech32 = (bech32: string): AddressDetails => Eff.runSync(Effect.fromBech32(bech32))
+export const fromBech32 = Function.makeDecodeSync(FromBech32, AddressDetailsError, "AddressDetails.fromBech32")
 
 /**
  * Parse AddressDetails from hex string.
@@ -133,7 +134,7 @@ export const fromBech32 = (bech32: string): AddressDetails => Eff.runSync(Effect
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): AddressDetails => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, AddressDetailsError, "AddressDetails.fromHex")
 
 // ============================================================================
 // Encoding Functions
@@ -145,7 +146,7 @@ export const fromHex = (hex: string): AddressDetails => Eff.runSync(Effect.fromH
  * @since 2.0.0
  * @category encoding
  */
-export const toBech32 = (details: AddressDetails): string => Eff.runSync(Effect.toBech32(details))
+export const toBech32 = Function.makeEncodeSync(FromBech32, AddressDetailsError, "AddressDetails.toBech32")
 
 /**
  * Convert AddressDetails to hex string.
@@ -153,31 +154,26 @@ export const toBech32 = (details: AddressDetails): string => Eff.runSync(Effect.
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (details: AddressDetails): string => Eff.runSync(Effect.toHex(details))
+export const toHex = Function.makeEncodeSync(FromHex, AddressDetailsError, "AddressDetails.toHex")
 
 // ============================================================================
-// Effect Namespace - Effect-based Error Handling
+// Either Namespace - Either-based Error Handling
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
- * Returns Effect<Success, Error> for composable error handling.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse AddressDetails from Bech32 string.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBech32 = (bech32: string) =>
-    Eff.mapError(
-      Schema.decode(FromBech32)(bech32),
-      (error) => new AddressDetailsError({ message: "Failed to decode AddressDetails from Bech32", cause: error })
-    )
+  export const fromBech32 = Function.makeDecodeEither(FromBech32, AddressDetailsError)
 
   /**
    * Parse AddressDetails from hex string.
@@ -185,11 +181,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string) =>
-    Eff.mapError(
-      Schema.decode(FromHex)(hex),
-      (error) => new AddressDetailsError({ message: "Failed to decode AddressDetails from hex", cause: error })
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, AddressDetailsError)
 
   /**
    * Convert AddressDetails to Bech32 string.
@@ -197,11 +189,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBech32 = (details: AddressDetails) =>
-    Eff.mapError(
-      Schema.encode(FromBech32)(details),
-      (error) => new AddressDetailsError({ message: "Failed to encode AddressDetails to Bech32", cause: error })
-    )
+  export const toBech32 = Function.makeEncodeEither(FromBech32, AddressDetailsError)
 
   /**
    * Convert AddressDetails to hex string.
@@ -209,9 +197,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (details: AddressDetails) =>
-    Eff.mapError(
-      Schema.encode(FromHex)(details),
-      (error) => new AddressDetailsError({ message: "Failed to encode AddressDetails to hex", cause: error })
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, AddressDetailsError)
 }

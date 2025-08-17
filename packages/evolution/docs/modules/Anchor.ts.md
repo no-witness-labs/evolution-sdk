@@ -10,24 +10,45 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
 - [constructors](#constructors)
   - [make](#make)
+- [effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [AnchorError (class)](#anchorerror-class)
-- [generators](#generators)
-  - [generator](#generator)
-- [model](#model)
-  - [Anchor (class)](#anchor-class)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
+  - [Anchor (class)](#anchor-class)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
 - [utils](#utils)
-  - [Codec](#codec)
+  - [CDDLSchema](#cddlschema)
 
 ---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for Anchor instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<Anchor>
+```
+
+Added in v2.0.0
 
 # constructors
 
@@ -38,7 +59,44 @@ Create an Anchor from a URL string and hash string.
 **Signature**
 
 ```ts
-export declare const make: (anchorUrl: string, anchorDataHash: string) => Anchor
+export declare const make: (
+  props: { readonly anchorUrl: string & Brand<"Url">; readonly anchorDataHash: any },
+  options?: Schema.MakeOptions | undefined
+) => Anchor
+```
+
+Added in v2.0.0
+
+# effect
+
+## Either (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert an Anchor to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: Anchor, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert an Anchor to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: Anchor, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
@@ -71,26 +129,41 @@ export declare class AnchorError
 
 Added in v2.0.0
 
-# generators
+# parsing
 
-## generator
+## fromCBORBytes
 
-FastCheck generator for Anchor instances.
+Parse an Anchor from CBOR bytes.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<Anchor>
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Anchor
 ```
 
 Added in v2.0.0
 
-# model
+## fromCBORHex
+
+Parse an Anchor from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Anchor
+```
+
+Added in v2.0.0
+
+# schemas
 
 ## Anchor (class)
 
 Schema for Anchor representing an anchor with URL and data hash.
+
+```
 anchor = [anchor_url: url, anchor_data_hash: Bytes32]
+```
 
 **Signature**
 
@@ -100,16 +173,14 @@ export declare class Anchor
 
 Added in v2.0.0
 
-# schemas
-
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for Anchor.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -117,37 +188,35 @@ export declare const FromBytes: (
     Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
     never
   >,
-  Schema.transformOrFail<
+  Schema.transform<
     Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.SchemaClass<Anchor, Anchor, never>,
-    never
+    Schema.SchemaClass<Anchor, Anchor, never>
   >
 >
 ```
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for Anchor.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
       Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
       never
     >,
-    Schema.transformOrFail<
+    Schema.transform<
       Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
-      Schema.SchemaClass<Anchor, Anchor, never>,
-      never
+      Schema.SchemaClass<Anchor, Anchor, never>
     >
   >
 >
@@ -158,15 +227,17 @@ Added in v2.0.0
 ## FromCDDL
 
 CDDL schema for Anchor as tuple structure.
+
+```
 anchor = [anchor_url: url, anchor_data_hash: Bytes32]
+```
 
 **Signature**
 
 ```ts
-export declare const FromCDDL: Schema.transformOrFail<
+export declare const FromCDDL: Schema.transform<
   Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
-  Schema.SchemaClass<Anchor, Anchor, never>,
-  never
+  Schema.SchemaClass<Anchor, Anchor, never>
 >
 ```
 
@@ -174,29 +245,10 @@ Added in v2.0.0
 
 # utils
 
-## Codec
+## CDDLSchema
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: Anchor) => any; cborHex: (input: Anchor) => string }
-  Decode: { cborBytes: (input: any) => Anchor; cborHex: (input: string) => Anchor }
-  EncodeEffect: {
-    cborBytes: (input: Anchor) => Effect.Effect<any, InstanceType<typeof AnchorError>>
-    cborHex: (input: Anchor) => Effect.Effect<string, InstanceType<typeof AnchorError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<Anchor, InstanceType<typeof AnchorError>>
-    cborHex: (input: string) => Effect.Effect<Anchor, InstanceType<typeof AnchorError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: Anchor) => Either<any, InstanceType<typeof AnchorError>>
-    cborHex: (input: Anchor) => Either<string, InstanceType<typeof AnchorError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<Anchor, InstanceType<typeof AnchorError>>
-    cborHex: (input: string) => Either<Anchor, InstanceType<typeof AnchorError>>
-  }
-}
+export declare const CDDLSchema: Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>
 ```

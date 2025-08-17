@@ -1,6 +1,6 @@
 ---
 title: Bytes.ts
-nav_order: 15
+nav_order: 18
 parent: Modules
 ---
 
@@ -10,21 +10,264 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [composition](#composition)
+  - [bytesLengthBetween](#byteslengthbetween)
+  - [bytesLengthEquals](#byteslengthequals)
+  - [bytesLengthMax](#byteslengthmax)
+  - [bytesLengthMin](#byteslengthmin)
+  - [bytesStartsWithPrefix](#bytesstartswithprefix)
+  - [hexLengthBetween](#hexlengthbetween)
+  - [hexLengthEquals](#hexlengthequals)
+  - [hexLengthMax](#hexlengthmax)
+  - [hexLengthMin](#hexlengthmin)
+  - [hexStartsWithPrefix](#hexstartswithprefix)
+- [conversions](#conversions)
+  - [fromHex](#fromhex)
+  - [fromHexLenient](#fromhexlenient)
+  - [toHex](#tohex)
+  - [toHexLenient](#tohexlenient)
+- [namespaces](#namespaces)
+  - [Either (namespace)](#either-namespace)
 - [predicates](#predicates)
   - [isHexLenient](#ishexlenient)
 - [schemas](#schemas)
-  - [FromBytesLenient](#frombyteslenient)
   - [HexLenientSchema](#hexlenientschema)
 - [utils](#utils)
   - [BytesError (class)](#byteserror-class)
-  - [Codec](#codec)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-  - [FromHexLenient](#fromhexlenient)
+  - [BytesFromHexLenient](#bytesfromhexlenient)
+  - [FromHex](#fromhex-1)
   - [HexSchema](#hexschema)
+  - [equals](#equals)
+  - [fromHexLenientUnsafe](#fromhexlenientunsafe)
+  - [fromHexUnsafe](#fromhexunsafe)
   - [isHex](#ishex)
+  - [makeBytesTransformation](#makebytestransformation)
+  - [toHexLenientUnsafe](#tohexlenientunsafe)
+  - [toHexUnsafe](#tohexunsafe)
 
 ---
+
+# composition
+
+## bytesLengthBetween
+
+Creates a curried filter that validates byte length is within a range (for Uint8Array).
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const bytesLengthBetween: (
+  minBytes: number,
+  maxBytes: number,
+  moduleName: string
+) => <S extends Schema.Schema<any, Uint8Array>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## bytesLengthEquals
+
+Creates a curried filter that validates exact byte length (for Uint8Array).
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const bytesLengthEquals: (
+  byteLength: number,
+  moduleName: string
+) => <S extends Schema.Schema<any, any>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## bytesLengthMax
+
+Creates a curried filter that validates maximum byte length (for Uint8Array).
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const bytesLengthMax: (
+  maxBytes: number,
+  moduleName: string
+) => <S extends Schema.Schema<any, Uint8Array>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## bytesLengthMin
+
+Creates a curried filter that validates minimum byte length (for Uint8Array).
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const bytesLengthMin: (
+  minBytes: number,
+  moduleName: string
+) => <S extends Schema.Schema<any, Uint8Array>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## bytesStartsWithPrefix
+
+Creates a curried filter that validates bytes start with specific prefix.
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const bytesStartsWithPrefix: (
+  prefix: Uint8Array,
+  moduleName: string
+) => <S extends Schema.Schema<any, Uint8Array>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## hexLengthBetween
+
+Creates a curried filter that validates byte length is within a range (for hex strings).
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const hexLengthBetween: (
+  minBytes: number,
+  maxBytes: number,
+  moduleName: string
+) => <S extends Schema.Schema<any, string>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## hexLengthEquals
+
+Creates a curried filter that validates exact byte length (for hex strings).
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const hexLengthEquals: (
+  byteLength: number,
+  moduleName: string
+) => <S extends Schema.Schema<any, string>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## hexLengthMax
+
+Creates a curried filter that validates maximum byte length (for hex strings).
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const hexLengthMax: (
+  maxBytes: number,
+  moduleName: string
+) => <S extends Schema.Schema<any, string>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## hexLengthMin
+
+Creates a curried filter that validates minimum byte length (for hex strings).
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const hexLengthMin: (
+  minBytes: number,
+  moduleName: string
+) => <S extends Schema.Schema<any, string>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+## hexStartsWithPrefix
+
+Creates a curried filter that validates hex starts with specific prefix.
+Preserves Context inference from the base schema.
+
+**Signature**
+
+```ts
+export declare const hexStartsWithPrefix: (
+  prefix: string,
+  moduleName: string
+) => <S extends Schema.Schema<any, string>>(baseSchema: S) => Schema.filter<S>
+```
+
+Added in v2.0.0
+
+# conversions
+
+## fromHex
+
+Convert hex string to Uint8Array. Throws on invalid input.
+
+**Signature**
+
+```ts
+export declare const fromHex: (hex: string) => Uint8Array
+```
+
+Added in v2.0.0
+
+## fromHexLenient
+
+Convert hex string to Uint8Array (allows empty strings). Throws on invalid input.
+
+**Signature**
+
+```ts
+export declare const fromHexLenient: (hex: string) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert Uint8Array to hex string. Never fails.
+
+**Signature**
+
+```ts
+export declare const toHex: (bytes: Uint8Array) => string
+```
+
+Added in v2.0.0
+
+## toHexLenient
+
+Convert Uint8Array to hex string (returns empty string for empty arrays). Never fails.
+
+**Signature**
+
+```ts
+export declare const toHexLenient: (bytes: Uint8Array) => string
+```
+
+Added in v2.0.0
+
+# namespaces
+
+## Either (namespace)
+
+Safe API that returns Either for error handling instead of throwing.
+
+Added in v2.0.0
 
 # predicates
 
@@ -42,22 +285,6 @@ export declare const isHexLenient: (input: string) => boolean
 Added in v2.0.0
 
 # schemas
-
-## FromBytesLenient
-
-Lenient version of FromBytes that allows empty byte arrays.
-Useful for PlutusData where empty byte arrays are valid.
-
-**Signature**
-
-```ts
-export declare const FromBytesLenient: Schema.transform<
-  typeof Schema.Uint8ArrayFromSelf,
-  Schema.refine<string, typeof Schema.String>
->
-```
-
-Added in v2.0.0
 
 ## HexLenientSchema
 
@@ -82,41 +309,14 @@ Added in v2.0.0
 export declare class BytesError
 ```
 
-## Codec
+## BytesFromHexLenient
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string) => any; bytesLenient: (input: string) => any }
-  Decode: { bytes: (input: any) => string; bytesLenient: (input: any) => string }
-  EncodeEffect: {
-    bytes: (input: string) => Effect<any, InstanceType<typeof BytesError>>
-    bytesLenient: (input: string) => Effect<any, InstanceType<typeof BytesError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string, InstanceType<typeof BytesError>>
-    bytesLenient: (input: any) => Effect<string, InstanceType<typeof BytesError>>
-  }
-  EncodeEither: {
-    bytes: (input: string) => Either<any, InstanceType<typeof BytesError>>
-    bytesLenient: (input: string) => Either<any, InstanceType<typeof BytesError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string, InstanceType<typeof BytesError>>
-    bytesLenient: (input: any) => Either<string, InstanceType<typeof BytesError>>
-  }
-}
-```
-
-## FromBytes
-
-**Signature**
-
-```ts
-export declare const FromBytes: Schema.transform<
-  typeof Schema.Uint8ArrayFromSelf,
-  Schema.refine<string, typeof Schema.String>
+export declare const BytesFromHexLenient: Schema.transform<
+  Schema.Schema<string, string, never>,
+  Schema.Schema<Uint8Array, Uint8Array, never>
 >
 ```
 
@@ -126,19 +326,8 @@ export declare const FromBytes: Schema.transform<
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.refine<string, typeof Schema.String>,
-  typeof Schema.Uint8ArrayFromSelf
->
-```
-
-## FromHexLenient
-
-**Signature**
-
-```ts
-export declare const FromHexLenient: Schema.transform<
-  Schema.refine<string, typeof Schema.String>,
-  typeof Schema.Uint8ArrayFromSelf
+  Schema.Schema<string, string, never>,
+  Schema.Schema<Uint8Array, Uint8Array, never>
 >
 ```
 
@@ -150,10 +339,70 @@ export declare const FromHexLenient: Schema.transform<
 export declare const HexSchema: Schema.refine<string, typeof Schema.String>
 ```
 
+## equals
+
+**Signature**
+
+```ts
+export declare const equals: (a: Uint8Array, b: Uint8Array) => boolean
+```
+
+## fromHexLenientUnsafe
+
+Pure conversion function from validated hex string to Uint8Array (lenient version).
+Assumes input is already validated hex or empty string.
+
+**Signature**
+
+```ts
+export declare const fromHexLenientUnsafe: (hex: string) => Uint8Array
+```
+
+## fromHexUnsafe
+
+Pure conversion function from validated hex string to Uint8Array.
+Assumes input is already validated hex.
+
+**Signature**
+
+```ts
+export declare const fromHexUnsafe: (hex: string) => Uint8Array
+```
+
 ## isHex
 
 **Signature**
 
 ```ts
 export declare const isHex: (input: string) => boolean
+```
+
+## makeBytesTransformation
+
+**Signature**
+
+```ts
+export declare const makeBytesTransformation: <I extends string = string>(
+  config: Uint8ArrayTransformationConfig<I>
+) => Schema.transform<Schema.Schema<I, I, never>, Schema.Schema<Uint8Array, Uint8Array, never>>
+```
+
+## toHexLenientUnsafe
+
+Pure conversion function from Uint8Array to hex string (lenient version).
+
+**Signature**
+
+```ts
+export declare const toHexLenientUnsafe: (bytes: Uint8Array) => string
+```
+
+## toHexUnsafe
+
+Pure conversion function from Uint8Array to hex string.
+
+**Signature**
+
+```ts
+export declare const toHexUnsafe: (bytes: Uint8Array) => string
 ```

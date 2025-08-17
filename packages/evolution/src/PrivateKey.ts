@@ -2,11 +2,14 @@ import { bech32 } from "@scure/base"
 import * as BIP32 from "@scure/bip32"
 import * as BIP39 from "@scure/bip39"
 import { wordlist } from "@scure/bip39/wordlists/english"
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 import sodium from "libsodium-wrappers-sumo"
 
+import * as Bytes from "./Bytes.js"
 import * as Bytes32 from "./Bytes32.js"
 import * as Bytes64 from "./Bytes64.js"
+import * as Ed25519Signature from "./Ed25519Signature.js"
+import * as Function from "./Function.js"
 import * as VKey from "./VKey.js"
 
 /**
@@ -28,32 +31,47 @@ export class PrivateKeyError extends Data.TaggedError("PrivateKeyError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const PrivateKey = Schema.Union(Bytes32.HexSchema, Bytes64.HexSchema)
-  .pipe(Schema.brand("PrivateKey"))
-  .annotations({
-    identifier: "PrivateKey",
-    description: "An Ed25519 private key supporting both standard 32-byte and CIP-0003 extended 64-byte formats"
-  })
+export class PrivateKey extends Schema.TaggedClass<PrivateKey>()("PrivateKey", {
+  key: Schema.Union(Bytes64.BytesSchema, Bytes32.BytesSchema)
+}) {
+  toJSON(): string {
+    return toHex(this)
+  }
 
-export type PrivateKey = typeof PrivateKey.Type
+  toString(): string {
+    return toHex(this)
+  }
 
-export const FromBytes = Schema.compose(Schema.Union(Bytes32.FromBytes, Bytes64.FromBytes), PrivateKey).annotations({
-  identifier: "PrivateKey.FromBytes",
-  description: "Transforms raw bytes (Uint8Array) to PrivateKey hex string"
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return `PrivateKey(${toHex(this)})`
+  }
+}
+
+export const FromBytes = Schema.transform(Schema.Union(Bytes64.BytesSchema, Bytes32.BytesSchema), PrivateKey, {
+  strict: true,
+  decode: (bytes) => new PrivateKey({ key: bytes }),
+  encode: (privateKey) => privateKey.key
+}).annotations({
+  identifier: "PrivateKey.FromBytes"
 })
 
-export const FromHex = PrivateKey
+export const FromHex = Schema.compose(
+  Bytes.FromHex, // string -> Uint8Array (any length)
+  FromBytes // Uint8Array -> PrivateKey (validates 32 or 64)
+).annotations({
+  identifier: "PrivateKey.FromHex"
+})
 
 export const FromBech32 = Schema.transformOrFail(Schema.String, PrivateKey, {
   strict: true,
   encode: (_, __, ___, toA) =>
-    Eff.gen(function* () {
-      const privateKeyBytes = yield* ParseResult.encode(FromBytes)(toA)
+    E.gen(function* () {
+      const privateKeyBytes = yield* ParseResult.encodeEither(FromBytes)(toA)
       const words = bech32.toWords(privateKeyBytes)
       return bech32.encode("ed25519e_sk", words, 1023)
     }),
   decode: (fromA, _, ast) =>
-    Eff.gen(function* () {
+    E.gen(function* () {
       const { prefix, words } = yield* ParseResult.try({
         try: () => bech32.decode(fromA as any, 1023),
         catch: (error) => new ParseResult.Type(ast, fromA, `Failed to decode Bech32: ${(error as Error).message}`)
@@ -62,7 +80,7 @@ export const FromBech32 = Schema.transformOrFail(Schema.String, PrivateKey, {
         throw new ParseResult.Type(ast, fromA, `Expected ed25519e_sk prefix, got ${prefix}`)
       }
       const decoded = bech32.fromWords(words)
-      return yield* ParseResult.decode(FromBytes)(decoded)
+      return yield* ParseResult.decodeEither(FromBytes)(decoded)
     })
 }).annotations({
   identifier: "PrivateKey.FromBech32",
@@ -75,7 +93,7 @@ export const FromBech32 = Schema.transformOrFail(Schema.String, PrivateKey, {
  * @since 2.0.0
  * @category constructors
  */
-export const make = PrivateKey.make
+export const make = (...args: ConstructorParameters<typeof PrivateKey>) => new PrivateKey(...args)
 
 /**
  * Check if two PrivateKey instances are equal.
@@ -83,7 +101,7 @@ export const make = PrivateKey.make
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: PrivateKey, b: PrivateKey): boolean => a === b
+export const equals = (a: PrivateKey, b: PrivateKey): boolean => Bytes.equals(a.key, b.key)
 
 /**
  * FastCheck arbitrary for generating random PrivateKey instances.
@@ -93,7 +111,7 @@ export const equals = (a: PrivateKey, b: PrivateKey): boolean => a === b
  * @category arbitrary
  */
 export const arbitrary = FastCheck.uint8Array({ minLength: 32, maxLength: 32 }).map((bytes) =>
-  Eff.runSync(Effect.fromBytes(bytes))
+  make({ key: bytes }, { disableValidation: true })
 )
 
 // ============================================================================
@@ -107,7 +125,7 @@ export const arbitrary = FastCheck.uint8Array({ minLength: 32, maxLength: 32 }).
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): PrivateKey => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, PrivateKeyError, "PrivateKey.fromBytes")
 
 /**
  * Parse a PrivateKey from a hex string.
@@ -116,7 +134,7 @@ export const fromBytes = (bytes: Uint8Array): PrivateKey => Eff.runSync(Effect.f
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): PrivateKey => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, PrivateKeyError, "PrivateKey.fromHex")
 
 /**
  * Parse a PrivateKey from a Bech32 string.
@@ -125,7 +143,7 @@ export const fromHex = (hex: string): PrivateKey => Eff.runSync(Effect.fromHex(h
  * @since 2.0.0
  * @category parsing
  */
-export const fromBech32 = (bech32: string): PrivateKey => Eff.runSync(Effect.fromBech32(bech32))
+export const fromBech32 = Function.makeDecodeSync(FromBech32, PrivateKeyError, "PrivateKey.fromBech32")
 
 // ============================================================================
 // Encoding Functions
@@ -137,7 +155,7 @@ export const fromBech32 = (bech32: string): PrivateKey => Eff.runSync(Effect.fro
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (privateKey: PrivateKey): Uint8Array => Eff.runSync(Effect.toBytes(privateKey))
+export const toBytes = Function.makeEncodeSync(FromBytes, PrivateKeyError, "PrivateKey.toBytes")
 
 /**
  * Convert a PrivateKey to a hex string.
@@ -145,7 +163,7 @@ export const toBytes = (privateKey: PrivateKey): Uint8Array => Eff.runSync(Effec
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (privateKey: PrivateKey): string => privateKey // Already a hex string
+export const toHex = Function.makeEncodeSync(FromHex, PrivateKeyError, "PrivateKey.toHex")
 
 /**
  * Convert a PrivateKey to a Bech32 string.
@@ -154,7 +172,7 @@ export const toHex = (privateKey: PrivateKey): string => privateKey // Already a
  * @since 2.0.0
  * @category encoding
  */
-export const toBech32 = (privateKey: PrivateKey): string => Eff.runSync(Effect.toBech32(privateKey))
+export const toBech32 = Function.makeEncodeSync(FromBech32, PrivateKeyError, "PrivateKey.toBech32")
 
 // ============================================================================
 // Factory Functions
@@ -211,8 +229,11 @@ export const validateMnemonic = (mnemonic: string): boolean => BIP39.validateMne
  * @since 2.0.0
  * @category bip39
  */
-export const fromMnemonic = (mnemonic: string, password?: string): PrivateKey =>
-  Eff.runSync(Effect.fromMnemonic(mnemonic, password))
+export const fromMnemonic = (mnemonic: string, password?: string): PrivateKey => {
+  return E.getOrThrowWith(Either.fromMnemonic(mnemonic, password), (error) => {
+    throw error
+  })
+}
 
 /**
  * Derive a child private key using BIP32 path (sync version that throws PrivateKeyError).
@@ -221,7 +242,11 @@ export const fromMnemonic = (mnemonic: string, password?: string): PrivateKey =>
  * @since 2.0.0
  * @category bip32
  */
-export const derive = (privateKey: PrivateKey, path: string): PrivateKey => Eff.runSync(Effect.derive(privateKey, path))
+export const derive = (privateKey: PrivateKey, path: string): PrivateKey => {
+  return E.getOrThrowWith(Either.derive(privateKey, path), (error) => {
+    throw error
+  })
+}
 
 // ============================================================================
 // Cryptographic Operations
@@ -236,8 +261,11 @@ export const derive = (privateKey: PrivateKey, path: string): PrivateKey => Eff.
  * @since 2.0.0
  * @category cryptography
  */
-export const sign = (privateKey: PrivateKey, message: Uint8Array): Uint8Array =>
-  Eff.runSync(Effect.sign(privateKey, message))
+export const sign = (privateKey: PrivateKey, message: Uint8Array): Ed25519Signature.Ed25519Signature => {
+  return E.getOrThrowWith(Either.sign(privateKey, message), (error) => {
+    throw error
+  })
+}
 
 /**
  * Cardano BIP44 derivation path utilities.
@@ -269,27 +297,18 @@ export const CardanoPath = {
 
 /**
  * Effect-based error handling variants for functions that can fail.
- * Returns Effect<Success, Error> for composable error handling.
  *
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse a PrivateKey from raw bytes using Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<PrivateKey, PrivateKeyError> =>
-    Eff.mapError(
-      Schema.decode(FromBytes)(bytes),
-      (cause) =>
-        new PrivateKeyError({
-          message: `Failed to parse PrivateKey from bytes`,
-          cause
-        })
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, PrivateKeyError)
 
   /**
    * Parse a PrivateKey from a hex string using Effect error handling.
@@ -297,15 +316,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<PrivateKey, PrivateKeyError> =>
-    Eff.mapError(
-      Schema.decode(FromHex)(hex),
-      (cause) =>
-        new PrivateKeyError({
-          message: "Failed to parse PrivateKey from hex",
-          cause
-        })
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, PrivateKeyError)
 
   /**
    * Parse a PrivateKey from a Bech32 string using Effect error handling.
@@ -313,15 +324,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBech32 = (bech32: string): Eff.Effect<PrivateKey, PrivateKeyError> =>
-    Eff.mapError(
-      Schema.decode(FromBech32)(bech32),
-      (cause) =>
-        new PrivateKeyError({
-          message: "Failed to parse PrivateKey from Bech32",
-          cause
-        })
-    )
+  export const fromBech32 = Function.makeDecodeEither(FromBech32, PrivateKeyError)
 
   /**
    * Convert a PrivateKey to raw bytes using Effect error handling.
@@ -329,15 +332,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (privateKey: PrivateKey): Eff.Effect<Uint8Array, PrivateKeyError> =>
-    Eff.mapError(
-      Schema.encode(FromBytes)(privateKey),
-      (cause) =>
-        new PrivateKeyError({
-          message: "Failed to encode PrivateKey to bytes",
-          cause
-        })
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, PrivateKeyError)
 
   /**
    * Convert a PrivateKey to a Bech32 string using Effect error handling.
@@ -345,15 +340,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBech32 = (privateKey: PrivateKey): Eff.Effect<string, PrivateKeyError> =>
-    Eff.mapError(
-      Schema.encode(FromBech32)(privateKey),
-      (cause) =>
-        new PrivateKeyError({
-          message: "Failed to encode PrivateKey to Bech32",
-          cause
-        })
-    )
+  export const toBech32 = Function.makeEncodeEither(FromBech32, PrivateKeyError)
 
   /**
    * Create a PrivateKey from a mnemonic phrase using Effect error handling.
@@ -361,15 +348,15 @@ export namespace Effect {
    * @since 2.0.0
    * @category bip39
    */
-  export const fromMnemonic = (mnemonic: string, password?: string): Eff.Effect<PrivateKey, PrivateKeyError> =>
-    Eff.gen(function* () {
+  export const fromMnemonic = (mnemonic: string, password?: string): E.Either<PrivateKey, PrivateKeyError> =>
+    E.gen(function* () {
       if (!validateMnemonic(mnemonic)) {
-        return yield* Eff.fail(new PrivateKeyError({ message: "Invalid mnemonic phrase" }))
+        return yield* E.left(new PrivateKeyError({ message: "Invalid mnemonic phrase" }))
       }
       const seed = BIP39.mnemonicToSeedSync(mnemonic, password || "")
       const hdKey = BIP32.HDKey.fromMasterSeed(seed)
       if (!hdKey.privateKey) {
-        return yield* Eff.fail(new PrivateKeyError({ message: "No private key in HD key" }))
+        return yield* E.left(new PrivateKeyError({ message: "No private key in HD key" }))
       }
       return yield* fromBytes(hdKey.privateKey)
     })
@@ -380,13 +367,13 @@ export namespace Effect {
    * @since 2.0.0
    * @category bip32
    */
-  export const derive = (privateKey: PrivateKey, path: string): Eff.Effect<PrivateKey, PrivateKeyError> =>
-    Eff.gen(function* () {
+  export const derive = (privateKey: PrivateKey, path: string): E.Either<PrivateKey, PrivateKeyError> =>
+    E.gen(function* () {
       const privateKeyBytes = yield* toBytes(privateKey)
       const hdKey = BIP32.HDKey.fromMasterSeed(privateKeyBytes)
       const childKey = hdKey.derive(path)
       if (!childKey.privateKey) {
-        return yield* Eff.fail(new PrivateKeyError({ message: "No private key in derived HD key" }))
+        return yield* E.left(new PrivateKeyError({ message: "No private key in derived HD key" }))
       }
       return yield* fromBytes(childKey.privateKey)
     })
@@ -397,8 +384,11 @@ export namespace Effect {
    * @since 2.0.0
    * @category cryptography
    */
-  export const sign = (privateKey: PrivateKey, message: Uint8Array): Eff.Effect<Uint8Array, PrivateKeyError> =>
-    Eff.gen(function* () {
+  export const sign = (
+    privateKey: PrivateKey,
+    message: Uint8Array
+  ): E.Either<Ed25519Signature.Ed25519Signature, PrivateKeyError> =>
+    E.gen(function* () {
       const privateKeyBytes = yield* toBytes(privateKey)
 
       if (privateKeyBytes.length === 64) {
@@ -414,12 +404,15 @@ export namespace Effect {
         const hram = sodium.crypto_core_ed25519_scalar_reduce(hramHash)
         const s = sodium.crypto_core_ed25519_scalar_add(sodium.crypto_core_ed25519_scalar_mul(hram, scalar), nonce)
 
-        return new Uint8Array([...r, ...s])
+        // return new Uint8Array([...r, ...s])
+        const signature = new Uint8Array([...r, ...s])
+        return Ed25519Signature.make({ bytes: signature })
       }
 
       // Standard 32-byte Ed25519 signing
       const publicKey = sodium.crypto_sign_seed_keypair(privateKeyBytes).publicKey
       const secretKey = new Uint8Array([...privateKeyBytes, ...publicKey])
-      return sodium.crypto_sign_detached(message, secretKey)
+      const signature = sodium.crypto_sign_detached(message, secretKey)
+      return Ed25519Signature.make({ bytes: signature })
     })
 }

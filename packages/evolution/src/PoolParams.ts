@@ -4,7 +4,6 @@ import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
 import * as KeyHash from "./KeyHash.js"
-import * as NetworkId from "./NetworkId.js"
 import * as PoolKeyHash from "./PoolKeyHash.js"
 import * as PoolMetadata from "./PoolMetadata.js"
 import * as Relay from "./Relay.js"
@@ -299,15 +298,7 @@ export const arbitrary = FastCheck.record({
   pledge: FastCheck.bigInt({ min: 0n, max: 1000000000000n }),
   cost: FastCheck.bigInt({ min: 340000000n, max: 1000000000n }),
   margin: UnitInterval.arbitrary,
-  rewardAccount: FastCheck.constant(
-    new RewardAccount.RewardAccount({
-      networkId: NetworkId.make(1),
-      stakeCredential: {
-        _tag: "KeyHash",
-        hash: KeyHash.KeyHash.make("a".repeat(56))
-      }
-    })
-  ),
+  rewardAccount: RewardAccount.arbitrary,
   poolOwners: FastCheck.array(KeyHash.arbitrary, {
     minLength: 1,
     maxLength: 5

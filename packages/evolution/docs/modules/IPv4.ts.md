@@ -1,6 +1,6 @@
 ---
 title: IPv4.ts
-nav_order: 47
+nav_order: 55
 parent: Modules
 ---
 
@@ -10,52 +10,76 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [IPv4Error (class)](#ipv4error-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [predicates](#predicates)
+  - [isIPv4](#isipv4)
 - [schemas](#schemas)
-  - [IPv4](#ipv4)
+  - [IPv4 (class)](#ipv4-class)
+    - [toJSON (method)](#tojson-method)
+    - [toString (method)](#tostring-method)
 - [utils](#utils)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-  - [IPv4 (type alias)](#ipv4-type-alias)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for IPv4 encoding and decoding operations.
+FastCheck arbitrary for generating random IPv4 instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string & Brand<"IPv4">) => any; hex: (input: string & Brand<"IPv4">) => string }
-  Decode: { bytes: (input: any) => string & Brand<"IPv4">; hex: (input: string) => string & Brand<"IPv4"> }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"IPv4">) => Effect<any, InstanceType<typeof IPv4Error>>
-    hex: (input: string & Brand<"IPv4">) => Effect<string, InstanceType<typeof IPv4Error>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"IPv4">, InstanceType<typeof IPv4Error>>
-    hex: (input: string) => Effect<string & Brand<"IPv4">, InstanceType<typeof IPv4Error>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"IPv4">) => Either<any, InstanceType<typeof IPv4Error>>
-    hex: (input: string & Brand<"IPv4">) => Either<string, InstanceType<typeof IPv4Error>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"IPv4">, InstanceType<typeof IPv4Error>>
-    hex: (input: string) => Either<string & Brand<"IPv4">, InstanceType<typeof IPv4Error>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<IPv4>
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode IPv4 to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: IPv4) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode IPv4 to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: IPv4) => string
 ```
 
 Added in v2.0.0
@@ -64,7 +88,7 @@ Added in v2.0.0
 
 ## equals
 
-Check if two IPv4 instances are equal.
+Equality on bytes
 
 **Signature**
 
@@ -88,34 +112,75 @@ export declare class IPv4Error
 
 Added in v2.0.0
 
-# generators
+# parsing
 
-## generator
+## fromBytes
 
-Generate a random IPv4.
+Parse IPv4 from bytes.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"IPv4">>
+export declare const fromBytes: (input: any) => IPv4
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse IPv4 from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => IPv4
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isIPv4
+
+Predicate for IPv4 instances
+
+**Signature**
+
+```ts
+export declare const isIPv4: (u: unknown, overrideOptions?: ParseOptions | number) => u is IPv4
 ```
 
 Added in v2.0.0
 
 # schemas
 
-## IPv4
+## IPv4 (class)
 
-Schema for IPv4 representing an IPv4 network address.
-Stored as 4 bytes in network byte order (big-endian).
+IPv4 model stored as 4 raw bytes (network byte order).
 
 **Signature**
 
 ```ts
-export declare const IPv4: Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "IPv4">
+export declare class IPv4
 ```
 
 Added in v2.0.0
+
+### toJSON (method)
+
+**Signature**
+
+```ts
+toJSON(): string
+```
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
 
 # utils
 
@@ -124,13 +189,7 @@ Added in v2.0.0
 **Signature**
 
 ```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
-    Schema.filter<Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "IPv4">
->
+export declare const FromBytes: Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof IPv4>
 ```
 
 ## FromHex
@@ -139,15 +198,7 @@ export declare const FromBytes: Schema.transform<
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.filter<Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "IPv4">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof IPv4>
 >
-```
-
-## IPv4 (type alias)
-
-**Signature**
-
-```ts
-export type IPv4 = typeof IPv4.Type
 ```

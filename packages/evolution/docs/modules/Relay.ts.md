@@ -1,6 +1,6 @@
 ---
 title: Relay.ts
-nav_order: 74
+nav_order: 89
 parent: Modules
 ---
 
@@ -10,16 +10,24 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [Effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
+- [FastCheck](#fastcheck)
+  - [arbitrary](#arbitrary)
 - [constructors](#constructors)
   - [fromMultiHostName](#frommultihostname)
   - [fromSingleHostAddr](#fromsinglehostaddr)
   - [fromSingleHostName](#fromsinglehostname)
+- [decoding](#decoding)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [RelayError (class)](#relayerror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [Relay (type alias)](#relay-type-alias)
 - [predicates](#predicates)
@@ -27,16 +35,37 @@ parent: Modules
   - [isSingleHostAddr](#issinglehostaddr)
   - [isSingleHostName](#issinglehostname)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
   - [Relay](#relay)
 - [transformation](#transformation)
   - [match](#match)
 - [utils](#utils)
-  - [Codec](#codec)
   - [FromCDDL](#fromcddl)
 
 ---
+
+# Effect
+
+## Effect (namespace)
+
+Effect namespace containing schema decode and encode operations.
+
+Added in v2.0.0
+
+# FastCheck
+
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<
+  SingleHostAddr.SingleHostAddr | SingleHostName.SingleHostName | MultiHostName.MultiHostName
+>
+```
+
+Added in v2.0.0
 
 # constructors
 
@@ -76,6 +105,58 @@ export declare const fromSingleHostName: (singleHostName: SingleHostName.SingleH
 
 Added in v2.0.0
 
+# decoding
+
+## fromCBORBytes
+
+Parse Relay from CBOR bytes (unsafe).
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (value: Uint8Array, options?: CBOR.CodecOptions) => Relay
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse Relay from CBOR hex (unsafe).
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (value: string, options?: CBOR.CodecOptions) => Relay
+```
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert Relay to CBOR bytes (unsafe).
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: Relay, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert Relay to CBOR hex (unsafe).
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: Relay, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
 # equality
 
 ## equals
@@ -100,22 +181,6 @@ Error class for Relay related operations.
 
 ```ts
 export declare class RelayError
-```
-
-Added in v2.0.0
-
-# generators
-
-## generator
-
-FastCheck generator for Relay instances.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<
-  SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
->
 ```
 
 Added in v2.0.0
@@ -174,16 +239,15 @@ Added in v2.0.0
 
 # schemas
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for Relay.
-For union types, we create a union of the child FromBytess
-rather than trying to create a complex three-layer transformation.
+For union types, we create a union of the child CBOR schemas.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.Union<
   [
@@ -236,17 +300,17 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for Relay.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.Union<
     [
       Schema.transform<
@@ -336,75 +400,6 @@ export declare const match: <A, B, C>(
 Added in v2.0.0
 
 # utils
-
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: {
-    cborBytes: (
-      input: SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
-    ) => any
-    cborHex: (
-      input: SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
-    ) => string
-  }
-  Decode: {
-    cborBytes: (
-      input: any
-    ) => SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
-    cborHex: (
-      input: string
-    ) => SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
-  }
-  EncodeEffect: {
-    cborBytes: (
-      input: SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
-    ) => Effect<any, InstanceType<typeof RelayError>>
-    cborHex: (
-      input: SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
-    ) => Effect<string, InstanceType<typeof RelayError>>
-  }
-  DecodeEffect: {
-    cborBytes: (
-      input: any
-    ) => Effect<
-      SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName,
-      InstanceType<typeof RelayError>
-    >
-    cborHex: (
-      input: string
-    ) => Effect<
-      SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName,
-      InstanceType<typeof RelayError>
-    >
-  }
-  EncodeEither: {
-    cborBytes: (
-      input: SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
-    ) => Either<any, InstanceType<typeof RelayError>>
-    cborHex: (
-      input: SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName
-    ) => Either<string, InstanceType<typeof RelayError>>
-  }
-  DecodeEither: {
-    cborBytes: (
-      input: any
-    ) => Either<
-      SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName,
-      InstanceType<typeof RelayError>
-    >
-    cborHex: (
-      input: string
-    ) => Either<
-      SingleHostName.SingleHostName | SingleHostAddr.SingleHostAddr | MultiHostName.MultiHostName,
-      InstanceType<typeof RelayError>
-    >
-  }
-}
-```
 
 ## FromCDDL
 

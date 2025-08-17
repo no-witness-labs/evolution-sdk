@@ -1,6 +1,7 @@
-import { Data, Effect as Eff, FastCheck, pipe, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for VrfKeyHash related operations.
@@ -20,25 +21,34 @@ export class VrfKeyHashError extends Data.TaggedError("VrfKeyHashError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const VrfKeyHash = pipe(Bytes32.HexSchema, Schema.brand("VrfKeyHash")).annotations({
-  identifier: "VrfKeyHash"
-})
+export class VrfKeyHash extends Schema.TaggedClass<VrfKeyHash>()("VrfKeyHash", {
+  hash: Bytes32.BytesSchema
+}) {
+  toJSON(): string {
+    return Bytes32.toHex(this.hash)
+  }
 
-export type VrfKeyHash = typeof VrfKeyHash.Type
+  toString(): string {
+    return Bytes32.toHex(this.hash)
+  }
+}
 
-export const FromBytes = Schema.compose(
-  Bytes32.FromBytes, // Uint8Array -> hex string
-  VrfKeyHash // hex string -> VrfKeyHash
-).annotations({
-  identifier: "VrfKeyHash.Bytes"
+export const FromBytes = Schema.transform(Bytes32.BytesSchema, VrfKeyHash, {
+  strict: true,
+  decode: (bytes) => new VrfKeyHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
+  encode: (vrfKeyHash) => vrfKeyHash.hash
+}).annotations({
+  identifier: "VrfKeyHash.FromBytes"
 })
 
 export const FromHex = Schema.compose(
-  Bytes32.HexSchema, // string -> hex string
-  VrfKeyHash // hex string -> VrfKeyHash
+  Bytes32.FromHex, // string -> hex string
+  FromBytes // hex string -> VrfKeyHash
 ).annotations({
-  identifier: "VrfKeyHash.Hex"
+  identifier: "VrfKeyHash.FromHex"
 })
+
+export const make = (...args: ConstructorParameters<typeof VrfKeyHash>) => new VrfKeyHash(...args)
 
 /**
  * Check if two VrfKeyHash instances are equal.
@@ -46,7 +56,7 @@ export const FromHex = Schema.compose(
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: VrfKeyHash, b: VrfKeyHash): boolean => a === b
+export const equals = (a: VrfKeyHash, b: VrfKeyHash): boolean => Bytes32.equals(a.hash, b.hash)
 
 /**
  * FastCheck arbitrary for generating random VrfKeyHash instances.
@@ -57,7 +67,7 @@ export const equals = (a: VrfKeyHash, b: VrfKeyHash): boolean => a === b
 export const arbitrary = FastCheck.uint8Array({
   minLength: Bytes32.BYTES_LENGTH,
   maxLength: Bytes32.BYTES_LENGTH
-}).map((bytes) => Eff.runSync(Effect.fromBytes(bytes)))
+}).map((bytes) => make({ hash: bytes }, { disableValidation: true }))
 
 // ============================================================================
 // Root Functions
@@ -69,7 +79,7 @@ export const arbitrary = FastCheck.uint8Array({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): VrfKeyHash => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, VrfKeyHashError, "VrfKeyHash.fromBytes")
 
 /**
  * Parse VrfKeyHash from hex string.
@@ -77,7 +87,7 @@ export const fromBytes = (bytes: Uint8Array): VrfKeyHash => Eff.runSync(Effect.f
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): VrfKeyHash => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, VrfKeyHashError, "VrfKeyHash.fromHex")
 
 /**
  * Encode VrfKeyHash to raw bytes.
@@ -85,7 +95,7 @@ export const fromHex = (hex: string): VrfKeyHash => Eff.runSync(Effect.fromHex(h
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (vrfKeyHash: VrfKeyHash): Uint8Array => Eff.runSync(Effect.toBytes(vrfKeyHash))
+export const toBytes = Function.makeEncodeSync(FromBytes, VrfKeyHashError, "VrfKeyHash.toBytes")
 
 /**
  * Encode VrfKeyHash to hex string.
@@ -93,7 +103,7 @@ export const toBytes = (vrfKeyHash: VrfKeyHash): Uint8Array => Eff.runSync(Effec
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (vrfKeyHash: VrfKeyHash): string => vrfKeyHash // Already a hex string
+export const toHex = Function.makeEncodeSync(FromHex, VrfKeyHashError, "VrfKeyHash.toHex")
 
 // ============================================================================
 // Effect Namespace
@@ -105,22 +115,14 @@ export const toHex = (vrfKeyHash: VrfKeyHash): string => vrfKeyHash // Already a
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse VrfKeyHash from raw bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<VrfKeyHash, VrfKeyHashError> =>
-    Eff.mapError(
-      Schema.decode(FromBytes)(bytes),
-      (cause) =>
-        new VrfKeyHashError({
-          message: "Failed to parse VrfKeyHash from bytes",
-          cause
-        })
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, VrfKeyHashError)
 
   /**
    * Parse VrfKeyHash from hex string with Effect error handling.
@@ -128,15 +130,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<VrfKeyHash, VrfKeyHashError> =>
-    Eff.mapError(
-      Schema.decode(VrfKeyHash)(hex),
-      (cause) =>
-        new VrfKeyHashError({
-          message: "Failed to parse VrfKeyHash from hex",
-          cause
-        })
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, VrfKeyHashError)
 
   /**
    * Encode VrfKeyHash to raw bytes with Effect error handling.
@@ -144,13 +138,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (vrfKeyHash: VrfKeyHash): Eff.Effect<Uint8Array, VrfKeyHashError> =>
-    Eff.mapError(
-      Schema.encode(FromBytes)(vrfKeyHash),
-      (cause) =>
-        new VrfKeyHashError({
-          message: "Failed to encode VrfKeyHash to bytes",
-          cause
-        })
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, VrfKeyHashError)
 }

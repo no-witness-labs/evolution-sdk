@@ -1,6 +1,6 @@
 ---
 title: TransactionIndex.ts
-nav_order: 88
+nav_order: 104
 parent: Modules
 ---
 
@@ -10,23 +10,107 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
-- [model](#model)
-  - [TransactionIndexSchema](#transactionindexschema)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [TransactionIndexError (class)](#transactionindexerror-class)
+- [predicates](#predicates)
+  - [is](#is)
+- [schemas](#schemas)
+  - [TransactionIndex](#transactionindex)
 - [utils](#utils)
   - [TransactionIndex (type alias)](#transactionindex-type-alias)
 
 ---
 
-# model
+# arbitrary
 
-## TransactionIndexSchema
+## arbitrary
 
+FastCheck arbitrary for generating random TransactionIndex instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<number & Brand<"TransactionIndex">>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for TransactionIndex that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const make: (a: number, options?: Schema.MakeOptions) => number & Brand<"TransactionIndex">
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two TransactionIndex instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: TransactionIndex, b: TransactionIndex) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## TransactionIndexError (class)
+
+Error class for TransactionIndex related operations.
+
+**Signature**
+
+```ts
+export declare class TransactionIndexError
+```
+
+Added in v2.0.0
+
+# predicates
+
+## is
+
+Check if a value is a valid TransactionIndex.
+
+**Signature**
+
+```ts
+export declare const is: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is number & Brand<"TransactionIndex">
+```
+
+Added in v2.0.0
+
+# schemas
+
+## TransactionIndex
+
+Schema for TransactionIndex representing a transaction index within a block.
 CDDL: transaction_index = uint .size 2
 
 **Signature**
 
 ```ts
-export declare const TransactionIndexSchema: Schema.refine<number, typeof Schema.Number>
+export declare const TransactionIndex: Schema.brand<Schema.refine<number, typeof Schema.Number>, "TransactionIndex">
 ```
 
 Added in v2.0.0
@@ -38,5 +122,5 @@ Added in v2.0.0
 **Signature**
 
 ```ts
-export type TransactionIndex = Schema.Schema.Type<typeof TransactionIndexSchema>
+export type TransactionIndex = typeof TransactionIndex.Type
 ```

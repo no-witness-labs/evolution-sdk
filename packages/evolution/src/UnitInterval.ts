@@ -63,7 +63,9 @@ export type UnitInterval = typeof UnitInterval.Type
 
 /**
  * Smart constructor for creating UnitInterval values.
+ * ```
  * Validates that denominator > 0 and numerator <= denominator.
+ * ```
  *
  * @since 2.0.0
  * @category constructors

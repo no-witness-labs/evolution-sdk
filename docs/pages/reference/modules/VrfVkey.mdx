@@ -1,6 +1,6 @@
 ---
 title: VrfVkey.ts
-nav_order: 100
+nav_order: 118
 parent: Modules
 ---
 
@@ -10,52 +10,75 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [VrfVkeyError (class)](#vrfvkeyerror-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [predicates](#predicates)
+  - [isVrfVkey](#isvrfvkey)
 - [schemas](#schemas)
-  - [VrfVkey](#vrfvkey)
+  - [VrfVkey (class)](#vrfvkey-class)
 - [utils](#utils)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-  - [VrfVkey (type alias)](#vrfvkey-type-alias)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
+  - [make](#make)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for VrfVkey encoding and decoding operations.
+FastCheck arbitrary for generating random VrfVkey instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string & Brand<"VrfVkey">) => any; hex: (input: string & Brand<"VrfVkey">) => string }
-  Decode: { bytes: (input: any) => string & Brand<"VrfVkey">; hex: (input: string) => string & Brand<"VrfVkey"> }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"VrfVkey">) => Effect<any, InstanceType<typeof VrfVkeyError>>
-    hex: (input: string & Brand<"VrfVkey">) => Effect<string, InstanceType<typeof VrfVkeyError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"VrfVkey">, InstanceType<typeof VrfVkeyError>>
-    hex: (input: string) => Effect<string & Brand<"VrfVkey">, InstanceType<typeof VrfVkeyError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"VrfVkey">) => Either<any, InstanceType<typeof VrfVkeyError>>
-    hex: (input: string & Brand<"VrfVkey">) => Either<string, InstanceType<typeof VrfVkeyError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"VrfVkey">, InstanceType<typeof VrfVkeyError>>
-    hex: (input: string) => Either<string & Brand<"VrfVkey">, InstanceType<typeof VrfVkeyError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<VrfVkey>
+```
+
+Added in v2.0.0
+
+# effect
+
+## Either (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode VrfVkey to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: VrfVkey) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode VrfVkey to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: VrfVkey) => string
 ```
 
 Added in v2.0.0
@@ -88,23 +111,49 @@ export declare class VrfVkeyError
 
 Added in v2.0.0
 
-# generators
+# parsing
 
-## generator
+## fromBytes
 
-Generate a random VrfVkey.
+Parse VrfVkey from bytes.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"VrfVkey">>
+export declare const fromBytes: (input: any) => VrfVkey
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse VrfVkey from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => VrfVkey
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isVrfVkey
+
+Check if the given value is a valid VrfVkey
+
+**Signature**
+
+```ts
+export declare const isVrfVkey: (u: unknown, overrideOptions?: ParseOptions | number) => u is VrfVkey
 ```
 
 Added in v2.0.0
 
 # schemas
 
-## VrfVkey
+## VrfVkey (class)
 
 Schema for VrfVkey representing a VRF verification key.
 vrf_vkey = bytes .size 32
@@ -113,10 +162,7 @@ Follows the Conway-era CDDL specification.
 **Signature**
 
 ```ts
-export declare const VrfVkey: Schema.brand<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  "VrfVkey"
->
+export declare class VrfVkey
 ```
 
 Added in v2.0.0
@@ -128,13 +174,7 @@ Added in v2.0.0
 **Signature**
 
 ```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VrfVkey">
->
+export declare const FromBytes: Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof VrfVkey>
 ```
 
 ## FromHex
@@ -143,15 +183,15 @@ export declare const FromBytes: Schema.transform<
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VrfVkey">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof VrfVkey>
 >
 ```
 
-## VrfVkey (type alias)
+## make
 
 **Signature**
 
 ```ts
-export type VrfVkey = typeof VrfVkey.Type
+export declare const make: (props: { readonly bytes: any }, options?: Schema.MakeOptions | undefined) => VrfVkey
 ```

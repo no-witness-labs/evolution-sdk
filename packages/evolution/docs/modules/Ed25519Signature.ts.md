@@ -1,6 +1,6 @@
 ---
 title: Ed25519Signature.ts
-nav_order: 40
+nav_order: 46
 parent: Modules
 ---
 
@@ -10,58 +10,96 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [Ed25519SignatureError (class)](#ed25519signatureerror-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [model](#model)
+  - [Ed25519Signature (class)](#ed25519signature-class)
+    - [toJSON (method)](#tojson-method)
+    - [toString (method)](#tostring-method)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
+- [predicates](#predicates)
+  - [is](#is)
 - [schemas](#schemas)
-  - [Ed25519Signature](#ed25519signature)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 - [utils](#utils)
-  - [Ed25519Signature (type alias)](#ed25519signature-type-alias)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
+  - [Either (namespace)](#either-namespace)
+  - [make](#make)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for Ed25519Signature encoding and decoding operations.
+FastCheck arbitrary for generating random Ed25519Signature instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: {
-    bytes: (input: string & Brand<"Ed25519Signature">) => any
-    hex: (input: string & Brand<"Ed25519Signature">) => string
-  }
-  Decode: {
-    bytes: (input: any) => string & Brand<"Ed25519Signature">
-    hex: (input: string) => string & Brand<"Ed25519Signature">
-  }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"Ed25519Signature">) => Effect<any, InstanceType<typeof Ed25519SignatureError>>
-    hex: (input: string & Brand<"Ed25519Signature">) => Effect<string, InstanceType<typeof Ed25519SignatureError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"Ed25519Signature">, InstanceType<typeof Ed25519SignatureError>>
-    hex: (input: string) => Effect<string & Brand<"Ed25519Signature">, InstanceType<typeof Ed25519SignatureError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"Ed25519Signature">) => Either<any, InstanceType<typeof Ed25519SignatureError>>
-    hex: (input: string & Brand<"Ed25519Signature">) => Either<string, InstanceType<typeof Ed25519SignatureError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"Ed25519Signature">, InstanceType<typeof Ed25519SignatureError>>
-    hex: (input: string) => Either<string & Brand<"Ed25519Signature">, InstanceType<typeof Ed25519SignatureError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<Ed25519Signature>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## fromBytes
+
+Parse Ed25519Signature from bytes (unsafe - throws on error).
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => Ed25519Signature
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse Ed25519Signature from hex string (unsafe - throws on error).
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => Ed25519Signature
+```
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Get the underlying bytes (returns a copy for safety).
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: Ed25519Signature) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert to hex string using optimized lookup table.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: Ed25519Signature) => string
 ```
 
 Added in v2.0.0
@@ -70,7 +108,7 @@ Added in v2.0.0
 
 ## equals
 
-Check if two Ed25519Signature instances are equal.
+Check equality with another Ed25519Signature.
 
 **Signature**
 
@@ -84,7 +122,7 @@ Added in v2.0.0
 
 ## Ed25519SignatureError (class)
 
-Error class for Ed25519Signature related operations.
+Error class for Ed25519SignatureClass related operations.
 
 **Signature**
 
@@ -94,34 +132,87 @@ export declare class Ed25519SignatureError
 
 Added in v2.0.0
 
-# generators
+# model
 
-## generator
+## Ed25519Signature (class)
 
-Generate a random Ed25519Signature.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"Ed25519Signature">>
-```
-
-Added in v2.0.0
-
-# schemas
-
-## Ed25519Signature
-
-Schema for Ed25519Signature representing an Ed25519 signature.
+Class-based Ed25519Signature with compile-time and runtime safety.
 ed25519_signature = bytes .size 64
 Follows the Conway-era CDDL specification.
 
 **Signature**
 
 ```ts
-export declare const Ed25519Signature: Schema.brand<
-  Schema.filter<Schema.refine<string, typeof Schema.String>>,
-  "Ed25519Signature"
+export declare class Ed25519Signature
+```
+
+Added in v2.0.0
+
+### toJSON (method)
+
+**Signature**
+
+```ts
+toJSON(): string
+```
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+[Symbol.for("nodejs.util.inspect.custom")](): string
+```
+
+# predicates
+
+## is
+
+Check if value is an Ed25519Signature instance.
+
+**Signature**
+
+```ts
+export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is Ed25519Signature
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromBytes
+
+Schema transformer from bytes to Ed25519Signature.
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  typeof Ed25519Signature
+>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+Schema transformer from hex string to Ed25519Signature.
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof Ed25519Signature>
 >
 ```
 
@@ -129,35 +220,15 @@ Added in v2.0.0
 
 # utils
 
-## Ed25519Signature (type alias)
+## Either (namespace)
+
+## make
 
 **Signature**
 
 ```ts
-export type Ed25519Signature = typeof Ed25519Signature.Type
-```
-
-## FromBytes
-
-**Signature**
-
-```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
-    Schema.filter<Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "Ed25519Signature">
->
-```
-
-## FromHex
-
-**Signature**
-
-```ts
-export declare const FromHex: Schema.transform<
-  Schema.filter<Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "Ed25519Signature">
->
+export declare const make: (
+  props: { readonly bytes: any },
+  options?: Schema.MakeOptions | undefined
+) => Ed25519Signature
 ```

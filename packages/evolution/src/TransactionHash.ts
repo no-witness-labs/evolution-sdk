@@ -1,6 +1,7 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for TransactionHash related operations.
@@ -20,11 +21,21 @@ export class TransactionHashError extends Data.TaggedError("TransactionHashError
  * @since 2.0.0
  * @category schemas
  */
-export const TransactionHash = Bytes32.HexSchema.pipe(Schema.brand("TransactionHash")).annotations({
-  identifier: "TransactionHash"
-})
+export class TransactionHash extends Schema.TaggedClass<TransactionHash>()("TransactionHash", {
+  bytes: Bytes32.BytesSchema
+}) {
+  toJSON(): string {
+    return toHex(this)
+  }
 
-export type TransactionHash = typeof TransactionHash.Type
+  toString(): string {
+    return toHex(this)
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 /**
  * Schema for transforming between Uint8Array and TransactionHash.
@@ -32,11 +43,12 @@ export type TransactionHash = typeof TransactionHash.Type
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.compose(
-  Bytes32.FromBytes, // Uint8Array -> hex string
-  TransactionHash // hex string -> TransactionHash
-).annotations({
-  identifier: "TransactionHash.Bytes"
+export const FromBytes = Schema.transform(Bytes32.BytesSchema, TransactionHash, {
+  strict: true,
+  decode: (bytes) => new TransactionHash({ bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
+  encode: (txHash) => txHash.bytes
+}).annotations({
+  identifier: "TransactionHash.FromBytes"
 })
 
 /**
@@ -46,10 +58,10 @@ export const FromBytes = Schema.compose(
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes32.HexSchema, // string -> hex string
-  TransactionHash // hex string -> TransactionHash
+  Bytes32.FromHex, // string -> Bytes32
+  FromBytes // Bytes32 -> TransactionHash
 ).annotations({
-  identifier: "TransactionHash.Hex"
+  identifier: "TransactionHash.FromHex"
 })
 
 /**
@@ -58,7 +70,7 @@ export const FromHex = Schema.compose(
  * @since 2.0.0
  * @category constructors
  */
-export const make = TransactionHash.make
+export const make = (...args: ConstructorParameters<typeof TransactionHash>) => new TransactionHash(...args)
 
 /**
  * Check if two TransactionHash instances are equal.
@@ -66,7 +78,7 @@ export const make = TransactionHash.make
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: TransactionHash, b: TransactionHash): boolean => a === b
+export const equals = (a: TransactionHash, b: TransactionHash): boolean => Bytes32.equals(a.bytes, b.bytes)
 
 /**
  * Check if the given value is a valid TransactionHash
@@ -82,10 +94,10 @@ export const isTransactionHash = Schema.is(TransactionHash)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.hexaString({
-  minLength: Bytes32.HEX_LENGTH,
-  maxLength: Bytes32.HEX_LENGTH
-}).map((hex) => hex as TransactionHash)
+export const arbitrary = FastCheck.uint8Array({
+  minLength: 32,
+  maxLength: 32
+}).map((bytes) => new TransactionHash({ bytes }, { disableValidation: true })) // Disable validation since we already check length in FastCheck
 
 // ============================================================================
 // Root Functions
@@ -97,7 +109,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): TransactionHash => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, TransactionHashError, "TransactionHash.fromBytes")
 
 /**
  * Parse TransactionHash from hex string.
@@ -105,7 +117,7 @@ export const fromBytes = (bytes: Uint8Array): TransactionHash => Eff.runSync(Eff
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): TransactionHash => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, TransactionHashError, "TransactionHash.fromHex")
 
 /**
  * Encode TransactionHash to bytes.
@@ -113,7 +125,7 @@ export const fromHex = (hex: string): TransactionHash => Eff.runSync(Effect.from
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (txHash: TransactionHash): Uint8Array => Eff.runSync(Effect.toBytes(txHash))
+export const toBytes = Function.makeEncodeSync(FromBytes, TransactionHashError, "TransactionHash.toBytes")
 
 /**
  * Encode TransactionHash to hex string.
@@ -121,7 +133,7 @@ export const toBytes = (txHash: TransactionHash): Uint8Array => Eff.runSync(Effe
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (txHash: TransactionHash): string => Eff.runSync(Effect.toHex(txHash))
+export const toHex = Function.makeEncodeSync(FromHex, TransactionHashError, "TransactionHash.toHex")
 
 // ============================================================================
 // Effect Namespace
@@ -133,23 +145,14 @@ export const toHex = (txHash: TransactionHash): string => Eff.runSync(Effect.toH
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse TransactionHash from bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<TransactionHash, TransactionHashError> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionHashError({
-            message: "Failed to parse TransactionHash from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, TransactionHashError)
 
   /**
    * Parse TransactionHash from hex string with Effect error handling.
@@ -157,16 +160,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<TransactionHash, TransactionHashError> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionHashError({
-            message: "Failed to parse TransactionHash from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, TransactionHashError)
 
   /**
    * Encode TransactionHash to bytes with Effect error handling.
@@ -174,16 +168,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (txHash: TransactionHash): Eff.Effect<Uint8Array, TransactionHashError> =>
-    Schema.encode(FromBytes)(txHash).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionHashError({
-            message: "Failed to encode TransactionHash to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, TransactionHashError)
 
   /**
    * Encode TransactionHash to hex string with Effect error handling.
@@ -191,14 +176,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (txHash: TransactionHash): Eff.Effect<string, TransactionHashError> =>
-    Schema.encode(FromHex)(txHash).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionHashError({
-            message: "Failed to encode TransactionHash to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, TransactionHashError)
 }

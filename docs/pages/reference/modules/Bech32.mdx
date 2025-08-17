@@ -1,6 +1,6 @@
 ---
 title: Bech32.ts
-nav_order: 8
+nav_order: 9
 parent: Modules
 ---
 
@@ -16,6 +16,7 @@ parent: Modules
   - [Bech32 (type alias)](#bech32-type-alias)
   - [Bech32Schema](#bech32schema)
   - [FromBytes](#frombytes)
+  - [FromHex](#fromhex)
 
 ---
 
@@ -46,7 +47,7 @@ export type Bech32 = typeof Bech32Schema.Type
 **Signature**
 
 ```ts
-export declare const Bech32Schema: Schema.brand<typeof Schema.String, "Bech32">
+export declare const Bech32Schema: typeof Schema.String
 ```
 
 ## FromBytes
@@ -56,5 +57,18 @@ export declare const Bech32Schema: Schema.brand<typeof Schema.String, "Bech32">
 ```ts
 export declare const FromBytes: (
   prefix?: string
-) => Schema.transformOrFail<typeof Schema.Uint8ArrayFromSelf, Schema.brand<typeof Schema.String, "Bech32">, never>
+) => Schema.transformOrFail<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String, never>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: (
+  prefix?: string
+) => Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transformOrFail<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String, never>
+>
 ```

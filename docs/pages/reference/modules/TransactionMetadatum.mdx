@@ -1,0 +1,406 @@
+---
+title: TransactionMetadatum.ts
+nav_order: 106
+parent: Modules
+---
+
+## TransactionMetadatum overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [constructors](#constructors)
+  - [array](#array)
+  - [bytes](#bytes)
+  - [int](#int)
+  - [map](#map)
+  - [text](#text)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [errors](#errors)
+  - [TransactionMetadatumError (class)](#transactionmetadatumerror-class)
+- [model](#model)
+  - [CDDLSchema (type alias)](#cddlschema-type-alias)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+- [schemas](#schemas)
+  - [ArrayMetadatum (class)](#arraymetadatum-class)
+  - [BytesMetadatum (class)](#bytesmetadatum-class)
+  - [CDDLSchema](#cddlschema)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
+  - [IntMetadatum (class)](#intmetadatum-class)
+  - [MetadatumMap (class)](#metadatummap-class)
+  - [TextMetadatum (class)](#textmetadatum-class)
+  - [TransactionMetadatum](#transactionmetadatum)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
+- [utilities](#utilities)
+  - [equals](#equals)
+- [utils](#utils)
+  - [FromCDDL](#fromcddl)
+  - [TransactionMetadatum (type alias)](#transactionmetadatum-type-alias)
+
+---
+
+# constructors
+
+## array
+
+Create an ArrayMetadatum from an array of TransactionMetadatum values.
+
+**Signature**
+
+```ts
+export declare const array: (value: Array<TransactionMetadatum>) => ArrayMetadatum
+```
+
+Added in v2.0.0
+
+## bytes
+
+Create a BytesMetadatum from a Uint8Array value.
+
+**Signature**
+
+```ts
+export declare const bytes: (value: Uint8Array) => BytesMetadatum
+```
+
+Added in v2.0.0
+
+## int
+
+Create an IntMetadatum from a bigint value.
+
+**Signature**
+
+```ts
+export declare const int: (value: bigint) => IntMetadatum
+```
+
+Added in v2.0.0
+
+## map
+
+Create a MetadatumMap from a Map of TransactionMetadatum key-value pairs.
+
+**Signature**
+
+```ts
+export declare const map: (value: Map<TransactionMetadatum, TransactionMetadatum>) => MetadatumMap
+```
+
+Added in v2.0.0
+
+## text
+
+Create a TextMetadatum from a string value.
+
+**Signature**
+
+```ts
+export declare const text: (value: string) => TextMetadatum
+```
+
+Added in v2.0.0
+
+# effect
+
+## Effect (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert a TransactionMetadatum to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (metadatum: TransactionMetadatum, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert a TransactionMetadatum to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (metadatum: TransactionMetadatum, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# errors
+
+## TransactionMetadatumError (class)
+
+Error class for transaction metadatum related operations.
+
+**Signature**
+
+```ts
+export declare class TransactionMetadatumError
+```
+
+Added in v2.0.0
+
+# model
+
+## CDDLSchema (type alias)
+
+Type representing the CDDL-compatible format for transaction metadata.
+
+**Signature**
+
+```ts
+export type CDDLSchema = bigint | string | Uint8Array | ReadonlyArray<CDDLSchema> | Map<CDDLSchema, CDDLSchema>
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromCBORBytes
+
+Parse a TransactionMetadatum from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => TransactionMetadatum
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse a TransactionMetadatum from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => TransactionMetadatum
+```
+
+Added in v2.0.0
+
+# schemas
+
+## ArrayMetadatum (class)
+
+Schema for array-based transaction metadata.
+
+**Signature**
+
+```ts
+export declare class ArrayMetadatum
+```
+
+Added in v2.0.0
+
+## BytesMetadatum (class)
+
+Schema for bytes-based transaction metadata.
+
+**Signature**
+
+```ts
+export declare class BytesMetadatum
+```
+
+Added in v2.0.0
+
+## CDDLSchema
+
+Schema for CDDL-compatible transaction metadata format.
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.Schema<CDDLSchema, CDDLSchema, never>
+```
+
+Added in v2.0.0
+
+## FromCBORBytes
+
+Schema transformer for TransactionMetadatum from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const FromCBORBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transform<
+    Schema.Schema<CDDLSchema, CDDLSchema, never>,
+    Schema.SchemaClass<
+      TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap,
+      TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCBORHex
+
+Schema transformer for TransactionMetadatum from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const FromCBORHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<
+    Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >
+  >,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transform<
+      Schema.Schema<CDDLSchema, CDDLSchema, never>,
+      Schema.SchemaClass<
+        TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap,
+        TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap,
+        never
+      >
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## IntMetadatum (class)
+
+Schema for integer-based transaction metadata.
+
+**Signature**
+
+```ts
+export declare class IntMetadatum
+```
+
+Added in v2.0.0
+
+## MetadatumMap (class)
+
+Schema for map-based transaction metadata.
+
+**Signature**
+
+```ts
+export declare class MetadatumMap
+```
+
+Added in v2.0.0
+
+## TextMetadatum (class)
+
+Schema for text-based transaction metadata.
+
+**Signature**
+
+```ts
+export declare class TextMetadatum
+```
+
+Added in v2.0.0
+
+## TransactionMetadatum
+
+Union schema for all types of transaction metadata.
+
+**Signature**
+
+```ts
+export declare const TransactionMetadatum: Schema.Union<
+  [typeof TextMetadatum, typeof IntMetadatum, typeof BytesMetadatum, typeof ArrayMetadatum, typeof MetadatumMap]
+>
+```
+
+Added in v2.0.0
+
+# testing
+
+## arbitrary
+
+FastCheck arbitrary for generating random TransactionMetadatum instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<TransactionMetadatum>
+```
+
+Added in v2.0.0
+
+# utilities
+
+## equals
+
+Check if two TransactionMetadatum instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: TransactionMetadatum, b: TransactionMetadatum) => boolean
+```
+
+Added in v2.0.0
+
+# utils
+
+## FromCDDL
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transform<
+  Schema.Schema<CDDLSchema, CDDLSchema, never>,
+  Schema.SchemaClass<
+    TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap,
+    TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap,
+    never
+  >
+>
+```
+
+## TransactionMetadatum (type alias)
+
+**Signature**
+
+```ts
+export type TransactionMetadatum = TextMetadatum | IntMetadatum | BytesMetadatum | MetadatumMap | ArrayMetadatum
+```

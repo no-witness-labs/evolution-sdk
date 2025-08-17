@@ -118,8 +118,8 @@ export const arbitrary = FastCheck.record({
   issuerVkey: VKey.arbitrary,
   vrfVkey: VrfVkey.arbitrary,
   vrfResult: FastCheck.record({
-    output: FastCheck.string(),
-    proof: FastCheck.string()
+    output: FastCheck.uint8Array({ minLength: 32, maxLength: 32 }),
+    proof: FastCheck.uint8Array({ minLength: 80, maxLength: 80 })
   }),
   blockBodySize: Natural.arbitrary,
   blockBodyHash: BlockBodyHash.arbitrary,
@@ -134,8 +134,8 @@ export const arbitrary = FastCheck.record({
       issuerVkey: props.issuerVkey,
       vrfVkey: props.vrfVkey,
       vrfResult: new VrfCert.VrfCert({
-        output: props.vrfResult.output as VrfCert.VRFOutput,
-        proof: props.vrfResult.proof as VrfCert.VRFProof
+        output: new VrfCert.VRFOutput({ bytes: props.vrfResult.output }),
+        proof: new VrfCert.VRFProof({ bytes: props.vrfResult.proof })
       }),
       blockBodySize: props.blockBodySize,
       blockBodyHash: props.blockBodyHash,

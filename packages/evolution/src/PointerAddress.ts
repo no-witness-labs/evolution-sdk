@@ -2,6 +2,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Credential from "./Credential.js"
+import * as Function from "./Function.js"
 import * as KeyHash from "./KeyHash.js"
 import * as Natural from "./Natural.js"
 import * as NetworkId from "./NetworkId.js"
@@ -61,7 +62,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
       // Set the header
       result[0] = header
 
-      const paymentCredentialBytes = yield* ParseResult.decode(Bytes.FromHex)(toA.paymentCredential.hash)
+      const paymentCredentialBytes = toA.paymentCredential.hash
       result.set(paymentCredentialBytes, 1)
 
       // Set the pointer data bytes at the correct position
@@ -86,15 +87,12 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
       // Check if the address is a pointer address
       const isPaymentKey = (addressType & 0b0001) === 0
       const paymentCredential: Credential.Credential = isPaymentKey
-        ? {
-            _tag: "KeyHash",
-            hash: yield* ParseResult.decode(KeyHash.FromBytes)(fromA.slice(1, 29))
-          }
-        : {
-            _tag: "ScriptHash",
-
-            hash: yield* ParseResult.decode(ScriptHash.FromBytes)(fromA.slice(1, 29))
-          }
+        ? new KeyHash.KeyHash({
+            hash: fromA.slice(1, 29)
+          })
+        : new ScriptHash.ScriptHash({
+            hash: fromA.slice(1, 29)
+          })
 
       // After the credential, we have 3 variable-length integers
       let offset = 29
@@ -241,11 +239,10 @@ export const make = (props: {
 export const equals = (a: PointerAddress, b: PointerAddress): boolean => {
   return (
     a.networkId === b.networkId &&
-    a.paymentCredential._tag === b.paymentCredential._tag &&
+    Credential.equals(a.paymentCredential, b.paymentCredential) &&
     a.pointer.slot === b.pointer.slot &&
     a.pointer.txIndex === b.pointer.txIndex &&
-    a.pointer.certIndex === b.pointer.certIndex &&
-    a.paymentCredential.hash === b.paymentCredential.hash
+    a.pointer.certIndex === b.pointer.certIndex
   )
 }
 
@@ -253,106 +250,97 @@ export const equals = (a: PointerAddress, b: PointerAddress): boolean => {
  * FastCheck arbitrary for generating random PointerAddress instances
  *
  * @since 2.0.0
- * @category testing
+ * @category arbitrary
  */
-export const arbitrary = FastCheck.tuple(
-  NetworkId.arbitrary,
-  Credential.arbitrary,
-  FastCheck.integer({ min: 1, max: 1000000 }),
-  FastCheck.integer({ min: 1, max: 1000000 }),
-  FastCheck.integer({ min: 1, max: 1000000 })
-).map(([networkId, paymentCredential, slot, txIndex, certIndex]) =>
-  make({
-    networkId,
-    paymentCredential,
-    pointer: Pointer.make(Natural.make(slot), Natural.make(txIndex), Natural.make(certIndex))
-  })
+export const arbitrary = FastCheck.tuple(NetworkId.arbitrary, Credential.arbitrary, Pointer.arbitrary).map(
+  ([networkId, paymentCredential, pointer]) =>
+    make({
+      networkId,
+      paymentCredential,
+      pointer
+    })
 )
 
+// ============================================================================
+// Effect Namespace - Effect-based Error Handling
+// ============================================================================
+
 /**
- * Effect namespace for PointerAddress operations that can fail
+ * Effect-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Convert bytes to PointerAddress using Effect
+   * Parse a PointerAddress from bytes.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array) =>
-    Eff.mapError(
-      Schema.decode(FromBytes)(bytes),
-      (cause) => new PointerAddressError({ message: "Failed to decode from bytes", cause })
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, PointerAddressError)
 
   /**
-   * Convert hex string to PointerAddress using Effect
+   * Parse a PointerAddress from hex string.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category parsing
    */
-  export const fromHex = (hex: string) =>
-    Eff.mapError(
-      Schema.decode(FromHex)(hex),
-      (cause) => new PointerAddressError({ message: "Failed to decode from hex", cause })
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, PointerAddressError)
 
   /**
-   * Convert PointerAddress to bytes using Effect
+   * Convert a PointerAddress to bytes.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category encoding
    */
-  export const toBytes = (address: PointerAddress) =>
-    Eff.mapError(
-      Schema.encode(FromBytes)(address),
-      (cause) => new PointerAddressError({ message: "Failed to encode to bytes", cause })
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, PointerAddressError)
 
   /**
-   * Convert PointerAddress to hex string using Effect
+   * Convert a PointerAddress to hex string.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category encoding
    */
-  export const toHex = (address: PointerAddress) =>
-    Eff.mapError(
-      Schema.encode(FromHex)(address),
-      (cause) => new PointerAddressError({ message: "Failed to encode to hex", cause })
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, PointerAddressError)
 }
 
-/**
- * Convert bytes to PointerAddress (unsafe)
- *
- * @since 2.0.0
- * @category conversion
- */
-export const fromBytes = (bytes: Uint8Array): PointerAddress => Eff.runSync(Effect.fromBytes(bytes))
+// ============================================================================
+// Parsing Functions
+// ============================================================================
 
 /**
- * Convert hex string to PointerAddress (unsafe)
+ * Parse a PointerAddress from bytes.
  *
  * @since 2.0.0
- * @category conversion
+ * @category parsing
  */
-export const fromHex = (hex: string): PointerAddress => Eff.runSync(Effect.fromHex(hex))
+export const fromBytes = Function.makeDecodeSync(FromBytes, PointerAddressError, "PointerAddress.fromBytes")
 
 /**
- * Convert PointerAddress to bytes (unsafe)
+ * Parse a PointerAddress from hex string.
  *
  * @since 2.0.0
- * @category conversion
+ * @category parsing
  */
-export const toBytes = (address: PointerAddress): Uint8Array => Eff.runSync(Effect.toBytes(address))
+export const fromHex = Function.makeDecodeSync(FromHex, PointerAddressError, "PointerAddress.fromHex")
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
 
 /**
- * Convert PointerAddress to hex string (unsafe)
+ * Convert a PointerAddress to bytes.
  *
  * @since 2.0.0
- * @category conversion
+ * @category encoding
  */
-export const toHex = (address: PointerAddress): string => Eff.runSync(Effect.toHex(address))
+export const toBytes = Function.makeEncodeSync(FromBytes, PointerAddressError, "PointerAddress.toBytes")
+
+/**
+ * Convert a PointerAddress to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = Function.makeEncodeSync(FromHex, PointerAddressError, "PointerAddress.toHex")

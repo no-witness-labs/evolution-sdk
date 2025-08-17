@@ -1,6 +1,6 @@
 ---
 title: PointerAddress.ts
-nav_order: 65
+nav_order: 77
 parent: Modules
 ---
 
@@ -10,24 +10,99 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [encoding/decoding](#encodingdecoding)
   - [decodeVariableLength](#decodevariablelength)
   - [encodeVariableLength](#encodevariablelength)
 - [equality](#equality)
   - [equals](#equals)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [PointerAddressError (class)](#pointeraddresserror-class)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
 - [schemas](#schemas)
   - [PointerAddress (class)](#pointeraddress-class)
     - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
 - [utils](#utils)
-  - [Codec](#codec)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for generating random PointerAddress instances
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<PointerAddress>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for creating PointerAddress instances
+
+**Signature**
+
+```ts
+export declare const make: (props: {
+  networkId: NetworkId.NetworkId
+  paymentCredential: Credential.Credential
+  pointer: Pointer.Pointer
+}) => PointerAddress
+```
+
+Added in v2.0.0
+
+# effect
+
+## Either (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Convert a PointerAddress to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: PointerAddress) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert a PointerAddress to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: PointerAddress) => string
+```
+
+Added in v2.0.0
 
 # encoding/decoding
 
@@ -42,7 +117,7 @@ Following the Cardano ledger implementation for variable-length integers
 export declare const decodeVariableLength: (
   bytes: Uint8Array,
   offset?: number | undefined
-) => Effect.Effect<[Natural.Natural, number], PointerAddressError | ParseResult.ParseIssue>
+) => Eff.Effect<[Natural.Natural, number], PointerAddressError | ParseResult.ParseIssue>
 ```
 
 Added in v2.0.0
@@ -56,7 +131,7 @@ Encode a number as a variable length integer following the Cardano ledger specif
 ```ts
 export declare const encodeVariableLength: (
   natural: Natural.Natural
-) => Effect.Effect<Uint8Array, ParseResult.ParseIssue, never>
+) => Eff.Effect<Uint8Array, ParseResult.ParseIssue, never>
 ```
 
 Added in v2.0.0
@@ -75,20 +150,6 @@ export declare const equals: (a: PointerAddress, b: PointerAddress) => boolean
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-Generate a random PointerAddress.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<PointerAddress>
-```
-
-Added in v2.0.0
-
 # model
 
 ## PointerAddressError (class)
@@ -99,6 +160,32 @@ Error thrown when address operations fail
 
 ```ts
 export declare class PointerAddressError
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromBytes
+
+Parse a PointerAddress from bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => PointerAddress
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse a PointerAddress from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => PointerAddress
 ```
 
 Added in v2.0.0
@@ -127,33 +214,6 @@ Added in v2.0.0
 
 # utils
 
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: {
-  Encode: { bytes: (input: PointerAddress) => any; hex: (input: PointerAddress) => string }
-  Decode: { bytes: (input: any) => PointerAddress; hex: (input: string) => PointerAddress }
-  EncodeEffect: {
-    bytes: (input: PointerAddress) => Effect.Effect<any, InstanceType<typeof PointerAddressError>>
-    hex: (input: PointerAddress) => Effect.Effect<string, InstanceType<typeof PointerAddressError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect.Effect<PointerAddress, InstanceType<typeof PointerAddressError>>
-    hex: (input: string) => Effect.Effect<PointerAddress, InstanceType<typeof PointerAddressError>>
-  }
-  EncodeEither: {
-    bytes: (input: PointerAddress) => Either<any, InstanceType<typeof PointerAddressError>>
-    hex: (input: PointerAddress) => Either<string, InstanceType<typeof PointerAddressError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<PointerAddress, InstanceType<typeof PointerAddressError>>
-    hex: (input: string) => Either<PointerAddress, InstanceType<typeof PointerAddressError>>
-  }
-}
-```
-
 ## FromBytes
 
 **Signature**
@@ -168,7 +228,7 @@ export declare const FromBytes: Schema.transformOrFail<typeof Schema.Uint8ArrayF
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transformOrFail<typeof Schema.Uint8ArrayFromSelf, typeof PointerAddress, never>
 >
 ```

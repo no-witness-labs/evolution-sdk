@@ -1,6 +1,6 @@
 ---
 title: KESVkey.ts
-nav_order: 50
+nav_order: 58
 parent: Modules
 ---
 
@@ -10,52 +10,82 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [KESVkeyError (class)](#kesvkeyerror-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [model](#model)
+  - [KESVkey (class)](#kesvkey-class)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [predicates](#predicates)
+  - [isKESVkey](#iskesvkey)
 - [schemas](#schemas)
-  - [KESVkey](#kesvkey)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 - [utils](#utils)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-  - [KESVkey (type alias)](#kesvkey-type-alias)
+  - [Either (namespace)](#either-namespace)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for KESVkey encoding and decoding operations.
+FastCheck arbitrary for generating random KESVkey instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string & Brand<"KESVkey">) => any; hex: (input: string & Brand<"KESVkey">) => string }
-  Decode: { bytes: (input: any) => string & Brand<"KESVkey">; hex: (input: string) => string & Brand<"KESVkey"> }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"KESVkey">) => Effect<any, InstanceType<typeof KESVkeyError>>
-    hex: (input: string & Brand<"KESVkey">) => Effect<string, InstanceType<typeof KESVkeyError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"KESVkey">, InstanceType<typeof KESVkeyError>>
-    hex: (input: string) => Effect<string & Brand<"KESVkey">, InstanceType<typeof KESVkeyError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"KESVkey">) => Either<any, InstanceType<typeof KESVkeyError>>
-    hex: (input: string & Brand<"KESVkey">) => Either<string, InstanceType<typeof KESVkeyError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"KESVkey">, InstanceType<typeof KESVkeyError>>
-    hex: (input: string) => Either<string & Brand<"KESVkey">, InstanceType<typeof KESVkeyError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<KESVkey>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for KESVkey.
+
+**Signature**
+
+```ts
+export declare const make: (props: { readonly bytes: any }, options?: Schema.MakeOptions | undefined) => KESVkey
+```
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode KESVkey to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: KESVkey) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode KESVkey to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: KESVkey) => string
 ```
 
 Added in v2.0.0
@@ -88,23 +118,9 @@ export declare class KESVkeyError
 
 Added in v2.0.0
 
-# generators
+# model
 
-## generator
-
-Generate a random KESVkey.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"KESVkey">>
-```
-
-Added in v2.0.0
-
-# schemas
-
-## KESVkey
+## KESVkey (class)
 
 Schema for KESVkey representing a KES verification key.
 kes_vkey = bytes .size 32
@@ -113,9 +129,75 @@ Follows the Conway-era CDDL specification.
 **Signature**
 
 ```ts
-export declare const KESVkey: Schema.brand<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  "KESVkey"
+export declare class KESVkey
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromBytes
+
+Parse KESVkey from bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => KESVkey
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse KESVkey from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => KESVkey
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isKESVkey
+
+Check if the given value is a valid KESVkey
+
+**Signature**
+
+```ts
+export declare const isKESVkey: (u: unknown, overrideOptions?: ParseOptions | number) => u is KESVkey
+```
+
+Added in v2.0.0
+
+# schemas
+
+## FromBytes
+
+Schema for transforming between Uint8Array and KESVkey.
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof KESVkey>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+Schema for transforming between hex string and KESVkey.
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof KESVkey>
 >
 ```
 
@@ -123,35 +205,4 @@ Added in v2.0.0
 
 # utils
 
-## FromBytes
-
-**Signature**
-
-```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KESVkey">
->
-```
-
-## FromHex
-
-**Signature**
-
-```ts
-export declare const FromHex: Schema.transform<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KESVkey">
->
-```
-
-## KESVkey (type alias)
-
-**Signature**
-
-```ts
-export type KESVkey = typeof KESVkey.Type
-```
+## Either (namespace)

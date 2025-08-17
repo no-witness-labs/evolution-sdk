@@ -1,6 +1,8 @@
-import { Data, Either as E, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
+import * as Bytes from "./Bytes.js"
 import * as Bytes4 from "./Bytes4.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for IPv4 related operations.
@@ -14,42 +16,48 @@ export class IPv4Error extends Data.TaggedError("IPv4Error")<{
 }> {}
 
 /**
- * Schema for IPv4 representing an IPv4 network address.
- * Stored as 4 bytes in network byte order (big-endian).
+ * IPv4 model stored as 4 raw bytes (network byte order).
  *
  * @since 2.0.0
  * @category schemas
  */
-export const IPv4 = Bytes4.HexSchema.pipe(Schema.brand("IPv4")).annotations({
-  identifier: "IPv4"
-})
+export class IPv4 extends Schema.TaggedClass<IPv4>()("IPv4", {
+  bytes: Bytes4.BytesSchema
+}) {
+  toJSON(): string {
+    return toHex(this)
+  }
+  toString(): string {
+    return toHex(this)
+  }
+}
 
-export type IPv4 = typeof IPv4.Type
-
-export const FromBytes = Schema.compose(
-  Bytes4.FromBytes, // Uint8Array -> hex string
-  IPv4 // hex string -> IPv4
-).annotations({
-  identifier: "IPv4.Bytes"
+// Transform between raw bytes (Uint8Array length 4) and IPv4
+export const FromBytes = Schema.transform(Bytes4.BytesSchema, IPv4, {
+  strict: true,
+  decode: (bytes) => new IPv4({ bytes }, { disableValidation: true }),
+  encode: (ipv4) => ipv4.bytes
+}).annotations({
+  identifier: "IPv4.FromBytes"
 })
 
 export const FromHex = Schema.compose(
-  Bytes4.HexSchema, // string -> hex string
-  IPv4 // hex string -> IPv4
+  Bytes4.FromHex, // string -> Uint8Array(4)
+  FromBytes // bytes -> IPv4
 ).annotations({
-  identifier: "IPv4.Hex"
+  identifier: "IPv4.FromHex"
 })
 
 /**
- * Check if two IPv4 instances are equal.
+ * Equality on bytes
  *
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: IPv4, b: IPv4): boolean => a === b
+export const equals = (a: IPv4, b: IPv4): boolean => Bytes.equals(a.bytes, b.bytes)
 
 /**
- * Check if the given value is a valid IPv4
+ * Predicate for IPv4 instances
  *
  * @since 2.0.0
  * @category predicates
@@ -62,10 +70,9 @@ export const isIPv4 = Schema.is(IPv4)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.hexaString({
-  minLength: Bytes4.HEX_LENGTH,
-  maxLength: Bytes4.HEX_LENGTH
-}).map((hex) => hex as IPv4)
+export const arbitrary = FastCheck.uint8Array({ minLength: 4, maxLength: 4 }).map(
+  (bytes) => new IPv4({ bytes }, { disableValidation: true })
+)
 
 // ============================================================================
 // Root Functions
@@ -77,16 +84,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): IPv4 => {
-  try {
-    return Schema.decodeSync(FromBytes)(bytes)
-  } catch (cause) {
-    throw new IPv4Error({
-      message: "Failed to parse IPv4 from bytes",
-      cause
-    })
-  }
-}
+export const fromBytes = Function.makeDecodeSync(FromBytes, IPv4Error, "IPv4.fromBytes")
 
 /**
  * Parse IPv4 from hex string.
@@ -94,16 +92,7 @@ export const fromBytes = (bytes: Uint8Array): IPv4 => {
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): IPv4 => {
-  try {
-    return Schema.decodeSync(FromHex)(hex)
-  } catch (cause) {
-    throw new IPv4Error({
-      message: "Failed to parse IPv4 from hex",
-      cause
-    })
-  }
-}
+export const fromHex = Function.makeDecodeSync(FromHex, IPv4Error, "IPv4.fromHex")
 
 /**
  * Encode IPv4 to bytes.
@@ -111,16 +100,7 @@ export const fromHex = (hex: string): IPv4 => {
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (ipv4: IPv4): Uint8Array => {
-  try {
-    return Schema.encodeSync(FromBytes)(ipv4)
-  } catch (cause) {
-    throw new IPv4Error({
-      message: "Failed to encode IPv4 to bytes",
-      cause
-    })
-  }
-}
+export const toBytes = Function.makeEncodeSync(FromBytes, IPv4Error, "IPv4.toBytes")
 
 /**
  * Encode IPv4 to hex string.
@@ -128,16 +108,7 @@ export const toBytes = (ipv4: IPv4): Uint8Array => {
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (ipv4: IPv4): string => {
-  try {
-    return Schema.encodeSync(FromHex)(ipv4)
-  } catch (cause) {
-    throw new IPv4Error({
-      message: "Failed to encode IPv4 to hex",
-      cause
-    })
-  }
-}
+export const toHex = Function.makeEncodeSync(FromHex, IPv4Error, "IPv4.toHex")
 
 // ============================================================================
 // Either Namespace
@@ -156,15 +127,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): E.Either<IPv4, IPv4Error> =>
-    E.mapLeft(
-      Schema.decodeEither(FromBytes)(bytes),
-      (cause) =>
-        new IPv4Error({
-          message: "Failed to parse IPv4 from bytes",
-          cause
-        })
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, IPv4Error)
 
   /**
    * Parse IPv4 from hex string with Either error handling.
@@ -172,15 +135,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): E.Either<IPv4, IPv4Error> =>
-    E.mapLeft(
-      Schema.decodeEither(FromHex)(hex),
-      (cause) =>
-        new IPv4Error({
-          message: "Failed to parse IPv4 from hex",
-          cause
-        })
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, IPv4Error)
 
   /**
    * Encode IPv4 to bytes with Either error handling.
@@ -188,15 +143,7 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (ipv4: IPv4): E.Either<Uint8Array, IPv4Error> =>
-    E.mapLeft(
-      Schema.encodeEither(FromBytes)(ipv4),
-      (cause) =>
-        new IPv4Error({
-          message: "Failed to encode IPv4 to bytes",
-          cause
-        })
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, IPv4Error)
 
   /**
    * Encode IPv4 to hex string with Either error handling.
@@ -204,13 +151,5 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (ipv4: IPv4): E.Either<string, IPv4Error> =>
-    E.mapLeft(
-      Schema.encodeEither(FromHex)(ipv4),
-      (cause) =>
-        new IPv4Error({
-          message: "Failed to encode IPv4 to hex",
-          cause
-        })
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, IPv4Error)
 }

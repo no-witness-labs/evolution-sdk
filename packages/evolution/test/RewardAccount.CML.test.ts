@@ -23,7 +23,7 @@ describe("RewardAccount CML Compatibility", () => {
       const networkId = NetworkId.make(networkValue)
       const evolutionRewardAccount = RewardAccount.make({
         networkId,
-        stakeCredential: { _tag: "KeyHash", hash: keyHash }
+        stakeCredential: keyHash
       })
 
       // Create CML RewardAccount - try different API

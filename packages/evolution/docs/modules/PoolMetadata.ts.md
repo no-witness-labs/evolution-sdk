@@ -1,6 +1,6 @@
 ---
 title: PoolMetadata.ts
-nav_order: 68
+nav_order: 80
 parent: Modules
 ---
 
@@ -10,18 +10,115 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [constructors](#constructors)
+  - [make](#make)
+- [conversion](#conversion)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
+- [equality](#equality)
+  - [equals](#equals)
 - [errors](#errors)
   - [PoolMetadataError (class)](#poolmetadataerror-class)
 - [model](#model)
   - [PoolMetadata (class)](#poolmetadata-class)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
-- [utils](#utils)
-  - [Codec](#codec)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 
 ---
+
+# constructors
+
+## make
+
+Smart constructor for creating PoolMetadata instances
+
+**Signature**
+
+```ts
+export declare const make: (props: { url: Url.Url; hash: Uint8Array }) => PoolMetadata
+```
+
+Added in v2.0.0
+
+# conversion
+
+## fromCBORBytes
+
+Convert CBOR bytes to PoolMetadata (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => PoolMetadata
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Convert CBOR hex string to PoolMetadata (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => PoolMetadata
+```
+
+Added in v2.0.0
+
+## toCBORBytes
+
+Convert PoolMetadata to CBOR bytes (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (metadata: PoolMetadata, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert PoolMetadata to CBOR hex string (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (metadata: PoolMetadata, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# effect
+
+## Effect (namespace)
+
+Effect namespace for PoolMetadata operations that can fail
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two PoolMetadata instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: PoolMetadata, b: PoolMetadata) => boolean
+```
+
+Added in v2.0.0
 
 # errors
 
@@ -54,7 +151,7 @@ Added in v2.0.0
 
 # schemas
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for PoolMetadata.
 Transforms between Uint8Array and PoolMetadata using CBOR encoding.
@@ -62,7 +159,7 @@ Transforms between Uint8Array and PoolMetadata using CBOR encoding.
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -80,7 +177,7 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for PoolMetadata.
 Transforms between hex string and PoolMetadata using CBOR encoding.
@@ -88,10 +185,10 @@ Transforms between hex string and PoolMetadata using CBOR encoding.
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -128,31 +225,16 @@ export declare const FromCDDL: Schema.transformOrFail<
 
 Added in v2.0.0
 
-# utils
+# testing
 
-## Codec
+## arbitrary
+
+FastCheck arbitrary for generating random PoolMetadata instances
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: PoolMetadata) => any; cborHex: (input: PoolMetadata) => string }
-  Decode: { cborBytes: (input: any) => PoolMetadata; cborHex: (input: string) => PoolMetadata }
-  EncodeEffect: {
-    cborBytes: (input: PoolMetadata) => Effect.Effect<any, InstanceType<typeof PoolMetadataError>>
-    cborHex: (input: PoolMetadata) => Effect.Effect<string, InstanceType<typeof PoolMetadataError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<PoolMetadata, InstanceType<typeof PoolMetadataError>>
-    cborHex: (input: string) => Effect.Effect<PoolMetadata, InstanceType<typeof PoolMetadataError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: PoolMetadata) => Either<any, InstanceType<typeof PoolMetadataError>>
-    cborHex: (input: PoolMetadata) => Either<string, InstanceType<typeof PoolMetadataError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<PoolMetadata, InstanceType<typeof PoolMetadataError>>
-    cborHex: (input: string) => Either<PoolMetadata, InstanceType<typeof PoolMetadataError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<PoolMetadata>
 ```
+
+Added in v2.0.0

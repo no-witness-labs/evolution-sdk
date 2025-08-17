@@ -4,7 +4,9 @@ import * as Numeric from "./Numeric.js"
 
 /**
  * CDDL specification:
+ * ```
  * epoch_no = uint .size 8
+ * ```
  *
  */
 

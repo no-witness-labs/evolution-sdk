@@ -1,6 +1,6 @@
 ---
 title: MultiHostName.ts
-nav_order: 54
+nav_order: 63
 parent: Modules
 ---
 
@@ -12,20 +12,25 @@ parent: Modules
 
 - [constructors](#constructors)
   - [make](#make)
+- [conversion](#conversion)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [MultiHostNameError (class)](#multihostnameerror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [MultiHostName (class)](#multihostname-class)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
-- [utils](#utils)
-  - [Codec](#codec)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 
 ---
 
@@ -40,6 +45,64 @@ Create a MultiHostName instance.
 ```ts
 export declare const make: (dnsName: DnsName.DnsName) => MultiHostName
 ```
+
+Added in v2.0.0
+
+# conversion
+
+## fromCBORBytes
+
+Convert CBOR bytes to MultiHostName (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => MultiHostName
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Convert CBOR hex string to MultiHostName (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => MultiHostName
+```
+
+Added in v2.0.0
+
+## toCBORBytes
+
+Convert MultiHostName to CBOR bytes (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (hostName: MultiHostName, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert MultiHostName to CBOR hex string (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (hostName: MultiHostName, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# effect
+
+## Effect (namespace)
+
+Effect namespace for MultiHostName operations that can fail
 
 Added in v2.0.0
 
@@ -71,20 +134,6 @@ export declare class MultiHostNameError
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-FastCheck generator for MultiHostName instances.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<MultiHostName>
-```
-
-Added in v2.0.0
-
 # model
 
 ## MultiHostName (class)
@@ -102,14 +151,14 @@ Added in v2.0.0
 
 # schemas
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for MultiHostName.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -127,17 +176,17 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for MultiHostName.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -172,31 +221,16 @@ export declare const FromCDDL: Schema.transformOrFail<
 
 Added in v2.0.0
 
-# utils
+# testing
 
-## Codec
+## arbitrary
+
+FastCheck arbitrary for MultiHostName instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: MultiHostName) => any; cborHex: (input: MultiHostName) => string }
-  Decode: { cborBytes: (input: any) => MultiHostName; cborHex: (input: string) => MultiHostName }
-  EncodeEffect: {
-    cborBytes: (input: MultiHostName) => Effect.Effect<any, InstanceType<typeof MultiHostNameError>>
-    cborHex: (input: MultiHostName) => Effect.Effect<string, InstanceType<typeof MultiHostNameError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<MultiHostName, InstanceType<typeof MultiHostNameError>>
-    cborHex: (input: string) => Effect.Effect<MultiHostName, InstanceType<typeof MultiHostNameError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: MultiHostName) => Either<any, InstanceType<typeof MultiHostNameError>>
-    cborHex: (input: MultiHostName) => Either<string, InstanceType<typeof MultiHostNameError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<MultiHostName, InstanceType<typeof MultiHostNameError>>
-    cborHex: (input: string) => Either<MultiHostName, InstanceType<typeof MultiHostNameError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<MultiHostName>
 ```
+
+Added in v2.0.0

@@ -1,6 +1,6 @@
 ---
 title: SingleHostAddr.ts
-nav_order: 80
+nav_order: 96
 parent: Modules
 ---
 
@@ -11,32 +11,53 @@ parent: Modules
 <h2 className="text-delta">Table of contents</h2>
 
 - [constructors](#constructors)
+  - [make](#make)
   - [withBothIPs](#withbothips)
   - [withIPv4](#withipv4)
   - [withIPv6](#withipv6)
+- [conversion](#conversion)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [SingleHostAddrError (class)](#singlehostaddrerror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [SingleHostAddr (class)](#singlehostaddr-class)
-    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
 - [predicates](#predicates)
   - [hasIPv4](#hasipv4)
   - [hasIPv6](#hasipv6)
   - [hasPort](#hasport)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
-  - [SingleHostAddrCDDLSchema](#singlehostaddrcddlschema)
-- [utils](#utils)
-  - [Codec](#codec)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
+  - [FromCDDL](#fromcddl)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 
 ---
 
 # constructors
+
+## make
+
+Smart constructor for creating SingleHostAddr instances
+
+**Signature**
+
+```ts
+export declare const make: (props: {
+  port: Option.Option<Port.Port>
+  ipv4: Option.Option<IPv4.IPv4>
+  ipv6: Option.Option<IPv6.IPv6>
+}) => SingleHostAddr
+```
+
+Added in v2.0.0
 
 ## withBothIPs
 
@@ -74,6 +95,64 @@ export declare const withIPv6: (port: Option.Option<Port.Port>, ipv6: IPv6.IPv6)
 
 Added in v2.0.0
 
+# conversion
+
+## fromCBORBytes
+
+Convert CBOR bytes to SingleHostAddr (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => SingleHostAddr
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Convert CBOR hex string to SingleHostAddr (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => SingleHostAddr
+```
+
+Added in v2.0.0
+
+## toCBORBytes
+
+Convert SingleHostAddr to CBOR bytes (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: SingleHostAddr, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert SingleHostAddr to CBOR hex string (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: SingleHostAddr, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either namespace for SingleHostAddr operations that can fail
+
+Added in v2.0.0
+
 # equality
 
 ## equals
@@ -102,20 +181,6 @@ export declare class SingleHostAddrError
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-Generate a random SingleHostAddr.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<SingleHostAddr>
-```
-
-Added in v2.0.0
-
 # model
 
 ## SingleHostAddr (class)
@@ -130,14 +195,6 @@ export declare class SingleHostAddr
 ```
 
 Added in v2.0.0
-
-### [Symbol.for("nodejs.util.inspect.custom")] (method)
-
-**Signature**
-
-```ts
-;[Symbol.for("nodejs.util.inspect.custom")]()
-```
 
 # predicates
 
@@ -179,14 +236,14 @@ Added in v2.0.0
 
 # schemas
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for SingleHostAddr.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -211,17 +268,17 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for SingleHostAddr.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -246,7 +303,7 @@ export declare const FromHex: (
 
 Added in v2.0.0
 
-## SingleHostAddrCDDLSchema
+## FromCDDL
 
 CDDL schema for SingleHostAddr.
 single_host_addr = (0, port / nil, ipv4 / nil, ipv6 / nil)
@@ -254,7 +311,7 @@ single_host_addr = (0, port / nil, ipv4 / nil, ipv6 / nil)
 **Signature**
 
 ```ts
-export declare const SingleHostAddrCDDLSchema: Schema.transformOrFail<
+export declare const FromCDDL: Schema.transformOrFail<
   Schema.Tuple<
     [
       Schema.Literal<[0n]>,
@@ -270,31 +327,16 @@ export declare const SingleHostAddrCDDLSchema: Schema.transformOrFail<
 
 Added in v2.0.0
 
-# utils
+# testing
 
-## Codec
+## arbitrary
+
+FastCheck arbitrary for generating random SingleHostAddr instances
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: SingleHostAddr) => any; cborHex: (input: SingleHostAddr) => string }
-  Decode: { cborBytes: (input: any) => SingleHostAddr; cborHex: (input: string) => SingleHostAddr }
-  EncodeEffect: {
-    cborBytes: (input: SingleHostAddr) => Effect.Effect<any, InstanceType<typeof SingleHostAddrError>>
-    cborHex: (input: SingleHostAddr) => Effect.Effect<string, InstanceType<typeof SingleHostAddrError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<SingleHostAddr, InstanceType<typeof SingleHostAddrError>>
-    cborHex: (input: string) => Effect.Effect<SingleHostAddr, InstanceType<typeof SingleHostAddrError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: SingleHostAddr) => Either<any, InstanceType<typeof SingleHostAddrError>>
-    cborHex: (input: SingleHostAddr) => Either<string, InstanceType<typeof SingleHostAddrError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<SingleHostAddr, InstanceType<typeof SingleHostAddrError>>
-    cborHex: (input: string) => Either<SingleHostAddr, InstanceType<typeof SingleHostAddrError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<SingleHostAddr>
 ```
+
+Added in v2.0.0

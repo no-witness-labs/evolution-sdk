@@ -78,7 +78,7 @@ export type Uint16 = typeof Uint16Schema.Type
  */
 export const Uint16Make = Uint16Schema.make
 
-export const Uint16Generator = FastCheck.integer({
+export const Uint16Arbitrary = FastCheck.integer({
   min: UINT16_MIN,
   max: UINT16_MAX
 }).map(Uint16Make)

@@ -1,11 +1,11 @@
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 import type { NonEmptyArray } from "effect/Array"
 
 import * as AuxiliaryDataHash from "./AuxiliaryDataHash.js"
 import * as CBOR from "./CBOR.js"
 import * as Certificate from "./Certificate.js"
 import * as Coin from "./Coin.js"
-import * as Hash28 from "./Hash28.js"
+import * as Function from "./Function.js"
 import * as KeyHash from "./KeyHash.js"
 import * as Mint from "./Mint.js"
 import * as NetworkId from "./NetworkId.js"
@@ -70,7 +70,41 @@ export class TransactionBody extends Schema.TaggedClass<TransactionBody>()("Tran
   proposalProcedures: Schema.optional(ProposalProcedures.ProposalProcedures), // 20
   currentTreasuryValue: Schema.optional(Coin.Coin), // 21
   donation: Schema.optional(PositiveCoin.PositiveCoinSchema) // 22
-}) {}
+}) {
+  toString(): string {
+    const fields: Array<string> = []
+
+    // Required fields
+    fields.push(`inputs: [${this.inputs.join(", ")}]`)
+    fields.push(`outputs: [${this.outputs.join(", ")}]`)
+    fields.push(`fee: ${this.fee}`)
+
+    // Optional fields (only show if present)
+    if (this.ttl !== undefined) fields.push(`ttl: ${this.ttl}`)
+    if (this.certificates !== undefined) fields.push(`certificates: [${this.certificates.join(", ")}]`)
+    if (this.withdrawals !== undefined) fields.push(`withdrawals: ${this.withdrawals}`)
+    if (this.auxiliaryDataHash !== undefined) fields.push(`auxiliaryDataHash: ${this.auxiliaryDataHash}`)
+    if (this.validityIntervalStart !== undefined) fields.push(`validityIntervalStart: ${this.validityIntervalStart}`)
+    if (this.mint !== undefined) fields.push(`mint: ${this.mint}`)
+    if (this.scriptDataHash !== undefined) fields.push(`scriptDataHash: ${this.scriptDataHash}`)
+    if (this.collateralInputs !== undefined) fields.push(`collateralInputs: [${this.collateralInputs.join(", ")}]`)
+    if (this.requiredSigners !== undefined) fields.push(`requiredSigners: [${this.requiredSigners.join(", ")}]`)
+    if (this.networkId !== undefined) fields.push(`networkId: ${this.networkId}`)
+    if (this.collateralReturn !== undefined) fields.push(`collateralReturn: ${this.collateralReturn}`)
+    if (this.totalCollateral !== undefined) fields.push(`totalCollateral: ${this.totalCollateral}`)
+    if (this.referenceInputs !== undefined) fields.push(`referenceInputs: [${this.referenceInputs.join(", ")}]`)
+    if (this.votingProcedures !== undefined) fields.push(`votingProcedures: ${this.votingProcedures}`)
+    if (this.proposalProcedures !== undefined) fields.push(`proposalProcedures: ${this.proposalProcedures}`)
+    if (this.currentTreasuryValue !== undefined) fields.push(`currentTreasuryValue: ${this.currentTreasuryValue}`)
+    if (this.donation !== undefined) fields.push(`donation: ${this.donation}`)
+
+    return `TransactionBody { ${fields.join(", ")} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 /**
  * Error class for TransactionBody related operations.
@@ -82,6 +116,25 @@ export class TransactionBodyError extends Data.TaggedError("TransactionBodyError
   message?: string
   cause?: unknown
 }> {}
+
+// Pre-bind hot ParseResult helpers (created once at module load)
+const encodeTxInput = ParseResult.encodeEither(TransactionInput.FromCDDL)
+const decodeTxInput = ParseResult.decodeEither(TransactionInput.FromCDDL)
+const encodeTxOutput = ParseResult.encodeEither(TransactionOutput.FromTransactionOutputCDDLSchema)
+const decodeTxOutput = ParseResult.decodeEither(TransactionOutput.FromTransactionOutputCDDLSchema)
+const encodeCertificate = ParseResult.encodeEither(Certificate.FromCDDL)
+const decodeCertificate = ParseResult.decodeEither(Certificate.FromCDDL)
+const encodeMint = ParseResult.encodeEither(Mint.FromCDDL)
+const decodeMint = ParseResult.decodeEither(Mint.FromCDDL)
+const encodeVotingProcedures = ParseResult.encodeEither(VotingProcedures.FromCDDL)
+const decodeVotingProcedures = ParseResult.decodeEither(VotingProcedures.FromCDDL)
+const encodeProposalProcedures = ParseResult.encodeEither(ProposalProcedures.FromCDDL)
+const decodeProposalProcedures = ParseResult.decodeEither(ProposalProcedures.FromCDDL)
+const encodeRewardAccountBytes = ParseResult.encodeEither(RewardAccount.FromBytes)
+const decodeRewardAccountBytes = ParseResult.decodeEither(RewardAccount.FromBytes)
+const decodeAuxiliaryDataHash = ParseResult.decodeEither(AuxiliaryDataHash.BytesSchema)
+const decodeScriptDataHash = ParseResult.decodeEither(ScriptDataHash.FromBytes)
+const decodeKeyHash = ParseResult.decodeEither(KeyHash.FromBytes)
 
 /**
  * CDDL schema for TransactionBody struct structure.
@@ -120,114 +173,137 @@ type CDDLSchema = typeof CDDLSchema.Type
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(TransactionBody), {
   strict: true,
   encode: (toA) =>
-    Eff.gen(function* () {
+    E.gen(function* () {
       const record = {} as any
 
       // Required fields
       // 0: inputs - always tagged as set
-      const inputs = yield* Eff.all(toA.inputs.map((input) => ParseResult.encode(TransactionInput.FromCDDL)(input)))
-      record[0] = CBOR.Tag.make({ tag: 258, value: inputs })
+      const inputsLen = toA.inputs.length
+      const inputsArr = new Array(inputsLen)
+      for (let i = 0; i < inputsLen; i++) {
+        inputsArr[i] = yield* encodeTxInput(toA.inputs[i])
+      }
+      record[0] = CBOR.Tag.make({ tag: 258, value: inputsArr }, { disableValidation: true })
 
       // 1: outputs
-      const outputs = yield* Eff.all(
-        toA.outputs.map((output) => ParseResult.encode(TransactionOutput.FromTransactionOutputCDDLSchema)(output))
-      )
-      record[1] = outputs
+      const outputsLen = toA.outputs.length
+      const outputsArr = new Array(outputsLen)
+      for (let i = 0; i < outputsLen; i++) {
+        outputsArr[i] = yield* encodeTxOutput(toA.outputs[i])
+      }
+      record[1] = outputsArr
 
       // 2: fee
       record[2] = toA.fee
 
-      // Optional fields
-      const ttl = toA.ttl
-      const certificates = toA.certificates
-        ? yield* Eff.all(toA.certificates.map((cert) => ParseResult.encode(Certificate.FromCDDL)(cert)))
-        : undefined
-      const withdrawalsMap = new Map<Uint8Array, bigint>()
-      if (toA.withdrawals) {
-        for (const [rewardAccount, coin] of toA.withdrawals.withdrawals.entries()) {
-          const accountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(rewardAccount)
-          withdrawalsMap.set(accountBytes, coin)
+      // Optional fields (assign directly when present)
+      if (toA.ttl !== undefined) record[3] = toA.ttl
+
+      if (toA.certificates) {
+        const len = toA.certificates.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = yield* encodeCertificate(toA.certificates[i])
         }
+        record[4] = arr
       }
-      const withdrawals = toA.withdrawals ? withdrawalsMap : undefined
-      const auxiliaryDataHash = toA.auxiliaryDataHash
-        ? yield* ParseResult.encode(AuxiliaryDataHash.BytesSchema)(toA.auxiliaryDataHash)
-        : undefined
-      const validityIntervalStart = toA.validityIntervalStart
-      const mint = toA.mint ? yield* ParseResult.encode(Mint.FromCDDL)(toA.mint) : undefined
-      const scriptDataHash = toA.scriptDataHash
-        ? yield* ParseResult.encode(ScriptDataHash.FromBytes)(toA.scriptDataHash)
-        : undefined
-      const collateralInputs = toA.collateralInputs
-        ? yield* Eff.all(toA.collateralInputs.map((input) => ParseResult.encode(TransactionInput.FromCDDL)(input)))
-        : undefined
-      const requiredSigners = toA.requiredSigners
-        ? yield* Eff.all(toA.requiredSigners.map((signer) => ParseResult.encode(Hash28.FromBytes)(signer)))
-        : undefined
-      const networkId = toA.networkId !== undefined ? BigInt(toA.networkId) : undefined
-      const collateralReturn = toA.collateralReturn
-        ? yield* ParseResult.encode(TransactionOutput.FromTransactionOutputCDDLSchema)(toA.collateralReturn)
-        : undefined
-      const totalCollateral = toA.totalCollateral
-      const referenceInputs = toA.referenceInputs
-        ? yield* Eff.all(toA.referenceInputs.map((input) => ParseResult.encode(TransactionInput.FromCDDL)(input)))
-        : undefined
-      const votingProcedures = toA.votingProcedures
-        ? yield* ParseResult.encode(VotingProcedures.FromCDDL)(toA.votingProcedures)
-        : undefined
-      const proposalProcedures = toA.proposalProcedures
-        ? yield* ParseResult.encode(ProposalProcedures.FromCDDL)(toA.proposalProcedures)
-        : undefined
-      // Optional fields (only set if defined)
-      if (ttl !== undefined) record[3] = ttl
-      if (certificates !== undefined) record[4] = certificates
-      if (withdrawals !== undefined) record[5] = withdrawals
-      if (auxiliaryDataHash !== undefined) record[7] = auxiliaryDataHash
-      if (validityIntervalStart !== undefined) record[8] = validityIntervalStart
-      if (mint !== undefined) record[9] = mint
-      if (scriptDataHash !== undefined) record[11] = scriptDataHash
-      if (collateralInputs !== undefined) record[13] = CBOR.Tag.make({ tag: 258, value: collateralInputs })
-      if (requiredSigners !== undefined) record[14] = requiredSigners
-      if (networkId !== undefined) record[15] = networkId
-      if (collateralReturn !== undefined) record[16] = collateralReturn
-      if (totalCollateral !== undefined) record[17] = totalCollateral
-      if (referenceInputs !== undefined) record[18] = CBOR.Tag.make({ tag: 258, value: referenceInputs })
-      if (votingProcedures !== undefined) record[19] = votingProcedures
-      if (proposalProcedures !== undefined) record[20] = proposalProcedures
+
+      if (toA.withdrawals) {
+        const map = new Map<Uint8Array, bigint>()
+        for (const [rewardAccount, coin] of toA.withdrawals.withdrawals.entries()) {
+          const accountBytes = yield* encodeRewardAccountBytes(rewardAccount)
+          map.set(accountBytes, coin)
+        }
+        record[5] = map
+      }
+
+      if (toA.auxiliaryDataHash) record[7] = toA.auxiliaryDataHash.bytes
+
+      if (toA.validityIntervalStart !== undefined) record[8] = toA.validityIntervalStart
+
+      if (toA.mint) record[9] = yield* encodeMint(toA.mint)
+
+      if (toA.scriptDataHash) record[11] = toA.scriptDataHash.hash
+
+      if (toA.collateralInputs) {
+        const len = toA.collateralInputs.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = yield* encodeTxInput(toA.collateralInputs[i])
+        }
+        record[13] = CBOR.Tag.make({ tag: 258, value: arr }, { disableValidation: true })
+      }
+
+      if (toA.requiredSigners) {
+        record[14] = toA.requiredSigners.map((signer) => signer.hash)
+      }
+
+      if (toA.networkId !== undefined) record[15] = BigInt(toA.networkId)
+
+      if (toA.collateralReturn) {
+        record[16] = yield* encodeTxOutput(toA.collateralReturn)
+      }
+
+      if (toA.totalCollateral !== undefined) record[17] = toA.totalCollateral
+
+      if (toA.referenceInputs) {
+        const len = toA.referenceInputs.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = yield* encodeTxInput(toA.referenceInputs[i])
+        }
+        record[18] = CBOR.Tag.make({ tag: 258, value: arr }, { disableValidation: true })
+      }
+
+      if (toA.votingProcedures) record[19] = yield* encodeVotingProcedures(toA.votingProcedures)
+
+      if (toA.proposalProcedures) record[20] = yield* encodeProposalProcedures(toA.proposalProcedures)
+
       if (toA.currentTreasuryValue !== undefined) record[21] = toA.currentTreasuryValue
+
       if (toA.donation !== undefined) record[22] = toA.donation
 
       return record as CDDLSchema
     }),
   decode: (fromA) =>
-    Eff.gen(function* () {
+    E.gen(function* () {
       // Required fields - access as record properties
-      const inputsTag = fromA[0] // This is a CBOR.Tag with tag 258
+      const inputsTag = fromA[0] // CBOR.Tag 258
       const inputsArray = inputsTag.value
-      const inputs = yield* Eff.all(inputsArray.map((input) => ParseResult.decode(TransactionInput.FromCDDL)(input)))
+      const inputsLen = inputsArray.length
+      const inputs = new Array(inputsLen)
+      for (let i = 0; i < inputsLen; i++) {
+        inputs[i] = yield* decodeTxInput(inputsArray[i])
+      }
 
       const outputsArray = fromA[1]
-      const outputs = yield* Eff.all(
-        outputsArray.map((output) => ParseResult.decode(TransactionOutput.FromTransactionOutputCDDLSchema)(output))
-      )
+      const outputsLen = outputsArray.length
+      const outputs = new Array(outputsLen)
+      for (let i = 0; i < outputsLen; i++) {
+        outputs[i] = yield* decodeTxOutput(outputsArray[i])
+      }
       const fee = fromA[2]
 
       // Optional fields - access as record properties
       const ttl = fromA[3]
 
       const certificatesArray = fromA[4]
-      const certificates = certificatesArray
-        ? ((yield* Eff.all(
-            certificatesArray.map((cert) => ParseResult.decode(Certificate.FromCDDL)(cert))
-          )) as NonEmptyArray<Certificate.Certificate>)
-        : undefined
+      let certificates: NonEmptyArray<Certificate.Certificate> | undefined
+      if (certificatesArray) {
+        const len = certificatesArray.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = yield* decodeCertificate(certificatesArray[i])
+        }
+        certificates = arr as NonEmptyArray<Certificate.Certificate>
+      }
 
       let withdrawals: Withdrawals.Withdrawals | undefined
       const withdrawalsMap = fromA[5]
       if (withdrawalsMap) {
         const decodedWithdrawals = new Map<RewardAccount.RewardAccount, Coin.Coin>()
         for (const [accountBytes, coinAmount] of withdrawalsMap.entries()) {
-          const rewardAccount = yield* ParseResult.decode(RewardAccount.FromBytes)(accountBytes)
+          const rewardAccount = yield* decodeRewardAccountBytes(accountBytes)
           decodedWithdrawals.set(rewardAccount, coinAmount)
         }
         withdrawals = new Withdrawals.Withdrawals({ withdrawals: decodedWithdrawals })
@@ -235,79 +311,88 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
 
       const auxiliaryDataHashBytes = fromA[7]
       const auxiliaryDataHash = auxiliaryDataHashBytes
-        ? yield* ParseResult.decode(AuxiliaryDataHash.BytesSchema)(auxiliaryDataHashBytes)
+        ? yield* decodeAuxiliaryDataHash(auxiliaryDataHashBytes)
         : undefined
       const validityIntervalStart = fromA[8]
       const mintData = fromA[9]
-      const mint = mintData ? yield* ParseResult.decode(Mint.FromCDDL)(mintData) : undefined
+      const mint = mintData ? yield* decodeMint(mintData) : undefined
       const scriptDataHashBytes = fromA[11]
-      const scriptDataHash = scriptDataHashBytes
-        ? yield* ParseResult.decode(ScriptDataHash.FromBytes)(scriptDataHashBytes)
-        : undefined
+      const scriptDataHash = scriptDataHashBytes ? yield* decodeScriptDataHash(scriptDataHashBytes) : undefined
 
-      const collateralInputsTag = fromA[13] // This might be a CBOR.Tag with tag 258
+      const collateralInputsTag = fromA[13] // CBOR.Tag 258
       const collateralInputsArray = collateralInputsTag ? collateralInputsTag.value : undefined
-      const collateralInputs = collateralInputsArray
-        ? ((yield* Eff.all(
-            collateralInputsArray.map((input) => ParseResult.decode(TransactionInput.FromCDDL)(input))
-          )) as NonEmptyArray<TransactionInput.TransactionInput>)
-        : undefined
+      let collateralInputs: NonEmptyArray<TransactionInput.TransactionInput> | undefined
+      if (collateralInputsArray) {
+        const len = collateralInputsArray.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = yield* decodeTxInput(collateralInputsArray[i])
+        }
+        collateralInputs = arr as NonEmptyArray<TransactionInput.TransactionInput>
+      }
 
       const requiredSignersArray = fromA[14]
-      const requiredSigners = requiredSignersArray
-        ? ((yield* Eff.all(
-            requiredSignersArray.map((signer) => ParseResult.decode(KeyHash.FromBytes)(signer))
-          )) as NonEmptyArray<KeyHash.KeyHash>)
-        : undefined
+      let requiredSigners: NonEmptyArray<KeyHash.KeyHash> | undefined
+      if (requiredSignersArray) {
+        const len = requiredSignersArray.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = yield* decodeKeyHash(requiredSignersArray[i])
+        }
+        requiredSigners = arr as NonEmptyArray<KeyHash.KeyHash>
+      }
 
       const networkIdBigInt = fromA[15]
       const networkId = networkIdBigInt ? NetworkId.make(Number(networkIdBigInt)) : undefined
       const collateralReturnData = fromA[16]
-      const collateralReturn = collateralReturnData
-        ? yield* ParseResult.decode(TransactionOutput.FromTransactionOutputCDDLSchema)(collateralReturnData)
-        : undefined
+      const collateralReturn = collateralReturnData ? yield* decodeTxOutput(collateralReturnData) : undefined
       const totalCollateral = fromA[17]
 
-      const referenceInputsTag = fromA[18] // This might be a CBOR.Tag with tag 258
+      const referenceInputsTag = fromA[18] // CBOR.Tag 258
       const referenceInputsArray = referenceInputsTag ? referenceInputsTag.value : undefined
-      const referenceInputs = referenceInputsArray
-        ? ((yield* Eff.all(
-            referenceInputsArray.map((input) => ParseResult.decode(TransactionInput.FromCDDL)(input))
-          )) as NonEmptyArray<TransactionInput.TransactionInput>)
-        : undefined
+      let referenceInputs: NonEmptyArray<TransactionInput.TransactionInput> | undefined
+      if (referenceInputsArray) {
+        const len = referenceInputsArray.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = yield* decodeTxInput(referenceInputsArray[i])
+        }
+        referenceInputs = arr as NonEmptyArray<TransactionInput.TransactionInput>
+      }
       const votingProceduresData = fromA[19]
-      const votingProcedures = votingProceduresData
-        ? yield* ParseResult.decode(VotingProcedures.FromCDDL)(votingProceduresData)
-        : undefined
+      const votingProcedures = votingProceduresData ? yield* decodeVotingProcedures(votingProceduresData) : undefined
       const proposalProceduresData = fromA[20]
       const proposalProcedures = proposalProceduresData
-        ? yield* ParseResult.decode(ProposalProcedures.FromCDDL)(proposalProceduresData)
+        ? yield* decodeProposalProcedures(proposalProceduresData)
         : undefined
       const currentTreasuryValue = fromA[21]
       const donation = fromA[22]
 
-      return new TransactionBody({
-        inputs,
-        outputs,
-        fee,
-        ttl,
-        certificates,
-        withdrawals,
-        auxiliaryDataHash,
-        validityIntervalStart,
-        mint,
-        scriptDataHash,
-        collateralInputs,
-        requiredSigners,
-        networkId,
-        collateralReturn,
-        totalCollateral,
-        referenceInputs,
-        votingProcedures,
-        proposalProcedures,
-        currentTreasuryValue,
-        donation
-      })
+      return new TransactionBody(
+        {
+          inputs,
+          outputs,
+          fee,
+          ttl,
+          certificates,
+          withdrawals,
+          auxiliaryDataHash,
+          validityIntervalStart,
+          mint,
+          scriptDataHash,
+          collateralInputs,
+          requiredSigners,
+          networkId,
+          collateralReturn,
+          totalCollateral,
+          referenceInputs,
+          votingProcedures,
+          proposalProcedures,
+          currentTreasuryValue,
+          donation
+        },
+        { disableValidation: true }
+      )
     })
 })
 
@@ -344,135 +429,68 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OP
 // ============================================================================
 
 /**
- * Decode a TransactionBody from CBOR bytes.
+ * Parse a TransactionBody from CBOR bytes.
+ * Default options use STRUCT_FRIENDLY_OPTIONS for better readability.
  *
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  TransactionBodyError,
+  "TransactionBody.fromCBORBytes"
+)
 
 /**
- * Decode a TransactionBody from CBOR hex string.
+ * Parse a TransactionBody from CBOR hex string.
+ * Default options use STRUCT_FRIENDLY_OPTIONS for better readability.
  *
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, TransactionBodyError, "TransactionBody.fromCBORHex")
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
 
 /**
- * Encode a TransactionBody to CBOR bytes.
+ * Convert a TransactionBody to CBOR bytes.
+ * Default options use STRUCT_FRIENDLY_OPTIONS for better readability.
  *
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (
-  transactionBody: TransactionBody,
-  options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
-) => Eff.runSync(Effect.toCBORBytes(transactionBody, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, TransactionBodyError, "TransactionBody.toCBORBytes")
 
 /**
- * Encode a TransactionBody to CBOR hex string.
+ * Convert a TransactionBody to CBOR hex string.
+ * Default options use STRUCT_FRIENDLY_OPTIONS for better readability.
  *
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (
-  transactionBody: TransactionBody,
-  options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
-) => Eff.runSync(Effect.toCBORHex(transactionBody, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, TransactionBodyError, "TransactionBody.toCBORHex")
 
 // ============================================================================
-// Effect Namespace
+// Either Namespace - Either-based Error Handling
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
-  /**
-   * Decode a TransactionBody from CBOR bytes with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
-  ): Eff.Effect<TransactionBody, TransactionBodyError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionBodyError({
-            message: "Failed to decode TransactionBody from CBOR bytes",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Decode a TransactionBody from CBOR hex string with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
-  ): Eff.Effect<TransactionBody, TransactionBodyError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionBodyError({
-            message: "Failed to decode TransactionBody from CBOR hex",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Encode a TransactionBody to CBOR bytes with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toCBORBytes = (
-    transactionBody: TransactionBody,
-    options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
-  ): Eff.Effect<Uint8Array, TransactionBodyError> =>
-    Schema.encode(FromCBORBytes(options))(transactionBody).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionBodyError({
-            message: "Failed to encode TransactionBody to CBOR bytes",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Encode a TransactionBody to CBOR hex string with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toCBORHex = (
-    transactionBody: TransactionBody,
-    options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS
-  ): Eff.Effect<string, TransactionBodyError> =>
-    Schema.encode(FromCBORHex(options))(transactionBody).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionBodyError({
-            message: "Failed to encode TransactionBody to CBOR hex",
-            cause
-          })
-      )
-    )
+export namespace Either {
+  export const fromCBORBytes = (options?: CBOR.CodecOptions) =>
+    Function.makeDecodeEither(FromCBORBytes(options), TransactionBodyError)
+  export const fromCBORHex = (options?: CBOR.CodecOptions) =>
+    Function.makeDecodeEither(FromCBORHex(options), TransactionBodyError)
+  export const toCBORBytes = (options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORBytes(options), TransactionBodyError)
+  export const toCBORHex = (options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORHex(options), TransactionBodyError)
 }
 
 // ============================================================================

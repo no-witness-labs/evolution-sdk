@@ -1,6 +1,6 @@
 ---
 title: NonZeroInt64.ts
-nav_order: 60
+nav_order: 69
 parent: Modules
 ---
 
@@ -10,27 +10,33 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
 - [constants](#constants)
   - [NEG_INT64_MIN](#neg_int64_min)
 - [constructors](#constructors)
   - [make](#make)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBigInt](#tobigint)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [NonZeroInt64Error (class)](#nonzeroint64error-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [NonZeroInt64 (type alias)](#nonzeroint64-type-alias)
 - [ordering](#ordering)
   - [compare](#compare)
+- [parsing](#parsing)
+  - [fromBigInt](#frombigint)
 - [predicates](#predicates)
   - [is](#is)
   - [isNegative](#isnegative)
   - [isPositive](#ispositive)
 - [schemas](#schemas)
   - [NegInt64Schema](#negint64schema)
-  - [NonZeroInt64Schema](#nonzeroint64schema)
+  - [NonZeroInt64](#nonzeroint64)
   - [PosInt64Schema](#posint64schema)
 - [transformation](#transformation)
   - [abs](#abs)
@@ -41,6 +47,20 @@ parent: Modules
   - [POS_INT64_MIN](#pos_int64_min)
 
 ---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for generating random NonZeroInt64 instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<bigint>
+```
+
+Added in v2.0.0
 
 # constants
 
@@ -68,7 +88,29 @@ Smart constructor for creating NonZeroInt64 values.
 **Signature**
 
 ```ts
-export declare const make: (i: bigint, overrideOptions?: ParseOptions) => bigint
+export declare const make: (i: bigint, overrideOptions?: ParseOptions) => bigint & Brand<"NonZeroInt64">
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBigInt
+
+Encode NonZeroInt64 to bigint.
+
+**Signature**
+
+```ts
+export declare const toBigInt: (value: NonZeroInt64) => bigint
 ```
 
 Added in v2.0.0
@@ -101,20 +143,6 @@ export declare class NonZeroInt64Error
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-Generate a random NonZeroInt64.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<bigint>
-```
-
-Added in v2.0.0
-
 # model
 
 ## NonZeroInt64 (type alias)
@@ -125,7 +153,7 @@ Used in minting operations where zero amounts are not allowed.
 **Signature**
 
 ```ts
-export type NonZeroInt64 = typeof NonZeroInt64Schema.Type
+export type NonZeroInt64 = typeof NonZeroInt64.Type
 ```
 
 Added in v2.0.0
@@ -144,6 +172,20 @@ export declare const compare: (a: NonZeroInt64, b: NonZeroInt64) => -1 | 0 | 1
 
 Added in v2.0.0
 
+# parsing
+
+## fromBigInt
+
+Parse NonZeroInt64 from bigint.
+
+**Signature**
+
+```ts
+export declare const fromBigInt: (value: bigint) => NonZeroInt64
+```
+
+Added in v2.0.0
+
 # predicates
 
 ## is
@@ -153,7 +195,7 @@ Check if a value is a valid NonZeroInt64.
 **Signature**
 
 ```ts
-export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is bigint
+export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is bigint & Brand<"NonZeroInt64">
 ```
 
 Added in v2.0.0
@@ -196,7 +238,7 @@ export declare const NegInt64Schema: Schema.refine<bigint, typeof Schema.BigIntF
 
 Added in v2.0.0
 
-## NonZeroInt64Schema
+## NonZeroInt64
 
 Schema for NonZeroInt64 representing non-zero 64-bit signed integers.
 nonZeroInt64 = negInt64/ posInt64
@@ -204,8 +246,11 @@ nonZeroInt64 = negInt64/ posInt64
 **Signature**
 
 ```ts
-export declare const NonZeroInt64Schema: Schema.Union<
-  [Schema.refine<bigint, typeof Schema.BigIntFromSelf>, Schema.refine<bigint, typeof Schema.BigIntFromSelf>]
+export declare const NonZeroInt64: Schema.brand<
+  Schema.Union<
+    [Schema.refine<bigint, typeof Schema.BigIntFromSelf>, Schema.refine<bigint, typeof Schema.BigIntFromSelf>]
+  >,
+  "NonZeroInt64"
 >
 ```
 

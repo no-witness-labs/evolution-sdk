@@ -1,6 +1,6 @@
 ---
 title: KeyHash.ts
-nav_order: 51
+nav_order: 59
 parent: Modules
 ---
 
@@ -10,52 +10,79 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [constructors](#constructors)
+  - [make](#make)
+- [effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [KeyHashError (class)](#keyhasherror-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [model](#model)
+  - [KeyHash (class)](#keyhash-class)
+    - [toJSON (method)](#tojson-method)
+    - [toString (method)](#tostring-method)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
 - [schemas](#schemas)
-  - [KeyHash](#keyhash)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 - [utils](#utils)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-  - [KeyHash (type alias)](#keyhash-type-alias)
+  - [fromPrivateKey](#fromprivatekey)
+  - [fromVKey](#fromvkey)
 
 ---
 
-# encoding/decoding
+# constructors
 
-## Codec
+## make
 
-Codec utilities for KeyHash encoding and decoding operations.
+Smart constructor for KeyHash that validates and applies branding.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string & Brand<"KeyHash">) => any; string: (input: string & Brand<"KeyHash">) => string }
-  Decode: { bytes: (input: any) => string & Brand<"KeyHash">; string: (input: string) => string & Brand<"KeyHash"> }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"KeyHash">) => Effect<any, InstanceType<typeof KeyHashError>>
-    string: (input: string & Brand<"KeyHash">) => Effect<string, InstanceType<typeof KeyHashError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"KeyHash">, InstanceType<typeof KeyHashError>>
-    string: (input: string) => Effect<string & Brand<"KeyHash">, InstanceType<typeof KeyHashError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"KeyHash">) => Either<any, InstanceType<typeof KeyHashError>>
-    string: (input: string & Brand<"KeyHash">) => Either<string, InstanceType<typeof KeyHashError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"KeyHash">, InstanceType<typeof KeyHashError>>
-    string: (input: string) => Either<string & Brand<"KeyHash">, InstanceType<typeof KeyHashError>>
-  }
-}
+export declare const make: (props: { readonly hash: any }, options?: Schema.MakeOptions | undefined) => KeyHash
+```
+
+Added in v2.0.0
+
+# effect
+
+## Either (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Convert a KeyHash to raw bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (keyhash: KeyHash) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert a KeyHash to a hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (keyhash: KeyHash) => string
 ```
 
 Added in v2.0.0
@@ -88,70 +115,136 @@ export declare class KeyHashError
 
 Added in v2.0.0
 
-# generators
+# model
 
-## generator
+## KeyHash (class)
 
-Generate a random KeyHash.
+KeyHash as a TaggedClass (breaking change from branded hex string).
+
+```
+addr_keyhash = hash28
+```
+
+Follows CIP-0019 binary representation.
+
+Stores raw 28-byte value for performance.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"KeyHash">>
+export declare class KeyHash
+```
+
+Added in v2.0.0
+
+### toJSON (method)
+
+**Signature**
+
+```ts
+toJSON(): string
+```
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+# parsing
+
+## fromBytes
+
+Parse a KeyHash from raw bytes.
+Expects exactly 28 bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => KeyHash
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse a KeyHash from a hex string.
+Expects exactly 56 hex characters (28 bytes).
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => KeyHash
 ```
 
 Added in v2.0.0
 
 # schemas
 
-## KeyHash
+## FromBytes
 
-Schema for KeyHash representing a verification key hash.
-addr_keyhash = hash28
-Follows CIP-0019 binary representation.
+Schema transformer from bytes to KeyHash.
 
 **Signature**
 
 ```ts
-export declare const KeyHash: Schema.brand<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  "KeyHash"
+export declare const FromBytes: Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof KeyHash>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+Schema transformer from hex string to KeyHash.
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof KeyHash>
 >
+```
+
+Added in v2.0.0
+
+# testing
+
+## arbitrary
+
+FastCheck arbitrary for generating random KeyHash instances.
+Used for property-based testing to generate valid test data.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<KeyHash>
 ```
 
 Added in v2.0.0
 
 # utils
 
-## FromBytes
+## fromPrivateKey
+
+Create a KeyHash from a PrivateKey (sync version that throws KeyHashError).
+All errors are normalized to KeyHashError with contextual information.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash">
->
+export declare const fromPrivateKey: (privateKey: PrivateKey) => KeyHash
 ```
 
-## FromHex
+## fromVKey
+
+Create a KeyHash from a VKey (sync version that throws KeyHashError).
+All errors are normalized to KeyHashError with contextual information.
 
 **Signature**
 
 ```ts
-export declare const FromHex: Schema.transform<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "KeyHash">
->
-```
-
-## KeyHash (type alias)
-
-**Signature**
-
-```ts
-export type KeyHash = typeof KeyHash.Type
+export declare const fromVKey: (vkey: VKey.VKey) => KeyHash
 ```

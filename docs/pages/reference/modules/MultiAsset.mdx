@@ -1,6 +1,6 @@
 ---
 title: MultiAsset.ts
-nav_order: 53
+nav_order: 62
 parent: Modules
 ---
 
@@ -10,27 +10,36 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
 - [constructors](#constructors)
   - [empty](#empty)
+  - [make](#make)
   - [singleton](#singleton)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [MultiAssetError (class)](#multiasseterror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [AssetMap (type alias)](#assetmap-type-alias)
-  - [MultiAsset (type alias)](#multiasset-type-alias)
+  - [MultiAsset (interface)](#multiasset-interface)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
 - [predicates](#predicates)
   - [hasAsset](#hasasset)
   - [is](#is)
 - [schemas](#schemas)
-  - [AssetMapSchema](#assetmapschema)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
+  - [AssetMap](#assetmap)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
+  - [MultiAsset](#multiasset)
   - [MultiAssetCDDLSchema](#multiassetcddlschema)
-  - [MultiAssetSchema](#multiassetschema)
 - [transformation](#transformation)
   - [addAsset](#addasset)
   - [getAsset](#getasset)
@@ -38,22 +47,54 @@ parent: Modules
   - [getPolicyIds](#getpolicyids)
   - [merge](#merge)
   - [subtract](#subtract)
-- [utils](#utils)
-  - [Codec](#codec)
 
 ---
+
+# arbitrary
+
+## arbitrary
+
+Change generator to arbitrary and rename CBOR schemas.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<
+  Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">
+>
+```
+
+Added in v2.0.0
 
 # constructors
 
 ## empty
 
-Create an empty MultiAsset (note: this will fail validation as MultiAsset cannot be empty).
-Use this only as a starting point for building a MultiAsset.
+Create an empty Map for building MultiAssets (note: empty maps will fail validation).
+Use this only as a starting point for building a MultiAsset with add operations.
 
 **Signature**
 
 ```ts
 export declare const empty: () => Map<PolicyId.PolicyId, AssetMap>
+```
+
+Added in v2.0.0
+
+## make
+
+Smart constructor for MultiAsset that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const make: (
+  i: ReadonlyMap<
+    { readonly hash: any; readonly _tag: "PolicyId" },
+    ReadonlyMap<{ readonly _tag: "AssetName"; readonly bytes: any }, bigint>
+  >,
+  overrideOptions?: ParseOptions
+) => Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">
 ```
 
 Added in v2.0.0
@@ -70,6 +111,40 @@ export declare const singleton: (
   assetName: AssetName.AssetName,
   amount: PositiveCoin.PositiveCoin
 ) => MultiAsset
+```
+
+Added in v2.0.0
+
+# effect
+
+## Effect (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Encode MultiAsset to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (multiAsset: MultiAsset, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Encode MultiAsset to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (multiAsset: MultiAsset, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
@@ -102,22 +177,6 @@ export declare class MultiAssetError
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-Generate a random MultiAsset.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<
-  Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
->
-```
-
-Added in v2.0.0
-
 # model
 
 ## AssetMap (type alias)
@@ -127,12 +186,12 @@ Type alias for the inner asset map.
 **Signature**
 
 ```ts
-export type AssetMap = typeof AssetMapSchema.Type
+export type AssetMap = typeof AssetMap.Type
 ```
 
 Added in v2.0.0
 
-## MultiAsset (type alias)
+## MultiAsset (interface)
 
 Type alias for MultiAsset representing a collection of native assets.
 Each policy ID maps to a collection of asset names and their amounts.
@@ -141,7 +200,33 @@ All amounts must be positive (non-zero).
 **Signature**
 
 ```ts
-export type MultiAsset = typeof MultiAssetSchema.Type
+export interface MultiAsset extends Schema.Schema.Type<typeof MultiAsset> {}
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromCBORBytes
+
+Parse MultiAsset from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => MultiAsset
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse MultiAsset from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => MultiAsset
 ```
 
 Added in v2.0.0
@@ -178,32 +263,30 @@ Added in v2.0.0
 
 # schemas
 
-## AssetMapSchema
+## AssetMap
 
 Schema for inner asset map (asset_name => positive_coin).
 
 **Signature**
 
 ```ts
-export declare const AssetMapSchema: Schema.refine<
-  Map<string & Brand<"AssetName">, bigint>,
-  Schema.Map$<
-    Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AssetName">,
-    Schema.refine<bigint, typeof Schema.BigIntFromSelf>
-  >
+export declare const AssetMap: Schema.refine<
+  Map<AssetName.AssetName, bigint>,
+  Schema.MapFromSelf<typeof AssetName.AssetName, Schema.refine<bigint, typeof Schema.BigIntFromSelf>>
 >
 ```
 
 Added in v2.0.0
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for MultiAsset.
+Transforms between CBOR bytes and MultiAsset using CBOR encoding.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -217,8 +300,8 @@ export declare const FromBytes: (
       Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
     >,
     Schema.SchemaClass<
-      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
-      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+      Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
+      Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
       never
     >,
     never
@@ -228,17 +311,18 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for MultiAsset.
+Transforms between CBOR hex string and MultiAsset using CBOR encoding.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -251,13 +335,41 @@ export declare const FromHex: (
         Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
       >,
       Schema.SchemaClass<
-        Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
-        Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+        Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
+        Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
         never
       >,
       never
     >
   >
+>
+```
+
+Added in v2.0.0
+
+## MultiAsset
+
+Schema for MultiAsset representing native assets.
+
+```
+multiasset<a0> = {+ policy_id => {+ asset_name => a0}}
+case: multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
+```
+
+**Signature**
+
+```ts
+export declare const MultiAsset: Schema.brand<
+  Schema.filter<
+    Schema.MapFromSelf<
+      typeof PolicyId.PolicyId,
+      Schema.refine<
+        Map<AssetName.AssetName, bigint>,
+        Schema.MapFromSelf<typeof AssetName.AssetName, Schema.refine<bigint, typeof Schema.BigIntFromSelf>>
+      >
+    >
+  >,
+  "MultiAsset"
 >
 ```
 
@@ -280,40 +392,11 @@ export declare const MultiAssetCDDLSchema: Schema.transformOrFail<
     Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
   >,
   Schema.SchemaClass<
-    Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
-    Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
+    Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
+    Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
     never
   >,
   never
->
-```
-
-Added in v2.0.0
-
-## MultiAssetSchema
-
-Schema for MultiAsset representing native assets.
-
-```
-multiasset<a0> = {+ policy_id => {+ asset_name => a0}}
-case: multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
-```
-
-**Signature**
-
-```ts
-export declare const MultiAssetSchema: Schema.refine<
-  Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
-  Schema.MapFromSelf<
-    Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "PolicyId">,
-    Schema.refine<
-      Map<string & Brand<"AssetName">, bigint>,
-      Schema.Map$<
-        Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AssetName">,
-        Schema.refine<bigint, typeof Schema.BigIntFromSelf>
-      >
-    >
-  >
 >
 ```
 
@@ -349,7 +432,7 @@ export declare const getAsset: (
   multiAsset: MultiAsset,
   policyId: PolicyId.PolicyId,
   assetName: AssetName.AssetName
-) => { _tag: "Some"; value: bigint } | { _tag: "None"; value?: undefined }
+) => bigint | undefined
 ```
 
 Added in v2.0.0
@@ -364,7 +447,7 @@ Get all assets for a specific policy ID.
 export declare const getAssetsByPolicy: (
   multiAsset: MultiAsset,
   policyId: PolicyId.PolicyId
-) => { _tag: "Some"; value: Map<string & Brand<"AssetName">, bigint> } | { _tag: "None"; value?: undefined }
+) => [AssetName.AssetName, bigint][]
 ```
 
 Added in v2.0.0
@@ -376,7 +459,7 @@ Get all policy IDs in a MultiAsset.
 **Signature**
 
 ```ts
-export declare const getPolicyIds: (multiAsset: MultiAsset) => IterableIterator<string & Brand<"PolicyId">>
+export declare const getPolicyIds: (multiAsset: MultiAsset) => Array<PolicyId.PolicyId>
 ```
 
 Added in v2.0.0
@@ -407,66 +490,3 @@ export declare const subtract: (a: MultiAsset, b: MultiAsset) => MultiAsset
 ```
 
 Added in v2.0.0
-
-# utils
-
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: {
-    cborBytes: (input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>) => any
-    cborHex: (input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>) => string
-  }
-  Decode: {
-    cborBytes: (input: any) => Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
-    cborHex: (input: string) => Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
-  }
-  EncodeEffect: {
-    cborBytes: (
-      input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
-    ) => Effect.Effect<any, InstanceType<typeof MultiAssetError>>
-    cborHex: (
-      input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
-    ) => Effect.Effect<string, InstanceType<typeof MultiAssetError>>
-  }
-  DecodeEffect: {
-    cborBytes: (
-      input: any
-    ) => Effect.Effect<
-      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
-      InstanceType<typeof MultiAssetError>
-    >
-    cborHex: (
-      input: string
-    ) => Effect.Effect<
-      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
-      InstanceType<typeof MultiAssetError>
-    >
-  }
-  EncodeEither: {
-    cborBytes: (
-      input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
-    ) => Either<any, InstanceType<typeof MultiAssetError>>
-    cborHex: (
-      input: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>
-    ) => Either<string, InstanceType<typeof MultiAssetError>>
-  }
-  DecodeEither: {
-    cborBytes: (
-      input: any
-    ) => Either<
-      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
-      InstanceType<typeof MultiAssetError>
-    >
-    cborHex: (
-      input: string
-    ) => Either<
-      Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>>,
-      InstanceType<typeof MultiAssetError>
-    >
-  }
-}
-```

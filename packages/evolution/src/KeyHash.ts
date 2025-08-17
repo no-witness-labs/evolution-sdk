@@ -1,9 +1,10 @@
 import { blake2b } from "@noble/hashes/blake2"
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
-import sodium from "libsodium-wrappers-sumo"
+import { Data, FastCheck, Schema } from "effect"
 
+import * as Bytes from "./Bytes.js"
+import * as Function from "./Function.js"
 import * as Hash28 from "./Hash28.js"
-import * as PrivateKey from "./PrivateKey.js"
+import type { PrivateKey } from "./PrivateKey.js"
 import * as VKey from "./VKey.js"
 
 /**
@@ -18,32 +19,55 @@ export class KeyHashError extends Data.TaggedError("KeyHashError")<{
 }> {}
 
 /**
- * Schema for KeyHash representing a verification key hash.
+ * KeyHash as a TaggedClass (breaking change from branded hex string).
+ * ```
  * addr_keyhash = hash28
+ * ```
  * Follows CIP-0019 binary representation.
+ *
+ * Stores raw 28-byte value for performance.
+ *
+ * @since 2.0.0
+ * @category model
+ */
+export class KeyHash extends Schema.TaggedClass<KeyHash>()("KeyHash", {
+  hash: Hash28.BytesSchema
+}) {
+  toJSON(): string {
+    return toHex(this)
+  }
+
+  toString(): string {
+    return toHex(this)
+  }
+}
+
+/**
+ * Schema transformer from bytes to KeyHash.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const KeyHash = Hash28.HexSchema.pipe(Schema.brand("KeyHash")).annotations({
-  identifier: "KeyHash",
-  title: "Verification Key Hash",
-  description: "A 28-byte verification key hash"
+export const FromBytes = Schema.transform(Hash28.BytesSchema, KeyHash, {
+  strict: true,
+  decode: (bytes) => new KeyHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Hash28
+  encode: (keyHash) => keyHash.hash
+}).annotations({
+  identifier: "KeyHash.FromBytes"
 })
 
-export type KeyHash = typeof KeyHash.Type
-
-export const FromBytes = Schema.compose(
-  Hash28.FromBytes, // Uint8Array -> hex string
-  KeyHash // hex string -> KeyHash
+/**
+ * Schema transformer from hex string to KeyHash.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
+export const FromHex = Schema.compose(
+  Bytes.FromHex, // string -> Uint8Array
+  FromBytes
 ).annotations({
-  identifier: "KeyHash.FromBytes",
-  title: "KeyHash from Bytes",
-  description: "Transforms raw bytes (Uint8Array) to KeyHash hex string",
-  message: () => "Invalid key hash bytes - must be exactly 28 bytes"
+  identifier: "KeyHash.FromHex"
 })
-
-export const FromHex = KeyHash
 
 /**
  * Smart constructor for KeyHash that validates and applies branding.
@@ -51,7 +75,7 @@ export const FromHex = KeyHash
  * @since 2.0.0
  * @category constructors
  */
-export const make = KeyHash.make
+export const make = (...args: ConstructorParameters<typeof KeyHash>) => new KeyHash(...args)
 
 /**
  * Check if two KeyHash instances are equal.
@@ -59,7 +83,7 @@ export const make = KeyHash.make
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: KeyHash, b: KeyHash): boolean => a === b
+export const equals = (a: KeyHash, b: KeyHash): boolean => Bytes.equals(a.hash, b.hash)
 
 // ============================================================================
 // Parsing Functions
@@ -72,7 +96,7 @@ export const equals = (a: KeyHash, b: KeyHash): boolean => a === b
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): KeyHash => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, KeyHashError, "KeyHash.fromBytes")
 
 /**
  * Parse a KeyHash from a hex string.
@@ -81,7 +105,7 @@ export const fromBytes = (bytes: Uint8Array): KeyHash => Eff.runSync(Effect.from
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): KeyHash => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, KeyHashError, "KeyHash.fromHex")
 
 /**
  * FastCheck arbitrary for generating random KeyHash instances.
@@ -91,7 +115,7 @@ export const fromHex = (hex: string): KeyHash => Eff.runSync(Effect.fromHex(hex)
  * @category testing
  */
 export const arbitrary: FastCheck.Arbitrary<KeyHash> = FastCheck.uint8Array({ minLength: 28, maxLength: 28 }).map(
-  fromBytes
+  (bytes) => make({ hash: bytes }, { disableValidation: true })
 )
 
 // ============================================================================
@@ -104,7 +128,7 @@ export const arbitrary: FastCheck.Arbitrary<KeyHash> = FastCheck.uint8Array({ mi
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (keyHash: KeyHash): Uint8Array => Eff.runSync(Effect.toBytes(keyHash))
+export const toBytes = (keyhash: KeyHash): Uint8Array => new Uint8Array(keyhash.hash) // Return a copy of the underlying bytes
 
 /**
  * Convert a KeyHash to a hex string.
@@ -112,30 +136,32 @@ export const toBytes = (keyHash: KeyHash): Uint8Array => Eff.runSync(Effect.toBy
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (keyHash: KeyHash): string => keyHash // Already a hex string
+export const toHex = (keyhash: KeyHash): string => Bytes.toHex(keyhash.hash)
 
 // ============================================================================
-// Cryptographic Operations
+// Cryptographic Operations (throwing)
 // ============================================================================
 
 /**
  * Create a KeyHash from a PrivateKey (sync version that throws KeyHashError).
  * All errors are normalized to KeyHashError with contextual information.
- *
- * @since 2.0.0
- * @category cryptography
  */
-export const fromPrivateKey = (privateKey: PrivateKey.PrivateKey): KeyHash =>
-  Eff.runSync(Effect.fromPrivateKey(privateKey))
+export const fromPrivateKey = (privateKey: PrivateKey): KeyHash => {
+  const vkey = VKey.fromPrivateKey(privateKey)
+  const publicKeyBytes = VKey.toBytes(vkey)
+  const keyHashBytes = blake2b(publicKeyBytes, { dkLen: 28 })
+  return KeyHash.make({ hash: keyHashBytes })
+}
 
 /**
  * Create a KeyHash from a VKey (sync version that throws KeyHashError).
  * All errors are normalized to KeyHashError with contextual information.
- *
- * @since 2.0.0
- * @category cryptography
  */
-export const fromVKey = (vkey: VKey.VKey): KeyHash => Eff.runSync(Effect.fromVKey(vkey))
+export const fromVKey = (vkey: VKey.VKey): KeyHash => {
+  const publicKeyBytes = VKey.toBytes(vkey)
+  const keyHashBytes = blake2b(publicKeyBytes, { dkLen: 28 })
+  return KeyHash.make({ hash: keyHashBytes })
+}
 
 // ============================================================================
 // Effect Namespace - Effect-based Error Handling
@@ -143,150 +169,13 @@ export const fromVKey = (vkey: VKey.VKey): KeyHash => Eff.runSync(Effect.fromVKe
 
 /**
  * Effect-based error handling variants for functions that can fail.
- * Returns Effect<Success, Error> for composable error handling.
  *
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
-  /**
-   * Parse a KeyHash from raw bytes using Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<KeyHash, KeyHashError> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new KeyHashError({
-            message: "Failed to parse KeyHash from bytes",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Parse a KeyHash from a hex string using Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromHex = (hex: string): Eff.Effect<KeyHash, KeyHashError> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new KeyHashError({
-            message: "Failed to parse KeyHash from hex",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Convert a KeyHash to raw bytes using Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toBytes = (keyHash: KeyHash): Eff.Effect<Uint8Array, KeyHashError> =>
-    Schema.encode(FromBytes)(keyHash).pipe(
-      Eff.mapError(
-        (cause) =>
-          new KeyHashError({
-            message: "Failed to encode KeyHash to bytes",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Create a KeyHash from a PrivateKey using Effect error handling.
-   *
-   * @since 2.0.0
-   * @category cryptography
-   */
-  export const fromPrivateKey = (privateKey: PrivateKey.PrivateKey): Eff.Effect<KeyHash, KeyHashError> =>
-    Eff.gen(function* () {
-      const privateKeyBytes = yield* Eff.mapError(
-        Schema.encode(PrivateKey.FromBytes)(privateKey),
-        (cause) =>
-          new KeyHashError({
-            message: "Failed to encode private key to bytes",
-            cause
-          })
-      )
-
-      const publicKeyBytes = yield* Eff.try({
-        try: () => {
-          if (privateKeyBytes.length === 64) {
-            // CML-compatible extended private key: use first 32 bytes as scalar
-            const scalar = privateKeyBytes.slice(0, 32)
-            return sodium.crypto_scalarmult_ed25519_base_noclamp(scalar)
-          } else {
-            // Standard 32-byte Ed25519 private key using sodium
-            return sodium.crypto_sign_seed_keypair(privateKeyBytes).publicKey
-          }
-        },
-        catch: (cause) =>
-          new KeyHashError({
-            message: "Failed to derive public key from private key",
-            cause
-          })
-      })
-
-      const keyHashBytes = yield* Eff.try({
-        try: () => blake2b(publicKeyBytes, { dkLen: 28 }),
-        catch: (cause) =>
-          new KeyHashError({
-            message: "Failed to hash public key",
-            cause
-          })
-      })
-
-      return yield* Eff.mapError(
-        Schema.decode(FromBytes)(keyHashBytes),
-        (cause) =>
-          new KeyHashError({
-            message: "Failed to create KeyHash from hash bytes",
-            cause
-          })
-      )
-    })
-
-  /**
-   * Create a KeyHash from a VKey using Effect error handling.
-   *
-   * @since 2.0.0
-   * @category cryptography
-   */
-  export const fromVKey = (vkey: VKey.VKey): Eff.Effect<KeyHash, KeyHashError> =>
-    Eff.gen(function* () {
-      const publicKeyBytes = yield* Eff.mapError(
-        Schema.encode(VKey.FromBytes)(vkey),
-        (cause) =>
-          new KeyHashError({
-            message: "Failed to encode VKey to bytes",
-            cause
-          })
-      )
-
-      const keyHashBytes = yield* Eff.try({
-        try: () => blake2b(publicKeyBytes, { dkLen: 28 }),
-        catch: (cause) =>
-          new KeyHashError({
-            message: "Failed to hash public key",
-            cause
-          })
-      })
-
-      return yield* Eff.mapError(
-        Schema.decode(FromBytes)(keyHashBytes),
-        (cause) =>
-          new KeyHashError({
-            message: "Failed to create KeyHash from hash bytes",
-            cause
-          })
-      )
-    })
+export namespace Either {
+  export const fromBytes = Function.makeDecodeEither(FromBytes, KeyHashError)
+  export const fromHex = Function.makeDecodeEither(FromHex, KeyHashError)
+  export const toBytes = Function.makeEncodeEither(FromBytes, KeyHashError)
+  export const toHex = Function.makeEncodeEither(FromHex, KeyHashError)
 }

@@ -10,53 +10,92 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [AssetNameError (class)](#assetnameerror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
-  - [AssetName](#assetname)
+  - [AssetName (class)](#assetname-class)
+    - [toJSON (method)](#tojson-method)
+    - [toString (method)](#tostring-method)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [predicates](#predicates)
+  - [isAssetName](#isassetname)
 - [schemas](#schemas)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-- [utils](#utils)
-  - [AssetName (type alias)](#assetname-type-alias)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for AssetName encoding and decoding operations.
+FastCheck arbitrary for generating random AssetName instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string & Brand<"AssetName">) => any; hex: (input: string & Brand<"AssetName">) => string }
-  Decode: { bytes: (input: any) => string & Brand<"AssetName">; hex: (input: string) => string & Brand<"AssetName"> }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"AssetName">) => Effect<any, InstanceType<typeof AssetNameError>>
-    hex: (input: string & Brand<"AssetName">) => Effect<string, InstanceType<typeof AssetNameError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"AssetName">, InstanceType<typeof AssetNameError>>
-    hex: (input: string) => Effect<string & Brand<"AssetName">, InstanceType<typeof AssetNameError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"AssetName">) => Either<any, InstanceType<typeof AssetNameError>>
-    hex: (input: string & Brand<"AssetName">) => Either<string, InstanceType<typeof AssetNameError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"AssetName">, InstanceType<typeof AssetNameError>>
-    hex: (input: string) => Either<string & Brand<"AssetName">, InstanceType<typeof AssetNameError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<AssetName>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for AssetName that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const make: (props: { readonly bytes: any }, options?: Schema.MakeOptions | undefined) => AssetName
+```
+
+Added in v2.0.0
+
+# effect
+
+## Either (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode AssetName to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: AssetName) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode AssetName to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: AssetName) => string
 ```
 
 Added in v2.0.0
@@ -89,23 +128,9 @@ export declare class AssetNameError
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-Generate a random AssetName.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"AssetName">>
-```
-
-Added in v2.0.0
-
 # model
 
-## AssetName
+## AssetName (class)
 
 Schema for AssetName representing a native asset identifier.
 Asset names are limited to 32 bytes (0-64 hex characters).
@@ -113,10 +138,63 @@ Asset names are limited to 32 bytes (0-64 hex characters).
 **Signature**
 
 ```ts
-export declare const AssetName: Schema.brand<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  "AssetName"
->
+export declare class AssetName
+```
+
+Added in v2.0.0
+
+### toJSON (method)
+
+**Signature**
+
+```ts
+toJSON(): string
+```
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+# parsing
+
+## fromBytes
+
+Parse AssetName from bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => AssetName
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse AssetName from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => AssetName
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isAssetName
+
+Check if the given value is a valid AssetName
+
+**Signature**
+
+```ts
+export declare const isAssetName: (u: unknown, overrideOptions?: ParseOptions | number) => u is AssetName
 ```
 
 Added in v2.0.0
@@ -130,13 +208,7 @@ Schema for encoding/decoding AssetName as bytes.
 **Signature**
 
 ```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AssetName">
->
+export declare const FromBytes: Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof AssetName>
 ```
 
 Added in v2.0.0
@@ -149,19 +221,9 @@ Schema for encoding/decoding AssetName as hex strings.
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AssetName">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof AssetName>
 >
 ```
 
 Added in v2.0.0
-
-# utils
-
-## AssetName (type alias)
-
-**Signature**
-
-```ts
-export type AssetName = typeof AssetName.Type
-```

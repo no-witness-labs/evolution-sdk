@@ -1,5 +1,6 @@
-import { Data, Effect as Eff, FastCheck, pipe, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
+import * as Function from "./Function.js"
 import * as Hash28 from "./Hash28.js"
 
 /**
@@ -14,30 +15,44 @@ export class PoolKeyHashError extends Data.TaggedError("PoolKeyHashError")<{
 }> {}
 
 /**
- * PoolKeyHash is a 28-byte hash representing a stake pool's verification key.
+ * PoolKeyHash as a TaggedClass representing a stake pool's verification key hash.
  * pool_keyhash = hash28
+ *
+ * @since 2.0.0
+ * @category model
+ */
+export class PoolKeyHash extends Schema.TaggedClass<PoolKeyHash>()("PoolKeyHash", {
+  hash: Hash28.BytesSchema
+}) {
+  toJSON(): string {
+    return toHex(this)
+  }
+
+  toString(): string {
+    return toHex(this)
+  }
+}
+
+/**
+ * Schema transformer from bytes to PoolKeyHash.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const PoolKeyHash = pipe(Hash28.HexSchema, Schema.brand("PoolKeyHash")).annotations({
-  identifier: "PoolKeyHash"
-})
+export const FromBytes = Schema.transform(Hash28.BytesSchema, PoolKeyHash, {
+  strict: true,
+  decode: (hash) => new PoolKeyHash({ hash }, { disableValidation: true }),
+  encode: (poolKeyHash) => poolKeyHash.hash
+}).annotations({ identifier: "PoolKeyHash.FromBytes" })
 
-export type PoolKeyHash = typeof PoolKeyHash.Type
-
-export const FromBytes = Schema.compose(
-  Hash28.FromBytes, // Uint8Array -> hex string
-  PoolKeyHash // hex string -> PoolKeyHash
-).annotations({
-  identifier: "PoolKeyHash.Bytes"
-})
-
-export const FromHex = Schema.compose(
-  Hash28.HexSchema, // string -> hex string
-  PoolKeyHash // hex string -> PoolKeyHash
-).annotations({
-  identifier: "PoolKeyHash.Hex"
+/**
+ * Schema transformer from hex string to PoolKeyHash.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
+export const FromHex = Schema.compose(Hash28.FromHex, FromBytes).annotations({
+  identifier: "PoolKeyHash.FromHex"
 })
 
 /**
@@ -46,7 +61,7 @@ export const FromHex = Schema.compose(
  * @since 2.0.0
  * @category constructors
  */
-export const make = PoolKeyHash.make
+export const make = (...args: ConstructorParameters<typeof PoolKeyHash>) => new PoolKeyHash(...args)
 
 /**
  * Check if two PoolKeyHash instances are equal.
@@ -54,7 +69,7 @@ export const make = PoolKeyHash.make
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: PoolKeyHash, b: PoolKeyHash): boolean => a === b
+export const equals = (a: PoolKeyHash, b: PoolKeyHash): boolean => Hash28.equals(a.hash, b.hash)
 
 /**
  * FastCheck arbitrary for generating random PoolKeyHash instances.
@@ -62,22 +77,22 @@ export const equals = (a: PoolKeyHash, b: PoolKeyHash): boolean => a === b
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.uint8Array({
+export const arbitrary: FastCheck.Arbitrary<PoolKeyHash> = FastCheck.uint8Array({
   minLength: Hash28.BYTES_LENGTH,
   maxLength: Hash28.BYTES_LENGTH
-}).map((bytes) => Eff.runSync(Effect.fromBytes(bytes)))
+}).map((bytes) => make({ hash: bytes }, { disableValidation: true }))
 
 // ============================================================================
 // Root Functions
 // ============================================================================
 
 /**
- * Parse PoolKeyHash from raw bytes.
+ * Parse PoolKeyHash from bytes.
  *
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): PoolKeyHash => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, PoolKeyHashError, "PoolKeyHash.fromBytes")
 
 /**
  * Parse PoolKeyHash from hex string.
@@ -85,15 +100,15 @@ export const fromBytes = (bytes: Uint8Array): PoolKeyHash => Eff.runSync(Effect.
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): PoolKeyHash => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, PoolKeyHashError, "PoolKeyHash.fromHex")
 
 /**
- * Encode PoolKeyHash to raw bytes.
+ * Encode PoolKeyHash to bytes.
  *
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (poolKeyHash: PoolKeyHash): Uint8Array => Eff.runSync(Effect.toBytes(poolKeyHash))
+export const toBytes = Function.makeEncodeSync(FromBytes, PoolKeyHashError, "PoolKeyHash.toBytes")
 
 /**
  * Encode PoolKeyHash to hex string.
@@ -101,64 +116,48 @@ export const toBytes = (poolKeyHash: PoolKeyHash): Uint8Array => Eff.runSync(Eff
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (poolKeyHash: PoolKeyHash): string => poolKeyHash // Already a hex string
+export const toHex = Function.makeEncodeSync(FromHex, PoolKeyHashError, "PoolKeyHash.toHex")
 
 // ============================================================================
-// Effect Namespace
+// Either Namespace
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Parse PoolKeyHash from raw bytes with Effect error handling.
+   * Parse PoolKeyHash from bytes using Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<PoolKeyHash, PoolKeyHashError> =>
-    Eff.mapError(
-      Schema.decode(FromBytes)(bytes),
-      (cause) =>
-        new PoolKeyHashError({
-          message: "Failed to parse PoolKeyHash from bytes",
-          cause
-        })
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, PoolKeyHashError)
 
   /**
-   * Parse PoolKeyHash from hex string with Effect error handling.
+   * Parse PoolKeyHash from hex string using Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<PoolKeyHash, PoolKeyHashError> =>
-    Eff.mapError(
-      Schema.decode(PoolKeyHash)(hex),
-      (cause) =>
-        new PoolKeyHashError({
-          message: "Failed to parse PoolKeyHash from hex",
-          cause
-        })
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, PoolKeyHashError)
 
   /**
-   * Encode PoolKeyHash to raw bytes with Effect error handling.
+   * Encode PoolKeyHash to bytes using Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (poolKeyHash: PoolKeyHash): Eff.Effect<Uint8Array, PoolKeyHashError> =>
-    Eff.mapError(
-      Schema.encode(FromBytes)(poolKeyHash),
-      (cause) =>
-        new PoolKeyHashError({
-          message: "Failed to encode PoolKeyHash to bytes",
-          cause
-        })
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, PoolKeyHashError)
+
+  /**
+   * Encode PoolKeyHash to hex string using Either error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = Function.makeEncodeEither(FromHex, PoolKeyHashError)
 }

@@ -10,202 +10,113 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBech32](#tobech32)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [model](#model)
   - [Address](#address)
   - [Address (type alias)](#address-type-alias)
   - [AddressError (class)](#addresserror-class)
+- [parsing](#parsing)
+  - [fromBech32](#frombech32)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
 - [schema](#schema)
-  - [FromBech32](#frombech32)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-- [testing](#testing)
-  - [generator](#generator)
+  - [FromBech32](#frombech32-1)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 - [utils](#utils)
   - [equals](#equals)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for addresses.
+FastCheck arbitrary for Address instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: {
-    bech32: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => string & Brand<"Bech32">
-    hex: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => string
-    bytes: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => any
-  }
-  Decode: {
-    bech32: (
-      input: string & Brand<"Bech32">
-    ) =>
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress
-    hex: (
-      input: string
-    ) =>
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress
-    bytes: (
-      input: any
-    ) =>
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress
-  }
-  EncodeEffect: {
-    bech32: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => Effect.Effect<string & Brand<"Bech32">, InstanceType<typeof AddressError>>
-    hex: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => Effect.Effect<string, InstanceType<typeof AddressError>>
-    bytes: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => Effect.Effect<any, InstanceType<typeof AddressError>>
-  }
-  DecodeEffect: {
-    bech32: (
-      input: string & Brand<"Bech32">
-    ) => Effect.Effect<
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress,
-      InstanceType<typeof AddressError>
-    >
-    hex: (
-      input: string
-    ) => Effect.Effect<
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress,
-      InstanceType<typeof AddressError>
-    >
-    bytes: (
-      input: any
-    ) => Effect.Effect<
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress,
-      InstanceType<typeof AddressError>
-    >
-  }
-  EncodeEither: {
-    bech32: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => Either<string & Brand<"Bech32">, InstanceType<typeof AddressError>>
-    hex: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => Either<string, InstanceType<typeof AddressError>>
-    bytes: (
-      input:
-        | RewardAccount.RewardAccount
-        | BaseAddress.BaseAddress
-        | EnterpriseAddress.EnterpriseAddress
-        | PointerAddress.PointerAddress
-        | ByronAddress.ByronAddress
-    ) => Either<any, InstanceType<typeof AddressError>>
-  }
-  DecodeEither: {
-    bech32: (
-      input: string & Brand<"Bech32">
-    ) => Either<
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress,
-      InstanceType<typeof AddressError>
-    >
-    hex: (
-      input: string
-    ) => Either<
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress,
-      InstanceType<typeof AddressError>
-    >
-    bytes: (
-      input: any
-    ) => Either<
-      | RewardAccount.RewardAccount
-      | BaseAddress.BaseAddress
-      | EnterpriseAddress.EnterpriseAddress
-      | PointerAddress.PointerAddress
-      | ByronAddress.ByronAddress,
-      InstanceType<typeof AddressError>
-    >
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<
+  | RewardAccount.RewardAccount
+  | BaseAddress.BaseAddress
+  | EnterpriseAddress.EnterpriseAddress
+  | PointerAddress.PointerAddress
+>
+```
+
+Added in v2.0.0
+
+# effect
+
+## Either (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBech32
+
+Convert an Address to Bech32 string.
+
+**Signature**
+
+```ts
+export declare const toBech32: (
+  input:
+    | RewardAccount.RewardAccount
+    | BaseAddress.BaseAddress
+    | EnterpriseAddress.EnterpriseAddress
+    | PointerAddress.PointerAddress
+    | ByronAddress.ByronAddress
+) => string
+```
+
+Added in v2.0.0
+
+## toBytes
+
+Convert an Address to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (
+  input:
+    | RewardAccount.RewardAccount
+    | BaseAddress.BaseAddress
+    | EnterpriseAddress.EnterpriseAddress
+    | PointerAddress.PointerAddress
+    | ByronAddress.ByronAddress
+) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert an Address to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (
+  input:
+    | RewardAccount.RewardAccount
+    | BaseAddress.BaseAddress
+    | EnterpriseAddress.EnterpriseAddress
+    | PointerAddress.PointerAddress
+    | ByronAddress.ByronAddress
+) => string
 ```
 
 Added in v2.0.0
@@ -256,6 +167,65 @@ export declare class AddressError
 
 Added in v2.0.0
 
+# parsing
+
+## fromBech32
+
+Parse an Address from Bech32 string.
+
+**Signature**
+
+```ts
+export declare const fromBech32: (
+  input: string
+) =>
+  | RewardAccount.RewardAccount
+  | BaseAddress.BaseAddress
+  | EnterpriseAddress.EnterpriseAddress
+  | PointerAddress.PointerAddress
+  | ByronAddress.ByronAddress
+```
+
+Added in v2.0.0
+
+## fromBytes
+
+Parse an Address from bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (
+  input: any
+) =>
+  | RewardAccount.RewardAccount
+  | BaseAddress.BaseAddress
+  | EnterpriseAddress.EnterpriseAddress
+  | PointerAddress.PointerAddress
+  | ByronAddress.ByronAddress
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse an Address from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (
+  input: string
+) =>
+  | RewardAccount.RewardAccount
+  | BaseAddress.BaseAddress
+  | EnterpriseAddress.EnterpriseAddress
+  | PointerAddress.PointerAddress
+  | ByronAddress.ByronAddress
+```
+
+Added in v2.0.0
+
 # schema
 
 ## FromBech32
@@ -266,7 +236,7 @@ Schema for encoding/decoding addresses as Bech32 strings.
 
 ```ts
 export declare const FromBech32: Schema.transformOrFail<
-  Schema.SchemaClass<string & Brand<"Bech32">, string & Brand<"Bech32">, never>,
+  typeof Schema.String,
   Schema.Union<
     [
       typeof BaseAddress.BaseAddress,
@@ -314,7 +284,7 @@ Schema for encoding/decoding addresses as hex strings.
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transformOrFail<
     typeof Schema.Uint8ArrayFromSelf,
     Schema.Union<
@@ -328,25 +298,6 @@ export declare const FromHex: Schema.transform<
     >,
     never
   >
->
-```
-
-Added in v2.0.0
-
-# testing
-
-## generator
-
-FastCheck generator for addresses.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<
-  | RewardAccount.RewardAccount
-  | BaseAddress.BaseAddress
-  | EnterpriseAddress.EnterpriseAddress
-  | PointerAddress.PointerAddress
 >
 ```
 

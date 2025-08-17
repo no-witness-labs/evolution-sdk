@@ -1,6 +1,6 @@
 ---
 title: AuxiliaryDataHash.ts
-nav_order: 6
+nav_order: 7
 parent: Modules
 ---
 
@@ -17,58 +17,86 @@ Added in v2.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [make](#make)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [AuxiliaryDataHashError (class)](#auxiliarydatahasherror-class)
-- [generators](#generators)
-  - [generator](#generator)
-- [schemas](#schemas)
-  - [AuxiliaryDataHash](#auxiliarydatahash)
+- [model](#model)
+  - [AuxiliaryDataHash (class)](#auxiliarydatahash-class)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [predicates](#predicates)
+  - [isAuxiliaryDataHash](#isauxiliarydatahash)
 - [utils](#utils)
-  - [AuxiliaryDataHash (type alias)](#auxiliarydatahash-type-alias)
   - [BytesSchema](#bytesschema)
+  - [Either (namespace)](#either-namespace)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
   - [HexSchema](#hexschema)
 
 ---
 
-# encoding/decoding
+# arbitrary
 
-## Codec
+## arbitrary
 
-Codec utilities for AuxiliaryDataHash encoding and decoding operations.
+FastCheck arbitrary for generating random AuxiliaryDataHash instances.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: {
-    bytes: (input: string & Brand<"AuxiliaryDataHash">) => any
-    hex: (input: string & Brand<"AuxiliaryDataHash">) => string
-  }
-  Decode: {
-    bytes: (input: any) => string & Brand<"AuxiliaryDataHash">
-    hex: (input: string) => string & Brand<"AuxiliaryDataHash">
-  }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"AuxiliaryDataHash">) => Effect<any, InstanceType<typeof AuxiliaryDataHashError>>
-    hex: (input: string & Brand<"AuxiliaryDataHash">) => Effect<string, InstanceType<typeof AuxiliaryDataHashError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"AuxiliaryDataHash">, InstanceType<typeof AuxiliaryDataHashError>>
-    hex: (input: string) => Effect<string & Brand<"AuxiliaryDataHash">, InstanceType<typeof AuxiliaryDataHashError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"AuxiliaryDataHash">) => Either<any, InstanceType<typeof AuxiliaryDataHashError>>
-    hex: (input: string & Brand<"AuxiliaryDataHash">) => Either<string, InstanceType<typeof AuxiliaryDataHashError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"AuxiliaryDataHash">, InstanceType<typeof AuxiliaryDataHashError>>
-    hex: (input: string) => Either<string & Brand<"AuxiliaryDataHash">, InstanceType<typeof AuxiliaryDataHashError>>
-  }
-}
+export declare const arbitrary: FastCheck.Arbitrary<AuxiliaryDataHash>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for AuxiliaryDataHash that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const make: (
+  props: { readonly bytes: any },
+  options?: Schema.MakeOptions | undefined
+) => AuxiliaryDataHash
+```
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Encode AuxiliaryDataHash to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: AuxiliaryDataHash) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Encode AuxiliaryDataHash to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: AuxiliaryDataHash) => string
 ```
 
 Added in v2.0.0
@@ -101,23 +129,9 @@ export declare class AuxiliaryDataHashError
 
 Added in v2.0.0
 
-# generators
+# model
 
-## generator
-
-Generate a random AuxiliaryDataHash.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"AuxiliaryDataHash">>
-```
-
-Added in v2.0.0
-
-# schemas
-
-## AuxiliaryDataHash
+## AuxiliaryDataHash (class)
 
 Schema for AuxiliaryDataHash representing auxiliary data hashes.
 auxiliary_data_hash = Bytes32
@@ -125,23 +139,55 @@ auxiliary_data_hash = Bytes32
 **Signature**
 
 ```ts
-export declare const AuxiliaryDataHash: Schema.brand<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  "AuxiliaryDataHash"
->
+export declare class AuxiliaryDataHash
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromBytes
+
+Parse AuxiliaryDataHash from bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => AuxiliaryDataHash
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse AuxiliaryDataHash from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => AuxiliaryDataHash
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isAuxiliaryDataHash
+
+Check if the given value is a valid AuxiliaryDataHash
+
+**Signature**
+
+```ts
+export declare const isAuxiliaryDataHash: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is AuxiliaryDataHash
 ```
 
 Added in v2.0.0
 
 # utils
-
-## AuxiliaryDataHash (type alias)
-
-**Signature**
-
-```ts
-export type AuxiliaryDataHash = typeof AuxiliaryDataHash.Type
-```
 
 ## BytesSchema
 
@@ -149,11 +195,32 @@ export type AuxiliaryDataHash = typeof AuxiliaryDataHash.Type
 
 ```ts
 export declare const BytesSchema: Schema.transform<
-  Schema.transform<
-    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AuxiliaryDataHash">
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  typeof AuxiliaryDataHash
+>
+```
+
+## Either (namespace)
+
+## FromBytes
+
+**Signature**
+
+```ts
+export declare const FromBytes: Schema.transform<
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  typeof AuxiliaryDataHash
+>
+```
+
+## FromHex
+
+**Signature**
+
+```ts
+export declare const FromHex: Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof AuxiliaryDataHash>
 >
 ```
 
@@ -163,7 +230,7 @@ export declare const BytesSchema: Schema.transform<
 
 ```ts
 export declare const HexSchema: Schema.transform<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "AuxiliaryDataHash">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof AuxiliaryDataHash>
 >
 ```

@@ -1,6 +1,6 @@
 ---
 title: VrfCert.ts
-nav_order: 98
+nav_order: 116
 parent: Modules
 ---
 
@@ -10,32 +10,58 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [Effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [FastCheck](#fastcheck)
+  - [arbitrary](#arbitrary)
 - [constructors](#constructors)
   - [make](#make)
+- [decoding](#decoding)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [VrfCertError (class)](#vrfcerterror-class)
 - [model](#model)
-  - [VRFOutput (type alias)](#vrfoutput-type-alias)
-  - [VRFProof (type alias)](#vrfproof-type-alias)
   - [VrfCert (class)](#vrfcert-class)
 - [predicates](#predicates)
   - [isVrfCert](#isvrfcert)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
-  - [VRFOutput](#vrfoutput)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
+  - [VRFOutput (class)](#vrfoutput-class)
   - [VRFOutputFromBytes](#vrfoutputfrombytes)
   - [VRFOutputHexSchema](#vrfoutputhexschema)
-  - [VRFProof](#vrfproof)
+  - [VRFProof (class)](#vrfproof-class)
   - [VRFProofFromBytes](#vrfprooffrombytes)
   - [VRFProofHexSchema](#vrfproofhexschema)
   - [VrfCertCDDLSchema](#vrfcertcddlschema)
-- [utils](#utils)
-  - [Codec](#codec)
 
 ---
+
+# Effect
+
+## Either (namespace)
+
+Effect namespace containing schema decode and encode operations.
+
+Added in v2.0.0
+
+# FastCheck
+
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<VrfCert>
+```
+
+Added in v2.0.0
 
 # constructors
 
@@ -47,6 +73,58 @@ Create a VrfCert from output and proof.
 
 ```ts
 export declare const make: (output: VRFOutput, proof: VRFProof) => VrfCert
+```
+
+Added in v2.0.0
+
+# decoding
+
+## fromCBORBytes
+
+Parse VrfCert from CBOR bytes (unsafe).
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (value: Uint8Array, options?: CBOR.CodecOptions) => VrfCert
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse VrfCert from CBOR hex (unsafe).
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (value: string, options?: CBOR.CodecOptions) => VrfCert
+```
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert VrfCert to CBOR bytes (unsafe).
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: VrfCert, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert VrfCert to CBOR hex (unsafe).
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: VrfCert, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
@@ -81,30 +159,6 @@ Added in v2.0.0
 
 # model
 
-## VRFOutput (type alias)
-
-Type alias for VRF output.
-
-**Signature**
-
-```ts
-export type VRFOutput = typeof VRFOutput.Type
-```
-
-Added in v2.0.0
-
-## VRFProof (type alias)
-
-Type alias for VRF proof.
-
-**Signature**
-
-```ts
-export type VRFProof = typeof VRFProof.Type
-```
-
-Added in v2.0.0
-
 ## VrfCert (class)
 
 Schema for VrfCert representing a VRF certificate.
@@ -134,14 +188,14 @@ Added in v2.0.0
 
 # schemas
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for VrfCert.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -159,17 +213,17 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for VrfCert.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -187,7 +241,7 @@ export declare const FromHex: (
 
 Added in v2.0.0
 
-## VRFOutput
+## VRFOutput (class)
 
 Schema for VRF output (32 bytes).
 vrf_output = bytes .size 32
@@ -195,10 +249,7 @@ vrf_output = bytes .size 32
 **Signature**
 
 ```ts
-export declare const VRFOutput: Schema.brand<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  "VrfOutput"
->
+export declare class VRFOutput
 ```
 
 Added in v2.0.0
@@ -212,11 +263,8 @@ vrf_output = bytes .size 32
 
 ```ts
 export declare const VRFOutputFromBytes: Schema.transform<
-  Schema.transform<
-    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VrfOutput">
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  typeof VRFOutput
 >
 ```
 
@@ -231,14 +279,14 @@ vrf_output = bytes .size 32
 
 ```ts
 export declare const VRFOutputHexSchema: Schema.transform<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VrfOutput">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof VRFOutput>
 >
 ```
 
 Added in v2.0.0
 
-## VRFProof
+## VRFProof (class)
 
 Schema for VRF proof (80 bytes).
 vrf_proof = bytes .size 80
@@ -246,7 +294,7 @@ vrf_proof = bytes .size 80
 **Signature**
 
 ```ts
-export declare const VRFProof: Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "VrfProof">
+export declare class VRFProof
 ```
 
 Added in v2.0.0
@@ -260,11 +308,8 @@ vrf_proof = bytes .size 80
 
 ```ts
 export declare const VRFProofFromBytes: Schema.transform<
-  Schema.transform<
-    Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
-    Schema.filter<Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "VrfProof">
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  typeof VRFProof
 >
 ```
 
@@ -279,8 +324,8 @@ vrf_proof = bytes .size 80
 
 ```ts
 export declare const VRFProofHexSchema: Schema.transform<
-  Schema.filter<Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.filter<Schema.refine<string, typeof Schema.String>>, "VrfProof">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof VRFProof>
 >
 ```
 
@@ -304,32 +349,3 @@ export declare const VrfCertCDDLSchema: Schema.transformOrFail<
 ```
 
 Added in v2.0.0
-
-# utils
-
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: VrfCert) => any; cborHex: (input: VrfCert) => string }
-  Decode: { cborBytes: (input: any) => VrfCert; cborHex: (input: string) => VrfCert }
-  EncodeEffect: {
-    cborBytes: (input: VrfCert) => Effect.Effect<any, InstanceType<typeof VrfCertError>>
-    cborHex: (input: VrfCert) => Effect.Effect<string, InstanceType<typeof VrfCertError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<VrfCert, InstanceType<typeof VrfCertError>>
-    cborHex: (input: string) => Effect.Effect<VrfCert, InstanceType<typeof VrfCertError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: VrfCert) => Either<any, InstanceType<typeof VrfCertError>>
-    cborHex: (input: VrfCert) => Either<string, InstanceType<typeof VrfCertError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<VrfCert, InstanceType<typeof VrfCertError>>
-    cborHex: (input: string) => Either<VrfCert, InstanceType<typeof VrfCertError>>
-  }
-}
-```

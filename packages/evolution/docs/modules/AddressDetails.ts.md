@@ -10,21 +10,150 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
+  - [fromAddress](#fromaddress)
+  - [make](#make)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBech32](#tobech32)
+  - [toHex](#tohex)
+- [equality](#equality)
+  - [equals](#equals)
+- [parsing](#parsing)
+  - [fromBech32](#frombech32)
+  - [fromHex](#fromhex)
 - [schemas](#schemas)
   - [AddressDetails (class)](#addressdetails-class)
 - [utils](#utils)
   - [AddressDetailsError (class)](#addressdetailserror-class)
-  - [Codec](#codec)
-  - [FromBech32](#frombech32)
-  - [FromHex](#fromhex)
+  - [FromBech32](#frombech32-1)
+  - [FromHex](#fromhex-1)
 
 ---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for AddressDetails instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: Arbitrary<AddressDetails>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## fromAddress
+
+Create AddressDetails from an Address.
+
+**Signature**
+
+```ts
+export declare const fromAddress: (address: Address.Address) => AddressDetails
+```
+
+Added in v2.0.0
+
+## make
+
+Create AddressDetails from an Address instance.
+
+**Signature**
+
+```ts
+export declare const make: <C>(this: C, ...args: ConstructorParameters<C>) => InstanceType<C>
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBech32
+
+Convert AddressDetails to Bech32 string.
+
+**Signature**
+
+```ts
+export declare const toBech32: (input: AddressDetails) => string
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert AddressDetails to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: AddressDetails) => string
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two AddressDetails instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (self: AddressDetails, that: AddressDetails) => boolean
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromBech32
+
+Parse AddressDetails from Bech32 string.
+
+**Signature**
+
+```ts
+export declare const fromBech32: (input: string) => AddressDetails
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse AddressDetails from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => AddressDetails
+```
+
+Added in v2.0.0
 
 # schemas
 
 ## AddressDetails (class)
 
-Pointer address with payment credential and pointer to stake registration
+Schema for AddressDetails representing extended address information.
+Contains the address structure and its serialized representations
 
 **Signature**
 
@@ -44,43 +173,12 @@ Added in v2.0.0
 export declare class AddressDetailsError
 ```
 
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: {
-  Encode: { bech32: (input: AddressDetails) => string & Brand<"Bech32">; hex: (input: AddressDetails) => string }
-  Decode: { bech32: (input: string & Brand<"Bech32">) => AddressDetails; hex: (input: string) => AddressDetails }
-  EncodeEffect: {
-    bech32: (input: AddressDetails) => Effect.Effect<string & Brand<"Bech32">, InstanceType<typeof AddressDetailsError>>
-    hex: (input: AddressDetails) => Effect.Effect<string, InstanceType<typeof AddressDetailsError>>
-  }
-  DecodeEffect: {
-    bech32: (input: string & Brand<"Bech32">) => Effect.Effect<AddressDetails, InstanceType<typeof AddressDetailsError>>
-    hex: (input: string) => Effect.Effect<AddressDetails, InstanceType<typeof AddressDetailsError>>
-  }
-  EncodeEither: {
-    bech32: (input: AddressDetails) => Either<string & Brand<"Bech32">, InstanceType<typeof AddressDetailsError>>
-    hex: (input: AddressDetails) => Either<string, InstanceType<typeof AddressDetailsError>>
-  }
-  DecodeEither: {
-    bech32: (input: string & Brand<"Bech32">) => Either<AddressDetails, InstanceType<typeof AddressDetailsError>>
-    hex: (input: string) => Either<AddressDetails, InstanceType<typeof AddressDetailsError>>
-  }
-}
-```
-
 ## FromBech32
 
 **Signature**
 
 ```ts
-export declare const FromBech32: Schema.transformOrFail<
-  Schema.SchemaClass<string & Brand<"Bech32">, string & Brand<"Bech32">, never>,
-  typeof AddressDetails,
-  never
->
+export declare const FromBech32: Schema.transformOrFail<typeof Schema.String, typeof AddressDetails, never>
 ```
 
 ## FromHex

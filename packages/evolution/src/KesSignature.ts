@@ -1,6 +1,8 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
+import * as Bytes from "./Bytes.js"
 import * as Bytes448 from "./Bytes448.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for KesSignature related operations.
@@ -14,43 +16,49 @@ export class KesSignatureError extends Data.TaggedError("KesSignatureError")<{
 }> {}
 
 /**
- * Schema for KesSignature representing a KES signature.
+ * KesSignature model stored as 448 raw bytes.
  * kes_signature = bytes .size 448
- * Follows the Conway-era CDDL specification.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const KesSignature = Bytes448.HexSchema.pipe(Schema.brand("KesSignature")).annotations({
-  identifier: "KesSignature"
-})
+export class KesSignature extends Schema.TaggedClass<KesSignature>()("KesSignature", {
+  bytes: Bytes448.BytesSchema
+}) {
+  toJSON(): string {
+    return toHex(this)
+  }
+  toString(): string {
+    return toHex(this)
+  }
+}
 
-export type KesSignature = typeof KesSignature.Type
-
-export const FromBytes = Schema.compose(
-  Bytes448.FromBytes, // Uint8Array -> hex string
-  KesSignature // hex string -> KesSignature
-).annotations({
-  identifier: "KesSignature.Bytes"
+// Transform between raw bytes (Uint8Array length 448) and KesSignature
+export const FromBytes = Schema.transform(Bytes448.BytesSchema, KesSignature, {
+  strict: true,
+  decode: (bytes) => new KesSignature({ bytes }, { disableValidation: true }),
+  encode: (value) => value.bytes
+}).annotations({
+  identifier: "KesSignature.FromBytes"
 })
 
 export const FromHex = Schema.compose(
-  Bytes448.HexSchema, // string -> hex string
-  KesSignature // hex string -> KesSignature
+  Bytes448.FromHex, // string -> Uint8Array(448)
+  FromBytes // bytes -> KesSignature
 ).annotations({
-  identifier: "KesSignature.Hex"
+  identifier: "KesSignature.FromHex"
 })
 
 /**
- * Check if two KesSignature instances are equal.
+ * Equality on bytes
  *
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: KesSignature, b: KesSignature): boolean => a === b
+export const equals = (a: KesSignature, b: KesSignature): boolean => Bytes.equals(a.bytes, b.bytes)
 
 /**
- * Check if the given value is a valid KesSignature
+ * Predicate for KesSignature instances
  *
  * @since 2.0.0
  * @category predicates
@@ -63,10 +71,9 @@ export const isKesSignature = Schema.is(KesSignature)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.hexaString({
-  minLength: Bytes448.HEX_LENGTH,
-  maxLength: Bytes448.HEX_LENGTH
-}).map((hex) => hex as KesSignature)
+export const arbitrary = FastCheck.uint8Array({ minLength: 448, maxLength: 448 }).map(
+  (bytes) => new KesSignature({ bytes }, { disableValidation: true })
+)
 
 // ============================================================================
 // Root Functions
@@ -78,7 +85,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): KesSignature => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, KesSignatureError, "KesSignature.fromBytes")
 
 /**
  * Parse KesSignature from hex string.
@@ -86,7 +93,7 @@ export const fromBytes = (bytes: Uint8Array): KesSignature => Eff.runSync(Effect
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): KesSignature => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, KesSignatureError, "KesSignature.fromHex")
 
 /**
  * Encode KesSignature to bytes.
@@ -94,7 +101,7 @@ export const fromHex = (hex: string): KesSignature => Eff.runSync(Effect.fromHex
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (kesSignature: KesSignature): Uint8Array => Eff.runSync(Effect.toBytes(kesSignature))
+export const toBytes = Function.makeEncodeSync(FromBytes, KesSignatureError, "KesSignature.toBytes")
 
 /**
  * Encode KesSignature to hex string.
@@ -102,84 +109,48 @@ export const toBytes = (kesSignature: KesSignature): Uint8Array => Eff.runSync(E
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (kesSignature: KesSignature): string => Eff.runSync(Effect.toHex(kesSignature))
+export const toHex = Function.makeEncodeSync(FromHex, KesSignatureError, "KesSignature.toHex")
 
 // ============================================================================
-// Effect Namespace
+// Either Namespace
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Parse KesSignature from bytes with Effect error handling.
+   * Parse KesSignature from bytes with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<KesSignature, KesSignatureError> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new KesSignatureError({
-            message: "Failed to parse KesSignature from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, KesSignatureError)
 
   /**
-   * Parse KesSignature from hex string with Effect error handling.
+   * Parse KesSignature from hex string with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<KesSignature, KesSignatureError> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new KesSignatureError({
-            message: "Failed to parse KesSignature from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, KesSignatureError)
 
   /**
-   * Encode KesSignature to bytes with Effect error handling.
+   * Encode KesSignature to bytes with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (kesSignature: KesSignature): Eff.Effect<Uint8Array, KesSignatureError> =>
-    Schema.encode(FromBytes)(kesSignature).pipe(
-      Eff.mapError(
-        (cause) =>
-          new KesSignatureError({
-            message: "Failed to encode KesSignature to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, KesSignatureError)
 
   /**
-   * Encode KesSignature to hex string with Effect error handling.
+   * Encode KesSignature to hex string with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (kesSignature: KesSignature): Eff.Effect<string, KesSignatureError> =>
-    Schema.encode(FromHex)(kesSignature).pipe(
-      Eff.mapError(
-        (cause) =>
-          new KesSignatureError({
-            message: "Failed to encode KesSignature to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, KesSignatureError)
 }

@@ -2,6 +2,7 @@ import { Data, Effect as Eff, FastCheck, Option, ParseResult, Schema } from "eff
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as IPv4 from "./IPv4.js"
 import * as IPv6 from "./IPv6.js"
 import * as Port from "./Port.js"
@@ -215,59 +216,47 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
   })
 
 /**
- * Effect namespace for SingleHostAddr operations that can fail
+ * Either namespace for SingleHostAddr operations that can fail
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Convert CBOR bytes to SingleHostAddr using Effect
+   * Convert CBOR bytes to SingleHostAddr using Either
    *
    * @since 2.0.0
    * @category conversion
    */
   export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.decode(FromCBORBytes(options))(bytes),
-      (cause) => new SingleHostAddrError({ message: "Failed to decode from CBOR bytes", cause })
-    )
+    Function.makeDecodeEither(FromCBORBytes(options), SingleHostAddrError)(bytes)
 
   /**
-   * Convert CBOR hex string to SingleHostAddr using Effect
+   * Convert CBOR hex string to SingleHostAddr using Either
    *
    * @since 2.0.0
    * @category conversion
    */
   export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.decode(FromCBORHex(options))(hex),
-      (cause) => new SingleHostAddrError({ message: "Failed to decode from CBOR hex", cause })
-    )
+    Function.makeDecodeEither(FromCBORHex(options), SingleHostAddrError)(hex)
 
   /**
-   * Convert SingleHostAddr to CBOR bytes using Effect
+   * Convert SingleHostAddr to CBOR bytes using Either
    *
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORBytes = (hostAddr: SingleHostAddr, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.encode(FromCBORBytes(options))(hostAddr),
-      (cause) => new SingleHostAddrError({ message: "Failed to encode to CBOR bytes", cause })
-    )
+  export const toCBORBytes = (value: SingleHostAddr, options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORBytes(options), SingleHostAddrError)(value)
 
   /**
-   * Convert SingleHostAddr to CBOR hex string using Effect
+   * Convert SingleHostAddr to CBOR hex string using Either
    *
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORHex = (hostAddr: SingleHostAddr, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.encode(FromCBORHex(options))(hostAddr),
-      (cause) => new SingleHostAddrError({ message: "Failed to encode to CBOR hex", cause })
-    )
+  export const toCBORHex = (value: SingleHostAddr, options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORHex(options), SingleHostAddrError)(value)
 }
 
 /**
@@ -277,7 +266,7 @@ export namespace Effect {
  * @category conversion
  */
 export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): SingleHostAddr =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+  Function.makeDecodeSync(FromCBORBytes(options), SingleHostAddrError, "SingleHostAddr.fromCBORBytes")(bytes)
 
 /**
  * Convert CBOR hex string to SingleHostAddr (unsafe)
@@ -286,7 +275,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): S
  * @category conversion
  */
 export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): SingleHostAddr =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+  Function.makeDecodeSync(FromCBORHex(options), SingleHostAddrError, "SingleHostAddr.fromCBORHex")(hex)
 
 /**
  * Convert SingleHostAddr to CBOR bytes (unsafe)
@@ -294,8 +283,8 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): SingleHos
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORBytes = (hostAddr: SingleHostAddr, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(hostAddr, options))
+export const toCBORBytes = (value: SingleHostAddr, options?: CBOR.CodecOptions): Uint8Array =>
+  Function.makeEncodeSync(FromCBORBytes(options), SingleHostAddrError, "SingleHostAddr.toCBORBytes")(value)
 
 /**
  * Convert SingleHostAddr to CBOR hex string (unsafe)
@@ -303,5 +292,5 @@ export const toCBORBytes = (hostAddr: SingleHostAddr, options?: CBOR.CodecOption
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORHex = (hostAddr: SingleHostAddr, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(hostAddr, options))
+export const toCBORHex = (value: SingleHostAddr, options?: CBOR.CodecOptions): string =>
+  Function.makeEncodeSync(FromCBORHex(options), SingleHostAddrError, "SingleHostAddr.toCBORHex")(value)

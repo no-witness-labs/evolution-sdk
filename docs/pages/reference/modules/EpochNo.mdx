@@ -1,6 +1,6 @@
 ---
 title: EpochNo.ts
-nav_order: 42
+nav_order: 48
 parent: Modules
 ---
 
@@ -38,7 +38,7 @@ Smart constructor for creating EpochNo values.
 **Signature**
 
 ```ts
-export declare const make: (a: number, options?: Schema.MakeOptions) => number & Brand<"EpochNo">
+export declare const make: (a: bigint, options?: Schema.MakeOptions) => bigint & Brand<"EpochNo">
 ```
 
 Added in v2.0.0
@@ -80,7 +80,7 @@ Generate a random EpochNo.
 **Signature**
 
 ```ts
-export declare const generator: Arbitrary<number>
+export declare const generator: Arbitrary<bigint>
 ```
 
 Added in v2.0.0
@@ -122,7 +122,7 @@ Check if a value is a valid EpochNo.
 **Signature**
 
 ```ts
-export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is number & Brand<"EpochNo">
+export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is bigint & Brand<"EpochNo">
 ```
 
 Added in v2.0.0
@@ -136,7 +136,7 @@ Schema for validating epoch numbers (0-255).
 **Signature**
 
 ```ts
-export declare const EpochNoSchema: Schema.brand<Schema.refine<number, typeof Schema.Number>, "EpochNo">
+export declare const EpochNoSchema: Schema.brand<Schema.refine<bigint, typeof Schema.BigIntFromSelf>, "EpochNo">
 ```
 
 Added in v2.0.0

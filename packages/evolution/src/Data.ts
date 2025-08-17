@@ -385,7 +385,7 @@ export const arbitraryPlutusBytes = (): FastCheck.Arbitrary<ByteArray> =>
   FastCheck.uint8Array({
     minLength: 0, // Allow empty arrays (valid for PlutusBytes)
     maxLength: 32 // Max 32 bytes
-  }).map((bytes) => bytearray(Schema.decodeSync(Bytes.FromBytesLenient)(bytes)))
+  }).map((bytes) => bytearray(Bytes.toHexLenient(bytes)))
 
 /**
  * Creates an arbitrary that generates PlutusBigInt values
@@ -528,7 +528,7 @@ export const plutusDataToCBORValue = (data: Data): CBOR.CBOR => {
       return value
     },
     Bytes: (bytes): CBOR.CBOR => {
-      return Schema.encodeSync(Bytes.FromBytesLenient)(bytes)
+      return Bytes.fromHexLenient(bytes)
     },
     Constr: (constr): CBOR.CBOR => {
       // PlutusData Constr -> CBOR tags based on index
@@ -576,7 +576,7 @@ export const cborValueToPlutusData = (cborValue: CBOR.CBOR): Data => {
     if (cborValue.length === 0) {
       return ""
     }
-    return Schema.decodeSync(Bytes.FromBytes)(cborValue)
+    return Bytes.toHexLenient(cborValue) // Convert Uint8Array to hex string
   }
 
   // Handle tagged values

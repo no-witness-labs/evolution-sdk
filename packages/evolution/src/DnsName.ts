@@ -1,5 +1,6 @@
-import { Data, Effect as Eff, Schema } from "effect"
+import { Data, Schema } from "effect"
 
+import * as Function from "./Function.js"
 import * as Text128 from "./Text128.js"
 
 /**
@@ -80,7 +81,7 @@ export const arbitrary = Text128.arbitrary.map((text) => make(text))
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): DnsName => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, DnsNameError, "DnsName.fromBytes")
 
 /**
  * Parse DnsName from hex string.
@@ -88,7 +89,7 @@ export const fromBytes = (bytes: Uint8Array): DnsName => Eff.runSync(Effect.from
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): DnsName => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, DnsNameError, "DnsName.fromHex")
 
 /**
  * Encode DnsName to bytes.
@@ -96,7 +97,7 @@ export const fromHex = (hex: string): DnsName => Eff.runSync(Effect.fromHex(hex)
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (dnsName: DnsName): Uint8Array => Eff.runSync(Effect.toBytes(dnsName))
+export const toBytes = Function.makeEncodeSync(FromBytes, DnsNameError, "DnsName.toBytes")
 
 /**
  * Encode DnsName to hex string.
@@ -104,84 +105,48 @@ export const toBytes = (dnsName: DnsName): Uint8Array => Eff.runSync(Effect.toBy
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (dnsName: DnsName): string => Eff.runSync(Effect.toHex(dnsName))
+export const toHex = Function.makeEncodeSync(FromHex, DnsNameError, "DnsName.toHex")
 
 // ============================================================================
-// Effect Namespace
+// Either Namespace
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Parse DnsName from bytes with Effect error handling.
+   * Parse DnsName from bytes with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<DnsName, DnsNameError> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new DnsNameError({
-            message: "Failed to parse DnsName from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, DnsNameError)
 
   /**
-   * Parse DnsName from hex string with Effect error handling.
+   * Parse DnsName from hex string with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<DnsName, DnsNameError> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new DnsNameError({
-            message: "Failed to parse DnsName from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, DnsNameError)
 
   /**
-   * Encode DnsName to bytes with Effect error handling.
+   * Encode DnsName to bytes with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (dnsName: DnsName): Eff.Effect<Uint8Array, DnsNameError> =>
-    Schema.encode(FromBytes)(dnsName).pipe(
-      Eff.mapError(
-        (cause) =>
-          new DnsNameError({
-            message: "Failed to encode DnsName to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, DnsNameError)
 
   /**
-   * Encode DnsName to hex string with Effect error handling.
+   * Encode DnsName to hex string with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (dnsName: DnsName): Eff.Effect<string, DnsNameError> =>
-    Schema.encode(FromHex)(dnsName).pipe(
-      Eff.mapError(
-        (cause) =>
-          new DnsNameError({
-            message: "Failed to encode DnsName to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, DnsNameError)
 }

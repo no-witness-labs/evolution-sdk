@@ -36,7 +36,9 @@ export const MetadataLabel = Numeric.Uint8Schema.annotations({
 
 /**
  * Schema for transaction metadata (map from labels to metadata).
+ * ```
  * Represents: metadata = {* transaction_metadatum_label => transaction_metadatum}
+ * ```
  *
  * @since 2.0.0
  * @category schemas

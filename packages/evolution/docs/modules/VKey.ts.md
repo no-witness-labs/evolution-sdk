@@ -1,6 +1,6 @@
 ---
 title: VKey.ts
-nav_order: 96
+nav_order: 114
 parent: Modules
 ---
 
@@ -10,52 +10,107 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [constructors](#constructors)
+  - [make](#make)
+- [cryptography](#cryptography)
+  - [fromPrivateKey](#fromprivatekey)
+  - [verify](#verify)
+- [effect](#effect)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [VKeyError (class)](#vkeyerror-class)
-- [generators](#generators)
-  - [generator](#generator)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+- [predicates](#predicates)
+  - [isVKey](#isvkey)
 - [schemas](#schemas)
-  - [VKey](#vkey)
+  - [VKey (class)](#vkey-class)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 - [utils](#utils)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
-  - [VKey (type alias)](#vkey-type-alias)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
 
-# encoding/decoding
+# constructors
 
-## Codec
+## make
 
-Codec utilities for VKey encoding and decoding operations.
+Smart constructor for VKey that validates and applies branding.
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string & Brand<"VKey">) => any; hex: (input: string & Brand<"VKey">) => string }
-  Decode: { bytes: (input: any) => string & Brand<"VKey">; hex: (input: string) => string & Brand<"VKey"> }
-  EncodeEffect: {
-    bytes: (input: string & Brand<"VKey">) => Effect<any, InstanceType<typeof VKeyError>>
-    hex: (input: string & Brand<"VKey">) => Effect<string, InstanceType<typeof VKeyError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string & Brand<"VKey">, InstanceType<typeof VKeyError>>
-    hex: (input: string) => Effect<string & Brand<"VKey">, InstanceType<typeof VKeyError>>
-  }
-  EncodeEither: {
-    bytes: (input: string & Brand<"VKey">) => Either<any, InstanceType<typeof VKeyError>>
-    hex: (input: string & Brand<"VKey">) => Either<string, InstanceType<typeof VKeyError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string & Brand<"VKey">, InstanceType<typeof VKeyError>>
-    hex: (input: string) => Either<string & Brand<"VKey">, InstanceType<typeof VKeyError>>
-  }
-}
+export declare const make: (props: { readonly bytes: any }, options?: Schema.MakeOptions | undefined) => VKey
+```
+
+Added in v2.0.0
+
+# cryptography
+
+## fromPrivateKey
+
+Create a VKey from a PrivateKey (sync version that throws VKeyError).
+For extended keys (64 bytes), uses CML-compatible Ed25519-BIP32 algorithm.
+For normal keys (32 bytes), uses standard Ed25519.
+
+**Signature**
+
+```ts
+export declare const fromPrivateKey: (privateKey: PrivateKey.PrivateKey) => VKey
+```
+
+Added in v2.0.0
+
+## verify
+
+Verify a signature against a message using this verification key.
+
+**Signature**
+
+```ts
+export declare const verify: (vkey: VKey, message: Uint8Array, signature: Uint8Array) => boolean
+```
+
+Added in v2.0.0
+
+# effect
+
+## Either (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Convert a VKey to raw bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: VKey) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert a VKey to a hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: VKey) => string
 ```
 
 Added in v2.0.0
@@ -88,23 +143,51 @@ export declare class VKeyError
 
 Added in v2.0.0
 
-# generators
+# parsing
 
-## generator
+## fromBytes
 
-Generate a random VKey.
+Parse a VKey from raw bytes.
+Expects exactly 32 bytes.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<string & Brand<"VKey">>
+export declare const fromBytes: (input: any) => VKey
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse a VKey from a hex string.
+Expects exactly 64 hex characters (32 bytes).
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => VKey
+```
+
+Added in v2.0.0
+
+# predicates
+
+## isVKey
+
+Check if the given value is a valid VKey
+
+**Signature**
+
+```ts
+export declare const isVKey: (u: unknown, overrideOptions?: ParseOptions | number) => u is VKey
 ```
 
 Added in v2.0.0
 
 # schemas
 
-## VKey
+## VKey (class)
 
 Schema for VKey representing a verification key.
 vkey = bytes .size 32
@@ -113,7 +196,22 @@ Follows the Conway-era CDDL specification.
 **Signature**
 
 ```ts
-export declare const VKey: Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VKey">
+export declare class VKey
+```
+
+Added in v2.0.0
+
+# testing
+
+## arbitrary
+
+FastCheck arbitrary for generating random VKey instances.
+Used for property-based testing to generate valid test data.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<VKey>
 ```
 
 Added in v2.0.0
@@ -125,13 +223,7 @@ Added in v2.0.0
 **Signature**
 
 ```ts
-export declare const FromBytes: Schema.transform<
-  Schema.transform<
-    Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-  >,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VKey">
->
+export declare const FromBytes: Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof VKey>
 ```
 
 ## FromHex
@@ -140,15 +232,7 @@ export declare const FromBytes: Schema.transform<
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>,
-  Schema.brand<Schema.refine<string, Schema.refine<string, typeof Schema.String>>, "VKey">
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof VKey>
 >
-```
-
-## VKey (type alias)
-
-**Signature**
-
-```ts
-export type VKey = typeof VKey.Type
 ```

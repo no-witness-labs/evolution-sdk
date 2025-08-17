@@ -1,6 +1,6 @@
 ---
 title: Text.ts
-nav_order: 83
+nav_order: 99
 parent: Modules
 ---
 
@@ -10,46 +10,80 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
+- [conversion](#conversion)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
 - [errors](#errors)
   - [TextError (class)](#texterror-class)
 - [schemas](#schemas)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
+- [utils](#utils)
+  - [Text](#text)
 
 ---
 
-# encoding/decoding
+# conversion
 
-## Codec
+## fromBytes
 
-Codec utilities for Text encoding and decoding operations.
+Convert bytes to text (unsafe)
 
 **Signature**
 
 ```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string) => any; hex: (input: string) => string }
-  Decode: { bytes: (input: any) => string; hex: (input: string) => string }
-  EncodeEffect: {
-    bytes: (input: string) => Effect<any, InstanceType<typeof TextError>>
-    hex: (input: string) => Effect<string, InstanceType<typeof TextError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string, InstanceType<typeof TextError>>
-    hex: (input: string) => Effect<string, InstanceType<typeof TextError>>
-  }
-  EncodeEither: {
-    bytes: (input: string) => Either<any, InstanceType<typeof TextError>>
-    hex: (input: string) => Either<string, InstanceType<typeof TextError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string, InstanceType<typeof TextError>>
-    hex: (input: string) => Either<string, InstanceType<typeof TextError>>
-  }
-}
+export declare const fromBytes: (bytes: Uint8Array) => string
 ```
+
+Added in v2.0.0
+
+## fromHex
+
+Convert hex string to text (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromHex: (hex: string) => string
+```
+
+Added in v2.0.0
+
+## toBytes
+
+Convert text to bytes (unsafe)
+
+**Signature**
+
+```ts
+export declare const toBytes: (text: string) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert text to hex string (unsafe)
+
+**Signature**
+
+```ts
+export declare const toHex: (text: string) => string
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either namespace for Text operations that can fail
 
 Added in v2.0.0
 
@@ -94,9 +128,33 @@ text <-> hex
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
 >
 ```
 
 Added in v2.0.0
+
+# testing
+
+## arbitrary
+
+FastCheck arbitrary for generating random text strings
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<string>
+```
+
+Added in v2.0.0
+
+# utils
+
+## Text
+
+**Signature**
+
+```ts
+export declare const Text: typeof Schema.String
+```

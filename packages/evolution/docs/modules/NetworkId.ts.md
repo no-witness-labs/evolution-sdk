@@ -1,6 +1,6 @@
 ---
 title: NetworkId.ts
-nav_order: 59
+nav_order: 68
 parent: Modules
 ---
 
@@ -10,17 +10,84 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
-- [utils](#utils)
-  - [NetworkId](#networkid)
-  - [NetworkId (type alias)](#networkid-type-alias)
-  - [generator](#generator)
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
+- [constructors](#constructors)
   - [make](#make)
+- [equality](#equality)
+  - [equals](#equals)
+- [errors](#errors)
+  - [NetworkIdError (class)](#networkiderror-class)
+- [schemas](#schemas)
+  - [NetworkId](#networkid)
+- [utils](#utils)
+  - [NetworkId (type alias)](#networkid-type-alias)
 
 ---
 
-# utils
+# arbitrary
+
+## arbitrary
+
+FastCheck generator for creating NetworkId instances.
+Generates values 0 (Testnet) or 1 (Mainnet).
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<number & Brand<"NetworkId">>
+```
+
+Added in v2.0.0
+
+# constructors
+
+## make
+
+Smart constructor for NetworkId that validates and applies branding.
+
+**Signature**
+
+```ts
+export declare const make: (a: number, options?: Schema.MakeOptions) => number & Brand<"NetworkId">
+```
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two NetworkId instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: NetworkId, b: NetworkId) => boolean
+```
+
+Added in v2.0.0
+
+# errors
+
+## NetworkIdError (class)
+
+Error class for NetworkId related operations.
+
+**Signature**
+
+```ts
+export declare class NetworkIdError
+```
+
+Added in v2.0.0
+
+# schemas
 
 ## NetworkId
+
+Schema for NetworkId representing a Cardano network identifier.
+0 = Testnet, 1 = Mainnet
 
 **Signature**
 
@@ -28,26 +95,14 @@ parent: Modules
 export declare const NetworkId: Schema.brand<Schema.refine<number, typeof Schema.NonNegative>, "NetworkId">
 ```
 
+Added in v2.0.0
+
+# utils
+
 ## NetworkId (type alias)
 
 **Signature**
 
 ```ts
 export type NetworkId = typeof NetworkId.Type
-```
-
-## generator
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<number & Brand<"NetworkId">>
-```
-
-## make
-
-**Signature**
-
-```ts
-export declare const make: (a: number, options?: Schema.MakeOptions) => number & Brand<"NetworkId">
 ```

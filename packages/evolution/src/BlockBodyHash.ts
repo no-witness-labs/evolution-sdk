@@ -1,6 +1,7 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for BlockBodyHash related operations.
@@ -19,26 +20,37 @@ export class BlockBodyHashError extends Data.TaggedError("BlockBodyHashError")<{
  * Follows the Conway-era CDDL specification.
  *
  * @since 2.0.0
+ * @category model
+ */
+export class BlockBodyHash extends Schema.TaggedClass<BlockBodyHash>()("BlockBodyHash", {
+  bytes: Bytes32.BytesSchema
+}) {}
+
+/**
+ * Schema for transforming between Uint8Array and BlockBodyHash.
+ *
+ * @since 2.0.0
  * @category schemas
  */
-export const BlockBodyHash = Bytes32.HexSchema.pipe(Schema.brand("BlockBodyHash")).annotations({
-  identifier: "BlockBodyHash"
+export const FromBytes = Schema.transform(Bytes32.BytesSchema, BlockBodyHash, {
+  strict: true,
+  decode: (bytes) => new BlockBodyHash({ bytes }, { disableValidation: true }),
+  encode: (bbh) => bbh.bytes
+}).annotations({
+  identifier: "BlockBodyHash.FromBytes"
 })
 
-export type BlockBodyHash = typeof BlockBodyHash.Type
-
-export const FromBytes = Schema.compose(
-  Bytes32.FromBytes, // Uint8Array -> hex string
-  BlockBodyHash // hex string -> BlockBodyHash
-).annotations({
-  identifier: "BlockBodyHash.Bytes"
-})
-
+/**
+ * Schema for transforming between hex string and BlockBodyHash.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
 export const FromHex = Schema.compose(
-  Bytes32.HexSchema, // string -> hex string
-  BlockBodyHash // hex string -> BlockBodyHash
+  Bytes32.FromHex, // string -> Bytes32
+  FromBytes // Bytes32 -> BlockBodyHash
 ).annotations({
-  identifier: "BlockBodyHash.Hex"
+  identifier: "BlockBodyHash.FromHex"
 })
 
 /**
@@ -47,7 +59,7 @@ export const FromHex = Schema.compose(
  * @since 2.0.0
  * @category constructors
  */
-export const make = BlockBodyHash.make
+export const make = (...args: ConstructorParameters<typeof BlockBodyHash>) => new BlockBodyHash(...args)
 
 /**
  * Check if two BlockBodyHash instances are equal.
@@ -55,7 +67,7 @@ export const make = BlockBodyHash.make
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: BlockBodyHash, b: BlockBodyHash): boolean => a === b
+export const equals = (a: BlockBodyHash, b: BlockBodyHash): boolean => Bytes32.equals(a.bytes, b.bytes)
 
 /**
  * Check if the given value is a valid BlockBodyHash
@@ -71,10 +83,9 @@ export const isBlockBodyHash = Schema.is(BlockBodyHash)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.hexaString({
-  minLength: Bytes32.HEX_LENGTH,
-  maxLength: Bytes32.HEX_LENGTH
-}).map((hex) => hex as BlockBodyHash)
+export const arbitrary = FastCheck.uint8Array({ minLength: 32, maxLength: 32 }).map(
+  (bytes) => new BlockBodyHash({ bytes }, { disableValidation: true })
+)
 
 // ============================================================================
 // Root Functions
@@ -86,7 +97,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): BlockBodyHash => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, BlockBodyHashError, "BlockBodyHash.fromBytes")
 
 /**
  * Parse BlockBodyHash from hex string.
@@ -94,7 +105,7 @@ export const fromBytes = (bytes: Uint8Array): BlockBodyHash => Eff.runSync(Effec
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): BlockBodyHash => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, BlockBodyHashError, "BlockBodyHash.fromHex")
 
 /**
  * Encode BlockBodyHash to bytes.
@@ -102,7 +113,7 @@ export const fromHex = (hex: string): BlockBodyHash => Eff.runSync(Effect.fromHe
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (blockBodyHash: BlockBodyHash): Uint8Array => Eff.runSync(Effect.toBytes(blockBodyHash))
+export const toBytes = Function.makeEncodeSync(FromBytes, BlockBodyHashError, "BlockBodyHash.toBytes")
 
 /**
  * Encode BlockBodyHash to hex string.
@@ -110,84 +121,15 @@ export const toBytes = (blockBodyHash: BlockBodyHash): Uint8Array => Eff.runSync
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (blockBodyHash: BlockBodyHash): string => Eff.runSync(Effect.toHex(blockBodyHash))
+export const toHex = Function.makeEncodeSync(FromHex, BlockBodyHashError, "BlockBodyHash.toHex")
 
 // ============================================================================
-// Effect Namespace
+// Either Namespace (composable non-throwing API)
 // ============================================================================
 
-/**
- * Effect-based error handling variants for functions that can fail.
- *
- * @since 2.0.0
- * @category effect
- */
-export namespace Effect {
-  /**
-   * Parse BlockBodyHash from bytes with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<BlockBodyHash, BlockBodyHashError> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new BlockBodyHashError({
-            message: "Failed to parse BlockBodyHash from bytes",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Parse BlockBodyHash from hex string with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromHex = (hex: string): Eff.Effect<BlockBodyHash, BlockBodyHashError> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new BlockBodyHashError({
-            message: "Failed to parse BlockBodyHash from hex",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Encode BlockBodyHash to bytes with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toBytes = (blockBodyHash: BlockBodyHash): Eff.Effect<Uint8Array, BlockBodyHashError> =>
-    Schema.encode(FromBytes)(blockBodyHash).pipe(
-      Eff.mapError(
-        (cause) =>
-          new BlockBodyHashError({
-            message: "Failed to encode BlockBodyHash to bytes",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Encode BlockBodyHash to hex string with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toHex = (blockBodyHash: BlockBodyHash): Eff.Effect<string, BlockBodyHashError> =>
-    Schema.encode(FromHex)(blockBodyHash).pipe(
-      Eff.mapError(
-        (cause) =>
-          new BlockBodyHashError({
-            message: "Failed to encode BlockBodyHash to hex",
-            cause
-          })
-      )
-    )
+export namespace Either {
+  export const fromBytes = Function.makeDecodeEither(FromBytes, BlockBodyHashError)
+  export const fromHex = Function.makeDecodeEither(FromHex, BlockBodyHashError)
+  export const toBytes = Function.makeEncodeEither(FromBytes, BlockBodyHashError)
+  export const toHex = Function.makeEncodeEither(FromHex, BlockBodyHashError)
 }

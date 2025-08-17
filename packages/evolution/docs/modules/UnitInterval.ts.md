@@ -1,6 +1,6 @@
 ---
 title: UnitInterval.ts
-nav_order: 93
+nav_order: 111
 parent: Modules
 ---
 
@@ -10,16 +10,17 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
 - [codecs](#codecs)
   - [CBORCodec](#cborcodec)
 - [constructors](#constructors)
   - [fromBigDecimal](#frombigdecimal)
+  - [make](#make)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [UnitIntervalError (class)](#unitintervalerror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [schemas](#schemas)
   - [FromCBORBytes](#fromcborbytes)
   - [FromCBORHex](#fromcborhex)
@@ -28,9 +29,24 @@ parent: Modules
 - [transformation](#transformation)
   - [toBigDecimal](#tobigdecimal)
 - [utils](#utils)
+  - [CDDLSchema](#cddlschema)
   - [UnitInterval (type alias)](#unitinterval-type-alias)
 
 ---
+
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for generating random UnitInterval instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<{ readonly numerator: bigint; readonly denominator: bigint }>
+```
+
+Added in v2.0.0
 
 # codecs
 
@@ -111,6 +127,25 @@ export declare const fromBigDecimal: (value: BigDecimal.BigDecimal) => UnitInter
 
 Added in v2.0.0
 
+## make
+
+Smart constructor for creating UnitInterval values.
+
+```
+Validates that denominator > 0 and numerator <= denominator.
+```
+
+**Signature**
+
+```ts
+export declare const make: (
+  a: { readonly numerator: bigint; readonly denominator: bigint },
+  options?: Schema.MakeOptions
+) => { readonly numerator: bigint; readonly denominator: bigint }
+```
+
+Added in v2.0.0
+
 # equality
 
 ## equals
@@ -139,20 +174,6 @@ export declare class UnitIntervalError
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-Generate a random UnitInterval.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<{ readonly numerator: bigint; readonly denominator: bigint }>
-```
-
-Added in v2.0.0
-
 # schemas
 
 ## FromCBORBytes
@@ -172,7 +193,10 @@ export declare const FromCBORBytes: (
     never
   >,
   Schema.transformOrFail<
-    typeof CBOR.Tag,
+    Schema.TaggedStruct<
+      "Tag",
+      { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+    >,
     Schema.refine<
       { readonly numerator: bigint; readonly denominator: bigint },
       Schema.Struct<{
@@ -198,7 +222,7 @@ Transforms between hex string and UnitInterval using CBOR encoding.
 export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -206,7 +230,10 @@ export declare const FromCBORHex: (
       never
     >,
     Schema.transformOrFail<
-      typeof CBOR.Tag,
+      Schema.TaggedStruct<
+        "Tag",
+        { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+      >,
       Schema.refine<
         { readonly numerator: bigint; readonly denominator: bigint },
         Schema.Struct<{
@@ -236,7 +263,10 @@ Transforms between CBOR tag 30 structure and UnitInterval model.
 
 ```ts
 export declare const FromCDDL: Schema.transformOrFail<
-  typeof CBOR.Tag,
+  Schema.TaggedStruct<
+    "Tag",
+    { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+  >,
   Schema.refine<
     { readonly numerator: bigint; readonly denominator: bigint },
     Schema.Struct<{
@@ -295,6 +325,17 @@ export declare const toBigDecimal: (interval: UnitInterval) => BigDecimal.BigDec
 Added in v2.0.0
 
 # utils
+
+## CDDLSchema
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.TaggedStruct<
+  "Tag",
+  { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+>
+```
 
 ## UnitInterval (type alias)
 

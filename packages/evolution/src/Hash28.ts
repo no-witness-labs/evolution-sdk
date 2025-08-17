@@ -1,220 +1,139 @@
-import { Data, Effect as Eff, Schema } from "effect"
+/**
+ * Hash28 module provides utilities for handling 28-byte hash values and variable-length byte arrays.
+ *
+ * @since 2.0.0
+ */
+import { Data, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
+import * as Function from "./Function.js"
 
+/**
+ * Error type for this module.
+ *
+ * @since 2.0.0
+ * @category errors
+ */
 export class Hash28Error extends Data.TaggedError("Hash28Error")<{
   message?: string
   cause?: unknown
 }> {}
 
-// Add constants following the style guide
+/**
+ * Constant bytes length
+ *
+ * @since 2.0.0
+ * @category constants
+ */
 export const BYTES_LENGTH = 28
-export const HEX_LENGTH = 56
+
+export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
+  Bytes.bytesLengthEquals(BYTES_LENGTH, `Hash${BYTES_LENGTH}.Hash${BYTES_LENGTH}`)
+)
+
+export const HexSchema = Bytes.HexSchema.pipe(
+  Bytes.hexLengthEquals(BYTES_LENGTH, `Hash${BYTES_LENGTH}.Hex${BYTES_LENGTH}`)
+)
 
 /**
- * Schema for Hash28 bytes with 28-byte length validation.
+ * Schema transformation for fixed-length bytes
  *
  * @since 2.0.0
  * @category schemas
  */
-export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(Schema.filter((a) => a.length === BYTES_LENGTH)).annotations({
-  identifier: "Hash28.Bytes",
-  title: "28-byte Hash Array",
-  description: "A Uint8Array containing exactly 28 bytes",
-  message: (issue) => `Hash28 bytes must be exactly ${BYTES_LENGTH} bytes, got ${(issue.actual as Uint8Array).length}`,
-  examples: [new Uint8Array(28).fill(0)]
+export const FromHex = Bytes.makeBytesTransformation({
+  id: `Hash${BYTES_LENGTH}.Hash${BYTES_LENGTH}FromHex`,
+  stringSchema: HexSchema,
+  uint8ArraySchema: BytesSchema,
+  decode: Bytes.fromHexUnsafe,
+  encode: Bytes.toHexUnsafe
 })
 
+export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(
+  Bytes.bytesLengthBetween(0, BYTES_LENGTH, `Hash${BYTES_LENGTH}.VariableHash${BYTES_LENGTH}`)
+)
+
 /**
- * Schema for Hash28 hex strings with 56-character length validation.
+ * Schema transformation for variable-length bytes (0..BYTES_LENGTH).
  *
  * @since 2.0.0
  * @category schemas
  */
-export const HexSchema = Bytes.HexSchema.pipe(Schema.filter((a) => a.length === HEX_LENGTH)).annotations({
-  identifier: "Hash28.Hex",
-  title: "28-byte Hash Hex String",
-  description: "A hexadecimal string representing exactly 28 bytes (56 characters)",
-  message: (issue) => `Hash28 hex must be exactly ${HEX_LENGTH} characters, got ${(issue.actual as string).length}`,
-  examples: ["a".repeat(56)]
+export const VariableBytesFromHex = Bytes.makeBytesTransformation({
+  id: `Hash${BYTES_LENGTH}.VariableHash${BYTES_LENGTH}FromHex`,
+  stringSchema: Bytes.HexLenientSchema.pipe(
+    Bytes.hexLengthBetween(0, BYTES_LENGTH, `Hash${BYTES_LENGTH}.VariableHex${BYTES_LENGTH}`)
+  ),
+  uint8ArraySchema: VariableBytes,
+  decode: Bytes.fromHexLenient,
+  encode: Bytes.toHexLenientUnsafe
 })
 
+export const equals = Bytes.equals
+
+// =============================================================================
+// Public (throwing) API
+// =============================================================================
+
 /**
- * Schema for variable-length byte arrays from 0 to 28 bytes.
- * Useful for asset names and other variable-length data structures.
+ * Decode fixed-length hex into bytes.
  *
  * @since 2.0.0
- * @category schemas
+ * @category decoding
  */
-export const VariableBytesSchema = Schema.Uint8ArrayFromSelf.pipe(
-  Schema.filter((a) => a.length >= 0 && a.length <= BYTES_LENGTH)
-).annotations({
-  message: (issue) =>
-    `must be a byte array of length 0 to ${BYTES_LENGTH}, but got ${(issue.actual as Uint8Array).length}`,
-  identifier: "Hash28.VariableBytes"
-})
+export const fromHex = Function.makeDecodeSync(FromHex, Hash28Error, "Hash28.fromHex")
 
 /**
- * Schema for variable-length hex strings from 0 to 56 characters (0 to 28 bytes).
- * Useful for asset names and other variable-length data structures.
+ * Encode fixed-length bytes to hex.
  *
  * @since 2.0.0
- * @category schemas
+ * @category encoding
  */
-export const VariableHexSchema = Bytes.HexSchema.pipe(
-  Schema.filter((a) => a.length >= 0 && a.length <= HEX_LENGTH)
-).annotations({
-  message: (issue) => `must be a hex string of length 0 to ${HEX_LENGTH}, but got ${(issue.actual as string).length}`,
-  identifier: "Hash28.VariableHex"
-})
+export const toHex = Function.makeEncodeSync(FromHex, Hash28Error, "Hash28.toHex")
 
 /**
- * Schema transformation that converts from Uint8Array to hex string.
- * Like Bytes.FromBytes but with Hash28-specific length validation.
+ * Decode variable-length hex (0..BYTES_LENGTH) into bytes.
  *
  * @since 2.0.0
- * @category schemas
+ * @category decoding
  */
-export const FromBytes = Schema.transform(BytesSchema, HexSchema, {
-  strict: true,
-  decode: (toA) => {
-    let hex = ""
-    for (let i = 0; i < toA.length; i++) {
-      hex += toA[i].toString(16).padStart(2, "0")
-    }
-    return hex
-  },
-  encode: (fromA) => {
-    const array = new Uint8Array(fromA.length / 2)
-    for (let ai = 0, hi = 0; ai < array.length; ai++, hi += 2) {
-      array[ai] = parseInt(fromA.slice(hi, hi + 2), 16)
-    }
-    return array
-  }
-}).annotations({
-  identifier: "Hash28.FromBytes",
-  title: "Hash28 from Uint8Array",
-  description: "Transforms a 28-byte Uint8Array to hex string representation",
-  documentation: "Converts raw bytes to lowercase hexadecimal string without 0x prefix"
-})
+export const fromVariableHex = Function.makeDecodeSync(VariableBytesFromHex, Hash28Error, "Hash28.fromVariableHex")
 
 /**
- * Schema transformer for variable-length data that converts between hex strings and byte arrays.
- * Works with 0 to 28 bytes (0 to 56 hex characters).
+ * Encode variable-length bytes (0..BYTES_LENGTH) to hex.
  *
  * @since 2.0.0
- * @category schemas
+ * @category encoding
  */
-export const FromVariableBytes = Schema.transform(VariableBytesSchema, VariableHexSchema, {
-  strict: true,
-  decode: (toA) => {
-    let hex = ""
-    for (let i = 0; i < toA.length; i++) {
-      hex += toA[i].toString(16).padStart(2, "0")
-    }
-    return hex
-  },
-  encode: (fromA) => {
-    if (fromA.length === 0) return new Uint8Array(0)
-    const array = new Uint8Array(fromA.length / 2)
-    for (let ai = 0, hi = 0; ai < array.length; ai++, hi += 2) {
-      array[ai] = parseInt(fromA.slice(hi, hi + 2), 16)
-    }
-    return array
-  }
-}).annotations({
-  identifier: "Hash28.FromVariableBytes",
-  title: "Variable Hash28 from Uint8Array",
-  description: "Transforms variable-length byte arrays (0-28 bytes) to hex strings (0-56 chars)",
-  documentation: "Converts raw bytes to lowercase hexadecimal string without 0x prefix"
-})
+export const toVariableHex = Function.makeEncodeSync(VariableBytesFromHex, Hash28Error, "Hash28.toVariableHex")
 
-/**
- * Effect namespace containing composable operations that can fail.
- * All functions return Effect objects for proper error handling and composition.
- */
-export namespace Effect {
+// =============================================================================
+// Either (safe) API
+// =============================================================================
+
+export namespace Either {
   /**
-   * Parse Hash28 from raw bytes using Effect error handling.
+   * Safely decode fixed-length hex into bytes.
+   * @since 2.0.0
+   * @category decoding
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<string, Hash28Error> =>
-    Eff.mapError(
-      Schema.decode(FromBytes)(bytes),
-      (cause) =>
-        new Hash28Error({
-          message: "Failed to parse Hash28 from bytes",
-          cause
-        })
-    )
-
+  export const fromHex = Function.makeDecodeEither(FromHex, Hash28Error)
   /**
-   * Convert Hash28 hex to raw bytes using Effect error handling.
+   * Safely encode fixed-length bytes to hex.
+   * @since 2.0.0
+   * @category encoding
    */
-  export const toBytes = (hex: string): Eff.Effect<Uint8Array, Hash28Error> =>
-    Eff.mapError(
-      Schema.encode(FromBytes)(hex),
-      (cause) =>
-        new Hash28Error({
-          message: "Failed to encode Hash28 to bytes",
-          cause
-        })
-    )
-
+  export const toHex = Function.makeEncodeEither(FromHex, Hash28Error)
   /**
-   * Parse variable-length data from raw bytes using Effect error handling.
+   * Safely decode variable-length hex (0..BYTES_LENGTH) into bytes.
+   * @since 2.0.0
+   * @category decoding
    */
-  export const fromVariableBytes = (bytes: Uint8Array): Eff.Effect<string, Hash28Error> =>
-    Eff.mapError(
-      Schema.decode(FromVariableBytes)(bytes),
-      (cause) =>
-        new Hash28Error({
-          message: "Failed to parse variable Hash28 from bytes",
-          cause
-        })
-    )
-
+  export const fromVariableHex = Function.makeDecodeEither(VariableBytesFromHex, Hash28Error)
   /**
-   * Convert variable-length hex to raw bytes using Effect error handling.
+   * Safely encode variable-length bytes (0..BYTES_LENGTH) to hex.
+   * @since 2.0.0
+   * @category encoding
    */
-  export const toVariableBytes = (hex: string): Eff.Effect<Uint8Array, Hash28Error> =>
-    Eff.mapError(
-      Schema.encode(FromVariableBytes)(hex),
-      (cause) =>
-        new Hash28Error({
-          message: "Failed to encode variable Hash28 to bytes",
-          cause
-        })
-    )
+  export const toVariableHex = Function.makeEncodeEither(VariableBytesFromHex, Hash28Error)
 }
-
-/**
- * Parse Hash28 from raw bytes (unsafe - throws on error).
- *
- * @since 2.0.0
- * @category parsing
- */
-export const fromBytes = (bytes: Uint8Array): string => Eff.runSync(Effect.fromBytes(bytes))
-
-/**
- * Convert Hash28 hex to raw bytes (unsafe - throws on error).
- *
- * @since 2.0.0
- * @category encoding
- */
-export const toBytes = (hex: string): Uint8Array => Eff.runSync(Effect.toBytes(hex))
-
-/**
- * Parse variable-length data from raw bytes (unsafe - throws on error).
- *
- * @since 2.0.0
- * @category parsing
- */
-export const fromVariableBytes = (bytes: Uint8Array): string => Eff.runSync(Effect.fromVariableBytes(bytes))
-
-/**
- * Convert variable-length hex to raw bytes (unsafe - throws on error).
- *
- * @since 2.0.0
- * @category encoding
- */
-export const toVariableBytes = (hex: string): Uint8Array => Eff.runSync(Effect.toVariableBytes(hex))

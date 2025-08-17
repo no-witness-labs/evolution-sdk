@@ -1,7 +1,9 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, Either as E, FastCheck, Schema } from "effect"
 import sodium from "libsodium-wrappers-sumo"
 
+import * as Bytes from "./Bytes.js"
 import * as Bytes64 from "./Bytes64.js"
+import * as Function from "./Function.js"
 
 // Initialize libsodium
 await sodium.ready
@@ -26,24 +28,43 @@ export class Bip32PublicKeyError extends Data.TaggedError("Bip32PublicKeyError")
  * @since 2.0.0
  * @category schemas
  */
-export const Bip32PublicKey = Bytes64.HexSchema.pipe(Schema.brand("Bip32PublicKey")).annotations({
-  identifier: "Bip32PublicKey"
+export class Bip32PublicKey extends Schema.TaggedClass<Bip32PublicKey>()("Bip32PublicKey", {
+  bytes: Bytes64.BytesSchema
+}) {
+  toJSON(): string {
+    return toHex(this)
+  }
+
+  toString(): string {
+    return toHex(this)
+  }
+}
+
+/**
+ * Schema for transforming between Uint8Array and Bip32PublicKey.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
+export const FromBytes = Schema.transform(Bytes64.BytesSchema, Bip32PublicKey, {
+  strict: true,
+  decode: (bytes) => new Bip32PublicKey({ bytes }, { disableValidation: true }),
+  encode: (bip32PublicKey) => bip32PublicKey.bytes
+}).annotations({
+  identifier: "Bip32PublicKey.FromBytes"
 })
 
-export type Bip32PublicKey = typeof Bip32PublicKey.Type
-
-export const FromBytes = Schema.compose(
-  Bytes64.FromBytes, // Uint8Array -> hex string
-  Bip32PublicKey // hex string -> Bip32PublicKey
-).annotations({
-  identifier: "Bip32PublicKey.Bytes"
-})
-
+/**
+ * Schema for transforming between hex string and Bip32PublicKey.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
 export const FromHex = Schema.compose(
-  Bytes64.HexSchema, // string -> hex string
-  Bip32PublicKey // hex string -> Bip32PublicKey
+  Bytes64.FromHex, // string -> Bytes64
+  FromBytes // Bytes64 -> Bip32PublicKey
 ).annotations({
-  identifier: "Bip32PublicKey.Hex"
+  identifier: "Bip32PublicKey.FromHex"
 })
 
 /**
@@ -52,7 +73,7 @@ export const FromHex = Schema.compose(
  * @since 2.0.0
  * @category constructors
  */
-export const make = Bip32PublicKey.make
+export const make = (...args: ConstructorParameters<typeof Bip32PublicKey>) => new Bip32PublicKey(...args)
 
 /**
  * Check if two Bip32PublicKey instances are equal.
@@ -60,7 +81,7 @@ export const make = Bip32PublicKey.make
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: Bip32PublicKey, b: Bip32PublicKey): boolean => a === b
+export const equals = (a: Bip32PublicKey, b: Bip32PublicKey): boolean => Bytes.equals(a.bytes, b.bytes)
 
 // Helper functions for extracting data from the 64-byte format
 
@@ -90,8 +111,19 @@ const extractChainCode = (keyBytes: Uint8Array): Uint8Array => {
   return keyBytes.slice(32, 64)
 }
 
+/**
+ * FastCheck arbitrary for generating random Bip32PublicKey instances.
+ *
+ * @since 2.0.0
+ * @category arbitrary
+ */
+export const arbitrary = FastCheck.uint8Array({
+  minLength: 64,
+  maxLength: 64
+}).map((bytes) => new Bip32PublicKey({ bytes }, { disableValidation: true }))
+
 // ============================================================================
-// Parsing Functions
+// Root Functions
 // ============================================================================
 
 /**
@@ -100,24 +132,16 @@ const extractChainCode = (keyBytes: Uint8Array): Uint8Array => {
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (publicKey: Uint8Array, chainCode: Uint8Array): Bip32PublicKey => {
-  if (publicKey.length !== 32) {
-    throw new Error(`Public key must be 32 bytes, got ${publicKey.length}`)
-  }
-  if (chainCode.length !== 32) {
-    throw new Error(`Chain code must be 32 bytes, got ${chainCode.length}`)
-  }
+// Standard single-argument decoder (64 bytes)
+export const fromBytes = Function.makeDecodeSync(FromBytes, Bip32PublicKeyError, "Bip32PublicKey.fromBytes")
 
-  const result = new Uint8Array(64)
-  result.set(publicKey, 0)
-  result.set(chainCode, 32)
-
-  return Eff.runSync(Schema.decode(FromBytes)(result))
-}
-
-// ============================================================================
-// Encoding Functions
-// ============================================================================
+/**
+ * Parse Bip32PublicKey from hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromHex = Function.makeDecodeSync(FromHex, Bip32PublicKeyError, "Bip32PublicKey.fromHex")
 
 /**
  * Convert a Bip32PublicKey to raw bytes (64 bytes).
@@ -125,7 +149,15 @@ export const fromBytes = (publicKey: Uint8Array, chainCode: Uint8Array): Bip32Pu
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (bip32PublicKey: Bip32PublicKey): Uint8Array => Eff.runSync(Effect.toBytes(bip32PublicKey))
+export const toBytes = Function.makeEncodeSync(FromBytes, Bip32PublicKeyError, "Bip32PublicKey.toBytes")
+
+/**
+ * Convert a Bip32PublicKey to hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toHex = Function.makeEncodeSync(FromHex, Bip32PublicKeyError, "Bip32PublicKey.toHex")
 
 /**
  * Convert a Bip32PublicKey to raw public key bytes (32 bytes only).
@@ -138,22 +170,17 @@ export const toRawBytes = (bip32PublicKey: Bip32PublicKey): Uint8Array => {
   return extractPublicKey(keyBytes)
 }
 
-// ============================================================================
-// Derivation Functions
-// ============================================================================
-
 /**
  * Derive a child public key using the specified index (soft derivation only).
  *
  * @since 2.0.0
  * @category derivation
  */
-export const deriveChild = (bip32PublicKey: Bip32PublicKey, index: number): Bip32PublicKey =>
-  Eff.runSync(Effect.deriveChild(bip32PublicKey, index))
-
-// ============================================================================
-// Accessor Functions
-// ============================================================================
+export const deriveChild = (bip32PublicKey: Bip32PublicKey, index: number): Bip32PublicKey => {
+  return E.getOrThrowWith(Either.deriveChild(bip32PublicKey, index), (err) => {
+    throw err
+  })
+}
 
 /**
  * Get the chain code.
@@ -178,96 +205,59 @@ export const publicKey = (bip32PublicKey: Bip32PublicKey): Uint8Array => {
 }
 
 // ============================================================================
-// FastCheck Arbitrary
+// Either Namespace
 // ============================================================================
 
 /**
- * FastCheck arbitrary for generating random Bip32PublicKey instances for testing.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category arbitrary
+ * @category either
  */
-export const arbitrary = FastCheck.uint8Array({
-  minLength: 64,
-  maxLength: 64
-}).map((bytes) => Eff.runSync(Effect.fromBytes(bytes.slice(0, 32), bytes.slice(32, 64))))
-
-/**
- * @since 2.0.0
- * @category Effect
- */
-export namespace Effect {
+export namespace Either {
   /**
-   * Create a BIP32 public key from public key and chain code bytes with Effect error handling.
+   * Create a BIP32 public key from public key and chain code bytes with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (
-    publicKey: Uint8Array,
-    chainCode: Uint8Array
-  ): Eff.Effect<Bip32PublicKey, Bip32PublicKeyError> =>
-    Eff.gen(function* () {
-      if (publicKey.length !== 32) {
-        return yield* Eff.fail(
-          new Bip32PublicKeyError({
-            message: `Public key must be 32 bytes, got ${publicKey.length}`
-          })
-        )
-      }
-      if (chainCode.length !== 32) {
-        return yield* Eff.fail(
-          new Bip32PublicKeyError({
-            message: `Chain code must be 32 bytes, got ${chainCode.length}`
-          })
-        )
-      }
-
-      const result = new Uint8Array(64)
-      result.set(publicKey, 0)
-      result.set(chainCode, 32)
-
-      return yield* Schema.decode(FromBytes)(result)
-    }).pipe(
-      Eff.mapError(
-        (cause) =>
-          new Bip32PublicKeyError({
-            message: "Failed to create Bip32PublicKey from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, Bip32PublicKeyError)
 
   /**
-   * Convert Bip32PublicKey to bytes with Effect error handling.
+   * Parse Bip32PublicKey from hex string with Either error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromHex = Function.makeDecodeEither(FromHex, Bip32PublicKeyError)
+
+  /**
+   * Convert Bip32PublicKey to bytes with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (bip32PublicKey: Bip32PublicKey): Eff.Effect<Uint8Array, Bip32PublicKeyError> =>
-    Eff.mapError(
-      Schema.encode(FromBytes)(bip32PublicKey),
-      (cause) =>
-        new Bip32PublicKeyError({
-          message: "Failed to encode Bip32PublicKey to bytes",
-          cause
-        })
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, Bip32PublicKeyError)
 
   /**
-   * Derive a child public key using the specified index with Effect error handling.
+   * Convert Bip32PublicKey to hex string with Either error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toHex = Function.makeEncodeEither(FromHex, Bip32PublicKeyError)
+
+  /**
+   * Derive a child public key using the specified index with Either error handling.
    * Only supports soft derivation (index < 0x80000000).
    *
    * @since 2.0.0
    * @category derivation
    */
-  export const deriveChild = (
-    bip32PublicKey: Bip32PublicKey,
-    index: number
-  ): Eff.Effect<Bip32PublicKey, Bip32PublicKeyError> =>
-    Eff.gen(function* () {
+  export const deriveChild = (bip32PublicKey: Bip32PublicKey, index: number) =>
+    E.gen(function* () {
       if (index >= 0x80000000) {
-        return yield* Eff.fail(
+        return yield* E.left(
           new Bip32PublicKeyError({
             message: `Hardened derivation (index >= 0x80000000) not supported for public keys, got index ${index}`
           })
@@ -279,7 +269,7 @@ export namespace Effect {
       const parentPublicKey = extractPublicKey(keyBytes)
       const parentChainCode = extractChainCode(keyBytes)
 
-      const derivedBytes = yield* Eff.try(() => {
+      const derivedBytes = yield* E.try(() => {
         // Serialize index in little-endian (V2 scheme) - CML compatible
         const indexBytes = new Uint8Array(4)
         indexBytes[0] = index & 0xff
@@ -347,14 +337,6 @@ export namespace Effect {
       newKeyBytes.set(derivedBytes.publicKey, 0)
       newKeyBytes.set(derivedBytes.chainCode, 32)
 
-      return yield* Schema.decode(FromBytes)(newKeyBytes)
-    }).pipe(
-      Eff.mapError(
-        (cause) =>
-          new Bip32PublicKeyError({
-            message: `Failed to derive child public key with index ${index}`,
-            cause
-          })
-      )
-    )
+      return new Bip32PublicKey({ bytes: newKeyBytes }, { disableValidation: true })
+    })
 }

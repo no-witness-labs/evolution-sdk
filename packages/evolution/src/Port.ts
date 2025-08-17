@@ -4,7 +4,9 @@ import * as Numeric from "./Numeric.js"
 
 /**
  * CDDL specification:
+ * ```
  * port = uint .le 65535
+ * ```
  *
  * @since 2.0.0
  * @category constants
@@ -97,7 +99,7 @@ export const isDynamic = (port: Port): boolean => port >= 49152 && port <= 65535
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = Numeric.Uint16Generator
+export const arbitrary = Numeric.Uint16Arbitrary
 
 /**
  * Synchronous encoding/decoding utilities.

@@ -25,14 +25,7 @@ export class CredentialError extends Data.TaggedError("CredentialError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const Credential = Schema.Union(
-  Schema.TaggedStruct("KeyHash", {
-    hash: KeyHash.KeyHash
-  }),
-  Schema.TaggedStruct("ScriptHash", {
-    hash: ScriptHash.ScriptHash
-  })
-)
+export const Credential = Schema.Union(KeyHash.KeyHash, ScriptHash.ScriptHash)
 
 /**
  * Type representing a credential that can be either a key hash or script hash
@@ -50,15 +43,6 @@ export type Credential = typeof Credential.Type
  * @category predicates
  */
 export const is = Schema.is(Credential)
-
-/**
- * Smart constructors for Credential variants.
- *
- * @since 2.0.0
- * @category constructors
- */
-export const makeKeyHash = (hash: KeyHash.KeyHash): Credential => ({ _tag: "KeyHash", hash })
-export const makeScriptHash = (hash: ScriptHash.ScriptHash): Credential => ({ _tag: "ScriptHash", hash })
 
 export const CDDLSchema = Schema.Tuple(
   Schema.Literal(0n, 1n),
@@ -78,12 +62,10 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cre
     Eff.gen(function* () {
       switch (toI._tag) {
         case "KeyHash": {
-          const keyHashBytes = yield* ParseResult.encode(KeyHash.FromBytes)(toI.hash)
-          return [0n, keyHashBytes] as const
+          return [0n, toI.hash] as const
         }
         case "ScriptHash": {
-          const scriptHashBytes = yield* ParseResult.encode(ScriptHash.FromBytes)(toI.hash)
-          return [1n, scriptHashBytes] as const
+          return [1n, toI.hash] as const
         }
       }
     }),
@@ -92,11 +74,11 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cre
       switch (tag) {
         case 0n: {
           const keyHash = yield* ParseResult.decode(KeyHash.FromBytes)(hashBytes)
-          return Credential.members[0].make({ hash: keyHash })
+          return keyHash
         }
         case 1n: {
           const scriptHash = yield* ParseResult.decode(ScriptHash.FromBytes)(hashBytes)
-          return Credential.members[1].make({ hash: scriptHash })
+          return scriptHash
         }
       }
     })
@@ -121,7 +103,7 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @category equality
  */
 export const equals = (a: Credential, b: Credential): boolean => {
-  return a._tag === b._tag && a.hash === b.hash
+  return a._tag === b._tag && Bytes.equals(a.hash, b.hash)
 }
 
 /**
@@ -131,16 +113,7 @@ export const equals = (a: Credential, b: Credential): boolean => {
  * @since 2.0.0
  * @category testing
  */
-export const arbitrary = FastCheck.oneof(
-  FastCheck.record({
-    _tag: FastCheck.constant("KeyHash" as const),
-    hash: KeyHash.arbitrary
-  }),
-  FastCheck.record({
-    _tag: FastCheck.constant("ScriptHash" as const),
-    hash: ScriptHash.arbitrary
-  })
-)
+export const arbitrary = FastCheck.oneof(KeyHash.arbitrary, ScriptHash.arbitrary)
 
 // ============================================================================
 // Root Functions

@@ -1,6 +1,6 @@
 ---
 title: EnterpriseAddress.ts
-nav_order: 41
+nav_order: 47
 parent: Modules
 ---
 
@@ -10,20 +10,85 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [constructors](#constructors)
+  - [make](#make)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toBytes](#tobytes)
+  - [toHex](#tohex)
 - [equality](#equality)
   - [equals](#equals)
-- [generators](#generators)
-  - [generator](#generator)
+- [parsing](#parsing)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
 - [schemas](#schemas)
   - [EnterpriseAddress (class)](#enterpriseaddress-class)
-    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 - [utils](#utils)
-  - [Codec](#codec)
   - [EnterpriseAddressError (class)](#enterpriseaddresserror-class)
-  - [FromBytes](#frombytes)
-  - [FromHex](#fromhex)
+  - [FromBytes](#frombytes-1)
+  - [FromHex](#fromhex-1)
 
 ---
+
+# constructors
+
+## make
+
+Smart constructor for EnterpriseAddress.
+
+**Signature**
+
+```ts
+export declare const make: (
+  i: {
+    readonly networkId: number
+    readonly _tag: "EnterpriseAddress"
+    readonly paymentCredential:
+      | { readonly hash: any; readonly _tag: "KeyHash" }
+      | { readonly hash: any; readonly _tag: "ScriptHash" }
+  },
+  overrideOptions?: ParseOptions
+) => EnterpriseAddress
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toBytes
+
+Convert a EnterpriseAddress to bytes.
+
+**Signature**
+
+```ts
+export declare const toBytes: (input: EnterpriseAddress) => any
+```
+
+Added in v2.0.0
+
+## toHex
+
+Convert a EnterpriseAddress to hex string.
+
+**Signature**
+
+```ts
+export declare const toHex: (input: EnterpriseAddress) => string
+```
+
+Added in v2.0.0
 
 # equality
 
@@ -39,16 +104,28 @@ export declare const equals: (a: EnterpriseAddress, b: EnterpriseAddress) => boo
 
 Added in v2.0.0
 
-# generators
+# parsing
 
-## generator
+## fromBytes
 
-Generate a random EnterpriseAddress.
+Parse a EnterpriseAddress from bytes.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<EnterpriseAddress>
+export declare const fromBytes: (input: any) => EnterpriseAddress
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Parse a EnterpriseAddress from hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => EnterpriseAddress
 ```
 
 Added in v2.0.0
@@ -67,42 +144,21 @@ export declare class EnterpriseAddress
 
 Added in v2.0.0
 
-### [Symbol.for("nodejs.util.inspect.custom")] (method)
+# testing
+
+## arbitrary
+
+FastCheck arbitrary for generating random EnterpriseAddress instances
 
 **Signature**
 
 ```ts
-;[Symbol.for("nodejs.util.inspect.custom")]()
+export declare const arbitrary: FastCheck.Arbitrary<EnterpriseAddress>
 ```
+
+Added in v2.0.0
 
 # utils
-
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: {
-  Encode: { bytes: (input: EnterpriseAddress) => any; hex: (input: EnterpriseAddress) => string }
-  Decode: { bytes: (input: any) => EnterpriseAddress; hex: (input: string) => EnterpriseAddress }
-  EncodeEffect: {
-    bytes: (input: EnterpriseAddress) => Effect.Effect<any, InstanceType<typeof EnterpriseAddressError>>
-    hex: (input: EnterpriseAddress) => Effect.Effect<string, InstanceType<typeof EnterpriseAddressError>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect.Effect<EnterpriseAddress, InstanceType<typeof EnterpriseAddressError>>
-    hex: (input: string) => Effect.Effect<EnterpriseAddress, InstanceType<typeof EnterpriseAddressError>>
-  }
-  EncodeEither: {
-    bytes: (input: EnterpriseAddress) => Either<any, InstanceType<typeof EnterpriseAddressError>>
-    hex: (input: EnterpriseAddress) => Either<string, InstanceType<typeof EnterpriseAddressError>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<EnterpriseAddress, InstanceType<typeof EnterpriseAddressError>>
-    hex: (input: string) => Either<EnterpriseAddress, InstanceType<typeof EnterpriseAddressError>>
-  }
-}
-```
 
 ## EnterpriseAddressError (class)
 
@@ -130,7 +186,7 @@ export declare const FromBytes: Schema.transformOrFail<
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transformOrFail<Schema.filter<typeof Schema.Uint8ArrayFromSelf>, typeof EnterpriseAddress, never>
 >
 ```

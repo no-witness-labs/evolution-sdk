@@ -1,151 +1,112 @@
 ---
 title: Bytes32.ts
-nav_order: 18
+nav_order: 22
 parent: Modules
 ---
 
 ## Bytes32 overview
 
+Bytes32 module provides utilities for handling fixed-length and variable-length byte arrays.
+
+Added in v2.0.0
+
 ---
 
 <h2 className="text-delta">Table of contents</h2>
 
-- [encoding/decoding](#encodingdecoding)
-  - [Codec](#codec)
-- [schemas](#schemas)
-  - [BytesSchema](#bytesschema)
-  - [FromBytes](#frombytes)
-  - [FromVariableBytes](#fromvariablebytes)
-  - [HexSchema](#hexschema)
-  - [VariableBytesSchema](#variablebytesschema)
-  - [VariableHexSchema](#variablehexschema)
-- [utils](#utils)
+- [constants](#constants)
+  - [BYTES_LENGTH](#bytes_length)
+- [decoding](#decoding)
+  - [fromHex](#fromhex)
+  - [fromVariableHex](#fromvariablehex)
+- [encoding](#encoding)
+  - [toHex](#tohex)
+  - [toVariableHex](#tovariablehex)
+- [errors](#errors)
   - [Bytes32Error (class)](#bytes32error-class)
-  - [Bytes32_BYTES_LENGTH](#bytes32_bytes_length)
-  - [Bytes32_HEX_LENGTH](#bytes32_hex_length)
+- [schemas](#schemas)
+  - [FromHex](#fromhex-1)
+  - [VariableBytesFromHex](#variablebytesfromhex)
+- [utils](#utils)
+  - [BytesSchema](#bytesschema)
+  - [Either (namespace)](#either-namespace)
+  - [HexSchema](#hexschema)
+  - [VariableBytes](#variablebytes)
+  - [equals](#equals)
 
 ---
 
-# encoding/decoding
+# constants
 
-## Codec
+## BYTES_LENGTH
 
-Codec for Bytes32 encoding and decoding operations.
-
-**Signature**
-
-```ts
-export declare const Codec: {
-  Encode: { bytes: (input: string) => any; variableBytes: (input: string) => any }
-  Decode: { bytes: (input: any) => string; variableBytes: (input: any) => string }
-  EncodeEffect: {
-    bytes: (input: string) => Effect<any, InstanceType<typeof Bytes32Error>>
-    variableBytes: (input: string) => Effect<any, InstanceType<typeof Bytes32Error>>
-  }
-  DecodeEffect: {
-    bytes: (input: any) => Effect<string, InstanceType<typeof Bytes32Error>>
-    variableBytes: (input: any) => Effect<string, InstanceType<typeof Bytes32Error>>
-  }
-  EncodeEither: {
-    bytes: (input: string) => Either<any, InstanceType<typeof Bytes32Error>>
-    variableBytes: (input: string) => Either<any, InstanceType<typeof Bytes32Error>>
-  }
-  DecodeEither: {
-    bytes: (input: any) => Either<string, InstanceType<typeof Bytes32Error>>
-    variableBytes: (input: any) => Either<string, InstanceType<typeof Bytes32Error>>
-  }
-}
-```
-
-Added in v2.0.0
-
-# schemas
-
-## BytesSchema
-
-Schema for Bytes32 bytes with 32-byte length validation.
+Constant bytes length
 
 **Signature**
 
 ```ts
-export declare const BytesSchema: Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>
+export declare const BYTES_LENGTH: 32
 ```
 
 Added in v2.0.0
 
-## FromBytes
+# decoding
 
-Schema transformer for Bytes32 that converts between hex strings and byte arrays.
-Like Bytes.BytesSchema but with Bytes32-specific length validation.
+## fromHex
+
+Decode fixed-length hex into bytes.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: Schema.transform<
-  Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>
->
+export declare const fromHex: (input: string) => Uint8Array
 ```
 
 Added in v2.0.0
 
-## FromVariableBytes
+## fromVariableHex
 
-Schema transformer for variable-length data that converts between hex strings and byte arrays.
-Works with 0 to 32 bytes (0 to 64 hex characters).
+Decode variable-length hex (0..BYTES_LENGTH) into bytes.
 
 **Signature**
 
 ```ts
-export declare const FromVariableBytes: Schema.transform<
-  Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>,
-  Schema.refine<string, Schema.refine<string, typeof Schema.String>>
->
+export declare const fromVariableHex: (input: string) => Uint8Array
 ```
 
 Added in v2.0.0
 
-## HexSchema
+# encoding
 
-Schema for Bytes32 hex strings with 64-character length validation.
+## toHex
+
+Encode fixed-length bytes to hex.
 
 **Signature**
 
 ```ts
-export declare const HexSchema: Schema.refine<string, Schema.refine<string, typeof Schema.String>>
+export declare const toHex: (input: Uint8Array) => string
 ```
 
 Added in v2.0.0
 
-## VariableBytesSchema
+## toVariableHex
 
-Schema for variable-length byte arrays from 0 to 32 bytes.
-Useful for asset names and other variable-length data structures.
+Encode variable-length bytes (0..BYTES_LENGTH) to hex.
 
 **Signature**
 
 ```ts
-export declare const VariableBytesSchema: Schema.refine<any, typeof Schema.Uint8ArrayFromSelf>
+export declare const toVariableHex: (input: Uint8Array) => string
 ```
 
 Added in v2.0.0
 
-## VariableHexSchema
-
-Schema for variable-length hex strings from 0 to 64 characters (0 to 32 bytes).
-Useful for asset names and other variable-length data structures.
-
-**Signature**
-
-```ts
-export declare const VariableHexSchema: Schema.refine<string, Schema.refine<string, typeof Schema.String>>
-```
-
-Added in v2.0.0
-
-# utils
+# errors
 
 ## Bytes32Error (class)
+
+Error type for this module.
 
 **Signature**
 
@@ -153,18 +114,72 @@ Added in v2.0.0
 export declare class Bytes32Error
 ```
 
-## Bytes32_BYTES_LENGTH
+Added in v2.0.0
+
+# schemas
+
+## FromHex
+
+Schema transformation for fixed-length bytes
 
 **Signature**
 
 ```ts
-export declare const Bytes32_BYTES_LENGTH: 32
+export declare const FromHex: Schema.transform<
+  Schema.Schema<string, string, never>,
+  Schema.Schema<Uint8Array, Uint8Array, never>
+>
 ```
 
-## Bytes32_HEX_LENGTH
+Added in v2.0.0
+
+## VariableBytesFromHex
+
+Schema transformation for variable-length bytes (0..BYTES_LENGTH).
 
 **Signature**
 
 ```ts
-export declare const Bytes32_HEX_LENGTH: 64
+export declare const VariableBytesFromHex: Schema.transform<
+  Schema.Schema<string, string, never>,
+  Schema.Schema<Uint8Array, Uint8Array, never>
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## BytesSchema
+
+**Signature**
+
+```ts
+export declare const BytesSchema: Schema.filter<typeof Schema.Uint8ArrayFromSelf>
+```
+
+## Either (namespace)
+
+## HexSchema
+
+**Signature**
+
+```ts
+export declare const HexSchema: Schema.filter<Schema.refine<string, typeof Schema.String>>
+```
+
+## VariableBytes
+
+**Signature**
+
+```ts
+export declare const VariableBytes: Schema.filter<typeof Schema.Uint8ArrayFromSelf>
+```
+
+## equals
+
+**Signature**
+
+```ts
+export declare const equals: (a: Uint8Array, b: Uint8Array) => boolean
 ```

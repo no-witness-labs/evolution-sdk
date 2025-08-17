@@ -12,3 +12,6 @@ docs/.next
 .tsbuildinfo/
 
 .github/instructions/
+
+# Ignore debug
+debug/

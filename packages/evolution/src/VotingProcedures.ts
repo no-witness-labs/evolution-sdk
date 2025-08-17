@@ -582,10 +582,10 @@ export const equals = (a: VotingProcedures, b: VotingProcedures): boolean => {
           let foundMatchingAction = false
 
           for (const [govActionIdB, procedureB] of govActionMapB) {
-            // Simple equality for GovActionId
+            // Compare GovActionId by value (hash bytes and index), not by reference
             if (
-              govActionIdA.transactionId === govActionIdB.transactionId &&
-              govActionIdA.govActionIndex === govActionIdB.govActionIndex
+              TransactionHash.equals(govActionIdA.transactionId, govActionIdB.transactionId) &&
+              TransactionIndex.equals(govActionIdA.govActionIndex, govActionIdB.govActionIndex)
             ) {
               foundMatchingAction = true
 
@@ -637,7 +637,7 @@ export const arbitrary = FastCheck.array(
         ).map(
           ([transactionId, govActionIndex]) =>
             new GovernanceAction.GovActionId({
-              transactionId: TransactionHash.make(transactionId),
+              transactionId: TransactionHash.fromHex(transactionId),
               govActionIndex: TransactionIndex.make(govActionIndex)
             })
         ),

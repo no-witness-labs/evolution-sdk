@@ -18,11 +18,11 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates minimal transaction body CBOR hex compatibility", () => {
     // Create test data for minimal transaction body (inputs, outputs, fee)
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  // hex string not needed for this test
     const fee = 100000n
 
     // Create Evolution SDK TransactionBody
-    const evolutionTxHash = TransactionHash.make(txHashHex)
+    const evolutionTxHash = TransactionHash.make({ bytes: txHashBytes })
     const evolutionTxInput = new TransactionInput.TransactionInput({
       transactionId: evolutionTxHash,
       index: 0 // Use number instead of bigint
@@ -57,12 +57,12 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with TTL CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  // hex string not needed for this test
     const fee = 100000n
     const ttl = 1000000n
 
     // Create Evolution SDK TransactionBody with TTL
-    const evolutionTxHash = TransactionHash.make(txHashHex)
+    const evolutionTxHash = TransactionHash.make({ bytes: txHashBytes })
     const evolutionTxInput = new TransactionInput.TransactionInput({
       transactionId: evolutionTxHash,
       index: 0
@@ -99,13 +99,12 @@ describe("TransactionBody CML Compatibility", () => {
     // Create test data for multiple inputs
     const txHashBytes1 = new Uint8Array(32).fill(1)
     const txHashBytes2 = new Uint8Array(32).fill(2)
-    const txHashHex1 = Array.from(txHashBytes1, (byte) => byte.toString(16).padStart(2, "0")).join("")
-    const txHashHex2 = Array.from(txHashBytes2, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  // hex strings not needed for this test
     const fee = 150000n
 
     // Create Evolution SDK TransactionBody with multiple inputs
-    const evolutionTxHash1 = TransactionHash.make(txHashHex1)
-    const evolutionTxHash2 = TransactionHash.make(txHashHex2)
+    const evolutionTxHash1 = TransactionHash.make({ bytes: txHashBytes1 })
+    const evolutionTxHash2 = TransactionHash.make({ bytes: txHashBytes2 })
     const evolutionTxInput1 = new TransactionInput.TransactionInput({
       transactionId: evolutionTxHash1,
       index: 0
@@ -121,6 +120,7 @@ describe("TransactionBody CML Compatibility", () => {
       outputs: [],
       fee: evolutionCoin
     })
+  // console output not required for lint-clean tests
 
     // Create equivalent CML TransactionBody
     const cmlTxHash1 = CML.TransactionHash.from_raw_bytes(txHashBytes1)
@@ -146,12 +146,12 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with network ID CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  // hex string not needed for this test
     const fee = 100000n
     const networkId = 1 // Mainnet
 
     // Create Evolution SDK TransactionBody with network ID
-    const evolutionTxHash = TransactionHash.make(txHashHex)
+    const evolutionTxHash = TransactionHash.make({ bytes: txHashBytes })
     const evolutionTxInput = new TransactionInput.TransactionInput({
       transactionId: evolutionTxHash,
       index: 0
@@ -187,13 +187,13 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with TTL and network ID CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  // hex string not needed for this test
     const fee = 100000n
     const ttl = 2000000n
     const networkId = 0 // Testnet
 
     // Create Evolution SDK TransactionBody with TTL and network ID
-    const evolutionTxHash = TransactionHash.make(txHashHex)
+    const evolutionTxHash = TransactionHash.make({ bytes: txHashBytes })
     const evolutionTxInput = new TransactionInput.TransactionInput({
       transactionId: evolutionTxHash,
       index: 0
@@ -231,11 +231,11 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with different input indices CBOR hex compatibility", () => {
     // Create test data for different input indices
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  // hex string not needed for this test
     const fee = 120000n
 
     // Create Evolution SDK TransactionBody with different input indices
-    const evolutionTxHash = TransactionHash.make(txHashHex)
+    const evolutionTxHash = TransactionHash.make({ bytes: txHashBytes })
     const evolutionTxInput1 = new TransactionInput.TransactionInput({
       transactionId: evolutionTxHash,
       index: 5
@@ -275,11 +275,11 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with large fee CBOR hex compatibility", () => {
     // Create test data with large fee
     const txHashBytes = new Uint8Array(32).fill(1)
-    const txHashHex = Array.from(txHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  // hex string not needed for this test
     const largeFee = 10000000000n // 10 billion lovelace
 
     // Create Evolution SDK TransactionBody
-    const evolutionTxHash = TransactionHash.make(txHashHex)
+    const evolutionTxHash = TransactionHash.make({ bytes: txHashBytes })
     const evolutionTxInput = new TransactionInput.TransactionInput({
       transactionId: evolutionTxHash,
       index: 0

@@ -1,6 +1,6 @@
 ---
 title: CBOR.ts
-nav_order: 24
+nav_order: 29
 parent: Modules
 ---
 
@@ -15,12 +15,20 @@ parent: Modules
   - [CBOR_ADDITIONAL_INFO](#cbor_additional_info)
   - [CBOR_MAJOR_TYPE](#cbor_major_type)
   - [CBOR_SIMPLE](#cbor_simple)
-  - [DEFAULT_OPTIONS](#default_options)
+  - [CML_DATA_DEFAULT_OPTIONS](#cml_data_default_options)
+  - [CML_DEFAULT_OPTIONS](#cml_default_options)
+  - [STRUCT_FRIENDLY_OPTIONS](#struct_friendly_options)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [errors](#errors)
   - [CBORError (class)](#cborerror-class)
 - [model](#model)
   - [CBOR (type alias)](#cbor-type-alias)
   - [CodecOptions (type alias)](#codecoptions-type-alias)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
 - [schemas](#schemas)
   - [CBORSchema](#cborschema)
   - [FromBytes](#frombytes)
@@ -30,20 +38,26 @@ parent: Modules
 - [utils](#utils)
   - [ArraySchema](#arrayschema)
   - [ByteArray](#bytearray)
-  - [FromHex](#FromHex)
-  - [Codec](#codec)
+  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
   - [Float](#float)
+  - [FromHex](#fromhex)
   - [MapSchema](#mapschema)
   - [RecordSchema](#recordschema)
   - [Simple](#simple)
-  - [Tag (class)](#tag-class)
+  - [Tag](#tag)
   - [Text](#text)
+  - [internalDecode](#internaldecode)
+  - [internalDecodeSync](#internaldecodesync)
+  - [internalEncodeSync](#internalencodesync)
   - [isArray](#isarray)
   - [isByteArray](#isbytearray)
   - [isInteger](#isinteger)
   - [isMap](#ismap)
   - [isRecord](#isrecord)
   - [isTag](#istag)
+  - [map](#map)
+  - [tag](#tag-1)
 
 ---
 
@@ -112,14 +126,64 @@ export declare const CBOR_SIMPLE: { readonly FALSE: 20; readonly TRUE: 21; reado
 
 Added in v1.0.0
 
-## DEFAULT_OPTIONS
+## CML_DATA_DEFAULT_OPTIONS
+
+Default CBOR encoding option for Data
+
+**Signature**
+
+```ts
+export declare const CML_DATA_DEFAULT_OPTIONS: CodecOptions
+```
+
+Added in v1.0.0
+
+## CML_DEFAULT_OPTIONS
 
 Default CBOR encoding options
 
 **Signature**
 
 ```ts
-export declare const DEFAULT_OPTIONS: CodecOptions
+export declare const CML_DEFAULT_OPTIONS: CodecOptions
+```
+
+Added in v1.0.0
+
+## STRUCT_FRIENDLY_OPTIONS
+
+CBOR encoding options that return objects instead of Maps for Schema.Struct compatibility
+
+**Signature**
+
+```ts
+export declare const STRUCT_FRIENDLY_OPTIONS: CodecOptions
+```
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert a CBOR value to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: CBOR, options?: CodecOptions) => Uint8Array
+```
+
+Added in v1.0.0
+
+## toCBORHex
+
+Convert a CBOR value to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: CBOR, options?: CodecOptions) => string
 ```
 
 Added in v1.0.0
@@ -153,8 +217,8 @@ export type CBOR =
   | string // text strings
   | ReadonlyArray<CBOR> // arrays
   | ReadonlyMap<CBOR, CBOR> // maps
-  | { readonly [key: string]: CBOR } // record alternative to maps
-  | Tag // tagged values
+  | { readonly [key: string | number]: CBOR } // record alternative to maps
+  | { _tag: "Tag"; tag: number; value: CBOR } // tagged values
   | boolean // boolean values
   | null // null value
   | undefined // undefined value
@@ -173,6 +237,7 @@ CBOR codec configuration options
 export type CodecOptions =
   | {
       readonly mode: "canonical"
+      readonly mapsAsObjects?: boolean
     }
   | {
       readonly mode: "custom"
@@ -181,7 +246,34 @@ export type CodecOptions =
       readonly useDefiniteForEmpty: boolean
       readonly sortMapKeys: boolean
       readonly useMinimalEncoding: boolean
+      readonly mapsAsObjects?: boolean
     }
+```
+
+Added in v1.0.0
+
+# parsing
+
+## fromCBORBytes
+
+Parse a CBOR value from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CodecOptions) => CBOR
+```
+
+Added in v1.0.0
+
+## fromCBORHex
+
+Parse a CBOR value from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CodecOptions) => CBOR
 ```
 
 Added in v1.0.0
@@ -274,6 +366,18 @@ export declare const ArraySchema: Schema.Array$<Schema.suspend<CBOR, CBOR, never
 export declare const ByteArray: typeof Schema.Uint8ArrayFromSelf
 ```
 
+## Effect (namespace)
+
+## Either (namespace)
+
+## Float
+
+**Signature**
+
+```ts
+export declare const Float: typeof Schema.Number
+```
+
 ## FromHex
 
 **Signature**
@@ -282,44 +386,9 @@ export declare const ByteArray: typeof Schema.Uint8ArrayFromSelf
 export declare const FromHex: (
   options: CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transformOrFail<typeof Schema.Uint8ArrayFromSelf, Schema.declare<CBOR, CBOR, readonly [], never>, never>
 >
-```
-
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: (options?: CodecOptions) => {
-  Encode: { cborBytes: (input: CBOR) => any; cborHex: (input: CBOR) => string }
-  Decode: { cborBytes: (input: any) => CBOR; cborHex: (input: string) => CBOR }
-  EncodeEffect: {
-    cborBytes: (input: CBOR) => Effect.Effect<any, InstanceType<typeof CBORError>>
-    cborHex: (input: CBOR) => Effect.Effect<string, InstanceType<typeof CBORError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<CBOR, InstanceType<typeof CBORError>>
-    cborHex: (input: string) => Effect.Effect<CBOR, InstanceType<typeof CBORError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: CBOR) => Either<any, InstanceType<typeof CBORError>>
-    cborHex: (input: CBOR) => Either<string, InstanceType<typeof CBORError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<CBOR, InstanceType<typeof CBORError>>
-    cborHex: (input: string) => Either<CBOR, InstanceType<typeof CBORError>>
-  }
-}
-```
-
-## Float
-
-**Signature**
-
-```ts
-export declare const Float: typeof Schema.Number
 ```
 
 ## MapSchema
@@ -349,12 +418,15 @@ export declare const RecordSchema: Schema.Record$<typeof Schema.String, Schema.s
 export declare const Simple: Schema.Union<[typeof Schema.Boolean, typeof Schema.Null, typeof Schema.Undefined]>
 ```
 
-## Tag (class)
+## Tag
 
 **Signature**
 
 ```ts
-export declare class Tag
+export declare const Tag: Schema.TaggedStruct<
+  "Tag",
+  { tag: typeof Schema.Number; value: Schema.suspend<CBOR, CBOR, never> }
+>
 ```
 
 ## Text
@@ -363,6 +435,30 @@ export declare class Tag
 
 ```ts
 export declare const Text: typeof Schema.String
+```
+
+## internalDecode
+
+**Signature**
+
+```ts
+export declare const internalDecode: (data: Uint8Array, options?: CodecOptions) => Eff.Effect<CBOR, CBORError>
+```
+
+## internalDecodeSync
+
+**Signature**
+
+```ts
+export declare const internalDecodeSync: (data: Uint8Array, options?: CodecOptions) => CBOR
+```
+
+## internalEncodeSync
+
+**Signature**
+
+```ts
+export declare const internalEncodeSync: (value: CBOR, options?: CodecOptions) => Uint8Array
 ```
 
 ## isArray
@@ -413,5 +509,30 @@ export declare const isRecord: (
 **Signature**
 
 ```ts
-export declare const isTag: (u: unknown, overrideOptions?: ParseOptions | number) => u is Tag
+export declare const isTag: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is { readonly _tag: "Tag"; readonly tag: number; readonly value: CBOR }
+```
+
+## map
+
+**Signature**
+
+```ts
+export declare const map: <K extends CBOR, V extends CBOR>(
+  key: Schema.Schema<K>,
+  value: Schema.Schema<V>
+) => Schema.ReadonlyMapFromSelf<Schema.Schema<K, K, never>, Schema.Schema<V, V, never>>
+```
+
+## tag
+
+**Signature**
+
+```ts
+export declare const tag: <T extends number, C extends Schema.Schema<any, any>>(
+  tag: T,
+  value: C
+) => Schema.TaggedStruct<"Tag", { tag: Schema.Literal<[T]>; value: C }>
 ```

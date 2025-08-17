@@ -1,6 +1,6 @@
 ---
 title: TSchema.ts
-nav_order: 92
+nav_order: 110
 parent: Modules
 ---
 
@@ -10,11 +10,12 @@ parent: Modules
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [schemas](#schemas)
+  - [ByteArray](#bytearray)
+  - [Integer](#integer)
 - [utils](#utils)
   - [Array](#array)
   - [Boolean](#boolean)
-  - [ByteArray](#bytearray)
-  - [Integer](#integer)
   - [Literal](#literal)
   - [Map](#map)
   - [NullOr](#nullor)
@@ -28,6 +29,32 @@ parent: Modules
   - [is](#is)
 
 ---
+
+# schemas
+
+## ByteArray
+
+ByteArray schema (hex string) directly re-exported from Data layer.
+
+**Signature**
+
+```ts
+export declare const ByteArray: Schema.refine<string, typeof Schema.String>
+```
+
+Added in v2.0.0
+
+## Integer
+
+Integer schema (bigint) directly re-exported from Data layer.
+
+**Signature**
+
+```ts
+export declare const Integer: Schema.SchemaClass<bigint, bigint, never>
+```
+
+Added in v2.0.0
 
 # utils
 
@@ -54,32 +81,6 @@ Schema for boolean values using Plutus Data Constructor
 
 ```ts
 export declare const Boolean: Boolean
-```
-
-Added in v2.0.0
-
-## ByteArray
-
-Creates a schema for byte arrays using Plutus Data ByteArray transformation
-The byte array is represented as a hex string
-
-**Signature**
-
-```ts
-export declare const ByteArray: ByteArray
-```
-
-Added in v2.0.0
-
-## Integer
-
-Creates a schema for integers using Plutus Data Integer transformation
-The integer is represented as a BigInt
-
-**Signature**
-
-```ts
-export declare const Integer: Schema.SchemaClass<bigint, bigint, never>
 ```
 
 Added in v2.0.0

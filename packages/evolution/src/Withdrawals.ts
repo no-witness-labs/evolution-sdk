@@ -3,6 +3,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
+import * as Function from "./Function.js"
 import * as RewardAccount from "./RewardAccount.js"
 
 /**
@@ -249,7 +250,7 @@ export const entries = (withdrawals: Withdrawals): Array<[RewardAccount.RewardAc
  * @category parsing
  */
 export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Withdrawals =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+  Function.makeDecodeSync(FromCBORBytes(options), WithdrawalsError, "Withdrawals.fromCBORBytes")(bytes)
 
 /**
  * Parse a Withdrawals from CBOR hex string.
@@ -258,7 +259,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): W
  * @category parsing
  */
 export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Withdrawals =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+  Function.makeDecodeSync(FromCBORHex(options), WithdrawalsError, "Withdrawals.fromCBORHex")(hex)
 
 // ============================================================================
 // Encoding Functions
@@ -270,8 +271,8 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Withdrawa
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (withdrawals: Withdrawals, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(withdrawals, options))
+export const toCBORBytes = (value: Withdrawals, options?: CBOR.CodecOptions): Uint8Array =>
+  Function.makeEncodeSync(FromCBORBytes(options), WithdrawalsError, "Withdrawals.toCBORBytes")(value)
 
 /**
  * Convert a Withdrawals to CBOR hex string.
@@ -279,97 +280,53 @@ export const toCBORBytes = (withdrawals: Withdrawals, options?: CBOR.CodecOption
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (withdrawals: Withdrawals, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(withdrawals, options))
+export const toCBORHex = (value: Withdrawals, options?: CBOR.CodecOptions): string =>
+  Function.makeEncodeSync(FromCBORHex(options), WithdrawalsError, "Withdrawals.toCBORHex")(value)
 
 // ============================================================================
-// Effect Namespace - Effect-based Error Handling
+// Either Namespace - Either-based Error Handling
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse a Withdrawals from CBOR bytes.
    *
    * @since 2.0.0
-   * @category effect
+   * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Withdrawals, WithdrawalsError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (error) =>
-          new WithdrawalsError({
-            message: "Failed to decode Withdrawals from CBOR bytes",
-            cause: error
-          })
-      )
-    )
+  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
+    Function.makeDecodeEither(FromCBORBytes(options), WithdrawalsError)(bytes)
 
   /**
    * Parse a Withdrawals from CBOR hex string.
    *
    * @since 2.0.0
-   * @category effect
+   * @category parsing
    */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Withdrawals, WithdrawalsError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (error) =>
-          new WithdrawalsError({
-            message: "Failed to decode Withdrawals from CBOR hex",
-            cause: error
-          })
-      )
-    )
+  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
+    Function.makeDecodeEither(FromCBORHex(options), WithdrawalsError)(hex)
 
   /**
    * Convert a Withdrawals to CBOR bytes.
    *
    * @since 2.0.0
-   * @category effect
+   * @category encoding
    */
-  export const toCBORBytes = (
-    withdrawals: Withdrawals,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, WithdrawalsError> =>
-    Schema.encode(FromCBORBytes(options))(withdrawals).pipe(
-      Eff.mapError(
-        (error) =>
-          new WithdrawalsError({
-            message: "Failed to encode Withdrawals to CBOR bytes",
-            cause: error
-          })
-      )
-    )
+  export const toCBORBytes = (value: Withdrawals, options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORBytes(options), WithdrawalsError)(value)
 
   /**
    * Convert a Withdrawals to CBOR hex string.
    *
    * @since 2.0.0
-   * @category effect
+   * @category encoding
    */
-  export const toCBORHex = (
-    withdrawals: Withdrawals,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, WithdrawalsError> =>
-    Schema.encode(FromCBORHex(options))(withdrawals).pipe(
-      Eff.mapError(
-        (error) =>
-          new WithdrawalsError({
-            message: "Failed to encode Withdrawals to CBOR hex",
-            cause: error
-          })
-      )
-    )
+  export const toCBORHex = (value: Withdrawals, options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORHex(options), WithdrawalsError)(value)
 }

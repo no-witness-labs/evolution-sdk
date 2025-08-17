@@ -1,6 +1,6 @@
 ---
 title: Value.ts
-nav_order: 95
+nav_order: 113
 parent: Modules
 ---
 
@@ -13,30 +13,40 @@ parent: Modules
 - [constructors](#constructors)
   - [onlyCoin](#onlycoin)
   - [withAssets](#withassets)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [ValueError (class)](#valueerror-class)
 - [generators](#generators)
-  - [generator](#generator)
+  - [arbitrary](#arbitrary)
 - [model](#model)
   - [ValueCDDL (type alias)](#valuecddl-type-alias)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
 - [predicates](#predicates)
   - [hasAssets](#hasassets)
   - [is](#is)
   - [isAdaOnly](#isadaonly)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
+  - [~~FromBytes~~](#frombytes)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
+  - [FromCDDL](#fromcddl)
+  - [~~FromHex~~](#fromhex)
   - [OnlyCoin (class)](#onlycoin-class)
-  - [ValueCDDLSchema](#valuecddlschema)
 - [transformation](#transformation)
   - [add](#add)
   - [getAda](#getada)
   - [getAssets](#getassets)
   - [subtract](#subtract)
 - [utils](#utils)
-  - [Codec](#codec)
+  - [CDDLSchema](#cddlschema)
   - [Value](#value)
   - [Value (type alias)](#value-type-alias)
   - [WithAssets (class)](#withassets-class)
@@ -65,6 +75,40 @@ Create a Value containing ADA and native assets.
 
 ```ts
 export declare const withAssets: (ada: Coin.Coin, assets: MultiAsset.MultiAsset) => WithAssets
+```
+
+Added in v2.0.0
+
+# effect
+
+## Effect (namespace)
+
+Effect-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Encode Value to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: Value, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Encode Value to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: Value, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
@@ -99,16 +143,20 @@ Added in v2.0.0
 
 # generators
 
-## generator
+## arbitrary
 
 Generate a random Value.
 
 **Signature**
 
 ```ts
-export declare const generator: FastCheck.Arbitrary<
+export declare const arbitrary: FastCheck.Arbitrary<
   | { _tag: string; coin: bigint }
-  | { _tag: string; coin: bigint; assets: Map<string & Brand<"PolicyId">, Map<string & Brand<"AssetName">, bigint>> }
+  | {
+      _tag: string
+      coin: bigint
+      assets: Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">
+    }
 >
 ```
 
@@ -124,7 +172,33 @@ This is what gets encoded/decoded to/from CBOR.
 **Signature**
 
 ```ts
-export type ValueCDDL = typeof ValueCDDLSchema.Type
+export type ValueCDDL = typeof FromCDDL.Type
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromCBORBytes
+
+Parse Value from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Value
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse Value from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Value
 ```
 
 Added in v2.0.0
@@ -169,9 +243,9 @@ Added in v2.0.0
 
 # schemas
 
-## FromBytes
+## ~~FromBytes~~
 
-CBOR bytes transformation schema for Value.
+Legacy alias for FromCBORBytes - kept for backwards compatibility.
 
 **Signature**
 
@@ -206,9 +280,125 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORBytes
+
+CBOR bytes transformation schema for Value.
+Transforms between CBOR bytes and Value using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromCBORBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.Union<
+      [
+        typeof Schema.BigIntFromSelf,
+        Schema.Tuple2<
+          typeof Schema.BigIntFromSelf,
+          Schema.SchemaClass<
+            ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+            ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+            never
+          >
+        >
+      ]
+    >,
+    Schema.SchemaClass<OnlyCoin | WithAssets, OnlyCoin | WithAssets, never>,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCBORHex
 
 CBOR hex transformation schema for Value.
+Transforms between CBOR hex string and Value using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromCBORHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Union<
+        [
+          typeof Schema.BigIntFromSelf,
+          Schema.Tuple2<
+            typeof Schema.BigIntFromSelf,
+            Schema.SchemaClass<
+              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+              never
+            >
+          >
+        ]
+      >,
+      Schema.SchemaClass<OnlyCoin | WithAssets, OnlyCoin | WithAssets, never>,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+CDDL schema for Value as union structure.
+
+```
+value = coin / [coin, multiasset<positive_coin>]
+```
+
+This represents either:
+
+- A single coin amount (for ADA-only values)
+- An array with [coin, multiasset] (for values with native assets)
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.Union<
+    [
+      typeof Schema.BigIntFromSelf,
+      Schema.Tuple2<
+        typeof Schema.BigIntFromSelf,
+        Schema.SchemaClass<
+          ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+          ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+          never
+        >
+      >
+    ]
+  >,
+  Schema.SchemaClass<OnlyCoin | WithAssets, OnlyCoin | WithAssets, never>,
+  never
+>
+```
+
+Added in v2.0.0
+
+## ~~FromHex~~
+
+Legacy alias for FromCBORHex - kept for backwards compatibility.
 
 **Signature**
 
@@ -216,7 +406,7 @@ CBOR hex transformation schema for Value.
 export declare const FromHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -263,43 +453,6 @@ This can be either:
 
 ```ts
 export declare class OnlyCoin
-```
-
-Added in v2.0.0
-
-## ValueCDDLSchema
-
-CDDL schema for Value as union structure.
-
-```
-value = coin / [coin, multiasset<positive_coin>]
-```
-
-This represents either:
-
-- A single coin amount (for ADA-only values)
-- An array with [coin, multiasset] (for values with native assets)
-
-**Signature**
-
-```ts
-export declare const ValueCDDLSchema: Schema.transformOrFail<
-  Schema.Union<
-    [
-      typeof Schema.BigIntFromSelf,
-      Schema.Tuple2<
-        typeof Schema.BigIntFromSelf,
-        Schema.SchemaClass<
-          ReadonlyMap<any, ReadonlyMap<any, bigint>>,
-          ReadonlyMap<any, ReadonlyMap<any, bigint>>,
-          never
-        >
-      >
-    ]
-  >,
-  Schema.SchemaClass<OnlyCoin | WithAssets, OnlyCoin | WithAssets, never>,
-  never
->
 ```
 
 Added in v2.0.0
@@ -358,31 +511,20 @@ Added in v2.0.0
 
 # utils
 
-## Codec
+## CDDLSchema
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: OnlyCoin | WithAssets) => any; cborHex: (input: OnlyCoin | WithAssets) => string }
-  Decode: { cborBytes: (input: any) => OnlyCoin | WithAssets; cborHex: (input: string) => OnlyCoin | WithAssets }
-  EncodeEffect: {
-    cborBytes: (input: OnlyCoin | WithAssets) => Effect.Effect<any, InstanceType<typeof ValueError>>
-    cborHex: (input: OnlyCoin | WithAssets) => Effect.Effect<string, InstanceType<typeof ValueError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<OnlyCoin | WithAssets, InstanceType<typeof ValueError>>
-    cborHex: (input: string) => Effect.Effect<OnlyCoin | WithAssets, InstanceType<typeof ValueError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: OnlyCoin | WithAssets) => Either<any, InstanceType<typeof ValueError>>
-    cborHex: (input: OnlyCoin | WithAssets) => Either<string, InstanceType<typeof ValueError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<OnlyCoin | WithAssets, InstanceType<typeof ValueError>>
-    cborHex: (input: string) => Either<OnlyCoin | WithAssets, InstanceType<typeof ValueError>>
-  }
-}
+export declare const CDDLSchema: Schema.Union<
+  [
+    typeof Schema.BigIntFromSelf,
+    Schema.Tuple2<
+      typeof Schema.BigIntFromSelf,
+      Schema.SchemaClass<ReadonlyMap<any, ReadonlyMap<any, bigint>>, ReadonlyMap<any, ReadonlyMap<any, bigint>>, never>
+    >
+  ]
+>
 ```
 
 ## Value

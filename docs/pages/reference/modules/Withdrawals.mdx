@@ -1,6 +1,6 @@
 ---
 title: Withdrawals.ts
-nav_order: 101
+nav_order: 119
 parent: Modules
 ---
 
@@ -14,23 +14,30 @@ parent: Modules
   - [empty](#empty)
   - [fromEntries](#fromentries)
   - [singleton](#singleton)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [WithdrawalsError (class)](#withdrawalserror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [Withdrawals (class)](#withdrawals-class)
-    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
 - [predicates](#predicates)
   - [has](#has)
   - [isEmpty](#isempty)
   - [isWithdrawals](#iswithdrawals)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
-  - [WithdrawalsCDDLSchema](#withdrawalscddlschema)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
+  - [FromCDDL](#fromcddl)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 - [transformation](#transformation)
   - [add](#add)
   - [entries](#entries)
@@ -38,7 +45,7 @@ parent: Modules
   - [remove](#remove)
   - [size](#size)
 - [utils](#utils)
-  - [Codec](#codec)
+  - [CDDLSchema](#cddlschema)
 
 ---
 
@@ -80,6 +87,40 @@ export declare const singleton: (rewardAccount: RewardAccount.RewardAccount, coi
 
 Added in v2.0.0
 
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert a Withdrawals to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (value: Withdrawals, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert a Withdrawals to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (value: Withdrawals, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
 # equality
 
 ## equals
@@ -108,20 +149,6 @@ export declare class WithdrawalsError
 
 Added in v2.0.0
 
-# generators
-
-## generator
-
-FastCheck generator for Withdrawals instances.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<Withdrawals>
-```
-
-Added in v2.0.0
-
 # model
 
 ## Withdrawals (class)
@@ -140,13 +167,31 @@ export declare class Withdrawals
 
 Added in v2.0.0
 
-### [Symbol.for("nodejs.util.inspect.custom")] (method)
+# parsing
+
+## fromCBORBytes
+
+Parse a Withdrawals from CBOR bytes.
 
 **Signature**
 
 ```ts
-;[Symbol.for("nodejs.util.inspect.custom")]()
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Withdrawals
 ```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse a Withdrawals from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Withdrawals
+```
+
+Added in v2.0.0
 
 # predicates
 
@@ -188,14 +233,14 @@ Added in v2.0.0
 
 # schemas
 
-## FromBytes
+## FromCBORBytes
 
 CBOR bytes transformation schema for Withdrawals.
 
 **Signature**
 
 ```ts
-export declare const FromBytes: (
+export declare const FromCBORBytes: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
   Schema.transformOrFail<
@@ -213,17 +258,17 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
+## FromCBORHex
 
 CBOR hex transformation schema for Withdrawals.
 
 **Signature**
 
 ```ts
-export declare const FromHex: (
+export declare const FromCBORHex: (
   options?: CBOR.CodecOptions
 ) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
   Schema.transform<
     Schema.transformOrFail<
       typeof Schema.Uint8ArrayFromSelf,
@@ -241,7 +286,7 @@ export declare const FromHex: (
 
 Added in v2.0.0
 
-## WithdrawalsCDDLSchema
+## FromCDDL
 
 CDDL schema for Withdrawals.
 
@@ -252,11 +297,25 @@ withdrawals = {+ reward_account => coin}
 **Signature**
 
 ```ts
-export declare const WithdrawalsCDDLSchema: Schema.transformOrFail<
+export declare const FromCDDL: Schema.transformOrFail<
   Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>,
   Schema.SchemaClass<Withdrawals, Withdrawals, never>,
   never
 >
+```
+
+Added in v2.0.0
+
+# testing
+
+## arbitrary
+
+FastCheck arbitrary for Withdrawals instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<Withdrawals>
 ```
 
 Added in v2.0.0
@@ -332,35 +391,10 @@ Added in v2.0.0
 
 # utils
 
-## Codec
+## CDDLSchema
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: {
-    cborBytes: (a: Withdrawals, overrideOptions?: ParseOptions) => any
-    cborHex: (a: Withdrawals, overrideOptions?: ParseOptions) => string
-  }
-  Decode: {
-    cborBytes: (u: unknown, overrideOptions?: ParseOptions) => Withdrawals
-    cborHex: (u: unknown, overrideOptions?: ParseOptions) => Withdrawals
-  }
-  EncodeEither: {
-    cborBytes: (a: Withdrawals, overrideOptions?: ParseOptions) => Either<any, ParseResult.ParseError>
-    cborHex: (a: Withdrawals, overrideOptions?: ParseOptions) => Either<string, ParseResult.ParseError>
-  }
-  DecodeEither: {
-    cborBytes: (u: unknown, overrideOptions?: ParseOptions) => Either<Withdrawals, ParseResult.ParseError>
-    cborHex: (u: unknown, overrideOptions?: ParseOptions) => Either<Withdrawals, ParseResult.ParseError>
-  }
-  EncodeEffect: {
-    cborBytes: (a: Withdrawals, overrideOptions?: ParseOptions) => Effect.Effect<any, ParseResult.ParseError, never>
-    cborHex: (a: Withdrawals, overrideOptions?: ParseOptions) => Effect.Effect<string, ParseResult.ParseError, never>
-  }
-  DecodeEffect: {
-    cborBytes: (u: unknown, overrideOptions?: ParseOptions) => Effect.Effect<Withdrawals, ParseResult.ParseError, never>
-    cborHex: (u: unknown, overrideOptions?: ParseOptions) => Effect.Effect<Withdrawals, ParseResult.ParseError, never>
-  }
-}
+export declare const CDDLSchema: Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
 ```

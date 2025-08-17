@@ -200,10 +200,10 @@ describe("PrivateKey CML Compatibility", () => {
       expect(cmlSignature.to_raw_bytes().length).toBe(64) // Ed25519 signature is 64 bytes
 
       const evolutionSignature = PrivateKey.sign(evolutionPrivateKey, testMessage)
-      expect(evolutionSignature.length).toBe(64) // Evolution signature should also be 64 bytes
+      expect(evolutionSignature.bytes.length).toBe(64) // Evolution signature should also be 64 bytes
 
       // Signatures should be identical
-      expect(Buffer.from(cmlSignature.to_raw_bytes())).toEqual(Buffer.from(evolutionSignature))
+      expect(Buffer.from(cmlSignature.to_raw_bytes())).toEqual(Buffer.from(evolutionSignature.bytes))
 
       // Verify signatures are cryptographically valid
       const cmlPublicKey = cmlPrivateKey.to_public()
@@ -214,7 +214,7 @@ describe("PrivateKey CML Compatibility", () => {
       expect(cmlVerifyResult).toBe(true)
 
       // Evolution signature verification using VKey
-      const evolutionVerifyResult = VKey.verify(evolutionPublicKey, testMessage, evolutionSignature)
+      const evolutionVerifyResult = VKey.verify(evolutionPublicKey, testMessage, evolutionSignature.bytes)
       expect(evolutionVerifyResult).toBe(true)
 
       // Cross-verify: CML signature with Evolution public key
@@ -222,7 +222,7 @@ describe("PrivateKey CML Compatibility", () => {
       expect(crossVerifyEvolution).toBe(true)
 
       // Cross-verify: Evolution signature with CML public key
-      const evolutionSignatureForCml = CML.Ed25519Signature.from_raw_bytes(evolutionSignature)
+      const evolutionSignatureForCml = CML.Ed25519Signature.from_raw_bytes(evolutionSignature.bytes)
       const crossVerifyCml = cmlPublicKey.verify(testMessage, evolutionSignatureForCml)
       expect(crossVerifyCml).toBe(true)
     })
@@ -243,10 +243,10 @@ describe("PrivateKey CML Compatibility", () => {
       expect(cmlSignature.to_raw_bytes().length).toBe(64) // Ed25519 signature is 64 bytes
 
       const evolutionSignature = PrivateKey.sign(evolutionPrivateKey, testMessage)
-      expect(evolutionSignature.length).toBe(64) // Evolution signature should also be 64 bytes
+      expect(evolutionSignature.bytes.length).toBe(64) // Evolution signature should also be 64 bytes
 
       // Signatures should be identical
-      expect(Buffer.from(cmlSignature.to_raw_bytes())).toEqual(Buffer.from(evolutionSignature))
+      expect(Buffer.from(cmlSignature.to_raw_bytes())).toEqual(Buffer.from(evolutionSignature.bytes))
 
       // Verify signatures are cryptographically valid
       const cmlPublicKey = cmlPrivateKey.to_public()
@@ -257,7 +257,7 @@ describe("PrivateKey CML Compatibility", () => {
       expect(cmlVerifyResult).toBe(true)
 
       // Evolution signature verification using VKey
-      const evolutionVerifyResult = VKey.verify(evolutionPublicKey, testMessage, evolutionSignature)
+      const evolutionVerifyResult = VKey.verify(evolutionPublicKey, testMessage, evolutionSignature.bytes)
       expect(evolutionVerifyResult).toBe(true)
 
       // Cross-verify: CML signature with Evolution public key
@@ -265,7 +265,7 @@ describe("PrivateKey CML Compatibility", () => {
       expect(crossVerifyEvolution).toBe(true)
 
       // Cross-verify: Evolution signature with CML public key
-      const evolutionSignatureForCml = CML.Ed25519Signature.from_raw_bytes(evolutionSignature)
+      const evolutionSignatureForCml = CML.Ed25519Signature.from_raw_bytes(evolutionSignature.bytes)
       const crossVerifyCml = cmlPublicKey.verify(testMessage, evolutionSignatureForCml)
       expect(crossVerifyCml).toBe(true)
     })
@@ -342,9 +342,9 @@ describe("PrivateKey CML Compatibility", () => {
       expect(cmlSignature.to_raw_bytes().length).toBe(64) // Signature should be 64 bytes
 
       const evolutionSignature = PrivateKey.sign(evolutionPrivateKey, message)
-      expect(evolutionSignature.length).toBe(64) // Evolution signature should also be 64 bytes
+      expect(evolutionSignature.bytes.length).toBe(64) // Evolution signature should also be 64 bytes
 
-      expect(Buffer.from(cmlSignature.to_raw_bytes())).toEqual(Buffer.from(evolutionSignature))
+      expect(Buffer.from(cmlSignature.to_raw_bytes())).toEqual(Buffer.from(evolutionSignature.bytes))
 
       // Verify signatures are cryptographically valid
       const cmlPublicKey = cmlPrivateKey.to_public()
@@ -354,14 +354,14 @@ describe("PrivateKey CML Compatibility", () => {
       const cmlVerifyResult = cmlPublicKey.verify(message, cmlSignature)
       expect(cmlVerifyResult).toBe(true)
 
-      const evolutionVerifyResult = VKey.verify(evolutionPublicKey, message, evolutionSignature)
+      const evolutionVerifyResult = VKey.verify(evolutionPublicKey, message, evolutionSignature.bytes)
       expect(evolutionVerifyResult).toBe(true)
 
       // Cross-verification should also work
       const crossVerifyEvolution = VKey.verify(evolutionPublicKey, message, cmlSignature.to_raw_bytes())
       expect(crossVerifyEvolution).toBe(true)
 
-      const evolutionSigForCml = CML.Ed25519Signature.from_raw_bytes(evolutionSignature)
+      const evolutionSigForCml = CML.Ed25519Signature.from_raw_bytes(evolutionSignature.bytes)
       const crossVerifyCml = cmlPublicKey.verify(message, evolutionSigForCml)
       expect(crossVerifyCml).toBe(true)
     })
@@ -390,7 +390,7 @@ describe("PrivateKey CML Compatibility", () => {
 
       // Both signatures should be 64 bytes (Ed25519 signature length)
       expect(cmlSignature.to_raw_bytes().length).toBe(64)
-      expect(evolutionSignature.length).toBe(64)
+      expect(evolutionSignature.bytes.length).toBe(64)
 
       // For extended keys, the signatures might be different due to different derivation
       // So let's just verify both are valid by checking they can verify
@@ -409,14 +409,14 @@ describe("PrivateKey CML Compatibility", () => {
       const cmlVerifyResult = cmlPublicKey.verify(message, cmlSignature)
       expect(cmlVerifyResult).toBe(true)
 
-      const evolutionVerifyResult = VKey.verify(evolutionPublicKey, message, evolutionSignature)
+      const evolutionVerifyResult = VKey.verify(evolutionPublicKey, message, evolutionSignature.bytes)
       expect(evolutionVerifyResult).toBe(true)
 
       // Since public keys are identical, cross-verification should work too
       const crossVerifyEvolution = VKey.verify(evolutionPublicKey, message, cmlSignature.to_raw_bytes())
       expect(crossVerifyEvolution).toBe(true)
 
-      const evolutionSigForCml = CML.Ed25519Signature.from_raw_bytes(evolutionSignature)
+      const evolutionSigForCml = CML.Ed25519Signature.from_raw_bytes(evolutionSignature.bytes)
       const crossVerifyCml = cmlPublicKey.verify(message, evolutionSigForCml)
       expect(crossVerifyCml).toBe(true)
     })

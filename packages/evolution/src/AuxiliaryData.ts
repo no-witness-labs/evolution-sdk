@@ -2,6 +2,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as Metadata from "./Metadata.js"
 import * as NativeScripts from "./NativeScripts.js"
 import * as PlutusV1 from "./PlutusV1.js"
@@ -23,6 +24,7 @@ export class AuxiliaryDataError extends Data.TaggedError("AuxiliaryDataError")<{
  * AuxiliaryData based on Conway CDDL specification.
  *
  * CDDL (Conway era):
+ * ```
  * auxiliary_data = {
  *   ? 0 => metadata           ; transaction_metadata
  *   ? 1 => [* native_script]  ; native_scripts
@@ -30,6 +32,7 @@ export class AuxiliaryDataError extends Data.TaggedError("AuxiliaryDataError")<{
  *   ? 3 => [* plutus_v2_script] ; plutus_v2_scripts
  *   ? 4 => [* plutus_v3_script] ; plutus_v3_scripts
  * }
+ * ```
  *
  * Uses map format with numeric keys as per Conway specification.
  *
@@ -213,10 +216,8 @@ export const arbitrary: FastCheck.Arbitrary<AuxiliaryData> = FastCheck.record({
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (
-  bytes: Uint8Array,
-  options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-): AuxiliaryData => Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): AuxiliaryData =>
+  Function.makeDecodeSync(FromCBORBytes(options), AuxiliaryDataError, "AuxiliaryData.fromCBORBytes")(bytes)
 
 /**
  * Decode AuxiliaryData from CBOR hex string.
@@ -224,8 +225,8 @@ export const fromCBORBytes = (
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS): AuxiliaryData =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): AuxiliaryData =>
+  Function.makeDecodeSync(FromCBORHex(options), AuxiliaryDataError, "AuxiliaryData.fromCBORHex")(hex)
 
 /**
  * Encode AuxiliaryData to CBOR bytes.
@@ -233,8 +234,8 @@ export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_D
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: AuxiliaryData, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(value, options))
+export const toCBORBytes = (value: AuxiliaryData, options?: CBOR.CodecOptions): Uint8Array =>
+  Function.makeEncodeSync(FromCBORBytes(options), AuxiliaryDataError, "AuxiliaryData.toCBORBytes")(value)
 
 /**
  * Encode AuxiliaryData to CBOR hex string.
@@ -242,97 +243,53 @@ export const toCBORBytes = (value: AuxiliaryData, options: CBOR.CodecOptions = C
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: AuxiliaryData, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS): string =>
-  Eff.runSync(Effect.toCBORHex(value, options))
+export const toCBORHex = (value: AuxiliaryData, options?: CBOR.CodecOptions): string =>
+  Function.makeEncodeSync(FromCBORHex(options), AuxiliaryDataError, "AuxiliaryData.toCBORHex")(value)
 
 // ============================================================================
-// Effect Namespace - Effect-based Error Handling
+// Either Namespace - Either-based Error Handling
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Decode AuxiliaryData from CBOR bytes with Effect error handling.
+   * Decode AuxiliaryData from CBOR bytes with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<AuxiliaryData, AuxiliaryDataError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new AuxiliaryDataError({
-            message: "Failed to decode AuxiliaryData from CBOR bytes",
-            cause
-          })
-      )
-    ) as Eff.Effect<AuxiliaryData, AuxiliaryDataError>
+  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
+    Function.makeDecodeEither(FromCBORBytes(options), AuxiliaryDataError)(bytes)
 
   /**
-   * Decode AuxiliaryData from CBOR hex string with Effect error handling.
+   * Decode AuxiliaryData from CBOR hex string with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<AuxiliaryData, AuxiliaryDataError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new AuxiliaryDataError({
-            message: "Failed to decode AuxiliaryData from CBOR hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
+    Function.makeDecodeEither(FromCBORHex(options), AuxiliaryDataError)(hex)
 
   /**
-   * Encode AuxiliaryData to CBOR bytes with Effect error handling.
+   * Encode AuxiliaryData to CBOR bytes with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    value: AuxiliaryData,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, AuxiliaryDataError> =>
-    Schema.encode(FromCBORBytes(options))(value).pipe(
-      Eff.mapError(
-        (cause) =>
-          new AuxiliaryDataError({
-            message: "Failed to encode AuxiliaryData to CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = (value: AuxiliaryData, options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORBytes(options), AuxiliaryDataError)(value)
 
   /**
-   * Encode AuxiliaryData to CBOR hex string with Effect error handling.
+   * Encode AuxiliaryData to CBOR hex string with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (
-    value: AuxiliaryData,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, AuxiliaryDataError> =>
-    Schema.encode(FromCBORHex(options))(value).pipe(
-      Eff.mapError(
-        (cause) =>
-          new AuxiliaryDataError({
-            message: "Failed to encode AuxiliaryData to CBOR hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = (value: AuxiliaryData, options?: CBOR.CodecOptions) =>
+    Function.makeEncodeEither(FromCBORHex(options), AuxiliaryDataError)(value)
 }

@@ -1,6 +1,7 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes32 from "./Bytes32.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for ScriptDataHash related operations.
@@ -26,13 +27,11 @@ export class ScriptDataHashError extends Data.TaggedError("ScriptDataHashError")
  *     (in field 18 of protocol_param_update.)
  *
  * @since 2.0.0
- * @category schemas
+ * @category model
  */
-export const ScriptDataHash = Bytes32.HexSchema.pipe(Schema.brand("ScriptDataHash")).annotations({
-  identifier: "ScriptDataHash"
-})
-
-export type ScriptDataHash = typeof ScriptDataHash.Type
+export class ScriptDataHash extends Schema.TaggedClass<ScriptDataHash>()("ScriptDataHash", {
+  hash: Bytes32.BytesSchema
+}) {}
 
 /**
  * Schema for transforming between Uint8Array and ScriptDataHash.
@@ -40,11 +39,12 @@ export type ScriptDataHash = typeof ScriptDataHash.Type
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.compose(
-  Bytes32.FromBytes, // Uint8Array -> hex string
-  ScriptDataHash // hex string -> ScriptDataHash
-).annotations({
-  identifier: "ScriptDataHash.Bytes"
+export const FromBytes = Schema.transform(Bytes32.BytesSchema, ScriptDataHash, {
+  strict: true,
+  decode: (bytes) => new ScriptDataHash({ hash: bytes }, { disableValidation: true }),
+  encode: (s) => s.hash
+}).annotations({
+  identifier: "ScriptDataHash.FromBytes"
 })
 
 /**
@@ -54,19 +54,19 @@ export const FromBytes = Schema.compose(
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes32.HexSchema, // string -> hex string
-  ScriptDataHash // hex string -> ScriptDataHash
+  Bytes32.FromHex, // string -> Bytes32
+  FromBytes // Bytes32 -> ScriptDataHash
 ).annotations({
-  identifier: "ScriptDataHash.Hex"
+  identifier: "ScriptDataHash.FromHex"
 })
 
 /**
- * Smart constructor for ScriptDataHash that validates and applies branding.
+ * Smart constructor for ScriptDataHash.
  *
  * @since 2.0.0
  * @category constructors
  */
-export const make = ScriptDataHash.make
+export const make = (...args: ConstructorParameters<typeof ScriptDataHash>) => new ScriptDataHash(...args)
 
 /**
  * Check if two ScriptDataHash instances are equal.
@@ -74,7 +74,7 @@ export const make = ScriptDataHash.make
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: ScriptDataHash, b: ScriptDataHash): boolean => a === b
+export const equals = (a: ScriptDataHash, b: ScriptDataHash): boolean => Bytes32.equals(a.hash, b.hash)
 
 /**
  * Check if the given value is a valid ScriptDataHash
@@ -90,10 +90,9 @@ export const isScriptDataHash = Schema.is(ScriptDataHash)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.hexaString({
-  minLength: Bytes32.HEX_LENGTH,
-  maxLength: Bytes32.HEX_LENGTH
-}).map((hex) => hex as ScriptDataHash)
+export const arbitrary = FastCheck.uint8Array({ minLength: 32, maxLength: 32 }).map(
+  (bytes) => new ScriptDataHash({ hash: bytes }, { disableValidation: true })
+)
 
 // ============================================================================
 // Root Functions
@@ -105,7 +104,7 @@ export const arbitrary = FastCheck.hexaString({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): ScriptDataHash => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, ScriptDataHashError, "ScriptDataHash.fromBytes")
 
 /**
  * Parse ScriptDataHash from hex string.
@@ -113,7 +112,7 @@ export const fromBytes = (bytes: Uint8Array): ScriptDataHash => Eff.runSync(Effe
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): ScriptDataHash => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, ScriptDataHashError, "ScriptDataHash.fromHex")
 
 /**
  * Encode ScriptDataHash to bytes.
@@ -121,7 +120,7 @@ export const fromHex = (hex: string): ScriptDataHash => Eff.runSync(Effect.fromH
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (scriptDataHash: ScriptDataHash): Uint8Array => Eff.runSync(Effect.toBytes(scriptDataHash))
+export const toBytes = Function.makeEncodeSync(FromBytes, ScriptDataHashError, "ScriptDataHash.toBytes")
 
 /**
  * Encode ScriptDataHash to hex string.
@@ -129,84 +128,30 @@ export const toBytes = (scriptDataHash: ScriptDataHash): Uint8Array => Eff.runSy
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (scriptDataHash: ScriptDataHash): string => Eff.runSync(Effect.toHex(scriptDataHash))
+export const toHex = Function.makeEncodeSync(FromHex, ScriptDataHashError, "ScriptDataHash.toHex")
 
 // ============================================================================
-// Effect Namespace
+// Either Namespace (composable non-throwing API)
 // ============================================================================
 
-/**
- * Effect-based error handling variants for functions that can fail.
- *
- * @since 2.0.0
- * @category effect
- */
-export namespace Effect {
+export namespace Either {
   /**
-   * Parse ScriptDataHash from bytes with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
+   * Parse ScriptDataHash from bytes with composable error handling.
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<ScriptDataHash, ScriptDataHashError> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new ScriptDataHashError({
-            message: "Failed to parse ScriptDataHash from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, ScriptDataHashError)
 
   /**
-   * Parse ScriptDataHash from hex string with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
+   * Parse ScriptDataHash from hex string with composable error handling.
    */
-  export const fromHex = (hex: string): Eff.Effect<ScriptDataHash, ScriptDataHashError> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new ScriptDataHashError({
-            message: "Failed to parse ScriptDataHash from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, ScriptDataHashError)
 
   /**
-   * Encode ScriptDataHash to bytes with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
+   * Encode ScriptDataHash to bytes with composable error handling.
    */
-  export const toBytes = (scriptDataHash: ScriptDataHash): Eff.Effect<Uint8Array, ScriptDataHashError> =>
-    Schema.encode(FromBytes)(scriptDataHash).pipe(
-      Eff.mapError(
-        (cause) =>
-          new ScriptDataHashError({
-            message: "Failed to encode ScriptDataHash to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, ScriptDataHashError)
 
   /**
-   * Encode ScriptDataHash to hex string with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
+   * Encode ScriptDataHash to hex string with composable error handling.
    */
-  export const toHex = (scriptDataHash: ScriptDataHash): Eff.Effect<string, ScriptDataHashError> =>
-    Schema.encode(FromHex)(scriptDataHash).pipe(
-      Eff.mapError(
-        (cause) =>
-          new ScriptDataHashError({
-            message: "Failed to encode ScriptDataHash to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, ScriptDataHashError)
 }

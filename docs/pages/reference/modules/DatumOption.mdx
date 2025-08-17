@@ -1,6 +1,6 @@
 ---
 title: DatumOption.ts
-nav_order: 34
+nav_order: 39
 parent: Modules
 ---
 
@@ -11,54 +11,140 @@ parent: Modules
 <h2 className="text-delta">Table of contents</h2>
 
 - [constructors](#constructors)
-  - [fromHash](#fromhash)
-  - [fromInlineData](#frominlinedata)
+  - [makeDatumHash](#makedatumhash)
+  - [makeInlineDatum](#makeinlinedatum)
+- [conversion](#conversion)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+- [effect](#effect)
+  - [Effect (namespace)](#effect-namespace)
+- [equality](#equality)
+  - [equals](#equals)
 - [errors](#errors)
   - [DatumOptionError (class)](#datumoptionerror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [DatumOption (type alias)](#datumoption-type-alias)
 - [predicates](#predicates)
   - [isDatumHash](#isdatumhash)
   - [isInlineDatum](#isinlinedatum)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
   - [DatumHash (class)](#datumhash-class)
   - [DatumOptionCDDLSchema](#datumoptioncddlschema)
   - [DatumOptionSchema](#datumoptionschema)
+  - [FromCBORBytes](#fromcborbytes-1)
+  - [FromCBORHex](#fromcborhex-1)
   - [InlineDatum (class)](#inlinedatum-class)
-- [transformation](#transformation)
-  - [getData](#getdata)
-  - [getHash](#gethash)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 - [utils](#utils)
-  - [Codec](#codec)
+  - [DatumHashFromBytes](#datumhashfrombytes)
+  - [datumHashArbitrary](#datumhasharbitrary)
+  - [inlineDatumArbitrary](#inlinedatumarbitrary)
 
 ---
 
 # constructors
 
-## fromHash
+## makeDatumHash
 
 Create a DatumOption with a datum hash.
 
 **Signature**
 
 ```ts
-export declare const fromHash: (hash: string) => DatumOption
+export declare const makeDatumHash: (
+  props: { readonly hash: any },
+  options?: Schema.MakeOptions | undefined
+) => DatumHash
 ```
 
 Added in v2.0.0
 
-## fromInlineData
+## makeInlineDatum
 
 Create a DatumOption with inline data.
 
 **Signature**
 
 ```ts
-export declare const fromInlineData: (data: PlutusData.Data) => DatumOption
+export declare const makeInlineDatum: (
+  props: { readonly data: PlutusData.Data },
+  options?: Schema.MakeOptions | undefined
+) => InlineDatum
+```
+
+Added in v2.0.0
+
+# conversion
+
+## fromCBORBytes
+
+Convert CBOR bytes to DatumOption (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => DatumOption
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Convert CBOR hex string to DatumOption (unsafe)
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => DatumOption
+```
+
+Added in v2.0.0
+
+## toCBORBytes
+
+Convert DatumOption to CBOR bytes (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (datumOption: DatumOption, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert DatumOption to CBOR hex string (unsafe)
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (datumOption: DatumOption, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
+
+# effect
+
+## Effect (namespace)
+
+Effect namespace for DatumOption operations that can fail
+
+Added in v2.0.0
+
+# equality
+
+## equals
+
+Check if two DatumOption instances are equal.
+
+**Signature**
+
+```ts
+export declare const equals: (a: DatumOption, b: DatumOption) => boolean
 ```
 
 Added in v2.0.0
@@ -73,20 +159,6 @@ Error class for DatumOption related operations.
 
 ```ts
 export declare class DatumOptionError
-```
-
-Added in v2.0.0
-
-# generators
-
-## generator
-
-FastCheck generator for DatumOption instances.
-
-**Signature**
-
-```ts
-export declare const generator: FastCheck.Arbitrary<DatumHash | InlineDatum>
 ```
 
 Added in v2.0.0
@@ -115,7 +187,7 @@ Check if a DatumOption is a datum hash.
 **Signature**
 
 ```ts
-export declare const isDatumHash: (datumOption: DatumOption) => datumOption is DatumHash
+export declare const isDatumHash: (u: unknown, overrideOptions?: ParseOptions | number) => u is DatumHash
 ```
 
 Added in v2.0.0
@@ -127,77 +199,12 @@ Check if a DatumOption is inline data.
 **Signature**
 
 ```ts
-export declare const isInlineDatum: (datumOption: DatumOption) => datumOption is InlineDatum
+export declare const isInlineDatum: (u: unknown, overrideOptions?: ParseOptions | number) => u is InlineDatum
 ```
 
 Added in v2.0.0
 
 # schemas
-
-## FromBytes
-
-CBOR bytes transformation schema for DatumOption.
-Transforms between Uint8Array and DatumOption using CBOR encoding.
-
-**Signature**
-
-```ts
-export declare const FromBytes: (
-  options?: CBOR.CodecOptions
-) => Schema.transform<
-  Schema.transformOrFail<
-    typeof Schema.Uint8ArrayFromSelf,
-    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
-    never
-  >,
-  Schema.transformOrFail<
-    Schema.Union<
-      [
-        Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-        Schema.Tuple2<Schema.Literal<[1n]>, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>
-      ]
-    >,
-    Schema.SchemaClass<DatumHash | InlineDatum, DatumHash | InlineDatum, never>,
-    never
-  >
->
-```
-
-Added in v2.0.0
-
-## FromHex
-
-CBOR hex transformation schema for DatumOption.
-Transforms between hex string and DatumOption using CBOR encoding.
-
-**Signature**
-
-```ts
-export declare const FromHex: (
-  options?: CBOR.CodecOptions
-) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
-  Schema.transform<
-    Schema.transformOrFail<
-      typeof Schema.Uint8ArrayFromSelf,
-      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
-      never
-    >,
-    Schema.transformOrFail<
-      Schema.Union<
-        [
-          Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-          Schema.Tuple2<Schema.Literal<[1n]>, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>
-        ]
-      >,
-      Schema.SchemaClass<DatumHash | InlineDatum, DatumHash | InlineDatum, never>,
-      never
-    >
-  >
->
-```
-
-Added in v2.0.0
 
 ## DatumHash (class)
 
@@ -258,6 +265,71 @@ export declare const DatumOptionSchema: Schema.Union<[typeof DatumHash, typeof I
 
 Added in v2.0.0
 
+## FromCBORBytes
+
+CBOR bytes transformation schema for DatumOption.
+Transforms between Uint8Array and DatumOption using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromCBORBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.Union<
+      [
+        Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple2<Schema.Literal<[1n]>, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>
+      ]
+    >,
+    Schema.SchemaClass<DatumHash | InlineDatum, DatumHash | InlineDatum, never>,
+    never
+  >
+>
+```
+
+Added in v2.0.0
+
+## FromCBORHex
+
+CBOR hex transformation schema for DatumOption.
+Transforms between hex string and DatumOption using CBOR encoding.
+
+**Signature**
+
+```ts
+export declare const FromCBORHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Union<
+        [
+          Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple2<Schema.Literal<[1n]>, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>
+        ]
+      >,
+      Schema.SchemaClass<DatumHash | InlineDatum, DatumHash | InlineDatum, never>,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
 ## InlineDatum (class)
 
 Schema for InlineDatum variant of DatumOption.
@@ -271,57 +343,45 @@ export declare class InlineDatum
 
 Added in v2.0.0
 
-# transformation
+# testing
 
-## getData
+## arbitrary
 
-Get the data from an InlineDatum, or undefined if it's not an InlineDatum.
-
-**Signature**
-
-```ts
-export declare const getData: (datumOption: DatumOption) => PlutusData.Data | undefined
-```
-
-Added in v2.0.0
-
-## getHash
-
-Get the hash from a DatumHash, or undefined if it's not a DatumHash.
+FastCheck arbitrary for generating random DatumOption instances
 
 **Signature**
 
 ```ts
-export declare const getHash: (datumOption: DatumOption) => string | undefined
+export declare const arbitrary: FastCheck.Arbitrary<DatumHash | InlineDatum>
 ```
 
 Added in v2.0.0
 
 # utils
 
-## Codec
+## DatumHashFromBytes
 
 **Signature**
 
 ```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: DatumHash | InlineDatum) => any; cborHex: (input: DatumHash | InlineDatum) => string }
-  Decode: { cborBytes: (input: any) => DatumHash | InlineDatum; cborHex: (input: string) => DatumHash | InlineDatum }
-  EncodeEffect: {
-    cborBytes: (input: DatumHash | InlineDatum) => Effect.Effect<any, InstanceType<typeof DatumOptionError>>
-    cborHex: (input: DatumHash | InlineDatum) => Effect.Effect<string, InstanceType<typeof DatumOptionError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<DatumHash | InlineDatum, InstanceType<typeof DatumOptionError>>
-    cborHex: (input: string) => Effect.Effect<DatumHash | InlineDatum, InstanceType<typeof DatumOptionError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: DatumHash | InlineDatum) => Either<any, InstanceType<typeof DatumOptionError>>
-    cborHex: (input: DatumHash | InlineDatum) => Either<string, InstanceType<typeof DatumOptionError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<DatumHash | InlineDatum, InstanceType<typeof DatumOptionError>>
-    cborHex: (input: string) => Either<DatumHash | InlineDatum, InstanceType<typeof DatumOptionError>>
-  }
-}
+export declare const DatumHashFromBytes: Schema.transform<
+  Schema.filter<typeof Schema.Uint8ArrayFromSelf>,
+  typeof DatumHash
+>
+```
+
+## datumHashArbitrary
+
+**Signature**
+
+```ts
+export declare const datumHashArbitrary: FastCheck.Arbitrary<DatumHash>
+```
+
+## inlineDatumArbitrary
+
+**Signature**
+
+```ts
+export declare const inlineDatumArbitrary: FastCheck.Arbitrary<InlineDatum>
 ```

@@ -1,6 +1,6 @@
 ---
 title: Port.ts
-nav_order: 70
+nav_order: 82
 parent: Modules
 ---
 
@@ -10,6 +10,8 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
 - [constants](#constants)
   - [PORT_MIN_VALUE](#port_min_value)
 - [constructors](#constructors)
@@ -21,8 +23,6 @@ parent: Modules
   - [equals](#equals)
 - [errors](#errors)
   - [PortError (class)](#porterror-class)
-- [generators](#generators)
-  - [generator](#generator)
 - [model](#model)
   - [Port (type alias)](#port-type-alias)
 - [predicates](#predicates)
@@ -39,12 +39,29 @@ parent: Modules
 
 ---
 
+# arbitrary
+
+## arbitrary
+
+Generate a random Port.
+
+**Signature**
+
+```ts
+export declare const arbitrary: Arbitrary<number>
+```
+
+Added in v2.0.0
+
 # constants
 
 ## PORT_MIN_VALUE
 
 CDDL specification:
+
+```
 port = uint .le 65535
+```
 
 **Signature**
 
@@ -118,20 +135,6 @@ Error class for Port related operations.
 
 ```ts
 export declare class PortError
-```
-
-Added in v2.0.0
-
-# generators
-
-## generator
-
-Generate a random Port.
-
-**Signature**
-
-```ts
-export declare const generator: Arbitrary<number>
 ```
 
 Added in v2.0.0

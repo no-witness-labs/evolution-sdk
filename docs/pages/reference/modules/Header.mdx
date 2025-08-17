@@ -1,6 +1,6 @@
 ---
 title: Header.ts
-nav_order: 45
+nav_order: 53
 parent: Modules
 ---
 
@@ -25,9 +25,9 @@ Added in v2.0.0
 - [predicates](#predicates)
   - [isHeader](#isheader)
 - [schemas](#schemas)
-  - [FromBytes](#FromBytes)
-  - [FromHex](#FromHex)
+  - [FromBytes](#frombytes)
   - [FromCDDL](#fromcddl)
+  - [FromHex](#fromhex)
 - [utils](#utils)
   - [Codec](#codec)
 
@@ -147,63 +147,6 @@ export declare const FromBytes: (
 
 Added in v2.0.0
 
-## FromHex
-
-CBOR hex transformation schema for Header.
-
-**Signature**
-
-```ts
-export declare const FromHex: (
-  options?: CBOR.CodecOptions
-) => Schema.transform<
-  Schema.transform<Schema.refine<string, typeof Schema.String>, typeof Schema.Uint8ArrayFromSelf>,
-  Schema.transform<
-    Schema.transformOrFail<
-      typeof Schema.Uint8ArrayFromSelf,
-      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
-      never
-    >,
-    Schema.transformOrFail<
-      Schema.Tuple2<
-        Schema.SchemaClass<
-          readonly [
-            bigint,
-            bigint,
-            any,
-            any,
-            any,
-            readonly [any, any],
-            bigint,
-            any,
-            readonly [any, bigint, bigint, any],
-            readonly [bigint, bigint]
-          ],
-          readonly [
-            bigint,
-            bigint,
-            any,
-            any,
-            any,
-            readonly [any, any],
-            bigint,
-            any,
-            readonly [any, bigint, bigint, any],
-            readonly [bigint, bigint]
-          ],
-          never
-        >,
-        typeof Schema.Uint8ArrayFromSelf
-      >,
-      Schema.SchemaClass<Header, Header, never>,
-      never
-    >
-  >
->
-```
-
-Added in v2.0.0
-
 ## FromCDDL
 
 CDDL schema for Header.
@@ -245,6 +188,63 @@ export declare const FromCDDL: Schema.transformOrFail<
   >,
   Schema.SchemaClass<Header, Header, never>,
   never
+>
+```
+
+Added in v2.0.0
+
+## FromHex
+
+CBOR hex transformation schema for Header.
+
+**Signature**
+
+```ts
+export declare const FromHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.Tuple2<
+        Schema.SchemaClass<
+          readonly [
+            bigint,
+            bigint,
+            any,
+            any,
+            any,
+            readonly [any, any],
+            bigint,
+            any,
+            readonly [any, bigint, bigint, any],
+            readonly [bigint, bigint]
+          ],
+          readonly [
+            bigint,
+            bigint,
+            any,
+            any,
+            any,
+            readonly [any, any],
+            bigint,
+            any,
+            readonly [any, bigint, bigint, any],
+            readonly [bigint, bigint]
+          ],
+          never
+        >,
+        typeof Schema.Uint8ArrayFromSelf
+      >,
+      Schema.SchemaClass<Header, Header, never>,
+      never
+    >
+  >
 >
 ```
 

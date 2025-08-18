@@ -4,6 +4,7 @@ import * as AssetName from "./AssetName.js"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as _Codec from "./Codec.js"
+import * as Function from "./Function.js"
 import * as PolicyId from "./PolicyId.js"
 import * as PositiveCoin from "./PositiveCoin.js"
 
@@ -249,7 +250,7 @@ export const arbitrary = FastCheck.array(
  * @since 2.0.0
  * @category schemas
  */
-export const MultiAssetCDDLSchema = Schema.transformOrFail(
+export const FromCDDL = Schema.transformOrFail(
   Schema.MapFromSelf({
     key: CBOR.ByteArray,
     value: Schema.MapFromSelf({
@@ -312,7 +313,7 @@ export const MultiAssetCDDLSchema = Schema.transformOrFail(
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    MultiAssetCDDLSchema // CBOR → MultiAsset
+    FromCDDL // CBOR → MultiAsset
   ).annotations({
     identifier: "MultiAsset.FromCBORBytes",
     title: "MultiAsset from CBOR Bytes",
@@ -347,8 +348,7 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): MultiAsset =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, MultiAssetError, "MultiAsset.fromCBORBytes")
 
 /**
  * Parse MultiAsset from CBOR hex string.
@@ -356,8 +356,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): M
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): MultiAsset =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, MultiAssetError, "MultiAsset.fromCBORHex")
 
 /**
  * Encode MultiAsset to CBOR bytes.
@@ -365,8 +364,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): MultiAsse
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (multiAsset: MultiAsset, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(multiAsset, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, MultiAssetError, "MultiAsset.toCBORBytes")
 
 /**
  * Encode MultiAsset to CBOR hex string.
@@ -374,8 +372,7 @@ export const toCBORBytes = (multiAsset: MultiAsset, options?: CBOR.CodecOptions)
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (multiAsset: MultiAsset, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(multiAsset, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, MultiAssetError, "MultiAsset.toCBORHex")
 
 /**
  * Merge two MultiAsset instances, combining amounts for assets that exist in both.
@@ -462,26 +459,14 @@ export const subtract = (a: MultiAsset, b: MultiAsset): MultiAsset => {
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse MultiAsset from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<MultiAsset, MultiAssetError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MultiAssetError({
-            message: "Failed to parse MultiAsset from CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, MultiAssetError)
 
   /**
    * Parse MultiAsset from CBOR hex string with Effect error handling.
@@ -489,16 +474,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Eff.Effect<MultiAsset, MultiAssetError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MultiAssetError({
-            message: "Failed to parse MultiAsset from CBOR hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, MultiAssetError)
 
   /**
    * Encode MultiAsset to CBOR bytes with Effect error handling.
@@ -506,19 +482,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    multiAsset: MultiAsset,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<Uint8Array, MultiAssetError> =>
-    Schema.encode(FromCBORBytes(options))(multiAsset).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MultiAssetError({
-            message: "Failed to encode MultiAsset to CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, MultiAssetError)
 
   /**
    * Encode MultiAsset to CBOR hex string with Effect error handling.
@@ -526,16 +490,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (multiAsset: MultiAsset, options?: CBOR.CodecOptions): Eff.Effect<string, MultiAssetError> =>
-    Schema.encode(FromCBORHex(options))(multiAsset).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MultiAssetError({
-            message: "Failed to encode MultiAsset to CBOR hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, MultiAssetError)
 }
-
-// ============================================================================

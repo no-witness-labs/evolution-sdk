@@ -7,13 +7,6 @@ import * as Function from "./Function.js"
 import * as RewardAccount from "./RewardAccount.js"
 
 /**
- * ```
- * CDDL specs
- * withdrawals = {+ reward_account => coin}
- * ```
- */
-
-/**
  * Error class for Withdrawals related operations.
  *
  * @since 2.0.0
@@ -71,7 +64,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Wit
       const withdrawalsMap = new Map<Uint8Array, bigint>()
       for (const [rewardAccount, coin] of toA.withdrawals.entries()) {
         const accountBytes = yield* ParseResult.encode(RewardAccount.FromBytes)(rewardAccount)
-        withdrawalsMap.set(accountBytes, BigInt(coin))
+        withdrawalsMap.set(accountBytes, coin)
       }
       return withdrawalsMap
     }),
@@ -83,10 +76,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Wit
         const coin = Coin.make(coinAmount)
         decodedWithdrawals.set(rewardAccount, coin)
       }
-      return yield* ParseResult.decode(Withdrawals)({
-        _tag: "Withdrawals",
-        withdrawals: decodedWithdrawals
-      })
+      return Withdrawals.make({ withdrawals: decodedWithdrawals }, { disableValidation: true })
     })
 })
 
@@ -249,8 +239,7 @@ export const entries = (withdrawals: Withdrawals): Array<[RewardAccount.RewardAc
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Withdrawals =>
-  Function.makeDecodeSync(FromCBORBytes(options), WithdrawalsError, "Withdrawals.fromCBORBytes")(bytes)
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, WithdrawalsError, "Withdrawals.fromCBORBytes")
 
 /**
  * Parse a Withdrawals from CBOR hex string.
@@ -258,8 +247,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): W
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Withdrawals =>
-  Function.makeDecodeSync(FromCBORHex(options), WithdrawalsError, "Withdrawals.fromCBORHex")(hex)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, WithdrawalsError, "Withdrawals.fromCBORHex")
 
 // ============================================================================
 // Encoding Functions
@@ -271,8 +259,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Withdrawa
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: Withdrawals, options?: CBOR.CodecOptions): Uint8Array =>
-  Function.makeEncodeSync(FromCBORBytes(options), WithdrawalsError, "Withdrawals.toCBORBytes")(value)
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, WithdrawalsError, "Withdrawals.toCBORBytes")
 
 /**
  * Convert a Withdrawals to CBOR hex string.
@@ -280,8 +267,7 @@ export const toCBORBytes = (value: Withdrawals, options?: CBOR.CodecOptions): Ui
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: Withdrawals, options?: CBOR.CodecOptions): string =>
-  Function.makeEncodeSync(FromCBORHex(options), WithdrawalsError, "Withdrawals.toCBORHex")(value)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, WithdrawalsError, "Withdrawals.toCBORHex")
 
 // ============================================================================
 // Either Namespace - Either-based Error Handling
@@ -300,8 +286,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORBytes(options), WithdrawalsError)(bytes)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, WithdrawalsError)
 
   /**
    * Parse a Withdrawals from CBOR hex string.
@@ -309,8 +294,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORHex(options), WithdrawalsError)(hex)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, WithdrawalsError)
 
   /**
    * Convert a Withdrawals to CBOR bytes.
@@ -318,8 +302,7 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (value: Withdrawals, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORBytes(options), WithdrawalsError)(value)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, WithdrawalsError)
 
   /**
    * Convert a Withdrawals to CBOR hex string.
@@ -327,6 +310,5 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (value: Withdrawals, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORHex(options), WithdrawalsError)(value)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, WithdrawalsError)
 }

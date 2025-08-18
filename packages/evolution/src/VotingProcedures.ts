@@ -5,6 +5,7 @@ import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Credential from "./Credential.js"
 import * as DRep from "./DRep.js"
+import * as Function from "./Function.js"
 import * as GovernanceAction from "./GovernanceAction.js"
 import * as PoolKeyHash from "./PoolKeyHash.js"
 import * as TransactionHash from "./TransactionHash.js"
@@ -366,8 +367,7 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category constructors
  */
-export const make = (procedures: Map<Voter, Map<GovernanceAction.GovActionId, VotingProcedure>>): VotingProcedures =>
-  new VotingProcedures({ procedures })
+export const make = (...args: ConstructorParameters<typeof VotingProcedures>) => new VotingProcedures(...args)
 
 /**
  * Create a VotingProcedure instance.
@@ -664,8 +664,11 @@ export const arbitrary = FastCheck.array(
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): VotingProcedures =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  VotingProceduresError,
+  "VotingProcedures.fromCBORBytes"
+)
 
 /**
  * Parse VotingProcedures from CBOR hex string.
@@ -673,8 +676,11 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): V
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): VotingProcedures =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(
+  FromCDDL,
+  VotingProceduresError,
+  "VotingProcedures.fromCBORHex"
+)
 
 /**
  * Encode VotingProcedures to CBOR bytes.
@@ -682,8 +688,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): VotingPro
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (votingProcedures: VotingProcedures, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(votingProcedures, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, VotingProceduresError, "VotingProcedures.toCBORBytes")
 
 /**
  * Encode VotingProcedures to CBOR hex string.
@@ -691,8 +696,7 @@ export const toCBORBytes = (votingProcedures: VotingProcedures, options?: CBOR.C
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (votingProcedures: VotingProcedures, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(votingProcedures, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, VotingProceduresError, "VotingProcedures.toCBORHex")
 
 // ============================================================================
 // Effect Namespace
@@ -704,26 +708,14 @@ export const toCBORHex = (votingProcedures: VotingProcedures, options?: CBOR.Cod
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse VotingProcedures from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<VotingProcedures, VotingProceduresError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new VotingProceduresError({
-            message: "Failed to parse VotingProcedures from bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, VotingProceduresError)
 
   /**
    * Parse VotingProcedures from CBOR hex string with Effect error handling.
@@ -731,19 +723,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<VotingProcedures, VotingProceduresError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new VotingProceduresError({
-            message: "Failed to parse VotingProcedures from hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, VotingProceduresError)
 
   /**
    * Encode VotingProcedures to CBOR bytes with Effect error handling.
@@ -751,19 +731,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    votingProcedures: VotingProcedures,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, VotingProceduresError> =>
-    Schema.encode(FromCBORBytes(options))(votingProcedures).pipe(
-      Eff.mapError(
-        (cause) =>
-          new VotingProceduresError({
-            message: "Failed to encode VotingProcedures to bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, VotingProceduresError)
 
   /**
    * Encode VotingProcedures to CBOR hex string with Effect error handling.
@@ -771,17 +739,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (
-    votingProcedures: VotingProcedures,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, VotingProceduresError> =>
-    Schema.encode(FromCBORHex(options))(votingProcedures).pipe(
-      Eff.mapError(
-        (cause) =>
-          new VotingProceduresError({
-            message: "Failed to encode VotingProcedures to hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, VotingProceduresError)
 }

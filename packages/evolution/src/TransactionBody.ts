@@ -120,8 +120,8 @@ export class TransactionBodyError extends Data.TaggedError("TransactionBodyError
 // Pre-bind hot ParseResult helpers (created once at module load)
 const encodeTxInput = ParseResult.encodeEither(TransactionInput.FromCDDL)
 const decodeTxInput = ParseResult.decodeEither(TransactionInput.FromCDDL)
-const encodeTxOutput = ParseResult.encodeEither(TransactionOutput.FromTransactionOutputCDDLSchema)
-const decodeTxOutput = ParseResult.decodeEither(TransactionOutput.FromTransactionOutputCDDLSchema)
+const encodeTxOutput = ParseResult.encodeEither(TransactionOutput.FromCDDL)
+const decodeTxOutput = ParseResult.decodeEither(TransactionOutput.FromCDDL)
 const encodeCertificate = ParseResult.encodeEither(Certificate.FromCDDL)
 const decodeCertificate = ParseResult.decodeEither(Certificate.FromCDDL)
 const encodeMint = ParseResult.encodeEither(Mint.FromCDDL)
@@ -448,7 +448,12 @@ export const fromCBORBytes = Function.makeCBORDecodeSync(
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, TransactionBodyError, "TransactionBody.fromCBORHex")
+export const fromCBORHex = Function.makeCBORDecodeHexSync(
+  FromCDDL,
+  TransactionBodyError,
+  "TransactionBody.fromCBORHex",
+  CBOR.STRUCT_FRIENDLY_OPTIONS
+)
 
 // ============================================================================
 // Encoding Functions
@@ -461,7 +466,12 @@ export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, TransactionB
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, TransactionBodyError, "TransactionBody.toCBORBytes")
+export const toCBORBytes = Function.makeCBOREncodeSync(
+  FromCDDL,
+  TransactionBodyError,
+  "TransactionBody.toCBORBytes",
+  CBOR.STRUCT_FRIENDLY_OPTIONS
+)
 
 /**
  * Convert a TransactionBody to CBOR hex string.
@@ -470,7 +480,12 @@ export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, TransactionBody
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, TransactionBodyError, "TransactionBody.toCBORHex")
+export const toCBORHex = Function.makeCBOREncodeHexSync(
+  FromCDDL,
+  TransactionBodyError,
+  "TransactionBody.toCBORHex",
+  CBOR.STRUCT_FRIENDLY_OPTIONS
+)
 
 // ============================================================================
 // Either Namespace - Either-based Error Handling
@@ -483,14 +498,22 @@ export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, TransactionBod
  * @category either
  */
 export namespace Either {
-  export const fromCBORBytes = (options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORBytes(options), TransactionBodyError)
-  export const fromCBORHex = (options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORHex(options), TransactionBodyError)
-  export const toCBORBytes = (options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORBytes(options), TransactionBodyError)
-  export const toCBORHex = (options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORHex(options), TransactionBodyError)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(
+    FromCDDL,
+    TransactionBodyError,
+    CBOR.STRUCT_FRIENDLY_OPTIONS
+  )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(
+    FromCDDL,
+    TransactionBodyError,
+    CBOR.STRUCT_FRIENDLY_OPTIONS
+  )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, TransactionBodyError, CBOR.STRUCT_FRIENDLY_OPTIONS)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(
+    FromCDDL,
+    TransactionBodyError,
+    CBOR.STRUCT_FRIENDLY_OPTIONS
+  )
 }
 
 // ============================================================================

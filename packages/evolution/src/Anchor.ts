@@ -47,9 +47,8 @@ export const CDDLSchema = Schema.Tuple(
  */
 export const FromCDDL = Schema.transform(CDDLSchema, Schema.typeSchema(Anchor), {
   strict: true,
-  encode: (toA) => [toA.anchorUrl, toA.anchorDataHash] as const,
-  decode: ([anchorUrl, anchorDataHash]) =>
-    new Anchor({ anchorUrl: Url.make(anchorUrl), anchorDataHash }, { disableValidation: true }) // Disable validation since we already check types
+  encode: (toA) => [toA.anchorUrl.href, toA.anchorDataHash] as const,
+  decode: ([anchorUrl, anchorDataHash]) => new Anchor({ anchorUrl: Url.make({ href: anchorUrl }), anchorDataHash })
 })
 
 /**
@@ -91,7 +90,7 @@ export const make = (...args: ConstructorParameters<typeof Anchor>) => new Ancho
  * @category equality
  */
 export const equals = (self: Anchor, that: Anchor): boolean => {
-  if (self.anchorUrl !== that.anchorUrl) return false
+  if (!Url.equals(self.anchorUrl, that.anchorUrl)) return false
   if (self.anchorDataHash.length !== that.anchorDataHash.length) return false
   for (let i = 0; i < self.anchorDataHash.length; i++) {
     if (self.anchorDataHash[i] !== that.anchorDataHash[i]) return false
@@ -120,8 +119,7 @@ export const arbitrary = FastCheck.record({
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Anchor =>
-  Function.makeDecodeSync(FromCBORBytes(options), AnchorError, "Anchor.fromCBORBytes")(bytes)
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, AnchorError, "Anchor.fromCBORBytes")
 
 /**
  * Parse an Anchor from CBOR hex string.
@@ -129,8 +127,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): A
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Anchor =>
-  Function.makeDecodeSync(FromCBORHex(options), AnchorError, "Anchor.fromCBORHex")(hex)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, AnchorError, "Anchor.fromCBORHex")
 
 // ============================================================================
 // Encoding Functions
@@ -142,8 +139,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Anchor =>
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: Anchor, options?: CBOR.CodecOptions): Uint8Array =>
-  Function.makeEncodeSync(FromCBORBytes(options), AnchorError, "Anchor.toCBORBytes")(value)
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, AnchorError, "Anchor.toCBORBytes")
 
 /**
  * Convert an Anchor to CBOR hex string.
@@ -151,8 +147,7 @@ export const toCBORBytes = (value: Anchor, options?: CBOR.CodecOptions): Uint8Ar
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: Anchor, options?: CBOR.CodecOptions): string =>
-  Function.makeEncodeSync(FromCBORHex(options), AnchorError, "Anchor.toCBORHex")(value)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, AnchorError, "Anchor.toCBORHex")
 
 // ============================================================================
 // Effect Namespace - Effect-based Error Handling
@@ -171,8 +166,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeDecodeEither(FromCBORBytes(options), AnchorError)(bytes)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, AnchorError)
 
   /**
    * Parse an Anchor from CBOR hex string.
@@ -180,8 +174,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeDecodeEither(FromCBORHex(options), AnchorError)(hex)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, AnchorError)
 
   /**
    * Convert an Anchor to CBOR bytes.
@@ -189,8 +182,7 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (value: Anchor, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeEncodeEither(FromCBORBytes(options), AnchorError)(value)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, AnchorError)
 
   /**
    * Convert an Anchor to CBOR hex string.
@@ -198,6 +190,5 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (value: Anchor, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeEncodeEither(FromCBORHex(options), AnchorError)(value)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, AnchorError)
 }

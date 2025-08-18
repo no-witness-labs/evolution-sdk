@@ -18,7 +18,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates minimal transaction body CBOR hex compatibility", () => {
     // Create test data for minimal transaction body (inputs, outputs, fee)
     const txHashBytes = new Uint8Array(32).fill(1)
-  // hex string not needed for this test
+    // hex string not needed for this test
     const fee = 100000n
 
     // Create Evolution SDK TransactionBody
@@ -57,7 +57,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with TTL CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-  // hex string not needed for this test
+    // hex string not needed for this test
     const fee = 100000n
     const ttl = 1000000n
 
@@ -99,7 +99,7 @@ describe("TransactionBody CML Compatibility", () => {
     // Create test data for multiple inputs
     const txHashBytes1 = new Uint8Array(32).fill(1)
     const txHashBytes2 = new Uint8Array(32).fill(2)
-  // hex strings not needed for this test
+    // hex strings not needed for this test
     const fee = 150000n
 
     // Create Evolution SDK TransactionBody with multiple inputs
@@ -120,7 +120,7 @@ describe("TransactionBody CML Compatibility", () => {
       outputs: [],
       fee: evolutionCoin
     })
-  // console output not required for lint-clean tests
+    // console output not required for lint-clean tests
 
     // Create equivalent CML TransactionBody
     const cmlTxHash1 = CML.TransactionHash.from_raw_bytes(txHashBytes1)
@@ -146,7 +146,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with network ID CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-  // hex string not needed for this test
+    // hex string not needed for this test
     const fee = 100000n
     const networkId = 1 // Mainnet
 
@@ -187,7 +187,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with TTL and network ID CBOR hex compatibility", () => {
     // Create test data
     const txHashBytes = new Uint8Array(32).fill(1)
-  // hex string not needed for this test
+    // hex string not needed for this test
     const fee = 100000n
     const ttl = 2000000n
     const networkId = 0 // Testnet
@@ -231,7 +231,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with different input indices CBOR hex compatibility", () => {
     // Create test data for different input indices
     const txHashBytes = new Uint8Array(32).fill(1)
-  // hex string not needed for this test
+    // hex string not needed for this test
     const fee = 120000n
 
     // Create Evolution SDK TransactionBody with different input indices
@@ -275,7 +275,7 @@ describe("TransactionBody CML Compatibility", () => {
   it("validates transaction body with large fee CBOR hex compatibility", () => {
     // Create test data with large fee
     const txHashBytes = new Uint8Array(32).fill(1)
-  // hex string not needed for this test
+    // hex string not needed for this test
     const largeFee = 10000000000n // 10 billion lovelace
 
     // Create Evolution SDK TransactionBody

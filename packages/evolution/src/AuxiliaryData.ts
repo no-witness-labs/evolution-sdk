@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
@@ -73,35 +73,71 @@ export const CDDLSchema = CBOR.tag(
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(AuxiliaryData), {
   strict: true,
   encode: (toA) =>
-    Eff.gen(function* () {
+    E.gen(function* () {
       const struct: Record<number, any> = {}
-      if (toA.metadata !== undefined) struct[0] = yield* ParseResult.encode(Metadata.FromCDDL)(toA.metadata)
-      if (toA.nativeScripts !== undefined)
-        struct[1] = yield* Eff.all(toA.nativeScripts.map((s) => ParseResult.encode(NativeScripts.FromCDDL)(s)))
-      if (toA.plutusV1Scripts !== undefined)
-        struct[2] = yield* Eff.all(toA.plutusV1Scripts.map((s) => ParseResult.encode(PlutusV1.FromCDDL)(s)))
-      if (toA.plutusV2Scripts !== undefined)
-        struct[3] = yield* Eff.all(toA.plutusV2Scripts.map((s) => ParseResult.encode(PlutusV2.FromCDDL)(s)))
-      if (toA.plutusV3Scripts !== undefined)
-        struct[4] = yield* Eff.all(toA.plutusV3Scripts.map((s) => ParseResult.encode(PlutusV3.FromCDDL)(s)))
+      if (toA.metadata !== undefined) struct[0] = yield* ParseResult.encodeEither(Metadata.FromCDDL)(toA.metadata)
+      if (toA.nativeScripts !== undefined) {
+        const scripts = []
+        for (const s of toA.nativeScripts) {
+          scripts.push(yield* ParseResult.encodeEither(NativeScripts.FromCDDL)(s))
+        }
+        struct[1] = scripts
+      }
+      if (toA.plutusV1Scripts !== undefined) {
+        const scripts = []
+        for (const s of toA.plutusV1Scripts) {
+          scripts.push(yield* ParseResult.encodeEither(PlutusV1.FromCDDL)(s))
+        }
+        struct[2] = scripts
+      }
+      if (toA.plutusV2Scripts !== undefined) {
+        const scripts = []
+        for (const s of toA.plutusV2Scripts) {
+          scripts.push(yield* ParseResult.encodeEither(PlutusV2.FromCDDL)(s))
+        }
+        struct[3] = scripts
+      }
+      if (toA.plutusV3Scripts !== undefined) {
+        const scripts = []
+        for (const s of toA.plutusV3Scripts) {
+          scripts.push(yield* ParseResult.encodeEither(PlutusV3.FromCDDL)(s))
+        }
+        struct[4] = scripts
+      }
       return { value: struct, tag: 259 as const, _tag: "Tag" as const }
     }),
   decode: (tagged) =>
-    Eff.gen(function* () {
+    E.gen(function* () {
       const struct = tagged.value
-      const metadata = struct[0] ? yield* ParseResult.decode(Metadata.FromCDDL)(struct[0]) : undefined
-      const nativeScripts = struct[1]
-        ? yield* Eff.all(struct[1].map((s) => ParseResult.decode(NativeScripts.FromCDDL)(s)))
-        : undefined
-      const plutusV1Scripts = struct[2]
-        ? yield* Eff.all(struct[2].map((s) => ParseResult.decode(PlutusV1.FromCDDL)(s)))
-        : undefined
-      const plutusV2Scripts = struct[3]
-        ? yield* Eff.all(struct[3].map((s) => ParseResult.decode(PlutusV2.FromCDDL)(s)))
-        : undefined
-      const plutusV3Scripts = struct[4]
-        ? yield* Eff.all(struct[4].map((s) => ParseResult.decode(PlutusV3.FromCDDL)(s)))
-        : undefined
+      const metadata = struct[0] ? yield* ParseResult.decodeEither(Metadata.FromCDDL)(struct[0]) : undefined
+      let nativeScripts: Array<NativeScripts.Native> | undefined = undefined
+      if (struct[1]) {
+        nativeScripts = []
+        for (const s of struct[1]) {
+          nativeScripts.push(yield* ParseResult.decodeEither(NativeScripts.FromCDDL)(s))
+        }
+      }
+      let plutusV1Scripts: Array<PlutusV1.PlutusV1> | undefined = undefined
+      if (struct[2]) {
+        plutusV1Scripts = []
+        for (const s of struct[2]) {
+          plutusV1Scripts.push(yield* ParseResult.decodeEither(PlutusV1.FromCDDL)(s))
+        }
+      }
+      let plutusV2Scripts: Array<PlutusV2.PlutusV2> | undefined = undefined
+      if (struct[3]) {
+        plutusV2Scripts = []
+        for (const s of struct[3]) {
+          plutusV2Scripts.push(yield* ParseResult.decodeEither(PlutusV2.FromCDDL)(s))
+        }
+      }
+      let plutusV3Scripts: Array<PlutusV3.PlutusV3> | undefined = undefined
+      if (struct[4]) {
+        plutusV3Scripts = []
+        for (const s of struct[4]) {
+          plutusV3Scripts.push(yield* ParseResult.decodeEither(PlutusV3.FromCDDL)(s))
+        }
+      }
       return new AuxiliaryData({ metadata, nativeScripts, plutusV1Scripts, plutusV2Scripts, plutusV3Scripts })
     })
 }).annotations({
@@ -216,8 +252,7 @@ export const arbitrary: FastCheck.Arbitrary<AuxiliaryData> = FastCheck.record({
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): AuxiliaryData =>
-  Function.makeDecodeSync(FromCBORBytes(options), AuxiliaryDataError, "AuxiliaryData.fromCBORBytes")(bytes)
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, AuxiliaryDataError, "AuxiliaryData.fromCBORBytes")
 
 /**
  * Decode AuxiliaryData from CBOR hex string.
@@ -225,8 +260,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): A
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): AuxiliaryData =>
-  Function.makeDecodeSync(FromCBORHex(options), AuxiliaryDataError, "AuxiliaryData.fromCBORHex")(hex)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, AuxiliaryDataError, "AuxiliaryData.fromCBORHex")
 
 /**
  * Encode AuxiliaryData to CBOR bytes.
@@ -234,8 +268,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Auxiliary
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: AuxiliaryData, options?: CBOR.CodecOptions): Uint8Array =>
-  Function.makeEncodeSync(FromCBORBytes(options), AuxiliaryDataError, "AuxiliaryData.toCBORBytes")(value)
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, AuxiliaryDataError, "AuxiliaryData.toCBORBytes")
 
 /**
  * Encode AuxiliaryData to CBOR hex string.
@@ -243,8 +276,7 @@ export const toCBORBytes = (value: AuxiliaryData, options?: CBOR.CodecOptions): 
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: AuxiliaryData, options?: CBOR.CodecOptions): string =>
-  Function.makeEncodeSync(FromCBORHex(options), AuxiliaryDataError, "AuxiliaryData.toCBORHex")(value)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, AuxiliaryDataError, "AuxiliaryData.toCBORHex")
 
 // ============================================================================
 // Either Namespace - Either-based Error Handling
@@ -263,8 +295,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORBytes(options), AuxiliaryDataError)(bytes)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, AuxiliaryDataError)
 
   /**
    * Decode AuxiliaryData from CBOR hex string with Either error handling.
@@ -272,8 +303,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORHex(options), AuxiliaryDataError)(hex)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, AuxiliaryDataError)
 
   /**
    * Encode AuxiliaryData to CBOR bytes with Either error handling.
@@ -281,8 +311,7 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (value: AuxiliaryData, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORBytes(options), AuxiliaryDataError)(value)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, AuxiliaryDataError)
 
   /**
    * Encode AuxiliaryData to CBOR hex string with Either error handling.
@@ -290,6 +319,5 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (value: AuxiliaryData, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORHex(options), AuxiliaryDataError)(value)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, AuxiliaryDataError)
 }

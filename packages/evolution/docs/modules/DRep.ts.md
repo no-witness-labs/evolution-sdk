@@ -1,6 +1,6 @@
 ---
 title: DRep.ts
-nav_order: 44
+nav_order: 45
 parent: Modules
 ---
 
@@ -18,7 +18,7 @@ parent: Modules
   - [fromKeyHash](#fromkeyhash)
   - [fromScriptHash](#fromscripthash)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toBytes](#tobytes)
   - [toHex](#tohex)
@@ -33,7 +33,7 @@ parent: Modules
   - [KeyHashDRep (type alias)](#keyhashdrep-type-alias)
   - [ScriptHashDRep (type alias)](#scripthashdrep-type-alias)
 - [parsing](#parsing)
-  - [fromBytes](#frombytes)
+  - [fromCBORBytes](#fromcborbytes)
   - [fromHex](#fromhex)
 - [pattern matching](#pattern-matching)
   - [match](#match)
@@ -41,7 +41,7 @@ parent: Modules
   - [isDRep](#isdrep)
 - [schemas](#schemas)
   - [DRep](#drep)
-  - [FromBytes](#frombytes-1)
+  - [FromBytes](#frombytes)
   - [FromCDDL](#fromcddl)
   - [FromHex](#fromhex-1)
 - [type guards](#type-guards)
@@ -125,7 +125,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -140,7 +140,14 @@ Encode DRep to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toBytes: (drep: DRep, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toBytes: (
+  input:
+    | { readonly _tag: "KeyHashDRep"; readonly keyHash: KeyHash.KeyHash }
+    | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: ScriptHash.ScriptHash }
+    | { readonly _tag: "AlwaysAbstainDRep" }
+    | { readonly _tag: "AlwaysNoConfidenceDRep" },
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -152,7 +159,14 @@ Encode DRep to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toHex: (drep: DRep, options?: CBOR.CodecOptions) => string
+export declare const toHex: (
+  input:
+    | { readonly _tag: "KeyHashDRep"; readonly keyHash: KeyHash.KeyHash }
+    | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: ScriptHash.ScriptHash }
+    | { readonly _tag: "AlwaysAbstainDRep" }
+    | { readonly _tag: "AlwaysNoConfidenceDRep" },
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0
@@ -249,14 +263,21 @@ Added in v2.0.0
 
 # parsing
 
-## fromBytes
+## fromCBORBytes
 
 Parse DRep from CBOR bytes.
 
 **Signature**
 
 ```ts
-export declare const fromBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => DRep
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) =>
+  | { readonly _tag: "KeyHashDRep"; readonly keyHash: KeyHash.KeyHash }
+  | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: ScriptHash.ScriptHash }
+  | { readonly _tag: "AlwaysAbstainDRep" }
+  | { readonly _tag: "AlwaysNoConfidenceDRep" }
 ```
 
 Added in v2.0.0
@@ -268,7 +289,14 @@ Parse DRep from CBOR hex string.
 **Signature**
 
 ```ts
-export declare const fromHex: (hex: string, options?: CBOR.CodecOptions) => DRep
+export declare const fromHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) =>
+  | { readonly _tag: "KeyHashDRep"; readonly keyHash: KeyHash.KeyHash }
+  | { readonly _tag: "ScriptHashDRep"; readonly scriptHash: ScriptHash.ScriptHash }
+  | { readonly _tag: "AlwaysAbstainDRep" }
+  | { readonly _tag: "AlwaysNoConfidenceDRep" }
 ```
 
 Added in v2.0.0

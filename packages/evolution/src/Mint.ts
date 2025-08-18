@@ -4,6 +4,7 @@ import * as AssetName from "./AssetName.js"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as _Codec from "./Codec.js"
+import * as Function from "./Function.js"
 import * as NonZeroInt64 from "./NonZeroInt64.js"
 import * as PolicyId from "./PolicyId.js"
 
@@ -345,8 +346,7 @@ export const arbitrary = FastCheck.array(
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Mint =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, MintError, "Mint.fromCBORBytes")
 
 /**
  * Parse Mint from CBOR hex string.
@@ -354,8 +354,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): M
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Mint =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, MintError, "Mint.fromCBORHex")
 
 /**
  * Encode Mint to CBOR bytes.
@@ -363,8 +362,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Mint =>
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (mint: Mint, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(mint, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, MintError, "Mint.toCBORBytes")
 
 /**
  * Encode Mint to CBOR hex string.
@@ -372,8 +370,7 @@ export const toCBORBytes = (mint: Mint, options?: CBOR.CodecOptions): Uint8Array
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (mint: Mint, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(mint, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, MintError, "Mint.toCBORHex")
 
 // ============================================================================
 // Effect Namespace
@@ -385,23 +382,14 @@ export const toCBORHex = (mint: Mint, options?: CBOR.CodecOptions): string =>
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse Mint from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Eff.Effect<Mint, MintError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MintError({
-            message: "Failed to parse Mint from CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, MintError)
 
   /**
    * Parse Mint from CBOR hex string with Effect error handling.
@@ -409,16 +397,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Eff.Effect<Mint, MintError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MintError({
-            message: "Failed to parse Mint from CBOR hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, MintError)
 
   /**
    * Encode Mint to CBOR bytes with Effect error handling.
@@ -426,16 +405,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (mint: Mint, options?: CBOR.CodecOptions): Eff.Effect<Uint8Array, MintError> =>
-    Schema.encode(FromCBORBytes(options))(mint).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MintError({
-            message: "Failed to encode Mint to CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, MintError)
 
   /**
    * Encode Mint to CBOR hex string with Effect error handling.
@@ -443,14 +413,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (mint: Mint, options?: CBOR.CodecOptions): Eff.Effect<string, MintError> =>
-    Schema.encode(FromCBORHex(options))(mint).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MintError({
-            message: "Failed to encode Mint to CBOR hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, MintError)
 }

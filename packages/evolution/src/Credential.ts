@@ -2,6 +2,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as KeyHash from "./KeyHash.js"
 import * as ScriptHash from "./ScriptHash.js"
 
@@ -125,8 +126,7 @@ export const arbitrary = FastCheck.oneof(KeyHash.arbitrary, ScriptHash.arbitrary
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Credential =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, CredentialError, "Credential.fromCBORBytes")
 
 /**
  * Parse a Credential from CBOR hex string.
@@ -134,8 +134,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): C
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Credential =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, CredentialError, "Credential.fromCBORHex")
 
 /**
  * Convert a Credential to CBOR bytes.
@@ -143,8 +142,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Credentia
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (credential: Credential, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(credential, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, CredentialError, "Credential.toCBORBytes")
 
 /**
  * Convert a Credential to CBOR hex string.
@@ -152,8 +150,7 @@ export const toCBORBytes = (credential: Credential, options?: CBOR.CodecOptions)
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (credential: Credential, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(credential, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, CredentialError, "Credential.toCBORHex")
 
 // ============================================================================
 // Effect Namespace
@@ -165,18 +162,14 @@ export const toCBORHex = (credential: Credential, options?: CBOR.CodecOptions): 
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse a Credential from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Eff.mapError(
-      Schema.decode(FromCBORBytes(options))(bytes),
-      (error) => new CredentialError({ message: "Failed to decode Credential from CBOR bytes", cause: error })
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, CredentialError)
 
   /**
    * Parse a Credential from CBOR hex string with Effect error handling.
@@ -184,11 +177,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Eff.mapError(
-      Schema.decode(FromCBORHex(options))(hex),
-      (error) => new CredentialError({ message: "Failed to decode Credential from CBOR hex", cause: error })
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, CredentialError)
 
   /**
    * Convert a Credential to CBOR bytes with Effect error handling.
@@ -196,11 +185,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (credential: Credential, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Eff.mapError(
-      Schema.encode(FromCBORBytes(options))(credential),
-      (error) => new CredentialError({ message: "Failed to encode Credential to CBOR bytes", cause: error })
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, CredentialError)
 
   /**
    * Convert a Credential to CBOR hex string with Effect error handling.
@@ -208,9 +193,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (credential: Credential, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Eff.mapError(
-      Schema.encode(FromCBORHex(options))(credential),
-      (error) => new CredentialError({ message: "Failed to encode Credential to CBOR hex", cause: error })
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, CredentialError)
 }

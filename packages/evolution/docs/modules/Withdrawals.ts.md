@@ -1,6 +1,6 @@
 ---
 title: Withdrawals.ts
-nav_order: 119
+nav_order: 120
 parent: Modules
 ---
 
@@ -104,7 +104,7 @@ Convert a Withdrawals to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: Withdrawals, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: Withdrawals, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -116,7 +116,7 @@ Convert a Withdrawals to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: Withdrawals, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: Withdrawals, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

@@ -1,7 +1,8 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as MultiHostName from "./MultiHostName.js"
 import * as SingleHostAddr from "./SingleHostAddr.js"
 import * as SingleHostName from "./SingleHostName.js"
@@ -135,18 +136,14 @@ export const fromMultiHostName = (multiHostName: MultiHostName.MultiHostName): R
  * @since 2.0.0
  * @category Effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse a Relay from CBOR bytes using Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (input: Uint8Array, options?: CBOR.CodecOptions): Eff.Effect<Relay, RelayError> =>
-    Eff.mapError(
-      Schema.decode(FromCBORBytes(options))(input),
-      (cause) => new RelayError({ message: "Failed to decode Relay from CBOR bytes", cause })
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, RelayError)
 
   /**
    * Parse a Relay from CBOR hex using Effect error handling.
@@ -154,11 +151,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (input: string, options?: CBOR.CodecOptions): Eff.Effect<Relay, RelayError> =>
-    Eff.mapError(
-      Schema.decode(FromCBORHex(options))(input),
-      (cause) => new RelayError({ message: "Failed to decode Relay from CBOR hex", cause })
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, RelayError)
 
   /**
    * Convert a Relay to CBOR bytes using Effect error handling.
@@ -166,11 +159,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (value: Relay, options?: CBOR.CodecOptions): Eff.Effect<Uint8Array, RelayError> =>
-    Eff.mapError(
-      Schema.encode(FromCBORBytes(options))(value),
-      (cause) => new RelayError({ message: "Failed to encode Relay to CBOR bytes", cause })
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, RelayError)
 
   /**
    * Convert a Relay to CBOR hex using Effect error handling.
@@ -178,11 +167,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (value: Relay, options?: CBOR.CodecOptions): Eff.Effect<string, RelayError> =>
-    Eff.mapError(
-      Schema.encode(FromCBORHex(options))(value),
-      (cause) => new RelayError({ message: "Failed to encode Relay to CBOR hex", cause })
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, RelayError)
 }
 
 /**
@@ -191,8 +176,7 @@ export namespace Effect {
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: Relay, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(value, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, RelayError, "Relay.toCBORBytes")
 
 /**
  * Convert Relay to CBOR hex (unsafe).
@@ -200,8 +184,7 @@ export const toCBORBytes = (value: Relay, options?: CBOR.CodecOptions): Uint8Arr
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: Relay, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(value, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, RelayError, "Relay.toCBORHex")
 
 /**
  * Parse Relay from CBOR bytes (unsafe).
@@ -209,8 +192,7 @@ export const toCBORHex = (value: Relay, options?: CBOR.CodecOptions): string =>
  * @since 2.0.0
  * @category decoding
  */
-export const fromCBORBytes = (value: Uint8Array, options?: CBOR.CodecOptions): Relay =>
-  Eff.runSync(Effect.fromCBORBytes(value, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, RelayError, "Relay.fromCBORBytes")
 
 /**
  * Parse Relay from CBOR hex (unsafe).
@@ -218,8 +200,7 @@ export const fromCBORBytes = (value: Uint8Array, options?: CBOR.CodecOptions): R
  * @since 2.0.0
  * @category decoding
  */
-export const fromCBORHex = (value: string, options?: CBOR.CodecOptions): Relay =>
-  Eff.runSync(Effect.fromCBORHex(value, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, RelayError, "Relay.fromCBORHex")
 
 /**
  * Pattern match on a Relay to handle different relay types.

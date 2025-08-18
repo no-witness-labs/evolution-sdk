@@ -3,6 +3,7 @@ import { Data, Effect, FastCheck, Option, ParseResult, Schema } from "effect"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as DnsName from "./DnsName.js"
+import * as Function from "./Function.js"
 import * as Port from "./Port.js"
 
 /**
@@ -173,29 +174,86 @@ export const FromHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =
     FromBytes(options) // Uint8Array → SingleHostName
   )
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) => ({
-  Encode: {
-    cborBytes: Schema.encodeSync(FromBytes(options)),
-    cborHex: Schema.encodeSync(FromHex(options))
-  },
-  Decode: {
-    cborBytes: Schema.decodeUnknownSync(FromBytes(options)),
-    cborHex: Schema.decodeUnknownSync(FromHex(options))
-  },
-  EncodeEither: {
-    cborBytes: Schema.encodeEither(FromBytes(options)),
-    cborHex: Schema.encodeEither(FromHex(options))
-  },
-  DecodeEither: {
-    cborBytes: Schema.decodeEither(FromBytes(options)),
-    cborHex: Schema.decodeEither(FromHex(options))
-  },
-  EncodeEffect: {
-    cborBytes: Schema.encode(FromBytes(options)),
-    cborHex: Schema.encode(FromHex(options))
-  },
-  DecodeEffect: {
-    cborBytes: Schema.decode(FromBytes(options)),
-    cborHex: Schema.decode(FromHex(options))
-  }
-})
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse a SingleHostName from CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, SingleHostNameError, "SingleHostName.fromCBORBytes")
+
+/**
+ * Parse a SingleHostName from CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, SingleHostNameError, "SingleHostName.fromCBORHex")
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
+
+/**
+ * Convert a SingleHostName to CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, SingleHostNameError, "SingleHostName.toCBORBytes")
+
+/**
+ * Convert a SingleHostName to CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, SingleHostNameError, "SingleHostName.toCBORHex")
+
+// ============================================================================
+// Either Namespace - Either-based Error Handling
+// ============================================================================
+
+/**
+ * Either-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category either
+ */
+export namespace Either {
+  /**
+   * Parse a SingleHostName from CBOR bytes.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, SingleHostNameError)
+
+  /**
+   * Parse a SingleHostName from CBOR hex string.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, SingleHostNameError)
+
+  /**
+   * Convert a SingleHostName to CBOR bytes.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, SingleHostNameError)
+
+  /**
+   * Convert a SingleHostName to CBOR hex string.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, SingleHostNameError)
+}

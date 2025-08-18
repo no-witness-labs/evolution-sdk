@@ -1,6 +1,6 @@
 ---
 title: CBOR.ts
-nav_order: 29
+nav_order: 30
 parent: Modules
 ---
 
@@ -38,7 +38,6 @@ parent: Modules
 - [utils](#utils)
   - [ArraySchema](#arrayschema)
   - [ByteArray](#bytearray)
-  - [Effect (namespace)](#effect-namespace)
   - [Either (namespace)](#either-namespace)
   - [Float](#float)
   - [FromHex](#fromhex)
@@ -365,8 +364,6 @@ export declare const ArraySchema: Schema.Array$<Schema.suspend<CBOR, CBOR, never
 ```ts
 export declare const ByteArray: typeof Schema.Uint8ArrayFromSelf
 ```
-
-## Effect (namespace)
 
 ## Either (namespace)
 

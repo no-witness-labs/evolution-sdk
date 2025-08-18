@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, Either as E, FastCheck, Schema } from "effect"
 
 /**
  * Error class for Coin related operations.
@@ -64,7 +64,7 @@ export const is = Schema.is(Coin)
  * @since 2.0.0
  * @category transformation
  */
-export const add = (a: Coin, b: Coin): Coin => Eff.runSync(Effect.add(a, b))
+export const add = (a: Coin, b: Coin): Coin => E.getOrThrow(Either.add(a, b))
 
 /**
  * Subtract two coin amounts safely.
@@ -72,7 +72,7 @@ export const add = (a: Coin, b: Coin): Coin => Eff.runSync(Effect.add(a, b))
  * @since 2.0.0
  * @category transformation
  */
-export const subtract = (a: Coin, b: Coin): Coin => Eff.runSync(Effect.subtract(a, b))
+export const subtract = (a: Coin, b: Coin): Coin => E.getOrThrow(Either.subtract(a, b))
 
 /**
  * Compare two coin amounts.
@@ -110,45 +110,45 @@ export const arbitrary = FastCheck.bigInt({
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Add two coin amounts safely with Effect error handling.
+   * Add two coin amounts safely with Either error handling.
    *
    * @since 2.0.0
    * @category transformation
    */
-  export const add = (a: Coin, b: Coin): Eff.Effect<Coin, CoinError> => {
+  export const add = (a: Coin, b: Coin): E.Either<Coin, CoinError> => {
     const result = a + b
     if (result > MAX_COIN_VALUE) {
-      return Eff.fail(
+      return E.left(
         new CoinError({
           message: `Addition overflow: ${a} + ${b} exceeds maximum coin value`
         })
       )
     }
-    return Eff.succeed(make(result))
+    return E.right(make(result))
   }
 
   /**
-   * Subtract two coin amounts safely with Effect error handling.
+   * Subtract two coin amounts safely with Either error handling.
    *
    * @since 2.0.0
    * @category transformation
    */
-  export const subtract = (a: Coin, b: Coin): Eff.Effect<Coin, CoinError> => {
+  export const subtract = (a: Coin, b: Coin): E.Either<Coin, CoinError> => {
     const result = a - b
     if (result < 0n) {
-      return Eff.fail(
+      return E.left(
         new CoinError({
           message: `Subtraction underflow: ${a} - ${b} results in negative value`
         })
       )
     }
-    return Eff.succeed(make(result))
+    return E.right(make(result))
   }
 }

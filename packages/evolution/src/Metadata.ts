@@ -1,6 +1,7 @@
-import { Data, Effect as Eff, Either, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as Numeric from "./Numeric.js"
 import * as TransactionMetadatum from "./TransactionMetadatum.js"
 
@@ -73,7 +74,7 @@ export const CDDLSchema = Schema.MapFromSelf({
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Metadata), {
   strict: true,
   encode: (toI) =>
-    Either.gen(function* () {
+    E.gen(function* () {
       const map = new Map<bigint, TransactionMetadatum.CDDLSchema>()
       for (const [label, metadatum] of toI.entries()) {
         const transactionMetadatum = yield* ParseResult.encodeEither(TransactionMetadatum.FromCDDL)(metadatum)
@@ -82,7 +83,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Met
       return map
     }),
   decode: (fromA) =>
-    Either.gen(function* () {
+    E.gen(function* () {
       const map = new Map<MetadataLabel, TransactionMetadatum.TransactionMetadatum>()
       for (const [label, metadatum] of fromA.entries()) {
         const transactionMetadatum = yield* ParseResult.decodeEither(TransactionMetadatum.FromCDDL)(metadatum)
@@ -124,8 +125,7 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category constructors
  */
-export const make = (map: Map<MetadataLabel, TransactionMetadatum.TransactionMetadatum>): Metadata =>
-  Schema.decodeSync(Metadata)(map)
+export const make = (...args: ConstructorParameters<typeof Metadata>) => new Metadata(...args)
 
 // ============================================================================
 // Utility Functions
@@ -172,8 +172,7 @@ export const arbitrary: FastCheck.Arbitrary<Metadata> = FastCheck.array(
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Metadata =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, MetadataError, "Metadata.fromCBORBytes")
 
 /**
  * Parse Metadata from CBOR hex string.
@@ -181,8 +180,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): M
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Metadata =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, MetadataError, "Metadata.fromCBORHex")
 
 // ============================================================================
 // Encoding Functions
@@ -194,8 +192,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Metadata 
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (metadata: Metadata, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(metadata, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, MetadataError, "Metadata.toCBORBytes")
 
 /**
  * Convert Metadata to CBOR hex string.
@@ -203,8 +200,7 @@ export const toCBORBytes = (metadata: Metadata, options?: CBOR.CodecOptions): Ui
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (metadata: Metadata, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(metadata, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, MetadataError, "Metadata.toCBORHex")
 
 // ============================================================================
 // Factory Functions
@@ -316,26 +312,14 @@ export const entries = (metadata: Metadata): Array<[MetadataLabel, TransactionMe
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse Metadata from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Metadata, MetadataError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MetadataError({
-            message: "Failed to decode Metadata from CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, MetadataError)
 
   /**
    * Parse Metadata from CBOR hex string with Effect error handling.
@@ -343,19 +327,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Metadata, MetadataError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MetadataError({
-            message: "Failed to decode Metadata from CBOR hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, MetadataError)
 
   /**
    * Convert Metadata to CBOR bytes with Effect error handling.
@@ -363,19 +335,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    metadata: Metadata,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, MetadataError> =>
-    Schema.encode(FromCBORBytes(options))(metadata).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MetadataError({
-            message: "Failed to encode Metadata to CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, MetadataError)
 
   /**
    * Convert Metadata to CBOR hex string with Effect error handling.
@@ -383,17 +343,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (
-    metadata: Metadata,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, MetadataError> =>
-    Schema.encode(FromCBORHex(options))(metadata).pipe(
-      Eff.mapError(
-        (cause) =>
-          new MetadataError({
-            message: "Failed to encode Metadata to CBOR hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, MetadataError)
 }

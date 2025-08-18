@@ -1,6 +1,6 @@
 ---
 title: Header.ts
-nav_order: 53
+nav_order: 54
 parent: Modules
 ---
 
@@ -16,22 +16,62 @@ Added in v2.0.0
 
 <h2 class="text-delta">Table of contents</h2>
 
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
   - [HeaderError (class)](#headererror-class)
 - [model](#model)
   - [Header (class)](#header-class)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
 - [predicates](#predicates)
   - [isHeader](#isheader)
 - [schemas](#schemas)
   - [FromBytes](#frombytes)
   - [FromCDDL](#fromcddl)
   - [FromHex](#fromhex)
-- [utils](#utils)
-  - [Codec](#codec)
 
 ---
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert a Header to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (input: Header, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert a Header to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (input: Header, options?: CBOR.CodecOptions) => string
+```
+
+Added in v2.0.0
 
 # equality
 
@@ -73,6 +113,32 @@ CDDL: header = [header_body, body_signature : kes_signature]
 
 ```ts
 export declare class Header
+```
+
+Added in v2.0.0
+
+# parsing
+
+## fromCBORBytes
+
+Parse a Header from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Header
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse a Header from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Header
 ```
 
 Added in v2.0.0
@@ -249,32 +315,3 @@ export declare const FromHex: (
 ```
 
 Added in v2.0.0
-
-# utils
-
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: { cborBytes: (input: Header) => any; cborHex: (input: Header) => string }
-  Decode: { cborBytes: (input: any) => Header; cborHex: (input: string) => Header }
-  EncodeEffect: {
-    cborBytes: (input: Header) => Effect.Effect<any, InstanceType<typeof HeaderError>>
-    cborHex: (input: Header) => Effect.Effect<string, InstanceType<typeof HeaderError>>
-  }
-  DecodeEffect: {
-    cborBytes: (input: any) => Effect.Effect<Header, InstanceType<typeof HeaderError>>
-    cborHex: (input: string) => Effect.Effect<Header, InstanceType<typeof HeaderError>>
-  }
-  EncodeEither: {
-    cborBytes: (input: Header) => Either<any, InstanceType<typeof HeaderError>>
-    cborHex: (input: Header) => Either<string, InstanceType<typeof HeaderError>>
-  }
-  DecodeEither: {
-    cborBytes: (input: any) => Either<Header, InstanceType<typeof HeaderError>>
-    cborHex: (input: string) => Either<Header, InstanceType<typeof HeaderError>>
-  }
-}
-```

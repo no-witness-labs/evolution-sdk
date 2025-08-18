@@ -1,6 +1,6 @@
 ---
 title: Relay.ts
-nav_order: 89
+nav_order: 90
 parent: Modules
 ---
 
@@ -11,7 +11,7 @@ parent: Modules
 <h2 className="text-delta">Table of contents</h2>
 
 - [Effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [FastCheck](#fastcheck)
   - [arbitrary](#arbitrary)
 - [constructors](#constructors)
@@ -47,7 +47,7 @@ parent: Modules
 
 # Effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect namespace containing schema decode and encode operations.
 
@@ -114,7 +114,10 @@ Parse Relay from CBOR bytes (unsafe).
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (value: Uint8Array, options?: CBOR.CodecOptions) => Relay
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) => SingleHostAddr.SingleHostAddr | SingleHostName.SingleHostName | MultiHostName.MultiHostName
 ```
 
 Added in v2.0.0
@@ -126,7 +129,10 @@ Parse Relay from CBOR hex (unsafe).
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (value: string, options?: CBOR.CodecOptions) => Relay
+export declare const fromCBORHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) => SingleHostAddr.SingleHostAddr | SingleHostName.SingleHostName | MultiHostName.MultiHostName
 ```
 
 Added in v2.0.0
@@ -140,7 +146,10 @@ Convert Relay to CBOR bytes (unsafe).
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: Relay, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (
+  input: SingleHostAddr.SingleHostAddr | SingleHostName.SingleHostName | MultiHostName.MultiHostName,
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -152,7 +161,10 @@ Convert Relay to CBOR hex (unsafe).
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: Relay, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (
+  input: SingleHostAddr.SingleHostAddr | SingleHostName.SingleHostName | MultiHostName.MultiHostName,
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0

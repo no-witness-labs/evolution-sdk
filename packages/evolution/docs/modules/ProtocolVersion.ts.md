@@ -1,6 +1,6 @@
 ---
 title: ProtocolVersion.ts
-nav_order: 87
+nav_order: 88
 parent: Modules
 ---
 
@@ -31,6 +31,8 @@ parent: Modules
   - [FromCDDL](#fromcddl)
 - [testing](#testing)
   - [arbitrary](#arbitrary)
+- [utils](#utils)
+  - [CDDLSchema](#cddlschema)
 
 ---
 
@@ -43,7 +45,10 @@ Smart constructor for creating ProtocolVersion instances
 **Signature**
 
 ```ts
-export declare const make: (props: { major: number; minor: number }) => ProtocolVersion
+export declare const make: (
+  props: { readonly major: bigint; readonly minor: bigint },
+  options?: Schema.MakeOptions | undefined
+) => ProtocolVersion
 ```
 
 Added in v2.0.0
@@ -81,7 +86,7 @@ Convert ProtocolVersion to CBOR bytes (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: ProtocolVersion, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: ProtocolVersion, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -93,7 +98,7 @@ Convert ProtocolVersion to CBOR hex string (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: ProtocolVersion, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: ProtocolVersion, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
@@ -167,10 +172,9 @@ export declare const FromCBORBytes: (
     Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
     never
   >,
-  Schema.transformOrFail<
+  Schema.transform<
     Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
-    Schema.SchemaClass<ProtocolVersion, ProtocolVersion, never>,
-    never
+    Schema.SchemaClass<ProtocolVersion, ProtocolVersion, never>
   >
 >
 ```
@@ -194,10 +198,9 @@ export declare const FromCBORHex: (
       Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
       never
     >,
-    Schema.transformOrFail<
+    Schema.transform<
       Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
-      Schema.SchemaClass<ProtocolVersion, ProtocolVersion, never>,
-      never
+      Schema.SchemaClass<ProtocolVersion, ProtocolVersion, never>
     >
   >
 >
@@ -213,10 +216,9 @@ protocol_version = [major_version : uint32, minor_version : uint32]
 **Signature**
 
 ```ts
-export declare const FromCDDL: Schema.transformOrFail<
+export declare const FromCDDL: Schema.transform<
   Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
-  Schema.SchemaClass<ProtocolVersion, ProtocolVersion, never>,
-  never
+  Schema.SchemaClass<ProtocolVersion, ProtocolVersion, never>
 >
 ```
 
@@ -235,3 +237,13 @@ export declare const arbitrary: FastCheck.Arbitrary<ProtocolVersion>
 ```
 
 Added in v2.0.0
+
+# utils
+
+## CDDLSchema
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
+```

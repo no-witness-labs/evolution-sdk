@@ -1,6 +1,6 @@
 ---
 title: NativeScripts.ts
-nav_order: 65
+nav_order: 66
 parent: Modules
 ---
 
@@ -15,7 +15,7 @@ parent: Modules
 - [decoding](#decoding)
   - [internalDecodeCDDL](#internaldecodecddl)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [internalEncodeCDDL](#internalencodecddl)
   - [toCBORBytes](#tocborbytes)
@@ -65,14 +65,14 @@ the appropriate Native instances.
 **Signature**
 
 ```ts
-export declare const internalDecodeCDDL: (cborTuple: NativeCDDL) => Eff.Effect<Native, ParseIssue>
+export declare const internalDecodeCDDL: (cborTuple: NativeCDDL) => E.Either<Native, ParseIssue>
 ```
 
 Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -87,7 +87,7 @@ Convert a Native to its CDDL representation.
 **Signature**
 
 ```ts
-export declare const internalEncodeCDDL: (native: Native) => Eff.Effect<NativeCDDL, ParseIssue>
+export declare const internalEncodeCDDL: (native: Native) => E.Either<NativeCDDL, ParseIssue>
 ```
 
 Added in v2.0.0
@@ -99,7 +99,7 @@ Encode Native to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (native: Native, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: Native, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -111,7 +111,7 @@ Encode Native to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (native: Native, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: Native, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

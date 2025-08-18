@@ -1,6 +1,6 @@
 ---
 title: ScriptRef.ts
-nav_order: 95
+nav_order: 96
 parent: Modules
 ---
 
@@ -99,7 +99,7 @@ Encode ScriptRef to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: ScriptRef, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: ScriptRef, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -111,7 +111,7 @@ Encode ScriptRef to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: ScriptRef, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: ScriptRef, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

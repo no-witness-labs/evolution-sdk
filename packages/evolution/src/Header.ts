@@ -9,7 +9,7 @@ import { Data, Effect, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import { createEncoders } from "./Codec.js"
+import * as Function from "./Function.js"
 import * as HeaderBody from "./HeaderBody.js"
 import * as KesSignature from "./KesSignature.js"
 
@@ -112,11 +112,86 @@ export const FromHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =
     FromBytes(options) // Uint8Array → Header
   )
 
-export const Codec = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-  createEncoders(
-    {
-      cborBytes: FromBytes(options),
-      cborHex: FromHex(options)
-    },
-    HeaderError
-  )
+// ============================================================================
+// Root Functions
+// ============================================================================
+
+/**
+ * Parse a Header from CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, HeaderError, "Header.fromCBORBytes")
+
+/**
+ * Parse a Header from CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, HeaderError, "Header.fromCBORHex")
+
+// ============================================================================
+// Encoding Functions
+// ============================================================================
+
+/**
+ * Convert a Header to CBOR bytes.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, HeaderError, "Header.toCBORBytes")
+
+/**
+ * Convert a Header to CBOR hex string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, HeaderError, "Header.toCBORHex")
+
+// ============================================================================
+// Either Namespace - Either-based Error Handling
+// ============================================================================
+
+/**
+ * Either-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category either
+ */
+export namespace Either {
+  /**
+   * Parse a Header from CBOR bytes.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, HeaderError)
+
+  /**
+   * Parse a Header from CBOR hex string.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, HeaderError)
+
+  /**
+   * Convert a Header to CBOR bytes.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, HeaderError)
+
+  /**
+   * Convert a Header to CBOR hex string.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, HeaderError)
+}

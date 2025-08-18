@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, Schema } from "effect"
 
 import * as NetworkId from "./NetworkId.js"
 
@@ -20,17 +20,7 @@ export class NetworkError extends Data.TaggedError("NetworkError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const Network = Schema.String.pipe(
-  Schema.filter(
-    (str): str is "Mainnet" | "Preview" | "Preprod" | "Custom" =>
-      str === "Mainnet" || str === "Preview" || str === "Preprod" || str === "Custom"
-  ),
-  Schema.brand("Network")
-).annotations({
-  identifier: "Network",
-  title: "Cardano Network",
-  description: "A Cardano network type (Mainnet, Preview, Preprod, or Custom)"
-})
+export const Network = Schema.Literal("Mainnet", "Preview", "Preprod", "Custom")
 
 /**
  * Type alias for Network representing Cardano network types.
@@ -63,16 +53,6 @@ export const equals = (a: Network, b: Network): boolean => a === b
  * @category predicates
  */
 export const is = (value: unknown): value is Network => Schema.is(Network)(value)
-
-/**
- * FastCheck arbitrary for generating random Network instances.
- *
- * @since 2.0.0
- * @category arbitrary
- */
-export const arbitrary = FastCheck.constantFrom("Mainnet", "Preview", "Preprod", "Custom").map((literal) =>
-  make(literal)
-)
 
 /**
  * Converts a Network type to NetworkId number.
@@ -109,71 +89,3 @@ export const fromId = (id: NetworkId.NetworkId): Network => {
       throw new Error(`Exhaustive check failed: Unhandled case ${id}`)
   }
 }
-
-// ============================================================================
-// Root Functions
-// ============================================================================
-
-/**
- * Parse Network from string.
- *
- * @since 2.0.0
- * @category parsing
- */
-export const fromString = (str: string): Network => Eff.runSync(Effect.fromString(str))
-
-/**
- * Encode Network to string.
- *
- * @since 2.0.0
- * @category encoding
- */
-export const toString = (network: Network): string => Eff.runSync(Effect.toString(network))
-
-// ============================================================================
-// Effect Namespace
-// ============================================================================
-
-/**
- * Effect-based error handling variants for functions that can fail.
- *
- * @since 2.0.0
- * @category effect
- */
-export namespace Effect {
-  /**
-   * Parse Network from string with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromString = (str: string): Eff.Effect<Network, NetworkError> =>
-    Schema.decode(Network)(str).pipe(
-      Eff.mapError(
-        (cause) =>
-          new NetworkError({
-            message: "Failed to parse Network from string",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Encode Network to string with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toString = (network: Network): Eff.Effect<string, NetworkError> =>
-    Schema.encode(Network)(network).pipe(
-      Eff.mapError(
-        (cause) =>
-          new NetworkError({
-            message: "Failed to encode Network to string",
-            cause
-          })
-      )
-    )
-}
-
-// ============================================================================

@@ -1,9 +1,10 @@
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Bytes32 from "./Bytes32.js"
 import * as CBOR from "./CBOR.js"
 import * as PlutusData from "./Data.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for DatumOption related operations.
@@ -153,25 +154,30 @@ export const DatumOptionCDDLSchema = Schema.transformOrFail(
   {
     strict: true,
     encode: (toA) =>
-      Eff.gen(function* () {
+      E.gen(function* () {
         const result =
           toA._tag === "DatumHash"
             ? ([0n, toA.hash] as const) // Encode as [0, Bytes32]
             : ([1n, PlutusData.plutusDataToCBORValue(toA.data)] as const) // Encode as [1, data]
-        return result
+        return yield* E.right(result)
       }),
     decode: ([tag, value], _, ast) =>
-      Eff.gen(function* () {
+      E.gen(function* () {
         if (tag === 0n) {
           // Decode as DatumHash
-          return new DatumHash({ hash: value })
+          return yield* E.right(new DatumHash({ hash: value }, { disableValidation: true }))
         } else if (tag === 1n) {
           // Decode as InlineDatum
-          return new InlineDatum({
-            data: PlutusData.cborValueToPlutusData(value)
-          })
+          return yield* E.right(
+            new InlineDatum(
+              {
+                data: PlutusData.cborValueToPlutusData(value)
+              },
+              { disableValidation: true }
+            )
+          )
         }
-        return yield* ParseResult.fail(
+        return yield* E.left(
           new ParseResult.Type(ast, [tag, value], `Invalid DatumOption tag: ${tag}. Expected 0 or 1.`)
         )
       })
@@ -180,6 +186,14 @@ export const DatumOptionCDDLSchema = Schema.transformOrFail(
   identifier: "DatumOption.DatumOptionCDDLSchema",
   description: "Transforms CBOR structure to DatumOption"
 })
+
+/**
+ * CDDL schema for DatumOption.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
+export const FromCDDL = DatumOptionCDDLSchema
 
 /**
  * CBOR bytes transformation schema for DatumOption.
@@ -214,60 +228,60 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
   })
 
 /**
- * Effect namespace for DatumOption operations that can fail
+ * Either namespace for DatumOption operations that can fail
  *
  * @since 2.0.0
- * @category effect
+ * @category either
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Convert CBOR bytes to DatumOption using Effect
+   * Parse a DatumOption from CBOR bytes using Either error handling.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.decode(FromCBORBytes(options))(bytes),
-      (cause) => new DatumOptionError({ message: "Failed to decode from CBOR bytes", cause })
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, DatumOptionError)
 
   /**
-   * Convert CBOR hex string to DatumOption using Effect
+   * Parse a DatumOption from CBOR hex using Either error handling.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category parsing
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.decode(FromCBORHex(options))(hex),
-      (cause) => new DatumOptionError({ message: "Failed to decode from CBOR hex", cause })
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, DatumOptionError)
 
   /**
-   * Convert DatumOption to CBOR bytes using Effect
+   * Convert a DatumOption to CBOR bytes using Either error handling.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category encoding
    */
-  export const toCBORBytes = (datumOption: DatumOption, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.encode(FromCBORBytes(options))(datumOption),
-      (cause) => new DatumOptionError({ message: "Failed to encode to CBOR bytes", cause })
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, DatumOptionError)
 
   /**
-   * Convert DatumOption to CBOR hex string using Effect
+   * Convert a DatumOption to CBOR hex using Either error handling.
    *
    * @since 2.0.0
-   * @category conversion
+   * @category encoding
    */
-  export const toCBORHex = (datumOption: DatumOption, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.encode(FromCBORHex(options))(datumOption),
-      (cause) => new DatumOptionError({ message: "Failed to encode to CBOR hex", cause })
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, DatumOptionError)
 }
+
+/**
+ * Convert DatumOption to CBOR bytes (unsafe).
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, DatumOptionError, "DatumOption.toCBORBytes")
+
+/**
+ * Convert DatumOption to CBOR hex (unsafe).
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, DatumOptionError, "DatumOption.toCBORHex")
 
 /**
  * Convert CBOR bytes to DatumOption (unsafe)
@@ -275,8 +289,7 @@ export namespace Effect {
  * @since 2.0.0
  * @category conversion
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): DatumOption =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, DatumOptionError, "DatumOption.fromCBORBytes")
 
 /**
  * Convert CBOR hex string to DatumOption (unsafe)
@@ -284,23 +297,4 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): D
  * @since 2.0.0
  * @category conversion
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): DatumOption =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
-
-/**
- * Convert DatumOption to CBOR bytes (unsafe)
- *
- * @since 2.0.0
- * @category conversion
- */
-export const toCBORBytes = (datumOption: DatumOption, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(datumOption, options))
-
-/**
- * Convert DatumOption to CBOR hex string (unsafe)
- *
- * @since 2.0.0
- * @category conversion
- */
-export const toCBORHex = (datumOption: DatumOption, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(datumOption, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, DatumOptionError, "DatumOption.fromCBORHex")

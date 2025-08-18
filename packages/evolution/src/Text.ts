@@ -1,6 +1,7 @@
-import { Data, Either as E, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for Text related operations.
@@ -15,22 +16,32 @@ export class TextError extends Data.TaggedError("TextError")<{
 
 export const Text = Schema.String
 
-//TODO: Invert the schema order
 /**
- * Schema for converting between strings and UTF-8 byte arrays.
- * text -> bytes
+ * Configuration for text transformations.
  *
  * @since 2.0.0
- * @category schemas
+ * @category types
  */
-export const FromBytes = Schema.transform(Schema.Uint8ArrayFromSelf, Schema.String, {
-  strict: true,
-  encode: (fromA) => new TextEncoder().encode(fromA),
-  decode: (toA) => new TextDecoder().decode(toA)
-}).annotations({
-  identifier: "Text.FromBytes",
-  description: "Transforms UTF-8 bytes to string"
-})
+export interface TextTransformationConfig {
+  id: string
+  to: Schema.Schema<string, string>
+  from: Schema.Schema<Uint8Array, Uint8Array>
+}
+
+/**
+ * Creates a text transformation schema.
+ *
+ * @since 2.0.0
+ * @category utilities
+ */
+export const makeTextTransformation = (config: TextTransformationConfig) => {
+  const { from: bytesSchema, id, to: inputSchema } = config
+  return Schema.transform(bytesSchema, inputSchema, {
+    strict: true,
+    decode: (input) => new TextDecoder().decode(input),
+    encode: (text) => new TextEncoder().encode(text)
+  }).annotations({ identifier: id })
+}
 
 /**
  * Schema for converting between strings and hex representation of UTF-8 bytes.
@@ -42,10 +53,127 @@ export const FromBytes = Schema.transform(Schema.Uint8ArrayFromSelf, Schema.Stri
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = Schema.compose(Bytes.FromHex, FromBytes).annotations({
-  identifier: "Text.FromHex",
-  description: "Transforms hex string to UTF-8 text"
+export const FromBytes = makeTextTransformation({
+  id: "Text.FromBytes",
+  to: Text,
+  from: Schema.Uint8ArrayFromSelf
 })
+// type t = typeof FromBytes.Type
+// type e = typeof FromBytes.Encoded
+
+export const FromHex = Schema.compose(
+  Bytes.FromHex, // string → Uint8Array
+  FromBytes // Uint8Array → string
+)
+
+// =============================================================================
+// Text Length Validation Utilities
+// =============================================================================
+
+/**
+ * Creates a schema that validates text length equals a specific value.
+ *
+ * @since 2.0.0
+ * @category validation
+ */
+export const textLengthEquals = (length: number, identifier?: string) =>
+  Schema.filter((text: string) => text.length === length, {
+    message: () => `Expected text length ${length}`,
+    identifier
+  })
+
+/**
+ * Creates a curried filter that validates text length is within a range.
+ * Preserves Context inference from the base schema.
+ *
+ * @since 2.0.0
+ * @category composition
+ */
+export const textLengthBetween =
+  (min: number, max: number, moduleName: string) =>
+  <S extends Schema.Schema<any, string>>(baseSchema: S) =>
+    baseSchema.pipe(
+      Schema.filter(
+        (text: string) => {
+          const textLength = text.length
+          return textLength >= min && textLength <= max
+        },
+        {
+          message: () => `Must be between ${min} and ${max} characters`,
+          identifier: `${moduleName}.LengthBetween${min}And${max}`
+        }
+      )
+    )
+
+/**
+ * Creates a schema that validates text length is at least min.
+ *
+ * @since 2.0.0
+ * @category validation
+ */
+export const textLengthMin = (min: number, identifier?: string) =>
+  Schema.filter((text: string) => text.length >= min, {
+    message: () => `Expected text length at least ${min}`,
+    identifier
+  })
+
+/**
+ * Creates a schema that validates text length is at most max.
+ *
+ * @since 2.0.0
+ * @category validation
+ */
+export const textLengthMax = (max: number, identifier?: string) =>
+  Schema.filter((text: string) => text.length <= max, {
+    message: () => `Expected text length at most ${max}`,
+    identifier
+  })
+
+// =============================================================================
+// Text Transformation Utilities
+// =============================================================================
+
+// =============================================================================
+// Unsafe Helper Functions
+// =============================================================================
+
+/**
+ * Convert bytes to text (unsafe, no validation).
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+export const fromBytesUnsafe = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
+
+/**
+ * Convert text to bytes (unsafe, no validation).
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+export const toBytesUnsafe = (text: string): Uint8Array => new TextEncoder().encode(text)
+
+/**
+ * Convert hex to text (unsafe, no validation).
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+export const fromHexUnsafe = (hex: string): string => {
+  const bytes = Bytes.fromHexUnsafe(hex)
+  return fromBytesUnsafe(bytes)
+}
+
+/**
+ * Convert text to hex (unsafe, no validation).
+ *
+ * @since 2.0.0
+ * @category unsafe
+ */
+export const toHexUnsafe = (text: string): string => {
+  const bytes = toBytesUnsafe(text)
+  return Bytes.toHexUnsafe(bytes)
+}
 
 /**
  * FastCheck arbitrary for generating random text strings
@@ -68,11 +196,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const fromBytes = (bytes: Uint8Array) =>
-    E.mapLeft(
-      Schema.decodeEither(FromBytes)(bytes),
-      (cause) => new TextError({ message: "Failed to decode from bytes", cause })
-    )
+  export const fromBytes = Function.makeDecodeEither(FromBytes, TextError)
 
   /**
    * Convert hex string to text using Either
@@ -80,11 +204,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const fromHex = (hex: string) =>
-    E.mapLeft(
-      Schema.decodeEither(FromHex)(hex),
-      (cause) => new TextError({ message: "Failed to decode from hex", cause })
-    )
+  export const fromHex = Function.makeDecodeEither(FromHex, TextError)
 
   /**
    * Convert text to bytes using Either
@@ -92,11 +212,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const toBytes = (text: string) =>
-    E.mapLeft(
-      Schema.encodeEither(FromBytes)(text),
-      (cause) => new TextError({ message: "Failed to encode to bytes", cause })
-    )
+  export const toBytes = Function.makeEncodeEither(FromBytes, TextError)
 
   /**
    * Convert text to hex string using Either
@@ -104,12 +220,12 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const toHex = (text: string) =>
-    E.mapLeft(
-      Schema.encodeEither(FromHex)(text),
-      (cause) => new TextError({ message: "Failed to encode to hex", cause })
-    )
+  export const toHex = Function.makeEncodeEither(FromHex, TextError)
 }
+
+// =============================================================================
+// Public (throwing) API
+// =============================================================================
 
 /**
  * Convert bytes to text (unsafe)
@@ -117,13 +233,7 @@ export namespace Either {
  * @since 2.0.0
  * @category conversion
  */
-export const fromBytes = (bytes: Uint8Array): string => {
-  try {
-    return Schema.decodeSync(FromBytes)(bytes)
-  } catch (cause) {
-    throw new TextError({ message: "Failed to decode from bytes", cause })
-  }
-}
+export const fromBytes = Function.makeDecodeSync(FromBytes, TextError, "Text.fromBytes")
 
 /**
  * Convert hex string to text (unsafe)
@@ -131,13 +241,7 @@ export const fromBytes = (bytes: Uint8Array): string => {
  * @since 2.0.0
  * @category conversion
  */
-export const fromHex = (hex: string): string => {
-  try {
-    return Schema.decodeSync(FromHex)(hex)
-  } catch (cause) {
-    throw new TextError({ message: "Failed to decode from hex", cause })
-  }
-}
+export const fromHex = Function.makeDecodeSync(FromHex, TextError, "Text.fromHex")
 
 /**
  * Convert text to bytes (unsafe)
@@ -145,13 +249,7 @@ export const fromHex = (hex: string): string => {
  * @since 2.0.0
  * @category conversion
  */
-export const toBytes = (text: string): Uint8Array => {
-  try {
-    return Schema.encodeSync(FromBytes)(text)
-  } catch (cause) {
-    throw new TextError({ message: "Failed to encode to bytes", cause })
-  }
-}
+export const toBytes = Function.makeEncodeSync(FromBytes, TextError, "Text.toBytes")
 
 /**
  * Convert text to hex string (unsafe)
@@ -159,10 +257,4 @@ export const toBytes = (text: string): Uint8Array => {
  * @since 2.0.0
  * @category conversion
  */
-export const toHex = (text: string): string => {
-  try {
-    return Schema.encodeSync(FromHex)(text)
-  } catch (cause) {
-    throw new TextError({ message: "Failed to encode to hex", cause })
-  }
-}
+export const toHex = Function.makeEncodeSync(FromHex, TextError, "Text.toHex")

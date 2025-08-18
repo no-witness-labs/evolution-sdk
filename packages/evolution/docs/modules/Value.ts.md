@@ -1,6 +1,6 @@
 ---
 title: Value.ts
-nav_order: 113
+nav_order: 114
 parent: Modules
 ---
 
@@ -14,7 +14,7 @@ parent: Modules
   - [onlyCoin](#onlycoin)
   - [withAssets](#withassets)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -34,11 +34,9 @@ parent: Modules
   - [is](#is)
   - [isAdaOnly](#isadaonly)
 - [schemas](#schemas)
-  - [~~FromBytes~~](#frombytes)
   - [FromCBORBytes](#fromcborbytes-1)
   - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
-  - [~~FromHex~~](#fromhex)
   - [OnlyCoin (class)](#onlycoin-class)
 - [transformation](#transformation)
   - [add](#add)
@@ -81,7 +79,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -96,7 +94,7 @@ Encode Value to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: Value, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: OnlyCoin | WithAssets, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -108,7 +106,7 @@ Encode Value to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: Value, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: OnlyCoin | WithAssets, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
@@ -186,7 +184,7 @@ Parse Value from CBOR bytes.
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Value
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => OnlyCoin | WithAssets
 ```
 
 Added in v2.0.0
@@ -198,7 +196,7 @@ Parse Value from CBOR hex string.
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Value
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => OnlyCoin | WithAssets
 ```
 
 Added in v2.0.0
@@ -242,43 +240,6 @@ export declare const isAdaOnly: (value: Value) => value is OnlyCoin
 Added in v2.0.0
 
 # schemas
-
-## ~~FromBytes~~
-
-Legacy alias for FromCBORBytes - kept for backwards compatibility.
-
-**Signature**
-
-```ts
-export declare const FromBytes: (
-  options?: CBOR.CodecOptions
-) => Schema.transform<
-  Schema.transformOrFail<
-    typeof Schema.Uint8ArrayFromSelf,
-    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
-    never
-  >,
-  Schema.transformOrFail<
-    Schema.Union<
-      [
-        typeof Schema.BigIntFromSelf,
-        Schema.Tuple2<
-          typeof Schema.BigIntFromSelf,
-          Schema.SchemaClass<
-            ReadonlyMap<any, ReadonlyMap<any, bigint>>,
-            ReadonlyMap<any, ReadonlyMap<any, bigint>>,
-            never
-          >
-        >
-      ]
-    >,
-    Schema.SchemaClass<OnlyCoin | WithAssets, OnlyCoin | WithAssets, never>,
-    never
-  >
->
-```
-
-Added in v2.0.0
 
 ## FromCBORBytes
 
@@ -391,46 +352,6 @@ export declare const FromCDDL: Schema.transformOrFail<
   >,
   Schema.SchemaClass<OnlyCoin | WithAssets, OnlyCoin | WithAssets, never>,
   never
->
-```
-
-Added in v2.0.0
-
-## ~~FromHex~~
-
-Legacy alias for FromCBORHex - kept for backwards compatibility.
-
-**Signature**
-
-```ts
-export declare const FromHex: (
-  options?: CBOR.CodecOptions
-) => Schema.transform<
-  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
-  Schema.transform<
-    Schema.transformOrFail<
-      typeof Schema.Uint8ArrayFromSelf,
-      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
-      never
-    >,
-    Schema.transformOrFail<
-      Schema.Union<
-        [
-          typeof Schema.BigIntFromSelf,
-          Schema.Tuple2<
-            typeof Schema.BigIntFromSelf,
-            Schema.SchemaClass<
-              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
-              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
-              never
-            >
-          >
-        ]
-      >,
-      Schema.SchemaClass<OnlyCoin | WithAssets, OnlyCoin | WithAssets, never>,
-      never
-    >
-  >
 >
 ```
 

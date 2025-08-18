@@ -34,9 +34,9 @@ describe("VotingProcedures CML Compatibility", () => {
     })
     const votingProcedure = VotingProcedures.makeProcedure(VotingProcedures.yes(), anchor)
 
-    const evolutionVotingProcedures = VotingProcedures.make(
-      new Map([[drepVoter, new Map([[govActionId, votingProcedure]])]])
-    )
+    const evolutionVotingProcedures = VotingProcedures.make({
+      procedures: new Map([[drepVoter, new Map([[govActionId, votingProcedure]])]])
+    })
 
     // Create equivalent CML VotingProcedure
     const cmlVote = CML.Vote.Yes
@@ -77,9 +77,9 @@ describe("VotingProcedures CML Compatibility", () => {
     })
     const votingProcedure = VotingProcedures.makeProcedure(VotingProcedures.no(), anchor)
 
-    const evolutionVotingProcedures = VotingProcedures.make(
-      new Map([[drepVoter, new Map([[govActionId, votingProcedure]])]])
-    )
+    const evolutionVotingProcedures = VotingProcedures.make({
+      procedures: new Map([[drepVoter, new Map([[govActionId, votingProcedure]])]])
+    })
 
     // Create CML VotingProcedure (without anchor - CML limitation)
     const cmlVote = CML.Vote.No

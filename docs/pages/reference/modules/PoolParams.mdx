@@ -1,6 +1,6 @@
 ---
 title: PoolParams.ts
-nav_order: 81
+nav_order: 82
 parent: Modules
 ---
 
@@ -15,7 +15,7 @@ parent: Modules
 - [constructors](#constructors)
   - [make](#make)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toBytes](#tobytes)
   - [toHex](#tohex)
@@ -83,7 +83,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -98,7 +98,7 @@ Encode PoolParams to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toBytes: (poolParams: PoolParams, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toBytes: (input: PoolParams, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -110,7 +110,7 @@ Encode PoolParams to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toHex: (poolParams: PoolParams, options?: CBOR.CodecOptions) => string
+export declare const toHex: (input: PoolParams, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

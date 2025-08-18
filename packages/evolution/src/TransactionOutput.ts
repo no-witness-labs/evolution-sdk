@@ -242,10 +242,7 @@ export const CDDLSchema = Schema.Union(ShelleyTransactionOutputCDDL, BabbageTran
  * @since 2.0.0
  * @category schemas
  */
-export const FromTransactionOutputCDDLSchema = Schema.Union(
-  FromShelleyTransactionOutputCDDLSchema,
-  FromBabbageTransactionOutputCDDLSchema
-)
+export const FromCDDL = Schema.Union(FromShelleyTransactionOutputCDDLSchema, FromBabbageTransactionOutputCDDLSchema)
 
 /**
  * CBOR bytes transformation schema for TransactionOutput.
@@ -257,7 +254,7 @@ export const FromTransactionOutputCDDLSchema = Schema.Union(
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    FromTransactionOutputCDDLSchema // CBOR → TransactionOutput
+    FromCDDL // CBOR → TransactionOutput
   ).annotations({
     identifier: "TransactionOutput.FromCBORBytes",
     title: "TransactionOutput from CBOR Bytes",
@@ -363,8 +360,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeDecodeEither(FromCBORBytes(options), TransactionOutputError)(bytes)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, TransactionOutputError)
 
   /**
    * Parse a TransactionOutput from CBOR hex using Either error handling.
@@ -372,8 +368,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeDecodeEither(FromCBORHex(options), TransactionOutputError)(hex)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, TransactionOutputError)
 
   /**
    * Convert a TransactionOutput to CBOR bytes using Either error handling.
@@ -381,8 +376,7 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (value: TransactionOutput, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeEncodeEither(FromCBORBytes(options), TransactionOutputError)(value)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, TransactionOutputError)
 
   /**
    * Convert a TransactionOutput to CBOR hex using Either error handling.
@@ -390,8 +384,7 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (value: TransactionOutput, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeEncodeEither(FromCBORHex(options), TransactionOutputError)(value)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, TransactionOutputError)
 }
 
 /**
@@ -400,8 +393,11 @@ export namespace Either {
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: TransactionOutput, options?: CBOR.CodecOptions): Uint8Array =>
-  Function.makeEncodeSync(FromCBORBytes(options), TransactionOutputError, "TransactionOutput.toCBORBytes")(value)
+export const toCBORBytes = Function.makeCBOREncodeSync(
+  FromCDDL,
+  TransactionOutputError,
+  "TransactionOutput.toCBORBytes"
+)
 
 /**
  * Convert TransactionOutput to CBOR hex (unsafe).
@@ -409,8 +405,7 @@ export const toCBORBytes = (value: TransactionOutput, options?: CBOR.CodecOption
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: TransactionOutput, options?: CBOR.CodecOptions): string =>
-  Function.makeEncodeSync(FromCBORHex(options), TransactionOutputError, "TransactionOutput.toCBORHex")(value)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, TransactionOutputError, "TransactionOutput.toCBORHex")
 
 /**
  * Parse TransactionOutput from CBOR bytes (unsafe).
@@ -418,8 +413,11 @@ export const toCBORHex = (value: TransactionOutput, options?: CBOR.CodecOptions)
  * @since 2.0.0
  * @category decoding
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): TransactionOutput =>
-  Function.makeDecodeSync(FromCBORBytes(options), TransactionOutputError, "TransactionOutput.fromCBORBytes")(bytes)
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  TransactionOutputError,
+  "TransactionOutput.fromCBORBytes"
+)
 
 /**
  * Parse TransactionOutput from CBOR hex (unsafe).
@@ -427,5 +425,8 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): T
  * @since 2.0.0
  * @category decoding
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): TransactionOutput =>
-  Function.makeDecodeSync(FromCBORHex(options), TransactionOutputError, "TransactionOutput.fromCBORHex")(hex)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(
+  FromCDDL,
+  TransactionOutputError,
+  "TransactionOutput.fromCBORHex"
+)

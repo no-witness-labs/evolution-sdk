@@ -60,7 +60,7 @@ Create an Anchor from a URL string and hash string.
 
 ```ts
 export declare const make: (
-  props: { readonly anchorUrl: string & Brand<"Url">; readonly anchorDataHash: any },
+  props: { readonly anchorUrl: Url.Url; readonly anchorDataHash: any },
   options?: Schema.MakeOptions | undefined
 ) => Anchor
 ```
@@ -84,7 +84,7 @@ Convert an Anchor to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: Anchor, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: Anchor, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -96,7 +96,7 @@ Convert an Anchor to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: Anchor, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: Anchor, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

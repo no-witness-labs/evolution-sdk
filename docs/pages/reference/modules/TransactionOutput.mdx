@@ -1,6 +1,6 @@
 ---
 title: TransactionOutput.ts
-nav_order: 108
+nav_order: 109
 parent: Modules
 ---
 
@@ -32,8 +32,8 @@ parent: Modules
   - [FromBabbageTransactionOutputCDDLSchema](#frombabbagetransactionoutputcddlschema)
   - [FromCBORBytes](#fromcborbytes-1)
   - [FromCBORHex](#fromcborhex-1)
+  - [FromCDDL](#fromcddl)
   - [FromShelleyTransactionOutputCDDLSchema](#fromshelleytransactionoutputcddlschema)
-  - [FromTransactionOutputCDDLSchema](#fromtransactionoutputcddlschema)
   - [TransactionOutput](#transactionoutput)
 - [utils](#utils)
   - [CDDLSchema](#cddlschema)
@@ -107,7 +107,10 @@ Parse TransactionOutput from CBOR bytes (unsafe).
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => TransactionOutput
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) => ShelleyTransactionOutput | BabbageTransactionOutput
 ```
 
 Added in v2.0.0
@@ -119,7 +122,10 @@ Parse TransactionOutput from CBOR hex (unsafe).
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => TransactionOutput
+export declare const fromCBORHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) => ShelleyTransactionOutput | BabbageTransactionOutput
 ```
 
 Added in v2.0.0
@@ -133,7 +139,10 @@ Convert TransactionOutput to CBOR bytes (unsafe).
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: TransactionOutput, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (
+  input: ShelleyTransactionOutput | BabbageTransactionOutput,
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -145,7 +154,10 @@ Convert TransactionOutput to CBOR hex (unsafe).
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: TransactionOutput, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (
+  input: ShelleyTransactionOutput | BabbageTransactionOutput,
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0
@@ -393,45 +405,7 @@ export declare const FromCBORHex: (
 
 Added in v2.0.0
 
-## FromShelleyTransactionOutputCDDLSchema
-
-CDDL schema for Shelley transaction outputs
-
-```
-CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
-```
-
-**Signature**
-
-```ts
-export declare const FromShelleyTransactionOutputCDDLSchema: Schema.transformOrFail<
-  Schema.Tuple<
-    [
-      typeof Schema.Uint8ArrayFromSelf,
-      Schema.Union<
-        [
-          typeof Schema.BigIntFromSelf,
-          Schema.Tuple2<
-            typeof Schema.BigIntFromSelf,
-            Schema.SchemaClass<
-              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
-              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
-              never
-            >
-          >
-        ]
-      >,
-      Schema.Element<typeof Schema.Uint8ArrayFromSelf, "?">
-    ]
-  >,
-  Schema.SchemaClass<ShelleyTransactionOutput, ShelleyTransactionOutput, never>,
-  never
->
-```
-
-Added in v2.0.0
-
-## FromTransactionOutputCDDLSchema
+## FromCDDL
 
 CDDL schema for transaction outputs
 
@@ -444,7 +418,7 @@ babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, ? 3 : 
 **Signature**
 
 ```ts
-export declare const FromTransactionOutputCDDLSchema: Schema.Union<
+export declare const FromCDDL: Schema.Union<
   [
     Schema.transformOrFail<
       Schema.Tuple<
@@ -496,6 +470,44 @@ export declare const FromTransactionOutputCDDLSchema: Schema.Union<
       never
     >
   ]
+>
+```
+
+Added in v2.0.0
+
+## FromShelleyTransactionOutputCDDLSchema
+
+CDDL schema for Shelley transaction outputs
+
+```
+CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
+```
+
+**Signature**
+
+```ts
+export declare const FromShelleyTransactionOutputCDDLSchema: Schema.transformOrFail<
+  Schema.Tuple<
+    [
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.Union<
+        [
+          typeof Schema.BigIntFromSelf,
+          Schema.Tuple2<
+            typeof Schema.BigIntFromSelf,
+            Schema.SchemaClass<
+              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+              ReadonlyMap<any, ReadonlyMap<any, bigint>>,
+              never
+            >
+          >
+        ]
+      >,
+      Schema.Element<typeof Schema.Uint8ArrayFromSelf, "?">
+    ]
+  >,
+  Schema.SchemaClass<ShelleyTransactionOutput, ShelleyTransactionOutput, never>,
+  never
 >
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: Certificate.ts
-nav_order: 30
+nav_order: 31
 parent: Modules
 ---
 
@@ -11,7 +11,7 @@ parent: Modules
 <h2 class="text-delta">Table of contents</h2>
 
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -57,7 +57,7 @@ parent: Modules
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -72,7 +72,27 @@ Convert a Certificate to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (certificate: Certificate, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (
+  input:
+    | StakeRegistration
+    | StakeDeregistration
+    | StakeDelegation
+    | PoolRegistration
+    | PoolRetirement
+    | RegCert
+    | UnregCert
+    | VoteDelegCert
+    | StakeVoteDelegCert
+    | StakeRegDelegCert
+    | VoteRegDelegCert
+    | StakeVoteRegDelegCert
+    | AuthCommitteeHotCert
+    | ResignCommitteeColdCert
+    | RegDrepCert
+    | UnregDrepCert
+    | UpdateDrepCert,
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -84,7 +104,27 @@ Convert a Certificate to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (certificate: Certificate, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (
+  input:
+    | StakeRegistration
+    | StakeDeregistration
+    | StakeDelegation
+    | PoolRegistration
+    | PoolRetirement
+    | RegCert
+    | UnregCert
+    | VoteDelegCert
+    | StakeVoteDelegCert
+    | StakeRegDelegCert
+    | VoteRegDelegCert
+    | StakeVoteRegDelegCert
+    | AuthCommitteeHotCert
+    | ResignCommitteeColdCert
+    | RegDrepCert
+    | UnregDrepCert
+    | UpdateDrepCert,
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0
@@ -140,7 +180,27 @@ Parse a Certificate from CBOR bytes.
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Certificate
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) =>
+  | StakeRegistration
+  | StakeDeregistration
+  | StakeDelegation
+  | PoolRegistration
+  | PoolRetirement
+  | RegCert
+  | UnregCert
+  | VoteDelegCert
+  | StakeVoteDelegCert
+  | StakeRegDelegCert
+  | VoteRegDelegCert
+  | StakeVoteRegDelegCert
+  | AuthCommitteeHotCert
+  | ResignCommitteeColdCert
+  | RegDrepCert
+  | UnregDrepCert
+  | UpdateDrepCert
 ```
 
 Added in v2.0.0
@@ -152,7 +212,27 @@ Parse a Certificate from CBOR hex string.
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Certificate
+export declare const fromCBORHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) =>
+  | StakeRegistration
+  | StakeDeregistration
+  | StakeDelegation
+  | PoolRegistration
+  | PoolRetirement
+  | RegCert
+  | UnregCert
+  | VoteDelegCert
+  | StakeVoteDelegCert
+  | StakeRegDelegCert
+  | VoteRegDelegCert
+  | StakeVoteRegDelegCert
+  | AuthCommitteeHotCert
+  | ResignCommitteeColdCert
+  | RegDrepCert
+  | UnregDrepCert
+  | UpdateDrepCert
 ```
 
 Added in v2.0.0

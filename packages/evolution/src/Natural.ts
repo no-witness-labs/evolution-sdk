@@ -18,7 +18,7 @@ export class NaturalError extends Data.TaggedError("NaturalError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const Natural = Schema.Positive.pipe(Schema.brand("Natural")).annotations({
+export const Natural = Schema.Positive.annotations({
   identifier: "Natural",
   title: "Natural Number",
   description: "A positive integer greater than 0"

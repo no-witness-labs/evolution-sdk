@@ -35,7 +35,7 @@ export class ScriptHash extends Schema.TaggedClass<ScriptHash>()("ScriptHash", {
   }
 
   toString(): string {
-    return toHex(this)
+    return `ScriptHash({ hash: ${this.hash} })`
   }
 }
 

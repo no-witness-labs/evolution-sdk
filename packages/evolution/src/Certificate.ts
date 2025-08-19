@@ -9,7 +9,10 @@ import * as DRep from "./DRep.js"
 import * as EpochNo from "./EpochNo.js"
 import * as Function from "./Function.js"
 import * as PoolKeyHash from "./PoolKeyHash.js"
+import * as PoolMetadata from "./PoolMetadata.js"
 import * as PoolParams from "./PoolParams.js"
+import * as Relay from "./Relay.js"
+import * as UnitInterval from "./UnitInterval.js"
 
 /**
  * Error class for Certificate related operations.
@@ -215,7 +218,19 @@ export const CDDLSchema = Schema.Union(
   // 2: stake_delegation = (2, stake_credential, pool_keyhash)
   Schema.Tuple(Schema.Literal(2n), Credential.CDDLSchema, CBOR.ByteArray),
   // 3: pool_registration = (3, pool_params)
-  Schema.Tuple(Schema.Literal(3n), PoolParams.CDDLSchema),
+  Schema.Tuple(
+    Schema.Literal(3n),
+    // Flattened PoolParams.CDDLSchema
+    CBOR.ByteArray, // operator (pool_keyhash as bytes)
+    CBOR.ByteArray, // vrf_keyhash (as bytes)
+    CBOR.Integer, // pledge (coin)
+    CBOR.Integer, // cost (coin)
+    UnitInterval.CDDLSchema, // margin
+    CBOR.ByteArray, // reward_account (bytes)
+    Schema.Array(CBOR.ByteArray), // pool_owners (array of addr_keyhash bytes)
+    Schema.Array(Schema.encodedSchema(Relay.FromCDDL)), // relays
+    Schema.NullOr(Schema.encodedSchema(PoolMetadata.FromCDDL)) // pool_metadata
+  ),
   // 4: pool_retirement = (4, pool_keyhash, epoch_no)
   Schema.Tuple(Schema.Literal(4n), CBOR.ByteArray, CBOR.Integer),
   // 7: reg_cert = (7, stake_credential , coin)
@@ -273,7 +288,8 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
         }
         case "PoolRegistration": {
           const poolParamsCDDL = yield* ParseResult.encodeEither(PoolParams.FromCDDL)(toA.poolParams)
-          return [3n, poolParamsCDDL] as const
+          // Spread encoded PoolParams fields directly into the certificate tuple (flattening)
+          return [3n, ...poolParamsCDDL] as const
         }
         case "PoolRetirement": {
           const poolKeyHashBytes = yield* ParseResult.encodeEither(PoolKeyHash.FromBytes)(toA.poolKeyHash)
@@ -370,9 +386,41 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
           return new StakeDelegation({ stakeCredential, poolKeyHash }, { disableValidation: true })
         }
         case 3n: {
-          // pool_registration = (3, pool_params)
-          const [, poolParamsCDDL] = fromA
-          const poolParams = yield* ParseResult.decodeEither(PoolParams.FromCDDL)(poolParamsCDDL)
+          // pool_registration = (3, ...pool_params fields flattened)
+          const [
+            ,
+            operatorBytes,
+            vrfKeyhashBytes,
+            pledge,
+            cost,
+            marginEncoded,
+            rewardAccountBytes,
+            poolOwnersBytes,
+            relaysEncoded,
+            poolMetadataEncoded
+          ] = fromA as unknown as readonly [
+            3n,
+            Uint8Array,
+            Uint8Array,
+            bigint,
+            bigint,
+            unknown,
+            Uint8Array,
+            ReadonlyArray<Uint8Array>,
+            ReadonlyArray<unknown>,
+            unknown | null
+          ]
+          const poolParams = yield* ParseResult.decodeEither(PoolParams.FromCDDL)([
+            operatorBytes,
+            vrfKeyhashBytes,
+            pledge,
+            cost,
+            marginEncoded as any,
+            rewardAccountBytes,
+            poolOwnersBytes as any,
+            relaysEncoded as any,
+            poolMetadataEncoded as any
+          ] as any)
           return new PoolRegistration({ poolParams }, { disableValidation: true })
         }
         case 4n: {

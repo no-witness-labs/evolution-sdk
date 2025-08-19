@@ -22,14 +22,14 @@ export class TransactionHashError extends Data.TaggedError("TransactionHashError
  * @category schemas
  */
 export class TransactionHash extends Schema.TaggedClass<TransactionHash>()("TransactionHash", {
-  bytes: Bytes32.BytesSchema
+  hash: Bytes32.BytesSchema
 }) {
   toJSON(): string {
     return toHex(this)
   }
 
   toString(): string {
-    return toHex(this)
+    return `TransactionHash { hash: ${this.hash} }`
   }
 
   [Symbol.for("nodejs.util.inspect.custom")](): string {
@@ -45,8 +45,8 @@ export class TransactionHash extends Schema.TaggedClass<TransactionHash>()("Tran
  */
 export const FromBytes = Schema.transform(Bytes32.BytesSchema, TransactionHash, {
   strict: true,
-  decode: (bytes) => new TransactionHash({ bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
-  encode: (txHash) => txHash.bytes
+  decode: (bytes) => new TransactionHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
+  encode: (txHash) => txHash.hash
 }).annotations({
   identifier: "TransactionHash.FromBytes"
 })
@@ -78,7 +78,7 @@ export const make = (...args: ConstructorParameters<typeof TransactionHash>) => 
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: TransactionHash, b: TransactionHash): boolean => Bytes32.equals(a.bytes, b.bytes)
+export const equals = (a: TransactionHash, b: TransactionHash): boolean => Bytes32.equals(a.hash, b.hash)
 
 /**
  * Check if the given value is a valid TransactionHash
@@ -97,7 +97,7 @@ export const isTransactionHash = Schema.is(TransactionHash)
 export const arbitrary = FastCheck.uint8Array({
   minLength: 32,
   maxLength: 32
-}).map((bytes) => new TransactionHash({ bytes }, { disableValidation: true })) // Disable validation since we already check length in FastCheck
+}).map((bytes) => new TransactionHash({ hash: bytes }, { disableValidation: true })) // Disable validation since we already check length in FastCheck
 
 // ============================================================================
 // Root Functions

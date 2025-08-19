@@ -60,23 +60,14 @@ export const CDDLSchema = Schema.Tuple(
  */
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(TransactionInput), {
   strict: true,
-  encode: (toA) => E.right([toA.transactionId.bytes, BigInt(toA.index)] as const),
+  encode: (toA) => E.right([toA.transactionId.hash, toA.index] as const),
   decode: ([txHashBytes, indexBigInt]) =>
     E.right(
       new TransactionInput({
-        transactionId: TransactionHash.make({ bytes: txHashBytes }),
-        index: Number(indexBigInt)
+        transactionId: TransactionHash.make({ hash: txHashBytes }),
+        index: indexBigInt
       })
     )
-  // E.gen(function* () {
-  //   // const transactionId = yield* ParseResult.decodeEither(TransactionHash.FromBytes)(txHashBytes)
-  //   // return yield* ParseResult.decode(TransactionInput)({
-  //   //   _tag: "TransactionInput",
-  //   //   transactionId,
-  //   //   index: Number(indexBigInt)
-  //   // })
-  //   return
-  // })
 }).annotations({
   identifier: "TransactionInput.FromCDDL",
   description: "Transforms CBOR structure to TransactionInput"

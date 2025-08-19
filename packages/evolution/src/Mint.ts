@@ -325,16 +325,38 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.array(
-  FastCheck.tuple(
-    PolicyId.arbitrary,
-    FastCheck.array(FastCheck.tuple(AssetName.arbitrary, NonZeroInt64.arbitrary.map(NonZeroInt64.make)), {
-      minLength: 1,
-      maxLength: 5
-    })
-  ),
-  { minLength: 0, maxLength: 5 }
-).map((entries) => fromEntries(entries))
+export const arbitrary: FastCheck.Arbitrary<Mint> = FastCheck.oneof(
+  // Sometimes generate an empty mint map
+  FastCheck.constant(empty()),
+  // Non-empty unique policies with unique assets per policy
+  FastCheck.uniqueArray(PolicyId.arbitrary, {
+    minLength: 1,
+    maxLength: 5,
+    selector: (p) => Bytes.toHexUnsafe(p.hash)
+  }).chain((policies) => {
+    const assetsForPolicy = () =>
+      FastCheck.uniqueArray(AssetName.arbitrary, {
+        minLength: 1,
+        maxLength: 5,
+        selector: (a) => Bytes.toHexUnsafe(a.bytes)
+      }).chain((names) =>
+        FastCheck.array(NonZeroInt64.arbitrary.map(NonZeroInt64.make), {
+          minLength: names.length,
+          maxLength: names.length
+        }).map((amounts) => names.map((n, i) => [n, amounts[i]] as const))
+      )
+
+    return FastCheck.array(assetsForPolicy(), { minLength: policies.length, maxLength: policies.length }).map(
+      (assetsEntries) =>
+        fromEntries(
+          policies.map((policy, idx) => [
+            policy,
+            assetsEntries[idx] as Array<[AssetName.AssetName, NonZeroInt64.NonZeroInt64]>
+          ])
+        )
+    )
+  })
+)
 
 // ============================================================================
 // Root Functions

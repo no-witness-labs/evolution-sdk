@@ -20,7 +20,7 @@ export class TransactionIndexError extends Data.TaggedError("TransactionIndexErr
  * @since 2.0.0
  * @category schemas
  */
-export const TransactionIndex = Numeric.Uint16Schema.pipe(Schema.brand("TransactionIndex")).annotations({
+export const TransactionIndex = Numeric.Uint16Schema.annotations({
   identifier: "TransactionIndex"
 })
 
@@ -56,4 +56,4 @@ export const is = Schema.is(TransactionIndex)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.integer({ min: 0, max: 65535 }).map((value) => make(value))
+export const arbitrary = FastCheck.bigInt({ min: 0n, max: 65535n }).map((value) => make(value))

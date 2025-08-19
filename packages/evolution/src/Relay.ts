@@ -100,11 +100,7 @@ export const equals = (self: Relay, that: Relay): boolean => {
  * @since 2.0.0
  * @category FastCheck
  */
-export const arbitrary = FastCheck.oneof(
-  SingleHostAddr.arbitrary,
-  FastCheck.constant({} as SingleHostName.SingleHostName), // Placeholder since it may not have arbitrary
-  MultiHostName.arbitrary
-)
+export const arbitrary = FastCheck.oneof(SingleHostAddr.arbitrary, SingleHostName.arbitrary, MultiHostName.arbitrary)
 
 /**
  * Create a Relay from a SingleHostAddr.

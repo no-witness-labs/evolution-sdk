@@ -23,7 +23,15 @@ export class BaseAddress extends Schema.TaggedClass<BaseAddress>("BaseAddress")(
   networkId: NetworkId.NetworkId,
   paymentCredential: Credential.Credential,
   stakeCredential: Credential.Credential
-}) {}
+}) {
+  toString(): string {
+    return `BaseAddress { networkId: ${this.networkId}, paymentCredential: ${this.paymentCredential}, stakeCredential: ${this.stakeCredential} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, BaseAddress, {
   strict: true,

@@ -134,8 +134,7 @@ export const FromCDDL = Schema.transformOrFail(
       }),
     decode: ([, portValue, ipv4Value, ipv6Value]) =>
       Eff.gen(function* () {
-        const port =
-          portValue === null || portValue === undefined ? Option.none() : Option.some(Port.make(Number(portValue)))
+        const port = portValue === null || portValue === undefined ? Option.none() : Option.some(Port.make(portValue))
 
         const ipv4 =
           ipv4Value === null || ipv4Value === undefined

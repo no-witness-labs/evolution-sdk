@@ -230,15 +230,32 @@ export const is = (value: unknown): value is MultiAsset => Schema.is(MultiAsset)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.array(
-  FastCheck.tuple(
-    PolicyId.arbitrary,
-    FastCheck.array(FastCheck.tuple(AssetName.arbitrary, PositiveCoin.arbitrary), { minLength: 1, maxLength: 5 }).map(
-      (tokens) => new Map(tokens)
+export const arbitrary: FastCheck.Arbitrary<MultiAsset> = FastCheck.uniqueArray(PolicyId.arbitrary, {
+  minLength: 1,
+  maxLength: 5,
+  selector: (p) => Bytes.toHexUnsafe(p.hash)
+}).chain((policies) => {
+  // For each unique policy, generate a unique set of asset names with aligned positive amounts
+  const assetsForPolicy = () =>
+    FastCheck.uniqueArray(AssetName.arbitrary, {
+      minLength: 1,
+      maxLength: 5,
+      selector: (a) => Bytes.toHexUnsafe(a.bytes)
+    }).chain((names) =>
+      // Generate exactly names.length amounts to pair with the unique names
+      FastCheck.array(PositiveCoin.arbitrary, { minLength: names.length, maxLength: names.length }).map((amounts) => {
+        const entries = names.map((n, i) => [n, amounts[i]] as const)
+        return new Map(entries)
+      })
     )
-  ),
-  { minLength: 1, maxLength: 5 }
-).map((entries) => make(new Map(entries)))
+
+  return FastCheck.array(assetsForPolicy(), { minLength: policies.length, maxLength: policies.length }).map(
+    (assetMaps) => {
+      const entries = policies.map((policy, idx) => [policy, assetMaps[idx]] as const)
+      return make(new Map(entries))
+    }
+  )
+})
 
 /**
  * CDDL schema for MultiAsset.

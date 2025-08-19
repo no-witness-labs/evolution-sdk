@@ -1,15 +1,19 @@
 import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 import type { NonEmptyArray } from "effect/Array"
 
+import * as Anchor from "./Anchor.js"
 import * as AuxiliaryDataHash from "./AuxiliaryDataHash.js"
+import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Certificate from "./Certificate.js"
 import * as Coin from "./Coin.js"
 import * as Function from "./Function.js"
+import * as GovernanceAction from "./GovernanceAction.js"
 import * as KeyHash from "./KeyHash.js"
 import * as Mint from "./Mint.js"
 import * as NetworkId from "./NetworkId.js"
 import * as PositiveCoin from "./PositiveCoin.js"
+import * as ProposalProcedure from "./ProposalProcedure.js"
 import * as ProposalProcedures from "./ProposalProcedures.js"
 import * as RewardAccount from "./RewardAccount.js"
 import * as ScriptDataHash from "./ScriptDataHash.js"
@@ -19,10 +23,10 @@ import * as VotingProcedures from "./VotingProcedures.js"
 import * as Withdrawals from "./Withdrawals.js"
 
 /**
- * TransactionBody based on Conway CDDL specification
+ * TransactionBody
  *
  * ```
- * CDDL: transaction_body =
+ * transaction_body =
  *   {   0  : set<transaction_input>
  *   ,   1  : [* transaction_output]
  *   ,   2  : coin
@@ -106,6 +110,8 @@ export class TransactionBody extends Schema.TaggedClass<TransactionBody>()("Tran
   }
 }
 
+export const make = (...args: ConstructorParameters<typeof TransactionBody>) => new TransactionBody(...args)
+
 /**
  * Error class for TransactionBody related operations.
  *
@@ -117,7 +123,7 @@ export class TransactionBodyError extends Data.TaggedError("TransactionBodyError
   cause?: unknown
 }> {}
 
-// Pre-bind hot ParseResult helpers (created once at module load)
+// Pre-bind hot ParseResult helpers
 const encodeTxInput = ParseResult.encodeEither(TransactionInput.FromCDDL)
 const decodeTxInput = ParseResult.decodeEither(TransactionInput.FromCDDL)
 const encodeTxOutput = ParseResult.encodeEither(TransactionOutput.FromCDDL)
@@ -128,8 +134,8 @@ const encodeMint = ParseResult.encodeEither(Mint.FromCDDL)
 const decodeMint = ParseResult.decodeEither(Mint.FromCDDL)
 const encodeVotingProcedures = ParseResult.encodeEither(VotingProcedures.FromCDDL)
 const decodeVotingProcedures = ParseResult.decodeEither(VotingProcedures.FromCDDL)
-const encodeProposalProcedures = ParseResult.encodeEither(ProposalProcedures.FromCDDL)
-const decodeProposalProcedures = ParseResult.decodeEither(ProposalProcedures.FromCDDL)
+const encodeProposalProcedure = ParseResult.encodeEither(ProposalProcedure.FromCDDL)
+const decodeProposalProcedure = ParseResult.decodeEither(ProposalProcedure.FromCDDL)
 const encodeRewardAccountBytes = ParseResult.encodeEither(RewardAccount.FromBytes)
 const decodeRewardAccountBytes = ParseResult.decodeEither(RewardAccount.FromBytes)
 const decodeAuxiliaryDataHash = ParseResult.decodeEither(AuxiliaryDataHash.BytesSchema)
@@ -139,8 +145,8 @@ const decodeKeyHash = ParseResult.decodeEither(KeyHash.FromBytes)
 /**
  * CDDL schema for TransactionBody struct structure.
  *
- * Maps the TransactionBody fields to their CDDL field numbers according to Conway spec.
- * Uses Struct with proper CBOR tags for sets (tag 258) for CML compatibility.
+ * Maps the TransactionBody fields to their CDDL spec.
+ * Uses Struct with proper CBOR tags for sets (tag 258)
  *
  * @since 2.0.0
  * @category schemas
@@ -163,7 +169,7 @@ export const CDDLSchema = Schema.Struct({
   17: Schema.optional(CBOR.Integer), // coin (total_collateral) - optional
   18: Schema.optional(CBOR.tag(258, Schema.Array(TransactionInput.CDDLSchema))), // nonempty_set<transaction_input> (reference_inputs) - optional
   19: Schema.optional(Schema.encodedSchema(VotingProcedures.CDDLSchema)), // voting_procedures - optional
-  20: Schema.optional(Schema.encodedSchema(ProposalProcedures.CDDLSchema)), // proposal_procedures - optional
+  20: Schema.optional(CBOR.tag(258, Schema.Array(ProposalProcedure.CDDLSchema))), // proposal_procedures (nonempty_set) - optional
   21: Schema.optional(CBOR.Integer), // coin (current_treasury_value) - optional
   22: Schema.optional(CBOR.Integer) // positive_coin (donation) - optional
 })
@@ -257,7 +263,14 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
 
       if (toA.votingProcedures) record[19] = yield* encodeVotingProcedures(toA.votingProcedures)
 
-      if (toA.proposalProcedures) record[20] = yield* encodeProposalProcedures(toA.proposalProcedures)
+      if (toA.proposalProcedures && toA.proposalProcedures.procedures.length > 0) {
+        const len = toA.proposalProcedures.procedures.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = yield* encodeProposalProcedure(toA.proposalProcedures.procedures[i])
+        }
+        record[20] = CBOR.Tag.make({ tag: 258, value: arr }, { disableValidation: true })
+      }
 
       if (toA.currentTreasuryValue !== undefined) record[21] = toA.currentTreasuryValue
 
@@ -361,9 +374,14 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       }
       const votingProceduresData = fromA[19]
       const votingProcedures = votingProceduresData ? yield* decodeVotingProcedures(votingProceduresData) : undefined
-      const proposalProceduresData = fromA[20]
-      const proposalProcedures = proposalProceduresData
-        ? yield* decodeProposalProcedures(proposalProceduresData)
+      const proposalProceduresTag = fromA[20]
+      const proposalProceduresArray = proposalProceduresTag
+        ? (proposalProceduresTag.value as ReadonlyArray<typeof ProposalProcedure.CDDLSchema.Type>)
+        : undefined
+      const proposalProcedures = proposalProceduresArray
+        ? new ProposalProcedures.ProposalProcedures({
+            procedures: yield* E.all(proposalProceduresArray.map((pp) => decodeProposalProcedure(pp)))
+          })
         : undefined
       const currentTreasuryValue = fromA[21]
       const donation = fromA[22]
@@ -423,6 +441,8 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OP
     title: "TransactionBody from CBOR hex",
     description: "Decode TransactionBody from CBOR-encoded hex string using Conway CDDL specification"
   })
+
+export const isTransactionBody = Schema.is(TransactionBody)
 
 // ============================================================================
 // Root Functions
@@ -530,38 +550,128 @@ export namespace Either {
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary: FastCheck.Arbitrary<TransactionBody> = FastCheck.record({
-  // Required fields
-  inputs: FastCheck.array(TransactionInput.arbitrary, { minLength: 1, maxLength: 5 }),
-  outputs: FastCheck.array(TransactionOutput.arbitrary(), { minLength: 1, maxLength: 5 }),
-  fee: Coin.arbitrary,
+export const arbitrary: FastCheck.Arbitrary<TransactionBody> =
+  // First, generate core fields
+  FastCheck.record({
+    inputs: FastCheck.uniqueArray(TransactionInput.arbitrary, {
+      minLength: 1,
+      maxLength: 5,
+      selector: (i) => `${Bytes.toHexUnsafe(i.transactionId.hash)}:${i.index.toString()}`
+    }),
+    outputs: FastCheck.array(TransactionOutput.arbitrary(), { minLength: 1, maxLength: 5 }),
+    fee: Coin.arbitrary,
+    networkId: FastCheck.option(FastCheck.integer({ min: 0, max: 1 }).map(NetworkId.make), { nil: undefined }),
+    // Optional extra (added first for iterative hardening)
+    auxiliaryDataHash: FastCheck.option(AuxiliaryDataHash.arbitrary, { nil: undefined }),
+    // Second optional extra: donation (positive_coin)
+    donation: FastCheck.option(PositiveCoin.arbitrary, { nil: undefined }),
+    // Third optional extra: script_data_hash
+    scriptDataHash: FastCheck.option(ScriptDataHash.arbitrary, { nil: undefined }),
+    // Fourth optional extra: mint
+    mint: FastCheck.option(Mint.arbitrary, { nil: undefined }),
+    // Fifth optional extra: current_treasury_value (coin)
+    currentTreasuryValue: FastCheck.option(Coin.arbitrary, { nil: undefined }),
+    // Sixth optional extra: required_signers (nonempty unique KeyHash[])
+    requiredSigners: FastCheck.option(
+      FastCheck.uniqueArray(KeyHash.arbitrary, {
+        minLength: 1,
+        maxLength: 5,
+        selector: (k) => Bytes.toHexUnsafe(k.hash)
+      }),
+      { nil: undefined }
+    ),
+    // Seventh optional extra: withdrawals
+    withdrawals: FastCheck.option(Withdrawals.arbitrary, { nil: undefined }),
+    // Eighth optional extra: certificates
+    certificates: FastCheck.option(FastCheck.array(Certificate.arbitrary, { minLength: 1, maxLength: 5 }), {
+      nil: undefined
+    }),
+    // Ninth optional extra: collateral_inputs (nonempty unique set)
+    collateralInputs: FastCheck.option(
+      FastCheck.uniqueArray(TransactionInput.arbitrary, {
+        minLength: 1,
+        maxLength: 3,
+        selector: (i) => `${Bytes.toHexUnsafe(i.transactionId.hash)}:${i.index.toString()}`
+      }),
+      { nil: undefined }
+    ),
+    // Tenth optional extra: reference_inputs (nonempty unique set)
+    referenceInputs: FastCheck.option(
+      FastCheck.uniqueArray(TransactionInput.arbitrary, {
+        minLength: 1,
+        maxLength: 3,
+        selector: (i) => `${Bytes.toHexUnsafe(i.transactionId.hash)}:${i.index.toString()}`
+      }),
+      { nil: undefined }
+    ),
+    // Eleventh optional extra: collateral_return (transaction_output)
+    collateralReturn: FastCheck.option(TransactionOutput.arbitrary(), { nil: undefined }),
+    // Twelfth optional extra: total_collateral (coin)
+    totalCollateral: FastCheck.option(Coin.arbitrary, { nil: undefined }),
+    // Thirteenth optional extra: voting_procedures
+    votingProcedures: FastCheck.option(VotingProcedures.arbitrary, { nil: undefined }),
+    // Fourteenth optional extra: proposal_procedures (nonempty set) with non-null anchors per CML parity
+    proposalProcedures: FastCheck.option(
+      FastCheck.record({
+        procedures: FastCheck.array(
+          FastCheck.record({
+            deposit: Coin.arbitrary,
+            rewardAccount: RewardAccount.arbitrary,
+            governanceAction: GovernanceAction.arbitrary,
+            anchor: Anchor.arbitrary
+          }).map((params) => ProposalProcedure.make(params)),
+          { minLength: 1, maxLength: 3 }
+        )
+      }).map((params) => new ProposalProcedures.ProposalProcedures(params)),
+      { nil: undefined }
+    )
+  })
+    // Then, stitch in ttl/vis with the invariant ttl ≥ vis when both present
+    .chain((base) => {
+      const visArb = FastCheck.bigInt({ min: 0n, max: 10_000_000n })
+      const ttlArb = FastCheck.bigInt({ min: 0n, max: 10_000_000n })
 
-  // Optional fields - start with some common ones
-  ttl: FastCheck.option(FastCheck.bigInt({ min: 0n, max: 10000000n }), { nil: undefined }),
-  validityIntervalStart: FastCheck.option(FastCheck.bigInt({ min: 0n, max: 10000000n }), { nil: undefined }),
-  networkId: FastCheck.option(FastCheck.integer({ min: 0, max: 1 }).map(NetworkId.make), { nil: undefined })
-}).map(
-  (props) =>
-    new TransactionBody({
-      inputs: props.inputs,
-      outputs: props.outputs,
-      fee: props.fee,
-      ttl: props.ttl,
-      certificates: undefined,
-      withdrawals: undefined,
-      auxiliaryDataHash: undefined,
-      validityIntervalStart: props.validityIntervalStart,
-      mint: undefined,
-      scriptDataHash: undefined,
-      collateralInputs: undefined,
-      requiredSigners: undefined,
-      networkId: props.networkId,
-      collateralReturn: undefined,
-      totalCollateral: undefined,
-      referenceInputs: undefined,
-      votingProcedures: undefined,
-      proposalProcedures: undefined,
-      currentTreasuryValue: undefined,
-      donation: undefined
+      const both = FastCheck.tuple(visArb, ttlArb).map(([vis, ttl]) => {
+        // Ensure ttl >= vis
+        return ttl < vis ? { ttl: vis, validityIntervalStart: ttl } : { ttl, validityIntervalStart: vis }
+      })
+
+      const onlyVis = visArb.map((vis) => ({ ttl: undefined as bigint | undefined, validityIntervalStart: vis }))
+      const onlyTtl = ttlArb.map((ttl) => ({ ttl, validityIntervalStart: undefined as bigint | undefined }))
+      const none = FastCheck.constant({
+        ttl: undefined as bigint | undefined,
+        validityIntervalStart: undefined as bigint | undefined
+      })
+
+      return FastCheck.oneof({ arbitrary: both, weight: 2 }, onlyVis, onlyTtl, none).map(
+        ({ ttl, validityIntervalStart }) => ({
+          ...base,
+          ttl,
+          validityIntervalStart
+        })
+      )
     })
-)
+    .map((props) => {
+      return new TransactionBody({
+        inputs: props.inputs,
+        outputs: props.outputs,
+        fee: props.fee,
+        ttl: props.ttl,
+        certificates: props.certificates as NonEmptyArray<Certificate.Certificate> | undefined,
+        withdrawals: props.withdrawals,
+        auxiliaryDataHash: props.auxiliaryDataHash,
+        validityIntervalStart: props.validityIntervalStart,
+        mint: props.mint,
+        scriptDataHash: props.scriptDataHash,
+        collateralInputs: props.collateralInputs as NonEmptyArray<TransactionInput.TransactionInput> | undefined,
+        requiredSigners: props.requiredSigners as NonEmptyArray<KeyHash.KeyHash> | undefined,
+        networkId: props.networkId,
+        collateralReturn: props.collateralReturn,
+        totalCollateral: props.totalCollateral,
+        referenceInputs: props.referenceInputs as NonEmptyArray<TransactionInput.TransactionInput> | undefined,
+        votingProcedures: props.votingProcedures,
+        proposalProcedures: props.proposalProcedures,
+        currentTreasuryValue: props.currentTreasuryValue,
+        donation: props.donation
+      })
+    })

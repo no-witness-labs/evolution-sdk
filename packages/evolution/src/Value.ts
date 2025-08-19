@@ -36,12 +36,28 @@ export class ValueError extends Data.TaggedError("ValueError")<{
  */
 export class OnlyCoin extends Schema.TaggedClass<OnlyCoin>("OnlyCoin")("OnlyCoin", {
   coin: Coin.Coin
-}) {}
+}) {
+  toString(): string {
+    return `OnlyCoin { coin: ${this.coin} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 export class WithAssets extends Schema.TaggedClass<WithAssets>("WithAssets")("WithAssets", {
   coin: Coin.Coin,
   assets: MultiAsset.MultiAsset
-}) {}
+}) {
+  toString(): string {
+    return `WithAssets { coin: ${this.coin}, assets: ${this.assets} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 export const Value = Schema.Union(OnlyCoin, WithAssets)
 export type Value = typeof Value.Type
@@ -223,16 +239,11 @@ export const is = (value: unknown): value is Value => Schema.is(Value)(value)
  * @since 2.0.0
  * @category generators
  */
-export const arbitrary = FastCheck.oneof(
-  FastCheck.record({
-    _tag: FastCheck.constant("OnlyCoin"),
-    coin: Coin.arbitrary
-  }),
-  FastCheck.record({
-    _tag: FastCheck.constant("WithAssets"),
-    coin: Coin.arbitrary,
-    assets: MultiAsset.arbitrary
-  })
+export const arbitrary: FastCheck.Arbitrary<Value> = FastCheck.oneof(
+  Coin.arbitrary.map((coin) => new OnlyCoin({ coin }, { disableValidation: true })),
+  FastCheck.record({ assets: MultiAsset.arbitrary, coin: Coin.arbitrary }).map(
+    ({ assets, coin }) => new WithAssets({ assets, coin }, { disableValidation: true })
+  )
 )
 
 export const CDDLSchema = Schema.Union(

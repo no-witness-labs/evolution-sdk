@@ -5,8 +5,9 @@ import { describe, expect, it } from "vitest"
 import * as Anchor from "../src/Anchor.js"
 import * as DRep from "../src/DRep.js"
 import * as GovernanceAction from "../src/GovernanceAction.js"
+import * as KeyHash from "../src/KeyHash.js"
+import * as ScriptHash from "../src/ScriptHash.js"
 import * as TransactionHash from "../src/TransactionHash.js"
-import * as TransactionIndex from "../src/TransactionIndex.js"
 import * as VotingProcedures from "../src/VotingProcedures.js"
 
 /**
@@ -14,7 +15,15 @@ import * as VotingProcedures from "../src/VotingProcedures.js"
  */
 describe("VotingProcedures CML Compatibility", () => {
   // Test helper to generate deterministic test data using arbitraries
-  const generateTestDRep = (seed: number = 42): DRep.DRep => FastCheck.sample(DRep.arbitrary, { seed, numRuns: 1 })[0]
+  // Only generate DRep variants valid for Voter identifiers (key/script)
+  const generateTestDRep = (seed: number = 42): DRep.DRep =>
+    FastCheck.sample(
+      FastCheck.oneof(
+        KeyHash.arbitrary.map((keyHash) => DRep.fromKeyHash(keyHash)),
+        ScriptHash.arbitrary.map((scriptHash) => DRep.fromScriptHash(scriptHash))
+      ),
+      { seed, numRuns: 1 }
+    )[0]
 
   const generateTestAnchor = (seed: number = 42): Anchor.Anchor =>
     FastCheck.sample(Anchor.arbitrary, { seed, numRuns: 1 })[0]
@@ -28,9 +37,9 @@ describe("VotingProcedures CML Compatibility", () => {
     const drepVoter = VotingProcedures.makeDRepVoter(drep)
     const govActionId = new GovernanceAction.GovActionId({
       transactionId: TransactionHash.make({
-        bytes: new Uint8Array(32).fill(1) // Deterministic test data
+        hash: new Uint8Array(32).fill(1) // Deterministic test data
       }),
-      govActionIndex: TransactionIndex.make(0)
+      govActionIndex: 0n
     })
     const votingProcedure = VotingProcedures.makeProcedure(VotingProcedures.yes(), anchor)
 
@@ -71,9 +80,9 @@ describe("VotingProcedures CML Compatibility", () => {
     const drepVoter = VotingProcedures.makeDRepVoter(drep)
     const govActionId = new GovernanceAction.GovActionId({
       transactionId: TransactionHash.make({
-        bytes: new Uint8Array(32).fill(1) // Deterministic test data
+        hash: new Uint8Array(32).fill(1) // Deterministic test data
       }),
-      govActionIndex: TransactionIndex.make(1)
+      govActionIndex: 1n
     })
     const votingProcedure = VotingProcedures.makeProcedure(VotingProcedures.no(), anchor)
 

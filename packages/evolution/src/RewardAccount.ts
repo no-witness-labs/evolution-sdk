@@ -22,7 +22,15 @@ export class RewardAccountError extends Data.TaggedError("RewardAccountError")<{
 export class RewardAccount extends Schema.TaggedClass<RewardAccount>("RewardAccount")("RewardAccount", {
   networkId: NetworkId.NetworkId,
   stakeCredential: Credential.Credential
-}) {}
+}) {
+  toString(): string {
+    return `RewardAccount { networkId: ${this.networkId}, stakeCredential: ${this.stakeCredential} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, RewardAccount, {
   strict: true,

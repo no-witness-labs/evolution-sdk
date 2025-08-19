@@ -1,4 +1,4 @@
-import { Data, Either as E, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 import type { ParseIssue } from "effect/ParseResult"
 
 import * as Bytes from "./Bytes.js"
@@ -306,6 +306,60 @@ export const internalDecodeCDDL = (cborTuple: NativeCDDL): E.Either<Native, Pars
         return yield* E.left(new ParseResult.Type(Schema.Literal(0, 1, 2, 3, 4, 5).ast, cborTuple[0]))
     }
   })
+
+/**
+ * FastCheck arbitrary for Native scripts.
+ * Generates valid native scripts with bounded depth and sizes.
+ *
+ * Depth limit prevents exponential blow-up. At depth 0, only base cases are generated.
+ */
+const nativeArbitrary = (depth: number): FastCheck.Arbitrary<Native> => {
+  const baseSig = FastCheck.record({
+    type: FastCheck.constant("sig" as const),
+    // 28-byte keyhash (56 hex chars)
+    keyHash: FastCheck.hexaString({ minLength: 56, maxLength: 56 })
+  })
+
+  const baseBefore = FastCheck.record({
+    type: FastCheck.constant("before" as const),
+    slot: FastCheck.integer({ min: 0, max: 10_000_000 })
+  })
+
+  const baseAfter = FastCheck.record({
+    type: FastCheck.constant("after" as const),
+    slot: FastCheck.integer({ min: 0, max: 10_000_000 })
+  })
+
+  if (depth <= 0) {
+    return FastCheck.oneof(baseSig, baseBefore, baseAfter)
+  }
+
+  const sub = nativeArbitrary(depth - 1)
+  const scriptsArray = FastCheck.array(sub, { minLength: 0, maxLength: 3 })
+
+  const all = scriptsArray.map((scripts) => ({ type: "all" as const, scripts }))
+  const any = scriptsArray.map((scripts) => ({ type: "any" as const, scripts }))
+
+  const atLeast = FastCheck.array(sub, { minLength: 0, maxLength: 4 }).chain((scripts) =>
+    FastCheck.integer({ min: 0, max: scripts.length }).map((required) => ({
+      type: "atLeast" as const,
+      required,
+      scripts
+    }))
+  )
+
+  // Weight base cases a bit higher for performance and balance
+  return FastCheck.oneof(
+    { arbitrary: baseSig, weight: 3 },
+    { arbitrary: baseBefore, weight: 2 },
+    { arbitrary: baseAfter, weight: 2 },
+    { arbitrary: all, weight: 1 },
+    { arbitrary: any, weight: 1 },
+    { arbitrary: atLeast, weight: 1 }
+  )
+}
+
+export const arbitrary: FastCheck.Arbitrary<Native> = nativeArbitrary(2)
 
 /**
  * CBOR bytes transformation schema for Native.

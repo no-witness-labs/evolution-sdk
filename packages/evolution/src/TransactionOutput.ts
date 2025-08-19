@@ -3,7 +3,6 @@ import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 import * as Address from "./Address.js"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
-import * as Coin from "./Coin.js"
 import * as DatumOption from "./DatumOption.js"
 import * as Function from "./Function.js"
 import * as ScriptRef from "./ScriptRef.js"
@@ -58,7 +57,17 @@ export class ShelleyTransactionOutput extends Schema.TaggedClass<ShelleyTransact
     amount: Value.Value,
     datumHash: Schema.optional(DatumOption.DatumHash)
   }
-) {}
+) {
+  toString(): string {
+    const fields = [`address: ${this.address}`, `amount: ${this.amount}`]
+    if (this.datumHash !== undefined) fields.push(`datumHash: ${this.datumHash}`)
+    return `ShelleyTransactionOutput { ${fields.join(", ")} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 /**
  * Babbage-era transaction output format
@@ -79,7 +88,18 @@ export class BabbageTransactionOutput extends Schema.TaggedClass<BabbageTransact
     datumOption: Schema.optional(DatumOption.DatumOptionSchema), // 2
     scriptRef: Schema.optional(ScriptRef.ScriptRef) // 3
   }
-) {}
+) {
+  toString(): string {
+    const fields = [`address: ${this.address}`, `amount: ${this.amount}`]
+    if (this.datumOption !== undefined) fields.push(`datumOption: ${this.datumOption}`)
+    if (this.scriptRef !== undefined) fields.push(`scriptRef: ${this.scriptRef}`)
+    return `BabbageTransactionOutput { ${fields.join(", ")} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 /**
  * Union type for transaction outputs
@@ -198,8 +218,8 @@ export const FromBabbageTransactionOutputCDDLSchema = Schema.transformOrFail(
         const scriptRefBytes = fromI[3]
 
         if (addressBytes === undefined || valueBytes === undefined) {
-          // return yield* ParseResult.fail(new ParseResult.Type(BabbageTransactionOutput.ast, fromI))
-          return yield* E.left(new ParseResult.Type(BabbageTransactionOutput.ast, fromI))
+          // The input should match the BabbageTransactionOutput CDDL struct (keys 0 and 1 are required)
+          return yield* E.left(new ParseResult.Type(BabbageTransactionOutputCDDL.ast, fromI))
         }
 
         const address = yield* decAddress(addressBytes)
@@ -334,14 +354,14 @@ export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
     // Shelley TransactionOutput
     FastCheck.record({
       address: Address.arbitrary,
-      amount: Coin.arbitrary.map((coin) => Value.onlyCoin(coin)),
+      amount: Value.arbitrary,
       datumHash: FastCheck.option(DatumOption.datumHashArbitrary, { nil: undefined })
     }).map((props) => new ShelleyTransactionOutput(props)),
 
     // Babbage TransactionOutput
     FastCheck.record({
       address: Address.arbitrary,
-      amount: Coin.arbitrary.map((coin) => Value.onlyCoin(coin)),
+      amount: Value.arbitrary,
       datumOption: FastCheck.option(DatumOption.arbitrary, { nil: undefined }),
       scriptRef: FastCheck.option(ScriptRef.arbitrary, { nil: undefined })
     }).map((props) => new BabbageTransactionOutput(props))

@@ -14,13 +14,12 @@ export class Pointer extends Schema.TaggedClass<Pointer>("Pointer")("Pointer", {
   txIndex: Natural.Natural,
   certIndex: Natural.Natural
 }) {
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      _tag: "Pointer",
-      slot: this.slot,
-      txIndex: this.txIndex,
-      certIndex: this.certIndex
-    }
+  toString(): string {
+    return `Pointer { slot: ${this.slot}, txIndex: ${this.txIndex}, certIndex: ${this.certIndex} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
   }
 }
 

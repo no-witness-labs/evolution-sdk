@@ -26,7 +26,15 @@ export class DatumOptionError extends Data.TaggedError("DatumOptionError")<{
  */
 export class DatumHash extends Schema.TaggedClass<DatumHash>()("DatumHash", {
   hash: Bytes32.BytesSchema
-}) {}
+}) {
+  toString(): string {
+    return `DatumHash { hash: ${this.hash} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 export const DatumHashFromBytes = Schema.transform(Bytes32.BytesSchema, DatumHash, {
   strict: true,
@@ -45,7 +53,15 @@ export const DatumHashFromBytes = Schema.transform(Bytes32.BytesSchema, DatumHas
  */
 export class InlineDatum extends Schema.TaggedClass<InlineDatum>()("InlineDatum", {
   data: PlutusData.DataSchema
-}) {}
+}) {
+  toString(): string {
+    return `InlineDatum { data: ${this.data} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 /**
  * Schema for DatumOption representing optional datum information in transaction outputs.
@@ -136,11 +152,11 @@ export const arbitrary = FastCheck.oneof(datumHashArbitrary, inlineDatumArbitrar
 
 /**
  * CDDL schema for DatumOption.
- * datum_option = [0, Bytes32// 1, data]
+ * datum_option = [0, Bytes32] / [1, #6.24(bytes)]
  *
  * Where:
  * - [0, Bytes32] represents a datum hash (tag 0 with 32-byte hash)
- * - [1, data] represents inline data (tag 1 with CBOR-encoded plutus data)
+ * - [1, #6.24(bytes)] represents inline data (tag 1 with CBOR tag 24 containing plutus data as bytes)
  *
  * @since 2.0.0
  * @category schemas
@@ -148,7 +164,7 @@ export const arbitrary = FastCheck.oneof(datumHashArbitrary, inlineDatumArbitrar
 export const DatumOptionCDDLSchema = Schema.transformOrFail(
   Schema.Union(
     Schema.Tuple(Schema.Literal(0n), CBOR.ByteArray), // [0, Bytes32]
-    Schema.Tuple(Schema.Literal(1n), CBOR.CBORSchema) // [1, data] - data as CBOR bytes
+    Schema.Tuple(Schema.Literal(1n), CBOR.tag(24, Schema.Uint8ArrayFromSelf)) // [1, tag(24, bytes)] - PlutusData as bytes in tag 24
   ),
   Schema.typeSchema(DatumOptionSchema),
   {
@@ -158,7 +174,7 @@ export const DatumOptionCDDLSchema = Schema.transformOrFail(
         const result =
           toA._tag === "DatumHash"
             ? ([0n, toA.hash] as const) // Encode as [0, Bytes32]
-            : ([1n, PlutusData.plutusDataToCBORValue(toA.data)] as const) // Encode as [1, data]
+            : ([1n, { _tag: "Tag" as const, tag: 24 as const, value: PlutusData.toCBORBytes(toA.data) }] as const) // Encode as [1, tag(24, bytes)]
         return yield* E.right(result)
       }),
     decode: ([tag, value], _, ast) =>
@@ -167,11 +183,21 @@ export const DatumOptionCDDLSchema = Schema.transformOrFail(
           // Decode as DatumHash
           return yield* E.right(new DatumHash({ hash: value }, { disableValidation: true }))
         } else if (tag === 1n) {
-          // Decode as InlineDatum
+          // Decode as InlineDatum - value is now a CBOR tag 24 wrapper containing bytes
+          const taggedValue = value as { _tag: "Tag"; tag: number; value: Uint8Array }
+          if (taggedValue._tag !== "Tag" || taggedValue.tag !== 24) {
+            return yield* E.left(
+              new ParseResult.Type(
+                ast,
+                [tag, value],
+                `Invalid InlineDatum format: expected tag 24, got ${taggedValue._tag} with tag ${taggedValue.tag}`
+              )
+            )
+          }
           return yield* E.right(
             new InlineDatum(
               {
-                data: PlutusData.cborValueToPlutusData(value)
+                data: PlutusData.fromCBORBytes(taggedValue.value)
               },
               { disableValidation: true }
             )

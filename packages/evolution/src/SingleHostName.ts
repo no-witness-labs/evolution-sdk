@@ -114,6 +114,15 @@ export const generator = FastCheck.record({
 )
 
 /**
+ * FastCheck arbitrary for SingleHostName instances.
+ * Alias to `generator` for consistency with other modules.
+ *
+ * @since 2.0.0
+ * @category testing
+ */
+export const arbitrary = generator
+
+/**
  * CDDL schema for SingleHostName.
  * single_host_name = (1, port / nil, dns_name)
  *
@@ -141,7 +150,7 @@ export const FromCDDL = Schema.transformOrFail(
         const port =
           portValue === null || portValue === undefined
             ? Option.none()
-            : Option.some(yield* ParseResult.decode(Port.PortSchema)(Number(portValue)))
+            : Option.some(yield* ParseResult.decode(Port.PortSchema)(portValue))
 
         const dnsName = yield* ParseResult.decode(DnsName.DnsName)(dnsNameValue)
 

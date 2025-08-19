@@ -160,11 +160,8 @@ export const equals = (a: Script, b: Script): boolean => {
  * @category arbitrary
  */
 export const arbitrary: FastCheck.Arbitrary<Script> = FastCheck.oneof(
-  // Simple native script generator
-  FastCheck.record({
-    type: FastCheck.constant("sig" as const),
-    keyHash: FastCheck.hexaString({ minLength: 56, maxLength: 56 })
-  }),
+  // Robust native script generator (bounded depth and sizes)
+  NativeScripts.arbitrary,
   PlutusV1.arbitrary,
   PlutusV2.arbitrary,
   PlutusV3.arbitrary

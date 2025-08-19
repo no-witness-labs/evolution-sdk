@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
@@ -35,11 +35,7 @@ export class ProtocolVersion extends Schema.TaggedClass<ProtocolVersion>()("Prot
  * @since 2.0.0
  * @category constructors
  */
-export const make = (props: { major: number; minor: number }): ProtocolVersion =>
-  new ProtocolVersion({
-    major: Numeric.Uint32Make(props.major),
-    minor: Numeric.Uint32Make(props.minor)
-  })
+export const make = (...args: ConstructorParameters<typeof ProtocolVersion>) => new ProtocolVersion(...args)
 
 /**
  * Check if two ProtocolVersion instances are equal.
@@ -55,8 +51,13 @@ export const equals = (a: ProtocolVersion, b: ProtocolVersion): boolean => a.maj
  * @since 2.0.0
  * @category testing
  */
-export const arbitrary = FastCheck.tuple(Numeric.Uint32Generator, Numeric.Uint32Generator).map(([major, minor]) =>
+export const arbitrary = FastCheck.tuple(Numeric.Uint32Arbitrary, Numeric.Uint32Arbitrary).map(([major, minor]) =>
   make({ major, minor })
+)
+
+export const CDDLSchema = Schema.Tuple(
+  CBOR.Integer, // major_version as bigint
+  CBOR.Integer // minor_version as bigint
 )
 
 /**
@@ -66,20 +67,20 @@ export const arbitrary = FastCheck.tuple(Numeric.Uint32Generator, Numeric.Uint32
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(
-  Schema.Tuple(CBOR.Integer, CBOR.Integer),
-  Schema.typeSchema(ProtocolVersion),
-  {
-    strict: true,
-    encode: (toA) => Eff.succeed([BigInt(toA.major), BigInt(toA.minor)] as const),
-    decode: ([major, minor]) =>
-      ParseResult.decode(ProtocolVersion)({
-        _tag: "ProtocolVersion",
-        major: Number(major),
-        minor: Number(minor)
-      })
-  }
-).annotations({
+export const FromCDDL = Schema.transform(CDDLSchema, Schema.typeSchema(ProtocolVersion), {
+  strict: true,
+  encode: (toA) => [toA.major, toA.minor] as const,
+  decode: ([major, minor]) =>
+    new ProtocolVersion(
+      {
+        major,
+        minor
+      },
+      {
+        disableValidation: true
+      }
+    )
+}).annotations({
   identifier: "ProtocolVersion.FromCDDL",
   description: "Transforms CBOR structure to ProtocolVersion"
 })
@@ -127,8 +128,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORBytes(options), ProtocolVersionError)(bytes)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, ProtocolVersionError)
 
   /**
    * Convert CBOR hex string to ProtocolVersion using Either
@@ -136,8 +136,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORHex(options), ProtocolVersionError)(hex)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, ProtocolVersionError)
 
   /**
    * Convert ProtocolVersion to CBOR bytes using Either
@@ -145,8 +144,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORBytes = (value: ProtocolVersion, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORBytes(options), ProtocolVersionError)(value)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, ProtocolVersionError)
 
   /**
    * Convert ProtocolVersion to CBOR hex string using Either
@@ -154,8 +152,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORHex = (value: ProtocolVersion, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORHex(options), ProtocolVersionError)(value)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, ProtocolVersionError)
 }
 
 /**
@@ -164,8 +161,11 @@ export namespace Either {
  * @since 2.0.0
  * @category conversion
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): ProtocolVersion =>
-  Function.makeDecodeSync(FromCBORBytes(options), ProtocolVersionError, "ProtocolVersion.fromCBORBytes")(bytes)
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  ProtocolVersionError,
+  "ProtocolVersion.fromCBORBytes"
+)
 
 /**
  * Convert CBOR hex string to ProtocolVersion (unsafe)
@@ -173,8 +173,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): P
  * @since 2.0.0
  * @category conversion
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): ProtocolVersion =>
-  Function.makeDecodeSync(FromCBORHex(options), ProtocolVersionError, "ProtocolVersion.fromCBORHex")(hex)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, ProtocolVersionError, "ProtocolVersion.fromCBORHex")
 
 /**
  * Convert ProtocolVersion to CBOR bytes (unsafe)
@@ -182,8 +181,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): ProtocolV
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORBytes = (value: ProtocolVersion, options?: CBOR.CodecOptions): Uint8Array =>
-  Function.makeEncodeSync(FromCBORBytes(options), ProtocolVersionError, "ProtocolVersion.toCBORBytes")(value)
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, ProtocolVersionError, "ProtocolVersion.toCBORBytes")
 
 /**
  * Convert ProtocolVersion to CBOR hex string (unsafe)
@@ -191,5 +189,4 @@ export const toCBORBytes = (value: ProtocolVersion, options?: CBOR.CodecOptions)
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORHex = (value: ProtocolVersion, options?: CBOR.CodecOptions): string =>
-  Function.makeEncodeSync(FromCBORHex(options), ProtocolVersionError, "ProtocolVersion.toCBORHex")(value)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, ProtocolVersionError, "ProtocolVersion.toCBORHex")

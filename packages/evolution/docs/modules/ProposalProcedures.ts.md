@@ -14,9 +14,8 @@ parent: Modules
   - [arbitrary](#arbitrary-1)
 - [constructors](#constructors)
   - [make](#make)
-  - [makeProcedure](#makeprocedure)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -60,31 +59,17 @@ Create a ProposalProcedures instance with validation.
 **Signature**
 
 ```ts
-export declare const make: (procedures: Array<ProposalProcedure.ProposalProcedure>) => ProposalProcedures
-```
-
-Added in v2.0.0
-
-## makeProcedure
-
-Create a single ProposalProcedure.
-
-**Signature**
-
-```ts
-export declare const makeProcedure: (params: {
-  deposit: Coin.Coin
-  rewardAccount: RewardAccount.RewardAccount
-  governanceAction: GovernanceAction.GovernanceAction
-  anchor?: Anchor.Anchor | null
-}) => ProposalProcedure.ProposalProcedure
+export declare const make: (
+  props: { readonly procedures: readonly ProposalProcedure.ProposalProcedure[] },
+  options?: Schema.MakeOptions | undefined
+) => ProposalProcedures
 ```
 
 Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -99,7 +84,7 @@ Encode ProposalProcedures to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (proposalProcedures: ProposalProcedures, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: ProposalProcedures, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -111,7 +96,7 @@ Encode ProposalProcedures to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (proposalProcedures: ProposalProcedures, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: ProposalProcedures, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

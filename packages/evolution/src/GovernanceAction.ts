@@ -69,7 +69,7 @@ export const GovActionIdFromCDDL = Schema.transformOrFail(GovActionIdCDDL, GovAc
       const [transactionIdBytes, govActionIndexNumber] = fromA
       // Convert CBOR types to domain types
       const transactionId = yield* ParseResult.decode(TransactionHash.FromBytes)(transactionIdBytes)
-      const govActionIndex = yield* ParseResult.decode(TransactionIndex.TransactionIndex)(Number(govActionIndexNumber))
+      const govActionIndex = yield* ParseResult.decode(TransactionIndex.TransactionIndex)(govActionIndexNumber)
       return new GovActionId({ transactionId, govActionIndex })
     })
 })

@@ -38,7 +38,7 @@ export class KeyHash extends Schema.TaggedClass<KeyHash>()("KeyHash", {
   }
 
   toString(): string {
-    return toHex(this)
+    return `KeyHash({ hash: ${this.hash} })`
   }
 }
 

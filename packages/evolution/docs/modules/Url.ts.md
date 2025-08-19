@@ -12,10 +12,8 @@ parent: Modules
 
 - [arbitrary](#arbitrary)
   - [arbitrary](#arbitrary-1)
-- [constants](#constants)
-  - [URL_MAX_LENGTH](#url_max_length)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toBytes](#tobytes)
   - [toHex](#tohex)
@@ -24,8 +22,7 @@ parent: Modules
 - [errors](#errors)
   - [UrlError (class)](#urlerror-class)
 - [model](#model)
-  - [Url](#url)
-  - [Url (type alias)](#url-type-alias)
+  - [Url (class)](#url-class)
 - [parsing](#parsing)
   - [fromBytes](#frombytes)
   - [fromHex](#fromhex)
@@ -47,31 +44,16 @@ FastCheck arbitrary for generating random Url instances.
 **Signature**
 
 ```ts
-export declare const arbitrary: Arbitrary<string & Brand<"Url">>
-```
-
-Added in v2.0.0
-
-# constants
-
-## URL_MAX_LENGTH
-
-CDDL specification:
-url = text .size (0..128)
-
-**Signature**
-
-```ts
-export declare const URL_MAX_LENGTH: 128
+export declare const arbitrary: Arbitrary<Url>
 ```
 
 Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
-Effect-based error handling variants for functions that can fail.
+Either-based error handling variants for functions that can fail.
 
 Added in v2.0.0
 
@@ -84,7 +66,7 @@ Encode Url to bytes.
 **Signature**
 
 ```ts
-export declare const toBytes: (url: Url) => Uint8Array
+export declare const toBytes: (input: Url) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -96,7 +78,7 @@ Encode Url to hex string.
 **Signature**
 
 ```ts
-export declare const toHex: (url: Url) => string
+export declare const toHex: (input: Url) => string
 ```
 
 Added in v2.0.0
@@ -131,7 +113,7 @@ Added in v2.0.0
 
 # model
 
-## Url
+## Url (class)
 
 Schema for Url representing URLs as branded text.
 url = text .size (0..128)
@@ -139,28 +121,7 @@ url = text .size (0..128)
 **Signature**
 
 ```ts
-export declare const Url: Schema.brand<
-  Schema.refine<
-    string,
-    Schema.transform<
-      Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
-      Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
-    >
-  >,
-  "Url"
->
-```
-
-Added in v2.0.0
-
-## Url (type alias)
-
-Type alias for Url.
-
-**Signature**
-
-```ts
-export type Url = typeof Url.Type
+export declare class Url
 ```
 
 Added in v2.0.0
@@ -174,7 +135,7 @@ Parse Url from bytes.
 **Signature**
 
 ```ts
-export declare const fromBytes: (bytes: Uint8Array) => Url
+export declare const fromBytes: (input: Uint8Array) => Url
 ```
 
 Added in v2.0.0
@@ -186,7 +147,7 @@ Parse Url from hex string.
 **Signature**
 
 ```ts
-export declare const fromHex: (hex: string) => Url
+export declare const fromHex: (input: string) => Url
 ```
 
 Added in v2.0.0
@@ -200,7 +161,7 @@ Check if the given value is a valid Url
 **Signature**
 
 ```ts
-export declare const isUrl: (u: unknown, overrideOptions?: ParseOptions | number) => u is string & Brand<"Url">
+export declare const isUrl: (u: unknown, overrideOptions?: ParseOptions | number) => u is Url
 ```
 
 Added in v2.0.0
@@ -213,17 +174,8 @@ Added in v2.0.0
 
 ```ts
 export declare const FromBytes: Schema.transform<
-  Schema.filter<Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>>,
-  Schema.brand<
-    Schema.refine<
-      string,
-      Schema.transform<
-        Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
-        Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
-      >
-    >,
-    "Url"
-  >
+  Schema.transform<Schema.Schema<Uint8Array, Uint8Array, never>, Schema.Schema<string, string, never>>,
+  typeof Url
 >
 ```
 
@@ -233,22 +185,10 @@ export declare const FromBytes: Schema.transform<
 
 ```ts
 export declare const FromHex: Schema.transform<
-  Schema.refine<
-    string,
-    Schema.transform<
-      Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
-      Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
-    >
-  >,
-  Schema.brand<
-    Schema.refine<
-      string,
-      Schema.transform<
-        Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
-        Schema.transform<typeof Schema.Uint8ArrayFromSelf, typeof Schema.String>
-      >
-    >,
-    "Url"
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<
+    Schema.transform<Schema.Schema<Uint8Array, Uint8Array, never>, Schema.Schema<string, string, never>>,
+    typeof Url
   >
 >
 ```
@@ -258,5 +198,5 @@ export declare const FromHex: Schema.transform<
 **Signature**
 
 ```ts
-export declare const make: (a: string, options?: Schema.MakeOptions) => string & Brand<"Url">
+export declare const make: (props: { readonly href: string }, options?: Schema.MakeOptions | undefined) => Url
 ```

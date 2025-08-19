@@ -17,7 +17,7 @@ parent: Modules
   - [remove](#remove)
   - [set](#set)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -85,7 +85,30 @@ Smart constructor for Metadata that validates and applies typing.
 **Signature**
 
 ```ts
-export declare const make: (map: Map<MetadataLabel, TransactionMetadatum.TransactionMetadatum>) => Metadata
+export declare const make: (
+  _: never
+) => Schema.Schema.Variance<
+  Map<
+    bigint,
+    | TransactionMetadatum.TextMetadatum
+    | TransactionMetadatum.IntMetadatum
+    | TransactionMetadatum.BytesMetadatum
+    | TransactionMetadatum.ArrayMetadatum
+    | TransactionMetadatum.MetadatumMap
+  >,
+  ReadonlyMap<
+    bigint,
+    | { readonly _tag: "TextMetadatum"; readonly value: string }
+    | { readonly _tag: "IntMetadatum"; readonly value: bigint }
+    | { readonly _tag: "BytesMetadatum"; readonly value: any }
+    | { readonly _tag: "ArrayMetadatum"; readonly value: readonly TransactionMetadatum.TransactionMetadatum[] }
+    | {
+        readonly _tag: "MetadatumMap"
+        readonly value: Map<TransactionMetadatum.TransactionMetadatum, TransactionMetadatum.TransactionMetadatum>
+      }
+  >,
+  never
+>
 ```
 
 Added in v2.0.0
@@ -120,7 +143,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -135,7 +158,17 @@ Convert Metadata to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (metadata: Metadata, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (
+  input: Map<
+    bigint,
+    | TransactionMetadatum.TextMetadatum
+    | TransactionMetadatum.IntMetadatum
+    | TransactionMetadatum.BytesMetadatum
+    | TransactionMetadatum.ArrayMetadatum
+    | TransactionMetadatum.MetadatumMap
+  >,
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -147,7 +180,17 @@ Convert Metadata to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (metadata: Metadata, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (
+  input: Map<
+    bigint,
+    | TransactionMetadatum.TextMetadatum
+    | TransactionMetadatum.IntMetadatum
+    | TransactionMetadatum.BytesMetadatum
+    | TransactionMetadatum.ArrayMetadatum
+    | TransactionMetadatum.MetadatumMap
+  >,
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0
@@ -189,7 +232,17 @@ Parse Metadata from CBOR bytes.
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Metadata
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) => Map<
+  bigint,
+  | TransactionMetadatum.TextMetadatum
+  | TransactionMetadatum.IntMetadatum
+  | TransactionMetadatum.BytesMetadatum
+  | TransactionMetadatum.ArrayMetadatum
+  | TransactionMetadatum.MetadatumMap
+>
 ```
 
 Added in v2.0.0
@@ -201,7 +254,17 @@ Parse Metadata from CBOR hex string.
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Metadata
+export declare const fromCBORHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) => Map<
+  bigint,
+  | TransactionMetadatum.TextMetadatum
+  | TransactionMetadatum.IntMetadatum
+  | TransactionMetadatum.BytesMetadatum
+  | TransactionMetadatum.ArrayMetadatum
+  | TransactionMetadatum.MetadatumMap
+>
 ```
 
 Added in v2.0.0

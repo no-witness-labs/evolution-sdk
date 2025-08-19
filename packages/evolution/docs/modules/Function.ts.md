@@ -14,7 +14,11 @@ parent: Modules
   - [makeCBORDecodeSync](#makecbordecodesync)
   - [makeCBOREncodeSync](#makecborencodesync)
 - [utils](#utils)
+  - [makeCBORDecodeEither](#makecbordecodeeither)
+  - [makeCBORDecodeHexEither](#makecbordecodehexeither)
   - [makeCBORDecodeHexSync](#makecbordecodehexsync)
+  - [makeCBOREncodeEither](#makecborencodeeither)
+  - [makeCBOREncodeHexEither](#makecborencodehexeither)
   - [makeCBOREncodeHexSync](#makecborencodehexsync)
   - [makeDecodeEither](#makedecodeeither)
   - [makeDecodeSync](#makedecodesync)
@@ -36,7 +40,8 @@ This pairs with makeCBOREncodeSync and avoids extra FromCBOR\* transformers by u
 export declare const makeCBORDecodeSync: <A, T extends CBOR.CBOR>(
   schemaTransformer: Schema.Schema<A, T>,
   ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
-  functionName: string
+  functionName: string,
+  defaultOptions?: CBOR.CodecOptions
 ) => (bytes: Uint8Array, options?: CBOR.CodecOptions) => A
 ```
 
@@ -53,13 +58,42 @@ Combines schema encoding with CBOR serialization in one step.
 export declare const makeCBOREncodeSync: <A, T extends CBOR.CBOR>(
   schemaTransformer: Schema.Schema<A, T>,
   ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
-  functionName: string
+  functionName: string,
+  defaultOptions?: CBOR.CodecOptions
 ) => (input: A, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
 
 # utils
+
+## makeCBORDecodeEither
+
+Creates a function that decodes CBOR bytes into a value using a schema, returning Either.
+
+**Signature**
+
+```ts
+export declare const makeCBORDecodeEither: <A, T extends CBOR.CBOR, TError extends Error>(
+  schemaTransformer: Schema.Schema<A, T>,
+  ErrorClass: new (props: { message?: string; cause?: unknown }) => TError,
+  defaultOptions?: CBOR.CodecOptions
+) => (bytes: Uint8Array, options?: CBOR.CodecOptions) => Either.Either<A, TError>
+```
+
+## makeCBORDecodeHexEither
+
+Creates a function that decodes CBOR hex string into a value using a schema, returning Either.
+
+**Signature**
+
+```ts
+export declare const makeCBORDecodeHexEither: <A, T extends CBOR.CBOR, TError extends Error>(
+  schemaTransformer: Schema.Schema<A, T>,
+  ErrorClass: new (props: { message?: string; cause?: unknown }) => TError,
+  defaultOptions?: CBOR.CodecOptions
+) => (hex: string, options?: CBOR.CodecOptions) => Either.Either<A, TError>
+```
 
 ## makeCBORDecodeHexSync
 
@@ -71,8 +105,37 @@ Creates a synchronous function that decodes a CBOR hex string into a value using
 export declare const makeCBORDecodeHexSync: <A, T extends CBOR.CBOR>(
   schemaTransformer: Schema.Schema<A, T>,
   ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
-  functionName: string
+  functionName: string,
+  defaultOptions?: CBOR.CodecOptions
 ) => (hex: string, options?: CBOR.CodecOptions) => A
+```
+
+## makeCBOREncodeEither
+
+Creates a function that encodes a value to CBOR bytes using a schema, returning Either.
+
+**Signature**
+
+```ts
+export declare const makeCBOREncodeEither: <A, T extends CBOR.CBOR, TError extends Error>(
+  schemaTransformer: Schema.Schema<A, T>,
+  ErrorClass: new (props: { message?: string; cause?: unknown }) => TError,
+  defaultOptions?: CBOR.CodecOptions
+) => (input: A, options?: CBOR.CodecOptions) => Either.Either<Uint8Array, TError>
+```
+
+## makeCBOREncodeHexEither
+
+Creates a function that encodes a value to CBOR hex string using a schema, returning Either.
+
+**Signature**
+
+```ts
+export declare const makeCBOREncodeHexEither: <A, T extends CBOR.CBOR, TError extends Error>(
+  schemaTransformer: Schema.Schema<A, T>,
+  ErrorClass: new (props: { message?: string; cause?: unknown }) => TError,
+  defaultOptions?: CBOR.CodecOptions
+) => (input: A, options?: CBOR.CodecOptions) => Either.Either<string, TError>
 ```
 
 ## makeCBOREncodeHexSync
@@ -86,7 +149,8 @@ Uses a schema to encode T -> A then serializes to hex.
 export declare const makeCBOREncodeHexSync: <A, T extends CBOR.CBOR>(
   schemaTransformer: Schema.Schema<A, T>,
   ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
-  functionName: string
+  functionName: string,
+  defaultOptions?: CBOR.CodecOptions
 ) => (input: A, options?: CBOR.CodecOptions) => string
 ```
 

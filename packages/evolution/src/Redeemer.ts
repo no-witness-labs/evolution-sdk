@@ -3,6 +3,7 @@ import { Data, Effect, FastCheck, ParseResult, Schema } from "effect"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as PlutusData from "./Data.js"
+import * as Function from "./Function.js"
 import * as Numeric from "./Numeric.js"
 
 /**
@@ -311,16 +312,7 @@ export const isReward = (redeemer: Redeemer): boolean => redeemer.tag === "rewar
  * @since 2.0.0
  * @category transformation
  */
-export const toCBORBytes = (redeemer: Redeemer, options?: CBOR.CodecOptions): Uint8Array => {
-  try {
-    return Schema.encodeSync(FromCBORBytes(options))(redeemer)
-  } catch (cause) {
-    throw new RedeemerError({
-      message: "Failed to encode Redeemer to CBOR bytes",
-      cause
-    })
-  }
-}
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, RedeemerError, "Redeemer.toCBORBytes")
 
 /**
  * Encode Redeemer to CBOR hex string.
@@ -328,16 +320,7 @@ export const toCBORBytes = (redeemer: Redeemer, options?: CBOR.CodecOptions): Ui
  * @since 2.0.0
  * @category transformation
  */
-export const toCBORHex = (redeemer: Redeemer, options?: CBOR.CodecOptions): string => {
-  try {
-    return Schema.encodeSync(FromCBORHex(options))(redeemer)
-  } catch (cause) {
-    throw new RedeemerError({
-      message: "Failed to encode Redeemer to CBOR hex",
-      cause
-    })
-  }
-}
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, RedeemerError, "Redeemer.toCBORHex")
 
 /**
  * Decode Redeemer from CBOR bytes.
@@ -345,16 +328,7 @@ export const toCBORHex = (redeemer: Redeemer, options?: CBOR.CodecOptions): stri
  * @since 2.0.0
  * @category transformation
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Redeemer => {
-  try {
-    return Schema.decodeSync(FromCBORBytes(options))(bytes)
-  } catch (cause) {
-    throw new RedeemerError({
-      message: "Failed to decode Redeemer from CBOR bytes",
-      cause
-    })
-  }
-}
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, RedeemerError, "Redeemer.fromCBORBytes")
 
 /**
  * Decode Redeemer from CBOR hex string.

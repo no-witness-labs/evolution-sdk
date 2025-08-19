@@ -1,8 +1,9 @@
-import { Data, Effect as Eff, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 import type { ParseIssue } from "effect/ParseResult"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for Native script related operations.
@@ -182,25 +183,37 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Nat
  * @since 2.0.0
  * @category encoding
  */
-export const internalEncodeCDDL = (native: Native): Eff.Effect<NativeCDDL, ParseIssue> =>
-  Eff.gen(function* () {
+export const internalEncodeCDDL = (native: Native): E.Either<NativeCDDL, ParseIssue> =>
+  E.gen(function* () {
     switch (native.type) {
       case "sig": {
         // Convert hex string keyHash to bytes for CBOR encoding
-        const keyHashBytes = yield* ParseResult.decode(Bytes.FromHex)(native.keyHash)
+        const keyHashBytes = yield* ParseResult.decodeEither(Bytes.FromHex)(native.keyHash)
         return [0n, keyHashBytes] as const
       }
       case "all": {
-        const scripts = yield* Eff.forEach(native.scripts, internalEncodeCDDL)
-        return [1n, scripts] as const
+        const scriptResults: Array<NativeCDDL> = []
+        for (const script of native.scripts) {
+          const encoded = yield* internalEncodeCDDL(script)
+          scriptResults.push(encoded)
+        }
+        return [1n, scriptResults] as const
       }
       case "any": {
-        const scripts = yield* Eff.forEach(native.scripts, internalEncodeCDDL)
-        return [2n, scripts] as const
+        const scriptResults: Array<NativeCDDL> = []
+        for (const script of native.scripts) {
+          const encoded = yield* internalEncodeCDDL(script)
+          scriptResults.push(encoded)
+        }
+        return [2n, scriptResults] as const
       }
       case "atLeast": {
-        const scripts = yield* Eff.forEach(native.scripts, internalEncodeCDDL)
-        return [3n, BigInt(native.required), scripts] as const
+        const scriptResults: Array<NativeCDDL> = []
+        for (const script of native.scripts) {
+          const encoded = yield* internalEncodeCDDL(script)
+          scriptResults.push(encoded)
+        }
+        return [3n, BigInt(native.required), scriptResults] as const
       }
       case "before": {
         return [4n, BigInt(native.slot)] as const
@@ -220,13 +233,13 @@ export const internalEncodeCDDL = (native: Native): Eff.Effect<NativeCDDL, Parse
  * @since 2.0.0
  * @category decoding
  */
-export const internalDecodeCDDL = (cborTuple: NativeCDDL): Eff.Effect<Native, ParseIssue> =>
-  Eff.gen(function* () {
+export const internalDecodeCDDL = (cborTuple: NativeCDDL): E.Either<Native, ParseIssue> =>
+  E.gen(function* () {
     switch (cborTuple[0]) {
       case 0n: {
         // sig: [0, keyHash_bytes] - convert bytes back to hex string
         const [, keyHashBytes] = cborTuple
-        const keyHash = yield* ParseResult.encode(Bytes.FromHex)(keyHashBytes)
+        const keyHash = yield* ParseResult.encodeEither(Bytes.FromHex)(keyHashBytes)
         return {
           type: "sig" as const,
           keyHash
@@ -290,9 +303,63 @@ export const internalDecodeCDDL = (cborTuple: NativeCDDL): Eff.Effect<Native, Pa
       }
       default:
         // This should never happen with proper CBOR validation
-        return yield* Eff.fail(new ParseResult.Type(Schema.Literal(0, 1, 2, 3, 4, 5).ast, cborTuple[0]))
+        return yield* E.left(new ParseResult.Type(Schema.Literal(0, 1, 2, 3, 4, 5).ast, cborTuple[0]))
     }
   })
+
+/**
+ * FastCheck arbitrary for Native scripts.
+ * Generates valid native scripts with bounded depth and sizes.
+ *
+ * Depth limit prevents exponential blow-up. At depth 0, only base cases are generated.
+ */
+const nativeArbitrary = (depth: number): FastCheck.Arbitrary<Native> => {
+  const baseSig = FastCheck.record({
+    type: FastCheck.constant("sig" as const),
+    // 28-byte keyhash (56 hex chars)
+    keyHash: FastCheck.hexaString({ minLength: 56, maxLength: 56 })
+  })
+
+  const baseBefore = FastCheck.record({
+    type: FastCheck.constant("before" as const),
+    slot: FastCheck.integer({ min: 0, max: 10_000_000 })
+  })
+
+  const baseAfter = FastCheck.record({
+    type: FastCheck.constant("after" as const),
+    slot: FastCheck.integer({ min: 0, max: 10_000_000 })
+  })
+
+  if (depth <= 0) {
+    return FastCheck.oneof(baseSig, baseBefore, baseAfter)
+  }
+
+  const sub = nativeArbitrary(depth - 1)
+  const scriptsArray = FastCheck.array(sub, { minLength: 0, maxLength: 3 })
+
+  const all = scriptsArray.map((scripts) => ({ type: "all" as const, scripts }))
+  const any = scriptsArray.map((scripts) => ({ type: "any" as const, scripts }))
+
+  const atLeast = FastCheck.array(sub, { minLength: 0, maxLength: 4 }).chain((scripts) =>
+    FastCheck.integer({ min: 0, max: scripts.length }).map((required) => ({
+      type: "atLeast" as const,
+      required,
+      scripts
+    }))
+  )
+
+  // Weight base cases a bit higher for performance and balance
+  return FastCheck.oneof(
+    { arbitrary: baseSig, weight: 3 },
+    { arbitrary: baseBefore, weight: 2 },
+    { arbitrary: baseAfter, weight: 2 },
+    { arbitrary: all, weight: 1 },
+    { arbitrary: any, weight: 1 },
+    { arbitrary: atLeast, weight: 1 }
+  )
+}
+
+export const arbitrary: FastCheck.Arbitrary<Native> = nativeArbitrary(2)
 
 /**
  * CBOR bytes transformation schema for Native.
@@ -339,8 +406,7 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Native =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, NativeError, "NativeScripts.fromCBORBytes")
 
 /**
  * Parse Native from CBOR hex string.
@@ -349,7 +415,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): N
  * @category parsing
  */
 export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Native =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+  E.getOrThrow(Either.fromCBORHex(hex, options))
 
 /**
  * Encode Native to CBOR bytes.
@@ -357,8 +423,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Native =>
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (native: Native, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(native, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, NativeError, "Native.toCBORBytes")
 
 /**
  * Encode Native to CBOR hex string.
@@ -366,8 +431,7 @@ export const toCBORBytes = (native: Native, options?: CBOR.CodecOptions): Uint8A
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (native: Native, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(native, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, NativeError, "Native.toCBORHex")
 
 // ============================================================================
 // Effect Namespace
@@ -379,23 +443,14 @@ export const toCBORHex = (native: Native, options?: CBOR.CodecOptions): string =
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse Native from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Eff.Effect<Native, NativeError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new NativeError({
-            message: "Failed to parse Native from CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, NativeError)
 
   /**
    * Parse Native from CBOR hex string with Effect error handling.
@@ -403,16 +458,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Eff.Effect<Native, NativeError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new NativeError({
-            message: "Failed to parse Native from CBOR hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, NativeError)
 
   /**
    * Encode Native to CBOR bytes with Effect error handling.
@@ -420,16 +466,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (native: Native, options?: CBOR.CodecOptions): Eff.Effect<Uint8Array, NativeError> =>
-    Schema.encode(FromCBORBytes(options))(native).pipe(
-      Eff.mapError(
-        (cause) =>
-          new NativeError({
-            message: "Failed to encode Native to CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, NativeError)
 
   /**
    * Encode Native to CBOR hex string with Effect error handling.
@@ -437,14 +474,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (native: Native, options?: CBOR.CodecOptions): Eff.Effect<string, NativeError> =>
-    Schema.encode(FromCBORHex(options))(native).pipe(
-      Eff.mapError(
-        (cause) =>
-          new NativeError({
-            message: "Failed to encode Native to CBOR hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, NativeError)
 }

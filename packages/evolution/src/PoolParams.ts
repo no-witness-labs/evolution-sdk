@@ -3,6 +3,7 @@ import { BigDecimal, Data, Effect as Eff, FastCheck, ParseResult, Schema } from 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
+import * as Function from "./Function.js"
 import * as KeyHash from "./KeyHash.js"
 import * as PoolKeyHash from "./PoolKeyHash.js"
 import * as PoolMetadata from "./PoolMetadata.js"
@@ -319,8 +320,7 @@ export const arbitrary = FastCheck.record({
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): PoolParams =>
-  Eff.runSync(Effect.fromBytes(bytes, options))
+export const fromBytes = Function.makeCBORDecodeSync(FromCDDL, PoolParamsError, "PoolParams.fromBytes")
 
 /**
  * Parse PoolParams from CBOR hex string.
@@ -328,8 +328,7 @@ export const fromBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): PoolP
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string, options?: CBOR.CodecOptions): PoolParams =>
-  Eff.runSync(Effect.fromHex(hex, options))
+export const fromHex = Function.makeCBORDecodeHexSync(FromCDDL, PoolParamsError, "PoolParams.fromHex")
 
 /**
  * Encode PoolParams to CBOR bytes.
@@ -337,8 +336,7 @@ export const fromHex = (hex: string, options?: CBOR.CodecOptions): PoolParams =>
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (poolParams: PoolParams, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toBytes(poolParams, options))
+export const toBytes = Function.makeCBOREncodeSync(FromCDDL, PoolParamsError, "PoolParams.toBytes")
 
 /**
  * Encode PoolParams to CBOR hex string.
@@ -346,8 +344,7 @@ export const toBytes = (poolParams: PoolParams, options?: CBOR.CodecOptions): Ui
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (poolParams: PoolParams, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toHex(poolParams, options))
+export const toHex = Function.makeCBOREncodeHexSync(FromCDDL, PoolParamsError, "PoolParams.toHex")
 
 // ============================================================================
 // Effect Namespace
@@ -359,26 +356,14 @@ export const toHex = (poolParams: PoolParams, options?: CBOR.CodecOptions): stri
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse PoolParams from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<PoolParams, PoolParamsError> =>
-    Schema.decode(FromBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new PoolParamsError({
-            message: "Failed to parse PoolParams from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeCBORDecodeEither(FromCDDL, PoolParamsError)
 
   /**
    * Parse PoolParams from CBOR hex string with Effect error handling.
@@ -386,19 +371,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<PoolParams, PoolParamsError> =>
-    Schema.decode(FromHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new PoolParamsError({
-            message: "Failed to parse PoolParams from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeCBORDecodeHexEither(FromCDDL, PoolParamsError)
 
   /**
    * Encode PoolParams to CBOR bytes with Effect error handling.
@@ -406,19 +379,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (
-    poolParams: PoolParams,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, PoolParamsError> =>
-    Schema.encode(FromBytes(options))(poolParams).pipe(
-      Eff.mapError(
-        (cause) =>
-          new PoolParamsError({
-            message: "Failed to encode PoolParams to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeCBOREncodeEither(FromCDDL, PoolParamsError)
 
   /**
    * Encode PoolParams to CBOR hex string with Effect error handling.
@@ -426,17 +387,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (
-    poolParams: PoolParams,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, PoolParamsError> =>
-    Schema.encode(FromHex(options))(poolParams).pipe(
-      Eff.mapError(
-        (cause) =>
-          new PoolParamsError({
-            message: "Failed to encode PoolParams to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeCBOREncodeHexEither(FromCDDL, PoolParamsError)
 }

@@ -1,6 +1,6 @@
 ---
 title: HeaderBody.ts
-nav_order: 54
+nav_order: 55
 parent: Modules
 ---
 
@@ -18,7 +18,7 @@ parent: Modules
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -45,18 +45,21 @@ Smart constructor for creating HeaderBody instances
 **Signature**
 
 ```ts
-export declare const make: (props: {
-  blockNumber: number
-  slot: number
-  prevHash: BlockHeaderHash.BlockHeaderHash | null
-  issuerVkey: VKey.VKey
-  vrfVkey: VrfVkey.VrfVkey
-  vrfResult: VrfCert.VrfCert
-  blockBodySize: number
-  blockBodyHash: BlockBodyHash.BlockBodyHash
-  operationalCert: OperationalCert.OperationalCert
-  protocolVersion: ProtocolVersion.ProtocolVersion
-}) => HeaderBody
+export declare const make: (
+  props: {
+    readonly slot: bigint
+    readonly protocolVersion: ProtocolVersion.ProtocolVersion
+    readonly blockNumber: bigint
+    readonly issuerVkey: VKey.VKey
+    readonly vrfVkey: VrfVkey.VrfVkey
+    readonly vrfResult: VrfCert.VrfCert
+    readonly blockBodySize: bigint
+    readonly blockBodyHash: BlockBodyHash.BlockBodyHash
+    readonly operationalCert: OperationalCert.OperationalCert
+    readonly prevHash: BlockHeaderHash.BlockHeaderHash | null
+  },
+  options?: Schema.MakeOptions | undefined
+) => HeaderBody
 ```
 
 Added in v2.0.0
@@ -94,7 +97,7 @@ Convert HeaderBody to CBOR bytes (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (headerBody: HeaderBody, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: HeaderBody, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -106,14 +109,14 @@ Convert HeaderBody to CBOR hex string (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORHex: (headerBody: HeaderBody, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: HeaderBody, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect namespace for HeaderBody operations that can fail
 
@@ -212,11 +215,18 @@ export declare const FromCBORBytes: (
         Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>,
         typeof Schema.Uint8ArrayFromSelf,
         typeof Schema.Uint8ArrayFromSelf,
-        Schema.SchemaClass<readonly [any, any], readonly [any, any], never>,
+        Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.Uint8ArrayFromSelf>,
         typeof Schema.BigIntFromSelf,
         typeof Schema.Uint8ArrayFromSelf,
-        Schema.SchemaClass<readonly [any, bigint, bigint, any], readonly [any, bigint, bigint, any], never>,
-        Schema.SchemaClass<readonly [bigint, bigint], readonly [bigint, bigint], never>
+        Schema.Tuple<
+          [
+            typeof Schema.Uint8ArrayFromSelf,
+            typeof Schema.BigIntFromSelf,
+            typeof Schema.BigIntFromSelf,
+            typeof Schema.Uint8ArrayFromSelf
+          ]
+        >,
+        Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
       ]
     >,
     Schema.SchemaClass<HeaderBody, HeaderBody, never>,
@@ -252,11 +262,18 @@ export declare const FromCBORHex: (
           Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>,
           typeof Schema.Uint8ArrayFromSelf,
           typeof Schema.Uint8ArrayFromSelf,
-          Schema.SchemaClass<readonly [any, any], readonly [any, any], never>,
+          Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.Uint8ArrayFromSelf>,
           typeof Schema.BigIntFromSelf,
           typeof Schema.Uint8ArrayFromSelf,
-          Schema.SchemaClass<readonly [any, bigint, bigint, any], readonly [any, bigint, bigint, any], never>,
-          Schema.SchemaClass<readonly [bigint, bigint], readonly [bigint, bigint], never>
+          Schema.Tuple<
+            [
+              typeof Schema.Uint8ArrayFromSelf,
+              typeof Schema.BigIntFromSelf,
+              typeof Schema.BigIntFromSelf,
+              typeof Schema.Uint8ArrayFromSelf
+            ]
+          >,
+          Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
         ]
       >,
       Schema.SchemaClass<HeaderBody, HeaderBody, never>,
@@ -295,11 +312,18 @@ export declare const FromCDDL: Schema.transformOrFail<
       Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>,
       typeof Schema.Uint8ArrayFromSelf,
       typeof Schema.Uint8ArrayFromSelf,
-      Schema.SchemaClass<readonly [any, any], readonly [any, any], never>,
+      Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.Uint8ArrayFromSelf>,
       typeof Schema.BigIntFromSelf,
       typeof Schema.Uint8ArrayFromSelf,
-      Schema.SchemaClass<readonly [any, bigint, bigint, any], readonly [any, bigint, bigint, any], never>,
-      Schema.SchemaClass<readonly [bigint, bigint], readonly [bigint, bigint], never>
+      Schema.Tuple<
+        [
+          typeof Schema.Uint8ArrayFromSelf,
+          typeof Schema.BigIntFromSelf,
+          typeof Schema.BigIntFromSelf,
+          typeof Schema.Uint8ArrayFromSelf
+        ]
+      >,
+      Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
     ]
   >,
   Schema.SchemaClass<HeaderBody, HeaderBody, never>,

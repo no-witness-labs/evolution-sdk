@@ -51,7 +51,7 @@ export type Port = typeof PortSchema.Type
  * @since 2.0.0
  * @category constructors
  */
-export const make = (value: number): Port => PortSchema.make(value)
+export const make = (value: bigint): Port => PortSchema.make(value)
 
 /**
  * Check if a value is a valid Port.

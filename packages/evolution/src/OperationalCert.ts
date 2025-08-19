@@ -41,6 +41,13 @@ export class OperationalCert extends Schema.TaggedClass<OperationalCert>()("Oper
   sigma: Ed25519Signature.Ed25519Signature
 }) {}
 
+export const CDDLSchema = Schema.Tuple(
+  CBOR.ByteArray, // hot_vkey as bytes
+  CBOR.Integer, // sequence_number as bigint
+  CBOR.Integer, // kes_period as bigint
+  CBOR.ByteArray // sigma as bytes
+)
+
 /**
  * CDDL schema for OperationalCert.
  * operational_cert = [
@@ -53,36 +60,27 @@ export class OperationalCert extends Schema.TaggedClass<OperationalCert>()("Oper
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(
-  Schema.Tuple(
-    CBOR.ByteArray, // hot_vkey as bytes
-    CBOR.Integer, // sequence_number as bigint
-    CBOR.Integer, // kes_period as bigint
-    CBOR.ByteArray // sigma as bytes
-  ),
-  Schema.typeSchema(OperationalCert),
-  {
-    strict: true,
-    encode: (toA) =>
-      Eff.gen(function* () {
-        const hotVkeyBytes = yield* ParseResult.encode(KESVkey.FromBytes)(toA.hotVkey)
-        const sigmaBytes = yield* ParseResult.encode(Ed25519Signature.FromBytes)(toA.sigma)
-        return [hotVkeyBytes, BigInt(toA.sequenceNumber), BigInt(toA.kesPeriod), sigmaBytes] as const
-      }),
-    decode: ([hotVkeyBytes, sequenceNumber, kesPeriod, sigmaBytes]) =>
-      Eff.gen(function* () {
-        const hotVkey = yield* ParseResult.decode(KESVkey.FromBytes)(hotVkeyBytes)
-        const sigma = yield* ParseResult.decode(Ed25519Signature.FromBytes)(sigmaBytes)
-        return yield* ParseResult.decode(OperationalCert)({
-          _tag: "OperationalCert",
-          hotVkey,
-          sequenceNumber,
-          kesPeriod,
-          sigma
-        })
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(OperationalCert), {
+  strict: true,
+  encode: (toA) =>
+    Eff.gen(function* () {
+      const hotVkeyBytes = yield* ParseResult.encode(KESVkey.FromBytes)(toA.hotVkey)
+      const sigmaBytes = yield* ParseResult.encode(Ed25519Signature.FromBytes)(toA.sigma)
+      return [hotVkeyBytes, BigInt(toA.sequenceNumber), BigInt(toA.kesPeriod), sigmaBytes] as const
+    }),
+  decode: ([hotVkeyBytes, sequenceNumber, kesPeriod, sigmaBytes]) =>
+    Eff.gen(function* () {
+      const hotVkey = yield* ParseResult.decode(KESVkey.FromBytes)(hotVkeyBytes)
+      const sigma = yield* ParseResult.decode(Ed25519Signature.FromBytes)(sigmaBytes)
+      return yield* ParseResult.decode(OperationalCert)({
+        _tag: "OperationalCert",
+        hotVkey,
+        sequenceNumber,
+        kesPeriod,
+        sigma
       })
-  }
-)
+    })
+})
 
 /**
  * CBOR bytes transformation schema for OperationalCert.
@@ -151,8 +149,11 @@ export const arbitrary = FastCheck.record({
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): OperationalCert =>
-  Function.makeDecodeSync(FromCBORBytes(options), OperationalCertError, "OperationalCert.fromCBORBytes")(bytes)
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  OperationalCertError,
+  "OperationalCert.fromCBORBytes"
+)
 
 /**
  * Parse OperationalCert from CBOR hex string.
@@ -160,8 +161,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): O
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): OperationalCert =>
-  Function.makeDecodeSync(FromCBORHex(options), OperationalCertError, "OperationalCert.fromCBORHex")(hex)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, OperationalCertError, "OperationalCert.fromCBORHex")
 
 /**
  * Encode OperationalCert to CBOR bytes.
@@ -169,8 +169,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Operation
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: OperationalCert, options?: CBOR.CodecOptions): Uint8Array =>
-  Function.makeEncodeSync(FromCBORBytes(options), OperationalCertError, "OperationalCert.toCBORBytes")(value)
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, OperationalCertError, "OperationalCert.toCBORBytes")
 
 /**
  * Encode OperationalCert to CBOR hex string.
@@ -178,8 +177,7 @@ export const toCBORBytes = (value: OperationalCert, options?: CBOR.CodecOptions)
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: OperationalCert, options?: CBOR.CodecOptions): string =>
-  Function.makeEncodeSync(FromCBORHex(options), OperationalCertError, "OperationalCert.toCBORHex")(value)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, OperationalCertError, "OperationalCert.toCBORHex")
 
 // ============================================================================
 // Effect Namespace
@@ -198,8 +196,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeDecodeEither(FromCBORBytes(options), OperationalCertError)(bytes)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, OperationalCertError)
 
   /**
    * Parse OperationalCert from CBOR hex string with Either error handling.
@@ -207,8 +204,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeDecodeEither(FromCBORHex(options), OperationalCertError)(hex)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, OperationalCertError)
 
   /**
    * Encode OperationalCert to CBOR bytes with Either error handling.
@@ -216,8 +212,7 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (value: OperationalCert, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeEncodeEither(FromCBORBytes(options), OperationalCertError)(value)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, OperationalCertError)
 
   /**
    * Encode OperationalCert to CBOR hex string with Either error handling.
@@ -225,6 +220,5 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (value: OperationalCert, options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
-    Function.makeEncodeEither(FromCBORHex(options), OperationalCertError)(value)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, OperationalCertError)
 }

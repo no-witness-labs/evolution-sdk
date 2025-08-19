@@ -17,7 +17,7 @@ parent: Modules
   - [map](#map)
   - [text](#text)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -112,7 +112,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -127,7 +127,10 @@ Convert a TransactionMetadatum to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (metadatum: TransactionMetadatum, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (
+  input: TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap,
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -139,7 +142,10 @@ Convert a TransactionMetadatum to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (metadatum: TransactionMetadatum, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (
+  input: TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap,
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0
@@ -181,7 +187,10 @@ Parse a TransactionMetadatum from CBOR bytes.
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => TransactionMetadatum
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) => TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap
 ```
 
 Added in v2.0.0
@@ -193,7 +202,10 @@ Parse a TransactionMetadatum from CBOR hex string.
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => TransactionMetadatum
+export declare const fromCBORHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) => TextMetadatum | IntMetadatum | BytesMetadatum | ArrayMetadatum | MetadatumMap
 ```
 
 Added in v2.0.0

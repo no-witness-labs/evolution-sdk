@@ -1,5 +1,7 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
+import * as Bytes from "./Bytes.js"
+import * as Function from "./Function.js"
 import * as Text from "./Text.js"
 
 /**
@@ -24,29 +26,6 @@ export const TEXT128_MIN_LENGTH = 0
 export const TEXT128_MAX_LENGTH = 128
 
 /**
- * Schema for validating variable-length text between 0 and 128 characters.
- * text .size (0 .. 128)
- *
- * @since 2.0.0
- * @category schemas
- */
-export const FromVariableBytes = Text.FromBytes.pipe(
-  Schema.filter((text) => text.length >= TEXT128_MIN_LENGTH && text.length <= TEXT128_MAX_LENGTH, {
-    message: (issue) =>
-      `Text128 must be between ${TEXT128_MIN_LENGTH} and ${TEXT128_MAX_LENGTH} characters, but got ${(issue.actual as string).length} characters.`
-  })
-)
-
-export const FromVariableHex = Text.FromHex.pipe(
-  Schema.filter((text) => text.length >= TEXT128_MIN_LENGTH && text.length <= TEXT128_MAX_LENGTH, {
-    message: (issue) =>
-      `Text128 must be between ${TEXT128_MIN_LENGTH} and ${TEXT128_MAX_LENGTH} characters, but got ${(issue.actual as string).length} characters.`
-  })
-).annotations({
-  identifier: "Text128.FromHex"
-})
-
-/**
  * Schema for Text128 representing a variable-length text string (0-128 chars).
  * text .size (0 .. 128)
  * Follows the Conway-era CDDL specification.
@@ -54,33 +33,22 @@ export const FromVariableHex = Text.FromHex.pipe(
  * @since 2.0.0
  * @category schemas
  */
-export const Text128 = FromVariableHex.pipe(Schema.brand("Text128")).annotations({
-  identifier: "Text128"
-})
+export const Text128 = Text.Text.pipe(Text.textLengthBetween(TEXT128_MIN_LENGTH, TEXT128_MAX_LENGTH, "Text128"))
 
 export type Text128 = typeof Text128.Type
 
-export const FromBytes = Schema.compose(
-  FromVariableBytes, // Uint8Array -> string
-  Text128 // string -> Text128
-).annotations({
-  identifier: "Text128.Bytes"
+export const FromVariableBytes = Text.makeTextTransformation({
+  id: "Text128.FromBytes",
+  to: Text128,
+  from: Schema.Uint8ArrayFromSelf
 })
 
-export const FromHex = Schema.compose(
-  FromVariableHex, // string -> string
-  Text128 // string -> Text128
+export const FromVariableHex = Schema.compose(
+  Bytes.BytesFromHexLenient,
+  FromVariableBytes // Uint8Array -> Text128
 ).annotations({
-  identifier: "Text128.Hex"
+  identifier: "Text128.FromHex"
 })
-
-/**
- * Check if two Text128 instances are equal.
- *
- * @since 2.0.0
- * @category equality
- */
-export const equals = (a: Text128, b: Text128): boolean => a === b
 
 /**
  * Check if the given value is a valid Text128
@@ -106,36 +74,36 @@ export const arbitrary = FastCheck.string({
 // ============================================================================
 
 /**
- * Parse Text128 from bytes.
+ * Parse Text128 from bytes (unsafe)
  *
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): Text128 => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromVariableBytes, Text128Error, "Text128.fromBytes")
 
 /**
- * Parse Text128 from hex string.
+ * Parse Text128 from hex string (unsafe)
  *
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): Text128 => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromVariableHex, Text128Error, "Text128.fromHex")
 
 /**
- * Encode Text128 to bytes.
+ * Encode Text128 to bytes (unsafe)
  *
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (text: Text128): Uint8Array => Eff.runSync(Effect.toBytes(text))
+export const toBytes = Function.makeEncodeSync(FromVariableBytes, Text128Error, "Text128.toBytes")
 
 /**
- * Encode Text128 to hex string.
+ * Encode Text128 to hex string (unsafe)
  *
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (text: Text128): string => Eff.runSync(Effect.toHex(text))
+export const toHex = Function.makeEncodeSync(FromVariableHex, Text128Error, "Text128.toHex")
 
 // ============================================================================
 // Effect Namespace
@@ -147,72 +115,36 @@ export const toHex = (text: Text128): string => Eff.runSync(Effect.toHex(text))
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
-   * Parse Text128 from bytes with Effect error handling.
+   * Parse Text128 from bytes with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<Text128, Text128Error> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new Text128Error({
-            message: "Failed to parse Text128 from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeDecodeEither(FromVariableBytes, Text128Error)
 
   /**
-   * Parse Text128 from hex string with Effect error handling.
+   * Parse Text128 from hex string with Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<Text128, Text128Error> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new Text128Error({
-            message: "Failed to parse Text128 from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeDecodeEither(FromVariableHex, Text128Error)
 
   /**
-   * Encode Text128 to bytes with Effect error handling.
+   * Encode Text128 to bytes with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (text: Text128): Eff.Effect<Uint8Array, Text128Error> =>
-    Schema.encode(FromBytes)(text).pipe(
-      Eff.mapError(
-        (cause) =>
-          new Text128Error({
-            message: "Failed to encode Text128 to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeEncodeEither(FromVariableBytes, Text128Error)
 
   /**
-   * Encode Text128 to hex string with Effect error handling.
+   * Encode Text128 to hex string with Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (text: Text128): Eff.Effect<string, Text128Error> =>
-    Schema.encode(FromHex)(text).pipe(
-      Eff.mapError(
-        (cause) =>
-          new Text128Error({
-            message: "Failed to encode Text128 to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeEncodeEither(FromVariableHex, Text128Error)
 }

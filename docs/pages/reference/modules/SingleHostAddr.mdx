@@ -1,6 +1,6 @@
 ---
 title: SingleHostAddr.ts
-nav_order: 96
+nav_order: 97
 parent: Modules
 ---
 
@@ -128,7 +128,7 @@ Convert SingleHostAddr to CBOR bytes (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: SingleHostAddr, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: SingleHostAddr, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -140,7 +140,7 @@ Convert SingleHostAddr to CBOR hex string (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: SingleHostAddr, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: SingleHostAddr, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

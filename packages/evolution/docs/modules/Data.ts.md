@@ -11,7 +11,6 @@ parent: Modules
 <h2 class="text-delta">Table of contents</h2>
 
 - [combinators](#combinators)
-  - [Codec](#codec)
   - [withSchema](#withschema)
 - [constants](#constants)
   - [DEFAULT_CBOR_OPTIONS](#default_cbor_options)
@@ -57,11 +56,9 @@ parent: Modules
   - [cborValueToPlutusData](#cborvaluetoplutusdata)
   - [fromCBORBytes](#fromcborbytes-1)
   - [fromCBORHex](#fromcborhex-1)
-  - [fromData](#fromdata)
   - [plutusDataToCBORValue](#plutusdatatocborvalue)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
-  - [toData](#todata)
 - [utilities](#utilities)
   - [matchConstr](#matchconstr)
   - [matchData](#matchdata)
@@ -74,29 +71,6 @@ parent: Modules
 
 # combinators
 
-## Codec
-
-Create a codec for a schema that transforms from a custom type to Data and provides CBOR encoding
-This is an alias for withSchema for backward compatibility
-
-**Signature**
-
-```ts
-export declare const Codec: <A, I extends Data>(config: {
-  schema: Schema.Schema<A, I>
-  options?: CBOR.CodecOptions
-}) => {
-  toData: (value: A) => Data
-  fromData: (data: Data) => A
-  toCBORHex: (value: A) => string
-  toCBORBytes: (value: A) => Uint8Array
-  fromCBORHex: (hex: string) => A
-  fromCBORBytes: (bytes: Uint8Array) => A
-}
-```
-
-Added in v2.0.0
-
 ## withSchema
 
 Create a schema that transforms from a custom type to Data and provides CBOR encoding
@@ -108,12 +82,12 @@ export declare const withSchema: <A, I extends Data>(
   schema: Schema.Schema<A, I>,
   options?: CBOR.CodecOptions
 ) => {
-  toData: (value: A) => Data
-  fromData: (data: Data) => A
-  toCBORHex: (value: A) => string
-  toCBORBytes: (value: A) => Uint8Array
-  fromCBORHex: (hex: string) => A
-  fromCBORBytes: (bytes: Uint8Array) => A
+  toData: (input: A) => I
+  fromData: (input: I) => A
+  toCBORHex: (input: A, options?: CBOR.CodecOptions) => string
+  toCBORBytes: (input: A, options?: CBOR.CodecOptions) => Uint8Array
+  fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => A
+  fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => A
 }
 ```
 
@@ -669,18 +643,6 @@ export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => 
 
 Added in v2.0.0
 
-## fromData
-
-Transform Data back from a schema
-
-**Signature**
-
-```ts
-export declare const fromData: <A>(schema: Schema.Schema<A, Data>) => (data: Data) => A
-```
-
-Added in v2.0.0
-
 ## plutusDataToCBORValue
 
 Convert PlutusData to CBORValue
@@ -700,7 +662,7 @@ Encode PlutusData to CBOR bytes
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (data: Data, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: Data, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -712,19 +674,7 @@ Encode PlutusData to CBOR hex string
 **Signature**
 
 ```ts
-export declare const toCBORHex: (data: Data, options?: CBOR.CodecOptions) => string
-```
-
-Added in v2.0.0
-
-## toData
-
-Transform data to Data using a schema
-
-**Signature**
-
-```ts
-export declare const toData: <A>(schema: Schema.Schema<A, Data>) => (data: A) => Data
+export declare const toCBORHex: (input: Data, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

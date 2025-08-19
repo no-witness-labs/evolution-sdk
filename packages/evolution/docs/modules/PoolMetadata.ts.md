@@ -18,7 +18,7 @@ parent: Modules
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -81,7 +81,7 @@ Convert PoolMetadata to CBOR bytes (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (metadata: PoolMetadata, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: PoolMetadata, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -93,14 +93,14 @@ Convert PoolMetadata to CBOR hex string (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORHex: (metadata: PoolMetadata, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: PoolMetadata, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect namespace for PoolMetadata operations that can fail
 
@@ -167,10 +167,9 @@ export declare const FromCBORBytes: (
     Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
     never
   >,
-  Schema.transformOrFail<
+  Schema.transform<
     Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
-    Schema.SchemaClass<PoolMetadata, PoolMetadata, never>,
-    never
+    Schema.SchemaClass<PoolMetadata, PoolMetadata, never>
   >
 >
 ```
@@ -195,10 +194,9 @@ export declare const FromCBORHex: (
       Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
       never
     >,
-    Schema.transformOrFail<
+    Schema.transform<
       Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
-      Schema.SchemaClass<PoolMetadata, PoolMetadata, never>,
-      never
+      Schema.SchemaClass<PoolMetadata, PoolMetadata, never>
     >
   >
 >
@@ -216,10 +214,9 @@ Transforms between CBOR tuple structure and PoolMetadata model.
 **Signature**
 
 ```ts
-export declare const FromCDDL: Schema.transformOrFail<
+export declare const FromCDDL: Schema.transform<
   Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
-  Schema.SchemaClass<PoolMetadata, PoolMetadata, never>,
-  never
+  Schema.SchemaClass<PoolMetadata, PoolMetadata, never>
 >
 ```
 

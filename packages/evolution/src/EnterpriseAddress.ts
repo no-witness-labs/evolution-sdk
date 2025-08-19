@@ -22,7 +22,15 @@ export class EnterpriseAddressError extends Data.TaggedError("EnterpriseAddressE
 export class EnterpriseAddress extends Schema.TaggedClass<EnterpriseAddress>("EnterpriseAddress")("EnterpriseAddress", {
   networkId: NetworkId.NetworkId,
   paymentCredential: Credential.Credential
-}) {}
+}) {
+  toString(): string {
+    return `EnterpriseAddress { networkId: ${this.networkId}, paymentCredential: ${this.paymentCredential} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseAddress, {
   strict: true,

@@ -5,8 +5,11 @@ import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Credential from "./Credential.js"
 import * as DRep from "./DRep.js"
+import * as Function from "./Function.js"
 import * as GovernanceAction from "./GovernanceAction.js"
+import * as KeyHash from "./KeyHash.js"
 import * as PoolKeyHash from "./PoolKeyHash.js"
+import * as ScriptHash from "./ScriptHash.js"
 import * as TransactionHash from "./TransactionHash.js"
 import * as TransactionIndex from "./TransactionIndex.js"
 
@@ -24,12 +27,12 @@ export class VotingProceduresError extends Data.TaggedError("VotingProceduresErr
 /**
  * Voter types based on Conway CDDL specification.
  *
- * ```
- * voter =
- *   [ 0, committee_hot_credential ]  // Constitutional Committee
- * / [ 1, drep ]                     // DRep
- * / [ 2, pool_keyhash ]             // Stake Pool Operator
- * ```
+ * Conway / CML mapping:
+ *  - [0, addr_keyhash]   ConstitutionalCommitteeHotKeyHash
+ *  - [1, script_hash]    ConstitutionalCommitteeHotScriptHash
+ *  - [2, addr_keyhash]   DRepKeyHash
+ *  - [3, script_hash]    DRepScriptHash
+ *  - [4, pool_keyhash]   StakingPoolKeyHash
  *
  * @since 2.0.0
  * @category schemas
@@ -69,10 +72,18 @@ export type Voter = typeof Voter.Type
  * @since 2.0.0
  * @category schemas
  */
+// Match CML: split by concrete key/script variants for committee and drep, plus pool keyhash
+// 0 = ConstitutionalCommitteeHotKeyHash (addr_keyhash)
+// 1 = ConstitutionalCommitteeHotScriptHash (script_hash)
+// 2 = DRepKeyHash (addr_keyhash)
+// 3 = DRepScriptHash (script_hash)
+// 4 = StakingPoolKeyHash (pool_keyhash)
 export const VoterCDDL = Schema.Union(
-  Schema.Tuple(Schema.Literal(0n), Credential.CDDLSchema), // committee_hot_credential
-  Schema.Tuple(Schema.Literal(1n), DRep.CDDLSchema), // drep
-  Schema.Tuple(Schema.Literal(2n), CBOR.ByteArray) // pool_keyhash
+  Schema.Tuple(Schema.Literal(0n), CBOR.ByteArray),
+  Schema.Tuple(Schema.Literal(1n), CBOR.ByteArray),
+  Schema.Tuple(Schema.Literal(2n), CBOR.ByteArray),
+  Schema.Tuple(Schema.Literal(3n), CBOR.ByteArray),
+  Schema.Tuple(Schema.Literal(4n), CBOR.ByteArray)
 )
 
 /**
@@ -87,16 +98,30 @@ export const VoterFromCDDL = Schema.transformOrFail(VoterCDDL, Schema.typeSchema
     Eff.gen(function* () {
       switch (voter._tag) {
         case "ConstitutionalCommitteeVoter": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(voter.credential)
-          return [0n, credentialCDDL] as const
+          if (voter.credential._tag === "KeyHash") {
+            const keyHashBytes = yield* ParseResult.encode(KeyHash.FromBytes)(voter.credential)
+            return [0n, keyHashBytes] as const
+          } else {
+            const scriptHashBytes = yield* ParseResult.encode(ScriptHash.FromBytes)(voter.credential)
+            return [1n, scriptHashBytes] as const
+          }
         }
         case "DRepVoter": {
-          const drepCDDL = yield* ParseResult.encode(DRep.FromCDDL)(voter.drep)
-          return [1n, drepCDDL] as const
+          if (voter.drep._tag === "KeyHashDRep") {
+            const keyHashBytes = yield* ParseResult.encode(KeyHash.FromBytes)(voter.drep.keyHash)
+            return [2n, keyHashBytes] as const
+          } else if (voter.drep._tag === "ScriptHashDRep") {
+            const scriptHashBytes = yield* ParseResult.encode(ScriptHash.FromBytes)(voter.drep.scriptHash)
+            return [3n, scriptHashBytes] as const
+          } else {
+            return yield* ParseResult.fail(
+              new ParseResult.Type(VoterCDDL.ast, voter, "Always* DRep variants are not valid Voter identifiers")
+            )
+          }
         }
         case "StakePoolVoter": {
           const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(voter.poolKeyHash)
-          return [2n, poolKeyHashBytes] as const
+          return [4n, poolKeyHashBytes] as const
         }
       }
     }),
@@ -105,14 +130,22 @@ export const VoterFromCDDL = Schema.transformOrFail(VoterCDDL, Schema.typeSchema
       const [voterType, voterData] = cddl
       switch (voterType) {
         case 0n: {
-          const credential = yield* ParseResult.decode(Credential.FromCDDL)(voterData)
-          return new ConstitutionalCommitteeVoter({ credential })
+          const keyHash = yield* ParseResult.decode(KeyHash.FromBytes)(voterData)
+          return new ConstitutionalCommitteeVoter({ credential: keyHash })
         }
         case 1n: {
-          const drep = yield* ParseResult.decode(DRep.FromCDDL)(voterData)
-          return new DRepVoter({ drep })
+          const scriptHash = yield* ParseResult.decode(ScriptHash.FromBytes)(voterData)
+          return new ConstitutionalCommitteeVoter({ credential: scriptHash })
         }
         case 2n: {
+          const keyHash = yield* ParseResult.decode(KeyHash.FromBytes)(voterData)
+          return new DRepVoter({ drep: { _tag: "KeyHashDRep", keyHash } as DRep.DRep })
+        }
+        case 3n: {
+          const scriptHash = yield* ParseResult.decode(ScriptHash.FromBytes)(voterData)
+          return new DRepVoter({ drep: { _tag: "ScriptHashDRep", scriptHash } as DRep.DRep })
+        }
+        case 4n: {
           const poolKeyHash = yield* ParseResult.decode(PoolKeyHash.FromBytes)(voterData)
           return new StakePoolVoter({ poolKeyHash })
         }
@@ -366,8 +399,7 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category constructors
  */
-export const make = (procedures: Map<Voter, Map<GovernanceAction.GovActionId, VotingProcedure>>): VotingProcedures =>
-  new VotingProcedures({ procedures })
+export const make = (...args: ConstructorParameters<typeof VotingProcedures>) => new VotingProcedures(...args)
 
 /**
  * Create a VotingProcedure instance.
@@ -625,7 +657,11 @@ export const arbitrary = FastCheck.array(
     // Reuse existing voter arbitraries
     FastCheck.oneof(
       Credential.arbitrary.map((credential) => new ConstitutionalCommitteeVoter({ credential })),
-      DRep.arbitrary.map((drep) => new DRepVoter({ drep })),
+      // Only key/script DRep variants are valid Voter identifiers
+      FastCheck.oneof(
+        KeyHash.arbitrary.map((keyHash) => ({ _tag: "KeyHashDRep" as const, keyHash })),
+        ScriptHash.arbitrary.map((scriptHash) => ({ _tag: "ScriptHashDRep" as const, scriptHash }))
+      ).map((drep) => new DRepVoter({ drep })),
       PoolKeyHash.arbitrary.map((poolKeyHash) => new StakePoolVoter({ poolKeyHash }))
     ),
     FastCheck.array(
@@ -633,7 +669,7 @@ export const arbitrary = FastCheck.array(
         // Create GovActionId instances using proper branded types
         FastCheck.tuple(
           FastCheck.hexaString({ minLength: 64, maxLength: 64 }),
-          FastCheck.integer({ min: 0, max: 65535 })
+          FastCheck.bigInt({ min: 0n, max: 65535n })
         ).map(
           ([transactionId, govActionIndex]) =>
             new GovernanceAction.GovActionId({
@@ -664,8 +700,11 @@ export const arbitrary = FastCheck.array(
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): VotingProcedures =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  VotingProceduresError,
+  "VotingProcedures.fromCBORBytes"
+)
 
 /**
  * Parse VotingProcedures from CBOR hex string.
@@ -673,8 +712,11 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): V
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): VotingProcedures =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(
+  FromCDDL,
+  VotingProceduresError,
+  "VotingProcedures.fromCBORHex"
+)
 
 /**
  * Encode VotingProcedures to CBOR bytes.
@@ -682,8 +724,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): VotingPro
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (votingProcedures: VotingProcedures, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(votingProcedures, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, VotingProceduresError, "VotingProcedures.toCBORBytes")
 
 /**
  * Encode VotingProcedures to CBOR hex string.
@@ -691,8 +732,7 @@ export const toCBORBytes = (votingProcedures: VotingProcedures, options?: CBOR.C
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (votingProcedures: VotingProcedures, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(votingProcedures, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, VotingProceduresError, "VotingProcedures.toCBORHex")
 
 // ============================================================================
 // Effect Namespace
@@ -704,26 +744,14 @@ export const toCBORHex = (votingProcedures: VotingProcedures, options?: CBOR.Cod
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse VotingProcedures from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<VotingProcedures, VotingProceduresError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new VotingProceduresError({
-            message: "Failed to parse VotingProcedures from bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, VotingProceduresError)
 
   /**
    * Parse VotingProcedures from CBOR hex string with Effect error handling.
@@ -731,19 +759,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<VotingProcedures, VotingProceduresError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new VotingProceduresError({
-            message: "Failed to parse VotingProcedures from hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, VotingProceduresError)
 
   /**
    * Encode VotingProcedures to CBOR bytes with Effect error handling.
@@ -751,19 +767,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    votingProcedures: VotingProcedures,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, VotingProceduresError> =>
-    Schema.encode(FromCBORBytes(options))(votingProcedures).pipe(
-      Eff.mapError(
-        (cause) =>
-          new VotingProceduresError({
-            message: "Failed to encode VotingProcedures to bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, VotingProceduresError)
 
   /**
    * Encode VotingProcedures to CBOR hex string with Effect error handling.
@@ -771,17 +775,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (
-    votingProcedures: VotingProcedures,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, VotingProceduresError> =>
-    Schema.encode(FromCBORHex(options))(votingProcedures).pipe(
-      Eff.mapError(
-        (cause) =>
-          new VotingProceduresError({
-            message: "Failed to encode VotingProcedures to hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, VotingProceduresError)
 }

@@ -4,6 +4,7 @@ import * as AssetName from "./AssetName.js"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
+import * as Function from "./Function.js"
 import * as MultiAsset from "./MultiAsset.js"
 import * as PolicyId from "./PolicyId.js"
 import * as PositiveCoin from "./PositiveCoin.js"
@@ -35,12 +36,28 @@ export class ValueError extends Data.TaggedError("ValueError")<{
  */
 export class OnlyCoin extends Schema.TaggedClass<OnlyCoin>("OnlyCoin")("OnlyCoin", {
   coin: Coin.Coin
-}) {}
+}) {
+  toString(): string {
+    return `OnlyCoin { coin: ${this.coin} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 export class WithAssets extends Schema.TaggedClass<WithAssets>("WithAssets")("WithAssets", {
   coin: Coin.Coin,
   assets: MultiAsset.MultiAsset
-}) {}
+}) {
+  toString(): string {
+    return `WithAssets { coin: ${this.coin}, assets: ${this.assets} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
+  }
+}
 
 export const Value = Schema.Union(OnlyCoin, WithAssets)
 export type Value = typeof Value.Type
@@ -222,16 +239,11 @@ export const is = (value: unknown): value is Value => Schema.is(Value)(value)
  * @since 2.0.0
  * @category generators
  */
-export const arbitrary = FastCheck.oneof(
-  FastCheck.record({
-    _tag: FastCheck.constant("OnlyCoin"),
-    coin: Coin.arbitrary
-  }),
-  FastCheck.record({
-    _tag: FastCheck.constant("WithAssets"),
-    coin: Coin.arbitrary,
-    assets: MultiAsset.arbitrary
-  })
+export const arbitrary: FastCheck.Arbitrary<Value> = FastCheck.oneof(
+  Coin.arbitrary.map((coin) => new OnlyCoin({ coin }, { disableValidation: true })),
+  FastCheck.record({ assets: MultiAsset.arbitrary, coin: Coin.arbitrary }).map(
+    ({ assets, coin }) => new WithAssets({ assets, coin }, { disableValidation: true })
+  )
 )
 
 export const CDDLSchema = Schema.Union(
@@ -239,7 +251,7 @@ export const CDDLSchema = Schema.Union(
   Schema.Tuple(
     CBOR.Integer,
     Schema.encodedSchema(
-      MultiAsset.MultiAssetCDDLSchema // MultiAsset CDDL structure
+      MultiAsset.FromCDDL // MultiAsset CDDL structure
     )
   )
 )
@@ -365,24 +377,6 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
     description: "Transforms CBOR hex string to Value"
   })
 
-/**
- * Legacy alias for FromCBORBytes - kept for backwards compatibility.
- *
- * @since 2.0.0
- * @category schemas
- * @deprecated Use FromCBORBytes instead
- */
-export const FromBytes = FromCBORBytes
-
-/**
- * Legacy alias for FromCBORHex - kept for backwards compatibility.
- *
- * @since 2.0.0
- * @category schemas
- * @deprecated Use FromCBORHex instead
- */
-export const FromHex = FromCBORHex
-
 // ============================================================================
 // Root Functions
 // ============================================================================
@@ -393,8 +387,7 @@ export const FromHex = FromCBORHex
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Value =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, ValueError, "Value.fromCBORBytes")
 
 /**
  * Parse Value from CBOR hex string.
@@ -402,8 +395,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): V
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Value =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, ValueError, "Value.fromCBORHex")
 
 /**
  * Encode Value to CBOR bytes.
@@ -411,8 +403,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Value =>
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: Value, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(value, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, ValueError, "Value.toCBORBytes")
 
 /**
  * Encode Value to CBOR hex string.
@@ -420,8 +411,7 @@ export const toCBORBytes = (value: Value, options?: CBOR.CodecOptions): Uint8Arr
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: Value, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(value, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, ValueError, "Value.toCBORHex")
 
 // ============================================================================
 // Effect Namespace
@@ -433,23 +423,14 @@ export const toCBORHex = (value: Value, options?: CBOR.CodecOptions): string =>
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse Value from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Eff.Effect<Value, ValueError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause: unknown) =>
-          new ValueError({
-            message: "Failed to parse Value from CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, ValueError)
 
   /**
    * Parse Value from CBOR hex string with Effect error handling.
@@ -457,16 +438,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Eff.Effect<Value, ValueError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause: unknown) =>
-          new ValueError({
-            message: "Failed to parse Value from CBOR hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, ValueError)
 
   /**
    * Encode Value to CBOR bytes with Effect error handling.
@@ -474,16 +446,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (value: Value, options?: CBOR.CodecOptions): Eff.Effect<Uint8Array, ValueError> =>
-    Schema.encode(FromCBORBytes(options))(value).pipe(
-      Eff.mapError(
-        (cause: unknown) =>
-          new ValueError({
-            message: "Failed to encode Value to CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, ValueError)
 
   /**
    * Encode Value to CBOR hex string with Effect error handling.
@@ -491,14 +454,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (value: Value, options?: CBOR.CodecOptions): Eff.Effect<string, ValueError> =>
-    Schema.encode(FromCBORHex(options))(value).pipe(
-      Eff.mapError(
-        (cause: unknown) =>
-          new ValueError({
-            message: "Failed to encode Value to CBOR hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, ValueError)
 }

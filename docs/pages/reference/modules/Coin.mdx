@@ -1,6 +1,6 @@
 ---
 title: Coin.ts
-nav_order: 32
+nav_order: 33
 parent: Modules
 ---
 
@@ -14,8 +14,8 @@ parent: Modules
   - [MAX_COIN_VALUE](#max_coin_value)
 - [constructors](#constructors)
   - [make](#make)
-- [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -64,11 +64,11 @@ export declare const make: (a: bigint, options?: Schema.MakeOptions) => bigint
 
 Added in v2.0.0
 
-# effect
+# either
 
-## Effect (namespace)
+## Either (namespace)
 
-Effect-based error handling variants for functions that can fail.
+Either-based error handling variants for functions that can fail.
 
 Added in v2.0.0
 

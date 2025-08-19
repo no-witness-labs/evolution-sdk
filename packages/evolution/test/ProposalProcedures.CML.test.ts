@@ -5,7 +5,6 @@ import { describe, expect, it } from "vitest"
 import * as Anchor from "../src/Anchor.js"
 import * as GovernanceAction from "../src/GovernanceAction.js"
 import * as ProposalProcedure from "../src/ProposalProcedure.js"
-import * as ProposalProcedures from "../src/ProposalProcedures.js"
 import * as RewardAccount from "../src/RewardAccount.js"
 
 /**
@@ -26,7 +25,7 @@ describe("ProposalProcedures CML Compatibility", () => {
 
     // Create Evolution SDK ProposalProcedure
     const evolutionInfoAction = GovernanceAction.makeInfo()
-    const evolutionProcedure = ProposalProcedures.makeProcedure({
+    const evolutionProcedure = ProposalProcedure.make({
       deposit,
       rewardAccount,
       governanceAction: evolutionInfoAction,

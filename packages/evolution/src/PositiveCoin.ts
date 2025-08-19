@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Coin from "./Coin.js"
 
@@ -65,35 +65,12 @@ export type PositiveCoin = typeof PositiveCoinSchema.Type
 export const make = PositiveCoinSchema.make
 
 /**
- * Create a PositiveCoin from a regular Coin, throwing if the value is zero.
- *
- * @since 2.0.0
- * @category constructors
- */
-export const fromCoin = (coin: Coin.Coin): PositiveCoin => {
-  if (coin === 0n) {
-    throw new PositiveCoinError({
-      message: "Cannot create PositiveCoin from zero coin amount"
-    })
-  }
-  return make(coin)
-}
-
-/**
- * Convert a PositiveCoin to a regular Coin.
- *
- * @since 2.0.0
- * @category transformation
- */
-export const toCoin = (positiveCoin: PositiveCoin): Coin.Coin => positiveCoin
-
-/**
  * Check if a value is a valid PositiveCoin.
  *
  * @since 2.0.0
  * @category predicates
  */
-export const is = (value: unknown): value is PositiveCoin => Schema.is(PositiveCoinSchema)(value)
+export const is = Schema.is(PositiveCoinSchema)
 
 /**
  * Add two positive coin amounts safely.
@@ -103,11 +80,6 @@ export const is = (value: unknown): value is PositiveCoin => Schema.is(PositiveC
  */
 export const add = (a: PositiveCoin, b: PositiveCoin): PositiveCoin => {
   const result = a + b
-  if (result > MAX_POSITIVE_COIN_VALUE) {
-    throw new PositiveCoinError({
-      message: `Addition overflow: ${a} + ${b} exceeds maximum positive coin value`
-    })
-  }
   return make(result)
 }
 
@@ -120,11 +92,6 @@ export const add = (a: PositiveCoin, b: PositiveCoin): PositiveCoin => {
  */
 export const subtract = (a: PositiveCoin, b: PositiveCoin): PositiveCoin => {
   const result = a - b
-  if (result <= 0n) {
-    throw new PositiveCoinError({
-      message: `Subtraction underflow: ${a} - ${b} results in non-positive value`
-    })
-  }
   return make(result)
 }
 
@@ -158,71 +125,3 @@ export const arbitrary = FastCheck.bigInt({
   min: MIN_POSITIVE_COIN_VALUE,
   max: MAX_POSITIVE_COIN_VALUE
 }).map(make)
-
-// ============================================================================
-// Root Functions
-// ============================================================================
-
-/**
- * Parse PositiveCoin from bigint value.
- *
- * @since 2.0.0
- * @category parsing
- */
-export const fromBigInt = (value: bigint): PositiveCoin => Eff.runSync(Effect.fromBigInt(value))
-
-/**
- * Convert PositiveCoin to bigint value.
- *
- * @since 2.0.0
- * @category encoding
- */
-export const toBigInt = (positiveCoin: PositiveCoin): bigint => Eff.runSync(Effect.toBigInt(positiveCoin))
-
-// ============================================================================
-// Effect Namespace
-// ============================================================================
-
-/**
- * Effect-based error handling variants for functions that can fail.
- *
- * @since 2.0.0
- * @category effect
- */
-export namespace Effect {
-  /**
-   * Parse PositiveCoin from bigint value with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromBigInt = (value: bigint): Eff.Effect<PositiveCoin, PositiveCoinError> =>
-    Schema.decode(PositiveCoinSchema)(value).pipe(
-      Eff.mapError(
-        (cause) =>
-          new PositiveCoinError({
-            message: "Failed to parse PositiveCoin from bigint",
-            cause
-          })
-      )
-    )
-
-  /**
-   * Convert PositiveCoin to bigint value with Effect error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toBigInt = (positiveCoin: PositiveCoin): Eff.Effect<bigint, PositiveCoinError> =>
-    Schema.encode(PositiveCoinSchema)(positiveCoin).pipe(
-      Eff.mapError(
-        (cause) =>
-          new PositiveCoinError({
-            message: "Failed to encode PositiveCoin to bigint",
-            cause
-          })
-      )
-    )
-}
-
-// ============================================================================

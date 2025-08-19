@@ -1,6 +1,7 @@
-import { Data, Effect as Eff, FastCheck, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 
 /**
  * Error class for transaction metadatum related operations.
@@ -278,8 +279,11 @@ export const arbitrary: FastCheck.Arbitrary<TransactionMetadatum> = FastCheck.on
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): TransactionMetadatum =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options ?? CBOR.CML_DEFAULT_OPTIONS))
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  TransactionMetadatumError,
+  "TransactionMetadatum.fromCBORBytes"
+)
 
 /**
  * Parse a TransactionMetadatum from CBOR hex string.
@@ -287,8 +291,11 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): T
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): TransactionMetadatum =>
-  Eff.runSync(Effect.fromCBORHex(hex, options ?? CBOR.CML_DEFAULT_OPTIONS))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(
+  FromCDDL,
+  TransactionMetadatumError,
+  "TransactionMetadatum.fromCBORHex"
+)
 
 // ============================================================================
 // Encoding Functions
@@ -300,8 +307,11 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Transacti
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (metadatum: TransactionMetadatum, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(metadatum, options ?? CBOR.CML_DEFAULT_OPTIONS))
+export const toCBORBytes = Function.makeCBOREncodeSync(
+  FromCDDL,
+  TransactionMetadatumError,
+  "TransactionMetadatum.toCBORBytes"
+)
 
 /**
  * Convert a TransactionMetadatum to CBOR hex string.
@@ -309,8 +319,11 @@ export const toCBORBytes = (metadatum: TransactionMetadatum, options?: CBOR.Code
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (metadatum: TransactionMetadatum, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(metadatum, options ?? CBOR.CML_DEFAULT_OPTIONS))
+export const toCBORHex = Function.makeCBOREncodeHexSync(
+  FromCDDL,
+  TransactionMetadatumError,
+  "TransactionMetadatum.toCBORHex"
+)
 
 // ============================================================================
 // Factory Functions
@@ -366,26 +379,14 @@ export const map = (value: Map<TransactionMetadatum, TransactionMetadatum>): Met
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse a TransactionMetadatum from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<TransactionMetadatum, TransactionMetadatumError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionMetadatumError({
-            message: "Failed to decode TransactionMetadatum from CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, TransactionMetadatumError)
 
   /**
    * Parse a TransactionMetadatum from CBOR hex string with Effect error handling.
@@ -393,19 +394,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<TransactionMetadatum, TransactionMetadatumError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionMetadatumError({
-            message: "Failed to decode TransactionMetadatum from CBOR hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, TransactionMetadatumError)
 
   /**
    * Convert a TransactionMetadatum to CBOR bytes with Effect error handling.
@@ -413,19 +402,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    metadatum: TransactionMetadatum,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, TransactionMetadatumError> =>
-    Schema.encode(FromCBORBytes(options))(metadatum).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionMetadatumError({
-            message: "Failed to encode TransactionMetadatum to CBOR bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, TransactionMetadatumError)
 
   /**
    * Convert a TransactionMetadatum to CBOR hex string with Effect error handling.
@@ -433,17 +410,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (
-    metadatum: TransactionMetadatum,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, TransactionMetadatumError> =>
-    Schema.encode(FromCBORHex(options))(metadatum).pipe(
-      Eff.mapError(
-        (cause) =>
-          new TransactionMetadatumError({
-            message: "Failed to encode TransactionMetadatum to CBOR hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, TransactionMetadatumError)
 }

@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Bytes32 from "./Bytes32.js"
@@ -117,6 +117,11 @@ export class VrfCert extends Schema.TaggedClass<VrfCert>()("VrfCert", {
  */
 export const isVrfCert = Schema.is(VrfCert)
 
+export const CDDLSchema = Schema.Tuple(
+  CBOR.ByteArray, // vrf_output as bytes
+  CBOR.ByteArray // vrf_proof as bytes
+)
+
 /**
  * CDDL schema for VrfCert as tuple structure.
  * vrf_cert = [vrf_output, vrf_proof]
@@ -126,29 +131,22 @@ export const isVrfCert = Schema.is(VrfCert)
  * @since 2.0.0
  * @category schemas
  */
-export const VrfCertCDDLSchema = Schema.transformOrFail(
-  Schema.Tuple(
-    CBOR.ByteArray, // vrf_output as bytes
-    CBOR.ByteArray // vrf_proof as bytes
-  ),
-  Schema.typeSchema(VrfCert),
-  {
-    strict: true,
-    encode: (vrfCert) =>
-      Eff.gen(function* () {
-        return [vrfCert.output.bytes, vrfCert.proof.bytes] as const
-      }),
-    decode: ([outputBytes, proofBytes]) =>
-      Eff.gen(function* () {
-        const output = yield* ParseResult.decode(VRFOutputFromBytes)(outputBytes)
-        const proof = yield* ParseResult.decode(VRFProofFromBytes)(proofBytes)
-        return new VrfCert({
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(VrfCert), {
+  strict: true,
+  encode: (vrfCert) => E.right([vrfCert.output.bytes, vrfCert.proof.bytes] as const),
+  decode: ([outputBytes, proofBytes]) =>
+    E.gen(function* () {
+      const output = yield* ParseResult.decodeEither(VRFOutputFromBytes)(outputBytes)
+      const proof = yield* ParseResult.decodeEither(VRFProofFromBytes)(proofBytes)
+      return new VrfCert(
+        {
           output,
           proof
-        })
-      })
-  }
-)
+        },
+        { disableValidation: true }
+      )
+    })
+})
 
 /**
  * CBOR bytes transformation schema for VrfCert.
@@ -159,7 +157,7 @@ export const VrfCertCDDLSchema = Schema.transformOrFail(
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    VrfCertCDDLSchema // CBOR → VrfCert
+    FromCDDL // CBOR → VrfCert
   ).annotations({
     identifier: "VrfCert.FromCBORBytes"
   })
@@ -212,47 +210,43 @@ export const arbitrary = FastCheck.record({
 )
 
 /**
- * Effect namespace containing schema decode and encode operations.
+ * Either namespace containing schema decode and encode operations.
  *
  * @since 2.0.0
- * @category Effect
+ * @category Either
  */
 export namespace Either {
   /**
-   * Parse a VrfCert from CBOR bytes using Effect error handling.
+   * Parse a VrfCert from CBOR bytes using Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (input: Uint8Array, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORBytes(options), VrfCertError)(input)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, VrfCertError)
 
   /**
-   * Parse a VrfCert from CBOR hex using Effect error handling.
+   * Parse a VrfCert from CBOR hex using Either error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (input: string, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORHex(options), VrfCertError)(input)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, VrfCertError)
 
   /**
-   * Convert a VrfCert to CBOR bytes using Effect error handling.
+   * Convert a VrfCert to CBOR bytes using Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (value: VrfCert, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORBytes(options), VrfCertError)(value)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, VrfCertError)
 
   /**
-   * Convert a VrfCert to CBOR hex using Effect error handling.
+   * Convert a VrfCert to CBOR hex using Either error handling.
    *
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (value: VrfCert, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORHex(options), VrfCertError)(value)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, VrfCertError)
 }
 
 /**
@@ -261,8 +255,7 @@ export namespace Either {
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (value: VrfCert, options?: CBOR.CodecOptions): Uint8Array =>
-  Function.makeEncodeSync(FromCBORBytes(options), VrfCertError, "VrfCert.toCBORBytes")(value)
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, VrfCertError, "VrfCert.toCBORBytes")
 
 /**
  * Convert VrfCert to CBOR hex (unsafe).
@@ -270,8 +263,7 @@ export const toCBORBytes = (value: VrfCert, options?: CBOR.CodecOptions): Uint8A
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (value: VrfCert, options?: CBOR.CodecOptions): string =>
-  Function.makeEncodeSync(FromCBORHex(options), VrfCertError, "VrfCert.toCBORHex")(value)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, VrfCertError, "VrfCert.toCBORHex")
 
 /**
  * Parse VrfCert from CBOR bytes (unsafe).
@@ -279,8 +271,7 @@ export const toCBORHex = (value: VrfCert, options?: CBOR.CodecOptions): string =
  * @since 2.0.0
  * @category decoding
  */
-export const fromCBORBytes = (value: Uint8Array, options?: CBOR.CodecOptions): VrfCert =>
-  Function.makeDecodeSync(FromCBORBytes(options), VrfCertError, "VrfCert.fromCBORBytes")(value)
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, VrfCertError, "VrfCert.fromCBORBytes")
 
 /**
  * Parse VrfCert from CBOR hex (unsafe).
@@ -288,5 +279,4 @@ export const fromCBORBytes = (value: Uint8Array, options?: CBOR.CodecOptions): V
  * @since 2.0.0
  * @category decoding
  */
-export const fromCBORHex = (value: string, options?: CBOR.CodecOptions): VrfCert =>
-  Function.makeDecodeSync(FromCBORHex(options), VrfCertError, "VrfCert.fromCBORHex")(value)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, VrfCertError, "VrfCert.fromCBORHex")

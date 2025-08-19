@@ -17,7 +17,7 @@ parent: Modules
   - [make](#make)
   - [singleton](#singleton)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -38,8 +38,8 @@ parent: Modules
   - [AssetMap](#assetmap)
   - [FromCBORBytes](#fromcborbytes-1)
   - [FromCBORHex](#fromcborhex-1)
+  - [FromCDDL](#fromcddl)
   - [MultiAsset](#multiasset)
-  - [MultiAssetCDDLSchema](#multiassetcddlschema)
 - [transformation](#transformation)
   - [addAsset](#addasset)
   - [getAsset](#getasset)
@@ -117,7 +117,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -132,7 +132,10 @@ Encode MultiAsset to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (multiAsset: MultiAsset, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (
+  input: Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -144,7 +147,10 @@ Encode MultiAsset to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (multiAsset: MultiAsset, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (
+  input: Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0
@@ -214,7 +220,10 @@ Parse MultiAsset from CBOR bytes.
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => MultiAsset
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) => Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">
 ```
 
 Added in v2.0.0
@@ -226,7 +235,10 @@ Parse MultiAsset from CBOR hex string.
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => MultiAsset
+export declare const fromCBORHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) => Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">
 ```
 
 Added in v2.0.0
@@ -347,6 +359,33 @@ export declare const FromCBORHex: (
 
 Added in v2.0.0
 
+## FromCDDL
+
+CDDL schema for MultiAsset.
+
+```
+multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
+```
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.MapFromSelf<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
+  >,
+  Schema.SchemaClass<
+    Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
+    Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
+    never
+  >,
+  never
+>
+```
+
+Added in v2.0.0
+
 ## MultiAsset
 
 Schema for MultiAsset representing native assets.
@@ -370,33 +409,6 @@ export declare const MultiAsset: Schema.brand<
     >
   >,
   "MultiAsset"
->
-```
-
-Added in v2.0.0
-
-## MultiAssetCDDLSchema
-
-CDDL schema for MultiAsset.
-
-```
-multiasset<positive_coin> = {+ policy_id => {+ asset_name => positive_coin}}
-```
-
-**Signature**
-
-```ts
-export declare const MultiAssetCDDLSchema: Schema.transformOrFail<
-  Schema.MapFromSelf<
-    typeof Schema.Uint8ArrayFromSelf,
-    Schema.MapFromSelf<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>
-  >,
-  Schema.SchemaClass<
-    Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
-    Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">,
-    never
-  >,
-  never
 >
 ```
 

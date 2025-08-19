@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Anchor from "./Anchor.js"
 import * as Bytes from "./Bytes.js"
@@ -7,8 +7,12 @@ import * as Coin from "./Coin.js"
 import * as Credential from "./Credential.js"
 import * as DRep from "./DRep.js"
 import * as EpochNo from "./EpochNo.js"
+import * as Function from "./Function.js"
 import * as PoolKeyHash from "./PoolKeyHash.js"
+import * as PoolMetadata from "./PoolMetadata.js"
 import * as PoolParams from "./PoolParams.js"
+import * as Relay from "./Relay.js"
+import * as UnitInterval from "./UnitInterval.js"
 
 /**
  * Error class for Certificate related operations.
@@ -214,7 +218,19 @@ export const CDDLSchema = Schema.Union(
   // 2: stake_delegation = (2, stake_credential, pool_keyhash)
   Schema.Tuple(Schema.Literal(2n), Credential.CDDLSchema, CBOR.ByteArray),
   // 3: pool_registration = (3, pool_params)
-  Schema.Tuple(Schema.Literal(3n), PoolParams.CDDLSchema),
+  Schema.Tuple(
+    Schema.Literal(3n),
+    // Flattened PoolParams.CDDLSchema
+    CBOR.ByteArray, // operator (pool_keyhash as bytes)
+    CBOR.ByteArray, // vrf_keyhash (as bytes)
+    CBOR.Integer, // pledge (coin)
+    CBOR.Integer, // cost (coin)
+    UnitInterval.CDDLSchema, // margin
+    CBOR.ByteArray, // reward_account (bytes)
+    Schema.Array(CBOR.ByteArray), // pool_owners (array of addr_keyhash bytes)
+    Schema.Array(Schema.encodedSchema(Relay.FromCDDL)), // relays
+    Schema.NullOr(Schema.encodedSchema(PoolMetadata.FromCDDL)) // pool_metadata
+  ),
   // 4: pool_retirement = (4, pool_keyhash, epoch_no)
   Schema.Tuple(Schema.Literal(4n), CBOR.ByteArray, CBOR.Integer),
   // 7: reg_cert = (7, stake_credential , coin)
@@ -255,86 +271,87 @@ export const CDDLSchema = Schema.Union(
 export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Certificate), {
   strict: true,
   encode: (toA) =>
-    Eff.gen(function* () {
+    E.gen(function* () {
       switch (toA._tag) {
         case "StakeRegistration": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
           return [0n, credentialCDDL] as const
         }
         case "StakeDeregistration": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
           return [1n, credentialCDDL] as const
         }
         case "StakeDelegation": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
-          const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.poolKeyHash)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
+          const poolKeyHashBytes = yield* ParseResult.encodeEither(PoolKeyHash.FromBytes)(toA.poolKeyHash)
           return [2n, credentialCDDL, poolKeyHashBytes] as const
         }
         case "PoolRegistration": {
-          const poolParamsCDDL = yield* ParseResult.encode(PoolParams.FromCDDL)(toA.poolParams)
-          return [3n, poolParamsCDDL] as const
+          const poolParamsCDDL = yield* ParseResult.encodeEither(PoolParams.FromCDDL)(toA.poolParams)
+          // Spread encoded PoolParams fields directly into the certificate tuple (flattening)
+          return [3n, ...poolParamsCDDL] as const
         }
         case "PoolRetirement": {
-          const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.poolKeyHash)
+          const poolKeyHashBytes = yield* ParseResult.encodeEither(PoolKeyHash.FromBytes)(toA.poolKeyHash)
           return [4n, poolKeyHashBytes, BigInt(toA.epoch)] as const
         }
         case "RegCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
           return [7n, credentialCDDL, toA.coin] as const
         }
         case "UnregCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
           return [8n, credentialCDDL, toA.coin] as const
         }
         case "VoteDelegCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
-          const drepCDDL = yield* ParseResult.encode(DRep.FromCDDL)(toA.drep)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
+          const drepCDDL = yield* ParseResult.encodeEither(DRep.FromCDDL)(toA.drep)
           return [9n, credentialCDDL, drepCDDL] as const
         }
         case "StakeVoteDelegCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
-          const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.poolKeyHash)
-          const drepCDDL = yield* ParseResult.encode(DRep.FromCDDL)(toA.drep)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
+          const poolKeyHashBytes = yield* ParseResult.encodeEither(PoolKeyHash.FromBytes)(toA.poolKeyHash)
+          const drepCDDL = yield* ParseResult.encodeEither(DRep.FromCDDL)(toA.drep)
           return [10n, credentialCDDL, poolKeyHashBytes, drepCDDL] as const
         }
         case "StakeRegDelegCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
-          const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.poolKeyHash)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
+          const poolKeyHashBytes = yield* ParseResult.encodeEither(PoolKeyHash.FromBytes)(toA.poolKeyHash)
           return [11n, credentialCDDL, poolKeyHashBytes, toA.coin] as const
         }
         case "VoteRegDelegCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
-          const drepCDDL = yield* ParseResult.encode(DRep.FromCDDL)(toA.drep)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
+          const drepCDDL = yield* ParseResult.encodeEither(DRep.FromCDDL)(toA.drep)
           return [12n, credentialCDDL, drepCDDL, toA.coin] as const
         }
         case "StakeVoteRegDelegCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.stakeCredential)
-          const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(toA.poolKeyHash)
-          const drepCDDL = yield* ParseResult.encode(DRep.FromCDDL)(toA.drep)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.stakeCredential)
+          const poolKeyHashBytes = yield* ParseResult.encodeEither(PoolKeyHash.FromBytes)(toA.poolKeyHash)
+          const drepCDDL = yield* ParseResult.encodeEither(DRep.FromCDDL)(toA.drep)
           return [13n, credentialCDDL, poolKeyHashBytes, drepCDDL, toA.coin] as const
         }
         case "AuthCommitteeHotCert": {
-          const coldCredentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.committeeColdCredential)
-          const hotCredentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.committeeHotCredential)
+          const coldCredentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.committeeColdCredential)
+          const hotCredentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.committeeHotCredential)
           return [14n, coldCredentialCDDL, hotCredentialCDDL] as const
         }
         case "ResignCommitteeColdCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.committeeColdCredential)
-          const anchorCDDL = toA.anchor ? yield* ParseResult.encode(Anchor.FromCDDL)(toA.anchor) : null
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.committeeColdCredential)
+          const anchorCDDL = toA.anchor ? yield* ParseResult.encodeEither(Anchor.FromCDDL)(toA.anchor) : null
           return [15n, credentialCDDL, anchorCDDL] as const
         }
         case "RegDrepCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.drepCredential)
-          const anchorCDDL = toA.anchor ? yield* ParseResult.encode(Anchor.FromCDDL)(toA.anchor) : null
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.drepCredential)
+          const anchorCDDL = toA.anchor ? yield* ParseResult.encodeEither(Anchor.FromCDDL)(toA.anchor) : null
           return [16n, credentialCDDL, toA.coin, anchorCDDL] as const
         }
         case "UnregDrepCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.drepCredential)
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.drepCredential)
           return [17n, credentialCDDL, toA.coin] as const
         }
         case "UpdateDrepCert": {
-          const credentialCDDL = yield* ParseResult.encode(Credential.FromCDDL)(toA.drepCredential)
-          const anchorCDDL = toA.anchor ? yield* ParseResult.encode(Anchor.FromCDDL)(toA.anchor) : null
+          const credentialCDDL = yield* ParseResult.encodeEither(Credential.FromCDDL)(toA.drepCredential)
+          const anchorCDDL = toA.anchor ? yield* ParseResult.encodeEither(Anchor.FromCDDL)(toA.anchor) : null
           return [18n, credentialCDDL, anchorCDDL] as const
         }
         // default:
@@ -344,7 +361,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
       }
     }),
   decode: (fromA) =>
-    Eff.gen(function* () {
+    E.gen(function* () {
       // const [typeId, ...fields] = fromA
 
       switch (fromA[0]) {
@@ -352,148 +369,190 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Cer
           // stake_registration = (0, stake_credential)
           // const [credentialCDDL] = fields
           const [, credentialCDDL] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          return yield* ParseResult.decode(Certificate)({ _tag: "StakeRegistration", stakeCredential })
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          return new StakeRegistration({ stakeCredential }, { disableValidation: true })
         }
         case 1n: {
           // stake_deregistration = (1, stake_credential)
           const [, credentialCDDL] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          return yield* ParseResult.decode(Certificate)({ _tag: "StakeDeregistration", stakeCredential })
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          return new StakeDeregistration({ stakeCredential }, { disableValidation: true })
         }
         case 2n: {
           // stake_delegation = (2, stake_credential, pool_keyhash)
           const [, credentialCDDL, poolKeyHashBytes] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          const poolKeyHash = yield* ParseResult.decode(PoolKeyHash.FromBytes)(poolKeyHashBytes)
-          return yield* ParseResult.decode(Certificate)({ _tag: "StakeDelegation", stakeCredential, poolKeyHash })
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          const poolKeyHash = yield* ParseResult.decodeEither(PoolKeyHash.FromBytes)(poolKeyHashBytes)
+          return new StakeDelegation({ stakeCredential, poolKeyHash }, { disableValidation: true })
         }
         case 3n: {
-          // pool_registration = (3, pool_params)
-          const [, poolParamsCDDL] = fromA
-          const poolParams = yield* ParseResult.decode(PoolParams.FromCDDL)(poolParamsCDDL)
-          return { _tag: "PoolRegistration", poolParams } as const
+          // pool_registration = (3, ...pool_params fields flattened)
+          const [
+            ,
+            operatorBytes,
+            vrfKeyhashBytes,
+            pledge,
+            cost,
+            marginEncoded,
+            rewardAccountBytes,
+            poolOwnersBytes,
+            relaysEncoded,
+            poolMetadataEncoded
+          ] = fromA as unknown as readonly [
+            3n,
+            Uint8Array,
+            Uint8Array,
+            bigint,
+            bigint,
+            unknown,
+            Uint8Array,
+            ReadonlyArray<Uint8Array>,
+            ReadonlyArray<unknown>,
+            unknown | null
+          ]
+          const poolParams = yield* ParseResult.decodeEither(PoolParams.FromCDDL)([
+            operatorBytes,
+            vrfKeyhashBytes,
+            pledge,
+            cost,
+            marginEncoded as any,
+            rewardAccountBytes,
+            poolOwnersBytes as any,
+            relaysEncoded as any,
+            poolMetadataEncoded as any
+          ] as any)
+          return new PoolRegistration({ poolParams }, { disableValidation: true })
         }
         case 4n: {
           // pool_retirement = (4, pool_keyhash, epoch_no)
           const [, poolKeyHashBytes, epochBigInt] = fromA
-          const poolKeyHash = yield* ParseResult.decode(PoolKeyHash.FromBytes)(poolKeyHashBytes)
+          const poolKeyHash = yield* ParseResult.decodeEither(PoolKeyHash.FromBytes)(poolKeyHashBytes)
           const epoch = EpochNo.make(epochBigInt)
-          return yield* ParseResult.decode(Certificate)({ _tag: "PoolRetirement", poolKeyHash, epoch })
+          return new PoolRetirement({ poolKeyHash, epoch }, { disableValidation: true })
         }
         case 7n: {
           // reg_cert = (7, stake_credential, coin)
           const [, credentialCDDL, coinBigInt] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
           const coin = Coin.make(coinBigInt)
-          return yield* ParseResult.decode(Certificate)({ _tag: "RegCert", stakeCredential, coin })
+          return new RegCert({ stakeCredential, coin }, { disableValidation: true })
         }
         case 8n: {
           // unreg_cert = (8, stake_credential, coin)
           const [, credentialCDDL, coinBigInt] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
           const coin = Coin.make(coinBigInt)
-          return yield* ParseResult.decode(Certificate)({ _tag: "UnregCert", stakeCredential, coin })
+          return new UnregCert({ stakeCredential, coin }, { disableValidation: true })
         }
         case 9n: {
           // vote_deleg_cert = (9, stake_credential, drep)
           const [, credentialCDDL, drepCDDL] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          const drep = yield* ParseResult.decode(DRep.FromCDDL)(drepCDDL)
-          return yield* ParseResult.decode(Certificate)({ _tag: "VoteDelegCert", stakeCredential, drep })
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          const drep = yield* ParseResult.decodeEither(DRep.FromCDDL)(drepCDDL)
+          return new VoteDelegCert({ stakeCredential, drep }, { disableValidation: true })
         }
         case 10n: {
           // stake_vote_deleg_cert = (10, stake_credential, pool_keyhash, drep)
           const [, credentialCDDL, poolKeyHashBytes, drepCDDL] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          const poolKeyHash = yield* ParseResult.decode(PoolKeyHash.FromBytes)(poolKeyHashBytes)
-          const drep = yield* ParseResult.decode(DRep.FromCDDL)(drepCDDL)
-          return yield* ParseResult.decode(Certificate)({
-            _tag: "StakeVoteDelegCert",
-            stakeCredential,
-            poolKeyHash,
-            drep
-          })
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          const poolKeyHash = yield* ParseResult.decodeEither(PoolKeyHash.FromBytes)(poolKeyHashBytes)
+          const drep = yield* ParseResult.decodeEither(DRep.FromCDDL)(drepCDDL)
+          return new StakeVoteDelegCert(
+            {
+              stakeCredential,
+              poolKeyHash,
+              drep
+            },
+            { disableValidation: true }
+          )
         }
         case 11n: {
           // stake_reg_deleg_cert = (11, stake_credential, pool_keyhash, coin)
           const [, credentialCDDL, poolKeyHashBytes, coinBigInt] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          const poolKeyHash = yield* ParseResult.decode(PoolKeyHash.FromBytes)(poolKeyHashBytes)
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          const poolKeyHash = yield* ParseResult.decodeEither(PoolKeyHash.FromBytes)(poolKeyHashBytes)
           const coin = Coin.make(coinBigInt)
-          return yield* ParseResult.decode(Certificate)({
-            _tag: "StakeRegDelegCert",
-            stakeCredential,
-            poolKeyHash,
-            coin
-          })
+          return new StakeRegDelegCert(
+            {
+              stakeCredential,
+              poolKeyHash,
+              coin
+            },
+            { disableValidation: true }
+          )
         }
         case 12n: {
           // vote_reg_deleg_cert = (12, stake_credential, drep, coin)
           const [, credentialCDDL, drepCDDL, coinBigInt] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          const drep = yield* ParseResult.decode(DRep.FromCDDL)(drepCDDL)
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          const drep = yield* ParseResult.decodeEither(DRep.FromCDDL)(drepCDDL)
           const coin = Coin.make(coinBigInt)
-          return yield* ParseResult.decode(Certificate)({ _tag: "VoteRegDelegCert", stakeCredential, drep, coin })
+          return new VoteRegDelegCert({ stakeCredential, drep, coin }, { disableValidation: true })
         }
         case 13n: {
           // stake_vote_reg_deleg_cert = (13, stake_credential, pool_keyhash, drep, coin)
           const [, credentialCDDL, poolKeyHashBytes, drepCDDL, coinBigInt] = fromA
-          const stakeCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          const poolKeyHash = yield* ParseResult.decode(PoolKeyHash.FromBytes)(poolKeyHashBytes)
-          const drep = yield* ParseResult.decode(DRep.FromCDDL)(drepCDDL)
+          const stakeCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          const poolKeyHash = yield* ParseResult.decodeEither(PoolKeyHash.FromBytes)(poolKeyHashBytes)
+          const drep = yield* ParseResult.decodeEither(DRep.FromCDDL)(drepCDDL)
           const coin = Coin.make(coinBigInt)
-          return yield* ParseResult.decode(Certificate)({
-            _tag: "StakeVoteRegDelegCert",
-            stakeCredential,
-            poolKeyHash,
-            drep,
-            coin
-          })
+          return new StakeVoteRegDelegCert(
+            {
+              stakeCredential,
+              poolKeyHash,
+              drep,
+              coin
+            },
+            { disableValidation: true }
+          )
         }
         case 14n: {
           // auth_committee_hot_cert = (14, committee_cold_credential, committee_hot_credential)
           const [, coldCredentialCDDL, hotCredentialCDDL] = fromA
-          const committeeColdCredential = yield* ParseResult.decode(Credential.FromCDDL)(coldCredentialCDDL)
-          const committeeHotCredential = yield* ParseResult.decode(Credential.FromCDDL)(hotCredentialCDDL)
-          return yield* ParseResult.decode(Certificate)({
-            _tag: "AuthCommitteeHotCert",
-            committeeColdCredential,
-            committeeHotCredential
-          })
+          const committeeColdCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(coldCredentialCDDL)
+          const committeeHotCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(hotCredentialCDDL)
+          return new AuthCommitteeHotCert(
+            {
+              committeeColdCredential,
+              committeeHotCredential
+            },
+            { disableValidation: true }
+          )
         }
         case 15n: {
           // resign_committee_cold_cert = (15, committee_cold_credential, anchor/ nil)
           const [, credentialCDDL, anchorCDDL] = fromA
-          const committeeColdCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          const anchor = anchorCDDL ? yield* ParseResult.decode(Anchor.FromCDDL)(anchorCDDL) : undefined
-          return yield* ParseResult.decode(Certificate)({
-            _tag: "ResignCommitteeColdCert",
-            committeeColdCredential,
-            anchor
-          })
+          const committeeColdCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          const anchor = anchorCDDL ? yield* ParseResult.decodeEither(Anchor.FromCDDL)(anchorCDDL) : undefined
+          return new ResignCommitteeColdCert(
+            {
+              committeeColdCredential,
+              anchor
+            },
+            { disableValidation: true }
+          )
         }
         case 16n: {
           // reg_drep_cert = (16, drep_credential, coin, anchor/ nil)
           const [, credentialCDDL, coinBigInt, anchorCDDL] = fromA
-          const drepCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
+          const drepCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
           const coin = Coin.make(coinBigInt)
-          const anchor = anchorCDDL ? yield* ParseResult.decode(Anchor.FromCDDL)(anchorCDDL) : undefined
-          return yield* ParseResult.decode(Certificate)({ _tag: "RegDrepCert", drepCredential, coin, anchor })
+          const anchor = anchorCDDL ? yield* ParseResult.decodeEither(Anchor.FromCDDL)(anchorCDDL) : undefined
+          return new RegDrepCert({ drepCredential, coin, anchor }, { disableValidation: true })
         }
         case 17n: {
           // unreg_drep_cert = (17, drep_credential, coin)
           const [, credentialCDDL, coinBigInt] = fromA
-          const drepCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
+          const drepCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
           const coin = Coin.make(coinBigInt)
-          return yield* ParseResult.decode(Certificate)({ _tag: "UnregDrepCert", drepCredential, coin })
+          return new UnregDrepCert({ drepCredential, coin }, { disableValidation: true })
         }
         case 18n: {
           // update_drep_cert = (18, drep_credential, anchor/ nil)
           const [, credentialCDDL, anchorCDDL] = fromA
-          const drepCredential = yield* ParseResult.decode(Credential.FromCDDL)(credentialCDDL)
-          const anchor = anchorCDDL ? yield* ParseResult.decode(Anchor.FromCDDL)(anchorCDDL) : undefined
-          return yield* ParseResult.decode(Certificate)({ _tag: "UpdateDrepCert", drepCredential, anchor })
+          const drepCredential = yield* ParseResult.decodeEither(Credential.FromCDDL)(credentialCDDL)
+          const anchor = anchorCDDL ? yield* ParseResult.decodeEither(Anchor.FromCDDL)(anchorCDDL) : undefined
+          return new UpdateDrepCert({ drepCredential, anchor }, { disableValidation: true })
         }
         // default:
         //   return yield* ParseResult.fail(
@@ -672,8 +731,7 @@ export const equals = (a: Certificate, b: Certificate): boolean => {
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): Certificate =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, CertificateError, "Certificate.fromCBORBytes")
 
 /**
  * Parse a Certificate from CBOR hex string.
@@ -681,8 +739,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): C
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Certificate =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, CertificateError, "Certificate.fromCBORHex")
 
 // ============================================================================
 // Encoding Functions
@@ -694,8 +751,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Certifica
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (certificate: Certificate, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(certificate, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, CertificateError, "Certificate.toCBORBytes")
 
 /**
  * Convert a Certificate to CBOR hex string.
@@ -703,8 +759,7 @@ export const toCBORBytes = (certificate: Certificate, options?: CBOR.CodecOption
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (certificate: Certificate, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(certificate, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, CertificateError, "Certificate.toCBORHex")
 
 // ============================================================================
 // Effect Namespace - Effect-based Error Handling
@@ -716,26 +771,14 @@ export const toCBORHex = (certificate: Certificate, options?: CBOR.CodecOptions)
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse a Certificate from CBOR bytes.
    *
    * @since 2.0.0
    * @category effect
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Certificate, CertificateError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (error) =>
-          new CertificateError({
-            message: "Failed to decode Certificate from CBOR bytes",
-            cause: error
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, CertificateError)
 
   /**
    * Parse a Certificate from CBOR hex string.
@@ -743,19 +786,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category effect
    */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Certificate, CertificateError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (error) =>
-          new CertificateError({
-            message: "Failed to decode Certificate from CBOR hex",
-            cause: error
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, CertificateError)
 
   /**
    * Convert a Certificate to CBOR bytes.
@@ -763,19 +794,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category effect
    */
-  export const toCBORBytes = (
-    certificate: Certificate,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, CertificateError> =>
-    Schema.encode(FromCBORBytes(options))(certificate).pipe(
-      Eff.mapError(
-        (error) =>
-          new CertificateError({
-            message: "Failed to encode Certificate to CBOR bytes",
-            cause: error
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, CertificateError)
 
   /**
    * Convert a Certificate to CBOR hex string.
@@ -783,17 +802,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category effect
    */
-  export const toCBORHex = (
-    certificate: Certificate,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, CertificateError> =>
-    Schema.encode(FromCBORHex(options))(certificate).pipe(
-      Eff.mapError(
-        (error) =>
-          new CertificateError({
-            message: "Failed to encode Certificate to CBOR hex",
-            cause: error
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, CertificateError)
 }

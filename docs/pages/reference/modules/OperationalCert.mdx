@@ -1,6 +1,6 @@
 ---
 title: OperationalCert.ts
-nav_order: 71
+nav_order: 72
 parent: Modules
 ---
 
@@ -32,6 +32,8 @@ parent: Modules
   - [FromCBORBytes](#fromcborbytes-1)
   - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
+- [utils](#utils)
+  - [CDDLSchema](#cddlschema)
 
 ---
 
@@ -66,7 +68,7 @@ Encode OperationalCert to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: OperationalCert, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: OperationalCert, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -78,7 +80,7 @@ Encode OperationalCert to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: OperationalCert, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: OperationalCert, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
@@ -273,3 +275,20 @@ export declare const FromCDDL: Schema.transformOrFail<
 ```
 
 Added in v2.0.0
+
+# utils
+
+## CDDLSchema
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.Tuple<
+  [
+    typeof Schema.Uint8ArrayFromSelf,
+    typeof Schema.BigIntFromSelf,
+    typeof Schema.BigIntFromSelf,
+    typeof Schema.Uint8ArrayFromSelf
+  ]
+>
+```

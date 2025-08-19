@@ -27,6 +27,7 @@
   "Bytes64": "Bytes64",
   "Bytes80": "Bytes80",
   "Bytes96": "Bytes96",
+  "BytesNew": "BytesNew",
   "CBOR": "CBOR",
   "Certificate": "Certificate",
   "Codec": "Codec",

@@ -94,7 +94,7 @@ Encode AuxiliaryData to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (value: AuxiliaryData, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: AuxiliaryData, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -106,7 +106,7 @@ Encode AuxiliaryData to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (value: AuxiliaryData, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: AuxiliaryData, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

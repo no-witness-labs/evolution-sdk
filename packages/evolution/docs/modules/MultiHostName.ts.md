@@ -18,7 +18,7 @@ parent: Modules
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -81,7 +81,7 @@ Convert MultiHostName to CBOR bytes (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (hostName: MultiHostName, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: MultiHostName, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -93,14 +93,14 @@ Convert MultiHostName to CBOR hex string (unsafe)
 **Signature**
 
 ```ts
-export declare const toCBORHex: (hostName: MultiHostName, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: MultiHostName, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect namespace for MultiHostName operations that can fail
 

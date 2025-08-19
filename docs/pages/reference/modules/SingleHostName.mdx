@@ -1,6 +1,6 @@
 ---
 title: SingleHostName.ts
-nav_order: 97
+nav_order: 98
 parent: Modules
 ---
 
@@ -13,6 +13,11 @@ parent: Modules
 - [constructors](#constructors)
   - [withPort](#withport)
   - [withoutPort](#withoutport)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -22,6 +27,9 @@ parent: Modules
 - [model](#model)
   - [SingleHostName (class)](#singlehostname-class)
     - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
+- [parsing](#parsing)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
 - [predicates](#predicates)
   - [hasPort](#hasport)
 - [schemas](#schemas)
@@ -31,8 +39,6 @@ parent: Modules
 - [transformation](#transformation)
   - [getDnsName](#getdnsname)
   - [getPort](#getport)
-- [utils](#utils)
-  - [Codec](#codec)
 
 ---
 
@@ -58,6 +64,40 @@ Create a SingleHostName without a port.
 
 ```ts
 export declare const withoutPort: (dnsName: DnsName.DnsName) => SingleHostName
+```
+
+Added in v2.0.0
+
+# either
+
+## Either (namespace)
+
+Either-based error handling variants for functions that can fail.
+
+Added in v2.0.0
+
+# encoding
+
+## toCBORBytes
+
+Convert a SingleHostName to CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (input: SingleHostName, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+Added in v2.0.0
+
+## toCBORHex
+
+Convert a SingleHostName to CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (input: SingleHostName, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0
@@ -128,6 +168,32 @@ Added in v2.0.0
 ```ts
 ;[Symbol.for("nodejs.util.inspect.custom")]()
 ```
+
+# parsing
+
+## fromCBORBytes
+
+Parse a SingleHostName from CBOR bytes.
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => SingleHostName
+```
+
+Added in v2.0.0
+
+## fromCBORHex
+
+Parse a SingleHostName from CBOR hex string.
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => SingleHostName
+```
+
+Added in v2.0.0
 
 # predicates
 
@@ -240,38 +306,3 @@ export declare const getPort: (hostName: SingleHostName) => Option.Option<Port.P
 ```
 
 Added in v2.0.0
-
-# utils
-
-## Codec
-
-**Signature**
-
-```ts
-export declare const Codec: (options?: CBOR.CodecOptions) => {
-  Encode: {
-    cborBytes: (a: SingleHostName, overrideOptions?: ParseOptions) => any
-    cborHex: (a: SingleHostName, overrideOptions?: ParseOptions) => string
-  }
-  Decode: {
-    cborBytes: (u: unknown, overrideOptions?: ParseOptions) => SingleHostName
-    cborHex: (u: unknown, overrideOptions?: ParseOptions) => SingleHostName
-  }
-  EncodeEither: {
-    cborBytes: (a: SingleHostName, overrideOptions?: ParseOptions) => Either<any, ParseResult.ParseError>
-    cborHex: (a: SingleHostName, overrideOptions?: ParseOptions) => Either<string, ParseResult.ParseError>
-  }
-  DecodeEither: {
-    cborBytes: (i: any, overrideOptions?: ParseOptions) => Either<SingleHostName, ParseResult.ParseError>
-    cborHex: (i: string, overrideOptions?: ParseOptions) => Either<SingleHostName, ParseResult.ParseError>
-  }
-  EncodeEffect: {
-    cborBytes: (a: SingleHostName, overrideOptions?: ParseOptions) => Effect.Effect<any, ParseResult.ParseError, never>
-    cborHex: (a: SingleHostName, overrideOptions?: ParseOptions) => Effect.Effect<string, ParseResult.ParseError, never>
-  }
-  DecodeEffect: {
-    cborBytes: (i: any, overrideOptions?: ParseOptions) => Effect.Effect<SingleHostName, ParseResult.ParseError, never>
-    cborHex: (i: string, overrideOptions?: ParseOptions) => Effect.Effect<SingleHostName, ParseResult.ParseError, never>
-  }
-}
-```

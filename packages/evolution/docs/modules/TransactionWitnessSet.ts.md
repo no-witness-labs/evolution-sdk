@@ -18,7 +18,7 @@ parent: Modules
   - [fromVKeyWitnesses](#fromvkeywitnesses)
   - [make](#make)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -110,7 +110,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -125,7 +125,7 @@ Convert a TransactionWitnessSet to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (witnessSet: TransactionWitnessSet, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: TransactionWitnessSet, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -137,7 +137,7 @@ Convert a TransactionWitnessSet to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (witnessSet: TransactionWitnessSet, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: TransactionWitnessSet, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

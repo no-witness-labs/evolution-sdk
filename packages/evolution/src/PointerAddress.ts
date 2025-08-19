@@ -31,19 +31,86 @@ export class PointerAddress extends Schema.TaggedClass<PointerAddress>("PointerA
   paymentCredential: Credential.Credential,
   pointer: Pointer.Pointer
 }) {
-  [Symbol.for("nodejs.util.inspect.custom")]() {
-    return {
-      _tag: "PointerAddress",
-      networkId: this.networkId,
-      paymentCredential: this.paymentCredential,
-      pointer: this.pointer
-    }
+  toString(): string {
+    return `PointerAddress { networkId: ${this.networkId}, paymentCredential: ${this.paymentCredential}, pointer: ${this.pointer} }`
+  }
+
+  [Symbol.for("nodejs.util.inspect.custom")](): string {
+    return this.toString()
   }
 }
 
+/**
+ * Encode a positive integer using Cardano pointer varint (LEB128-like) encoding.
+ * - Little-endian base-128: emit 7-bit groups, low to high, set MSB (0x80) on all but last.
+ * - Matches decodeVariableLength below and Cardano pointer address spec.
+ *
+ * @since 2.0.0
+ * @category encoding/decoding
+ */
+export const encodeVariableLength = (natural: Natural.Natural) =>
+  Eff.gen(function* () {
+    const value = yield* ParseResult.decode(Natural.Natural)(natural)
+    let n = value as number
+    const chunks: Array<number> = []
+
+    // Collect 7-bit chunks (LSB first)
+    while (n > 0) {
+      chunks.push(n & 0x7f)
+      n = Math.floor(n / 128)
+    }
+
+    // Emit in big-endian order with continuation bit on all but the last
+    const out: Array<number> = []
+    for (let i = chunks.length - 1; i >= 0; i--) {
+      let byte = chunks[i]
+      if (i !== 0) byte |= 0x80
+      out.push(byte)
+    }
+
+    return new Uint8Array(out)
+  })
+
+/**
+ * Decode a variable length integer from a Uint8Array (LEB128-like)
+ * Following the Cardano ledger implementation for variable-length integers
+ *
+ * @since 2.0.0
+ * @category encoding/decoding
+ */
+export const decodeVariableLength: (
+  bytes: Uint8Array,
+  offset?: number | undefined
+) => Eff.Effect<[Natural.Natural, number], ParseResult.ParseIssue> = Eff.fnUntraced(function* (
+  bytes: Uint8Array,
+  offset = 0
+) {
+  let number = 0
+  let bytesRead = 0
+
+  while (true) {
+    if (offset + bytesRead >= bytes.length) {
+      return yield* ParseResult.fail(
+        new ParseResult.Type(Natural.Natural.ast, bytes, `Buffer overflow decoding varint at offset ${offset}`)
+      )
+    }
+
+    const b = bytes[offset + bytesRead]
+    bytesRead++
+
+    // Big-endian base-128 accumulate
+    number = (number << 7) | (b & 0x7f)
+
+    if ((b & 0x80) === 0) {
+      const value = yield* ParseResult.decode(Natural.Natural)(number)
+      return [value, bytesRead] as const
+    }
+  }
+})
+
 export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, PointerAddress, {
   strict: true,
-  encode: (toI, options, ast, toA) =>
+  encode: (_, __, ___, toA) =>
     Eff.gen(function* () {
       const paymentBit = toA.paymentCredential._tag === "KeyHash" ? 0 : 1
       const header = (0b01 << 6) | (0b0 << 5) | (paymentBit << 4) | (toA.networkId & 0b00001111)
@@ -53,66 +120,68 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
       const txIndexBytes = yield* encodeVariableLength(toA.pointer.txIndex)
       const certIndexBytes = yield* encodeVariableLength(toA.pointer.certIndex)
 
-      // Calculate total buffer size: 1 byte header + 28 bytes credential + variable parts
       const totalSize = 1 + 28 + slotBytes.length + txIndexBytes.length + certIndexBytes.length
-
-      // Allocate a buffer with the correct total size
       const result = new Uint8Array(totalSize)
-
-      // Set the header
       result[0] = header
 
-      const paymentCredentialBytes = toA.paymentCredential.hash
-      result.set(paymentCredentialBytes, 1)
+      // payment credential
+      result.set(toA.paymentCredential.hash, 1)
 
-      // Set the pointer data bytes at the correct position
-      let offset = 29 // 1 byte header + 28 bytes credential
+      // pointer components
+      let offset = 29
       result.set(slotBytes, offset)
       offset += slotBytes.length
       result.set(txIndexBytes, offset)
       offset += txIndexBytes.length
       result.set(certIndexBytes, offset)
 
-      return result
+      return yield* ParseResult.succeed(result)
     }),
   decode: (_, __, ast, fromA) =>
     Eff.gen(function* () {
+      if (fromA.length < 30) {
+        return yield* ParseResult.fail(new ParseResult.Type(ast, fromA, "PointerAddress: too few bytes"))
+      }
+
       const header = fromA[0]
-      // Extract network ID from the lower 4 bits
       const networkId = header & 0b00001111
-      // Extract address type from the upper 4 bits (bits 4-7)
       const addressType = header >> 4
 
-      // Script payment with pointer
-      // Check if the address is a pointer address
+      // validate pointer address type group: top bits 01 and bit5=0
+      const top2 = (header >> 6) & 0b11
+      const stakeOrPtrBit = (header >> 5) & 0b1
+      if (!(top2 === 0b01 && stakeOrPtrBit === 0b0)) {
+        return yield* ParseResult.fail(
+          new ParseResult.Type(ast, fromA, "PointerAddress: invalid header for pointer address")
+        )
+      }
+
+      // payment credential kind
       const isPaymentKey = (addressType & 0b0001) === 0
       const paymentCredential: Credential.Credential = isPaymentKey
-        ? new KeyHash.KeyHash({
-            hash: fromA.slice(1, 29)
-          })
-        : new ScriptHash.ScriptHash({
-            hash: fromA.slice(1, 29)
-          })
+        ? new KeyHash.KeyHash({ hash: fromA.slice(1, 29) })
+        : new ScriptHash.ScriptHash({ hash: fromA.slice(1, 29) })
 
-      // After the credential, we have 3 variable-length integers
+      // decode pointer components
       let offset = 29
+      const [slot, r1] = yield* decodeVariableLength(fromA, offset)
+      offset += r1
+      const [txIndex, r2] = yield* decodeVariableLength(fromA, offset)
+      offset += r2
+      const [certIndex, r3] = yield* decodeVariableLength(fromA, offset)
+      offset += r3
 
-      // Decode the slot, txIndex, and certIndex as variable length integers
-      const [slot, slotBytesRead] = yield* decodeVariableLength(fromA, offset)
-      offset += slotBytesRead
-
-      const [txIndex, txIndexBytesRead] = yield* decodeVariableLength(fromA, offset)
-      offset += txIndexBytesRead
-
-      const [certIndex] = yield* decodeVariableLength(fromA, offset)
+      if (offset !== fromA.length) {
+        return yield* ParseResult.fail(new ParseResult.Type(ast, fromA, "PointerAddress: unexpected trailing bytes"))
+      }
 
       return yield* ParseResult.decode(PointerAddress)({
         _tag: "PointerAddress",
         networkId,
         paymentCredential,
-        pointer: Pointer.make(slot, txIndex, certIndex)
+        pointer: new Pointer.Pointer({ slot, txIndex, certIndex }, { disableValidation: true })
       })
-    }).pipe(Eff.catchTag("PointerAddressError", (e) => Eff.fail(new ParseResult.Type(ast, fromA, e.message))))
+    })
 }).annotations({
   identifier: "PointerAddress.FromBytes",
   description: "Transforms raw bytes to PointerAddress"
@@ -124,98 +193,6 @@ export const FromHex = Schema.compose(
 ).annotations({
   identifier: "PointerAddress.FromHex",
   description: "Transforms raw hex string to PointerAddress"
-})
-
-/**
- * Encode a number as a variable length integer following the Cardano ledger specification
- *
- * @since 2.0.0
- * @category encoding/decoding
- */
-export const encodeVariableLength = (natural: Natural.Natural) =>
-  Eff.gen(function* () {
-    // Handle the simple case: values less than 128 (0x80, binary 10000000) fit in a single byte
-    // with no continuation bit needed
-    if (natural < 128) {
-      return new Uint8Array([natural])
-    }
-    // For larger values, we need to split the number into 7-bit chunks
-    const result: Array<number> = []
-    let remaining = natural
-    // Loop until all bits of the number have been processed
-    while (remaining >= 128) {
-      // Take the least significant 7 bits (value & 0x7F, binary 01111111)
-      // and set the high bit (| 0x80, binary 10000000) to indicate more bytes follow
-      result.push((remaining & 0x7f) | 0x80)
-      // Shift right by 7 bits (divide by 128) to process the next chunk
-      remaining = yield* ParseResult.decode(Natural.Natural)(Math.floor(remaining / 128))
-    }
-    // Push the final byte (the most significant bits)
-    // without setting the high bit, indicating this is the last byte
-    result.push(remaining & 0x7f) // Binary: 0xxxxxxx where x are bits from the value
-    // Convert the array of bytes to a Uint8Array
-    // The bytes are already in little-endian order (least significant byte first)
-    return new Uint8Array(result)
-  })
-
-/**
- * Decode a variable length integer from a Uint8Array
- * Following the Cardano ledger implementation for variable-length integers
- *
- * @since 2.0.0
- * @category encoding/decoding
- */
-export const decodeVariableLength: (
-  bytes: Uint8Array,
-  offset?: number | undefined
-) => Eff.Effect<[Natural.Natural, number], PointerAddressError | ParseResult.ParseIssue> = Eff.fnUntraced(function* (
-  bytes: Uint8Array,
-  offset = 0
-) {
-  // The accumulated decoded value
-  let number = 0
-
-  // Count of bytes processed so far
-  let bytesRead = 0
-
-  // Multiplier for the current byte position (increases by powers of 128)
-  // Starts at 1 because the first 7 bits are multiplied by 1
-  let multiplier = 1
-
-  while (true) {
-    // Check if we've reached the end of the buffer without finding a complete value
-    // This is a safeguard against buffer overruns
-    if (offset + bytesRead >= bytes.length) {
-      yield* new PointerAddressError({
-        message: `Buffer overflow: not enough bytes to decode variable length integer at offset ${offset}`
-      })
-    }
-
-    // Read the current byte
-    const b = bytes[offset + bytesRead]
-    bytesRead++
-
-    // Extract value bits by masking with 0x7F (binary 01111111)
-    // This removes the high continuation bit and keeps only the 7 value bits
-    // Then multiply by the current position multiplier and add to accumulated value
-    number += (b & 0x7f) * multiplier
-
-    // Check if this is the last byte by testing the high bit (0x80, binary 10000000)
-    // If the high bit is 0, we've reached the end of the encoded integer
-    if ((b & 0x80) === 0) {
-      // Return the decoded value and the count of bytes read
-      // const value = yield* Schema.decode(Natural.Natural)({ number });
-      const value = yield* ParseResult.decode(Natural.Natural)(number)
-      return [value, bytesRead] as const
-    }
-
-    // If the high bit is 1, we need to read more bytes
-    // Increase the multiplier for the next byte position (each position is worth 128 times more)
-    // This is because each byte holds 7 bits of value information
-    multiplier *= 128
-
-    // Continue reading bytes until we find one with the high bit set to 0
-  }
 })
 
 /**

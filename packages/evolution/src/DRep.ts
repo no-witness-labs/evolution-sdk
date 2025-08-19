@@ -2,6 +2,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as KeyHash from "./KeyHash.js"
 import * as ScriptHash from "./ScriptHash.js"
 
@@ -201,8 +202,7 @@ export const arbitrary = FastCheck.oneof(
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): DRep =>
-  Eff.runSync(Effect.fromBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, DRepError, "DRep.fromBytes")
 
 /**
  * Parse DRep from CBOR hex string.
@@ -210,7 +210,7 @@ export const fromBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): DRep 
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string, options?: CBOR.CodecOptions): DRep => Eff.runSync(Effect.fromHex(hex, options))
+export const fromHex = Function.makeCBORDecodeHexSync(FromCDDL, DRepError, "DRep.fromHex")
 
 /**
  * Encode DRep to CBOR bytes.
@@ -218,8 +218,7 @@ export const fromHex = (hex: string, options?: CBOR.CodecOptions): DRep => Eff.r
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (drep: DRep, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toBytes(drep, options))
+export const toBytes = Function.makeCBOREncodeSync(FromCDDL, DRepError, "DRep.toBytes")
 
 /**
  * Encode DRep to CBOR hex string.
@@ -227,7 +226,7 @@ export const toBytes = (drep: DRep, options?: CBOR.CodecOptions): Uint8Array =>
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (drep: DRep, options?: CBOR.CodecOptions): string => Eff.runSync(Effect.toHex(drep, options))
+export const toHex = Function.makeCBOREncodeHexSync(FromCDDL, DRepError, "DRep.toHex")
 
 // ============================================================================
 // Effect Namespace
@@ -239,26 +238,14 @@ export const toHex = (drep: DRep, options?: CBOR.CodecOptions): string => Eff.ru
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse DRep from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<DRep, DRepError> =>
-    Schema.decode(FromBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new DRepError({
-            message: "Failed to parse DRep from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeCBORDecodeEither(FromCDDL, DRepError)
 
   /**
    * Parse DRep from CBOR hex string with Effect error handling.
@@ -266,19 +253,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<DRep, DRepError> =>
-    Schema.decode(FromHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new DRepError({
-            message: "Failed to parse DRep from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeCBORDecodeHexEither(FromCDDL, DRepError)
 
   /**
    * Encode DRep to CBOR bytes with Effect error handling.
@@ -286,19 +261,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (
-    drep: DRep,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, DRepError> =>
-    Schema.encode(FromBytes(options))(drep).pipe(
-      Eff.mapError(
-        (cause) =>
-          new DRepError({
-            message: "Failed to encode DRep to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeCBOREncodeEither(FromCDDL, DRepError)
 
   /**
    * Encode DRep to CBOR hex string with Effect error handling.
@@ -306,19 +269,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (
-    drep: DRep,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, DRepError> =>
-    Schema.encode(FromHex(options))(drep).pipe(
-      Eff.mapError(
-        (cause) =>
-          new DRepError({
-            message: "Failed to encode DRep to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeCBOREncodeHexEither(FromCDDL, DRepError)
 }
 
 /**

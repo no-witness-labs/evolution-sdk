@@ -60,10 +60,10 @@ parent: Modules
   - [Uint16Arbitrary](#uint16arbitrary)
   - [Uint16Schema](#uint16schema)
   - [Uint32 (type alias)](#uint32-type-alias)
-  - [Uint32Generator](#uint32generator)
+  - [Uint32Arbitrary](#uint32arbitrary)
   - [Uint32Schema](#uint32schema)
   - [Uint64 (type alias)](#uint64-type-alias)
-  - [Uint64Generator](#uint64generator)
+  - [Uint64Arbitrary](#uint64arbitrary)
   - [Uint64Schema](#uint64schema)
 
 ---
@@ -151,7 +151,7 @@ Smart constructor for Uint32 that validates and applies branding.
 **Signature**
 
 ```ts
-export declare const Uint32Make: (a: number, options?: Schema.MakeOptions) => number
+export declare const Uint32Make: (a: bigint, options?: Schema.MakeOptions) => bigint
 ```
 
 Added in v2.0.0
@@ -405,7 +405,7 @@ export declare const UINT16_MIN: 0
 **Signature**
 
 ```ts
-export declare const UINT32_MAX: 4294967295
+export declare const UINT32_MAX: 4294967295n
 ```
 
 ## UINT32_MIN
@@ -413,7 +413,7 @@ export declare const UINT32_MAX: 4294967295
 **Signature**
 
 ```ts
-export declare const UINT32_MIN: 0
+export declare const UINT32_MIN: 0n
 ```
 
 ## UINT64_MAX
@@ -480,12 +480,12 @@ export declare const Uint16Schema: Schema.refine<number, typeof Schema.Number>
 export type Uint32 = typeof Uint32Schema.Type
 ```
 
-## Uint32Generator
+## Uint32Arbitrary
 
 **Signature**
 
 ```ts
-export declare const Uint32Generator: FastCheck.Arbitrary<number>
+export declare const Uint32Arbitrary: FastCheck.Arbitrary<bigint>
 ```
 
 ## Uint32Schema
@@ -493,7 +493,7 @@ export declare const Uint32Generator: FastCheck.Arbitrary<number>
 **Signature**
 
 ```ts
-export declare const Uint32Schema: Schema.refine<number, typeof Schema.Number>
+export declare const Uint32Schema: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
 ```
 
 ## Uint64 (type alias)
@@ -504,12 +504,12 @@ export declare const Uint32Schema: Schema.refine<number, typeof Schema.Number>
 export type Uint64 = typeof Uint64Schema.Type
 ```
 
-## Uint64Generator
+## Uint64Arbitrary
 
 **Signature**
 
 ```ts
-export declare const Uint64Generator: FastCheck.Arbitrary<bigint>
+export declare const Uint64Arbitrary: FastCheck.Arbitrary<bigint>
 ```
 
 ## Uint64Schema

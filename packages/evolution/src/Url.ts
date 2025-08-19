@@ -1,15 +1,8 @@
-import { Data, Effect as Eff, Schema } from "effect"
+import { Data, Schema } from "effect"
 
+import * as Bytes from "./Bytes.js"
+import * as Function from "./Function.js"
 import * as Text128 from "./Text128.js"
-
-/**
- * CDDL specification:
- * url = text .size (0..128)
- *
- * @since 2.0.0
- * @category constants
- */
-export const URL_MAX_LENGTH = 128
 
 /**
  * Error class for Url related operations.
@@ -30,28 +23,21 @@ export class UrlError extends Data.TaggedError("UrlError")<{
  * @since 2.0.0
  * @category model
  */
-export const Url = Text128.FromVariableHex.pipe(Schema.brand("Url"))
+export class Url extends Schema.TaggedClass<Url>("Url")("Url", {
+  href: Text128.Text128
+}) {}
 
-/**
- * Type alias for Url.
- *
- * @since 2.0.0
- * @category model
- */
-export type Url = typeof Url.Type
+export const make = (...args: ConstructorParameters<typeof Url>) => new Url(...args)
 
-export const make = Url.make
-
-export const FromBytes = Schema.compose(
-  Text128.FromVariableBytes, // Uint8Array -> hex string
-  Url // hex string -> Url
-).annotations({
-  identifier: "Url.Bytes"
+export const FromBytes = Schema.transform(Text128.FromVariableBytes, Url, {
+  strict: true,
+  decode: (bytes) => new Url({ href: bytes }, { disableValidation: true }), // Disable validation since we already check length in Text128
+  encode: (url) => url.href
 })
 
 export const FromHex = Schema.compose(
-  Text128.FromVariableHex, // string -> hex string
-  Url // hex string -> Url
+  Bytes.BytesFromHexLenient, // string -> hex string
+  FromBytes
 ).annotations({
   identifier: "Url.Hex"
 })
@@ -62,7 +48,7 @@ export const FromHex = Schema.compose(
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: Url, b: Url): boolean => a === b
+export const equals = (a: Url, b: Url): boolean => a.href === b.href
 
 /**
  * Check if the given value is a valid Url
@@ -78,7 +64,7 @@ export const isUrl = Schema.is(Url)
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = Text128.arbitrary.map((text) => Url.make(text))
+export const arbitrary = Text128.arbitrary.map((text) => Url.make({ href: text }, { disableValidation: true }))
 
 // ============================================================================
 // Root Functions
@@ -90,7 +76,7 @@ export const arbitrary = Text128.arbitrary.map((text) => Url.make(text))
  * @since 2.0.0
  * @category parsing
  */
-export const fromBytes = (bytes: Uint8Array): Url => Eff.runSync(Effect.fromBytes(bytes))
+export const fromBytes = Function.makeDecodeSync(FromBytes, UrlError, "Url.fromBytes")
 
 /**
  * Parse Url from hex string.
@@ -98,7 +84,7 @@ export const fromBytes = (bytes: Uint8Array): Url => Eff.runSync(Effect.fromByte
  * @since 2.0.0
  * @category parsing
  */
-export const fromHex = (hex: string): Url => Eff.runSync(Effect.fromHex(hex))
+export const fromHex = Function.makeDecodeSync(FromHex, UrlError, "Url.fromHex")
 
 /**
  * Encode Url to bytes.
@@ -106,7 +92,7 @@ export const fromHex = (hex: string): Url => Eff.runSync(Effect.fromHex(hex))
  * @since 2.0.0
  * @category encoding
  */
-export const toBytes = (url: Url): Uint8Array => Eff.runSync(Effect.toBytes(url))
+export const toBytes = Function.makeEncodeSync(FromBytes, UrlError, "Url.toBytes")
 
 /**
  * Encode Url to hex string.
@@ -114,35 +100,26 @@ export const toBytes = (url: Url): Uint8Array => Eff.runSync(Effect.toBytes(url)
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = (url: Url): string => Eff.runSync(Effect.toHex(url))
+export const toHex = Function.makeEncodeSync(FromHex, UrlError, "Url.toHex")
 
 // ============================================================================
-// Effect Namespace
+// Either Namespace
 // ============================================================================
 
 /**
- * Effect-based error handling variants for functions that can fail.
+ * Either-based error handling variants for functions that can fail.
  *
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse Url from bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromBytes = (bytes: Uint8Array): Eff.Effect<Url, UrlError> =>
-    Schema.decode(FromBytes)(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new UrlError({
-            message: "Failed to parse Url from bytes",
-            cause
-          })
-      )
-    )
+  export const fromBytes = Function.makeCBORDecodeEither(FromBytes, UrlError)
 
   /**
    * Parse Url from hex string with Effect error handling.
@@ -150,16 +127,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = (hex: string): Eff.Effect<Url, UrlError> =>
-    Schema.decode(FromHex)(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new UrlError({
-            message: "Failed to parse Url from hex",
-            cause
-          })
-      )
-    )
+  export const fromHex = Function.makeCBORDecodeEither(FromHex, UrlError)
 
   /**
    * Encode Url to bytes with Effect error handling.
@@ -167,16 +135,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toBytes = (url: Url): Eff.Effect<Uint8Array, UrlError> =>
-    Schema.encode(FromBytes)(url).pipe(
-      Eff.mapError(
-        (cause) =>
-          new UrlError({
-            message: "Failed to encode Url to bytes",
-            cause
-          })
-      )
-    )
+  export const toBytes = Function.makeEncodeSync(FromBytes, UrlError, "Url.toBytes")
 
   /**
    * Encode Url to hex string with Effect error handling.
@@ -184,14 +143,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = (url: Url): Eff.Effect<string, UrlError> =>
-    Schema.encode(FromHex)(url).pipe(
-      Eff.mapError(
-        (cause) =>
-          new UrlError({
-            message: "Failed to encode Url to hex",
-            cause
-          })
-      )
-    )
+  export const toHex = Function.makeEncodeSync(FromHex, UrlError, "Url.toHex")
 }

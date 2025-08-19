@@ -16,12 +16,7 @@ parent: Modules
   - [MAX_POSITIVE_COIN_VALUE](#max_positive_coin_value)
   - [MIN_POSITIVE_COIN_VALUE](#min_positive_coin_value)
 - [constructors](#constructors)
-  - [fromCoin](#fromcoin)
   - [make](#make)
-- [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
-- [encoding](#encoding)
-  - [toBigInt](#tobigint)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -30,8 +25,6 @@ parent: Modules
   - [PositiveCoin (type alias)](#positivecoin-type-alias)
 - [ordering](#ordering)
   - [compare](#compare)
-- [parsing](#parsing)
-  - [fromBigInt](#frombigint)
 - [predicates](#predicates)
   - [is](#is)
 - [schemas](#schemas)
@@ -39,7 +32,6 @@ parent: Modules
 - [transformation](#transformation)
   - [add](#add)
   - [subtract](#subtract)
-  - [toCoin](#tocoin)
 
 ---
 
@@ -85,18 +77,6 @@ Added in v2.0.0
 
 # constructors
 
-## fromCoin
-
-Create a PositiveCoin from a regular Coin, throwing if the value is zero.
-
-**Signature**
-
-```ts
-export declare const fromCoin: (coin: Coin.Coin) => PositiveCoin
-```
-
-Added in v2.0.0
-
 ## make
 
 Smart constructor for creating PositiveCoin values.
@@ -106,28 +86,6 @@ Uses the built-in .make property for branded schemas.
 
 ```ts
 export declare const make: (a: bigint, options?: Schema.MakeOptions) => bigint
-```
-
-Added in v2.0.0
-
-# effect
-
-## Effect (namespace)
-
-Effect-based error handling variants for functions that can fail.
-
-Added in v2.0.0
-
-# encoding
-
-## toBigInt
-
-Convert PositiveCoin to bigint value.
-
-**Signature**
-
-```ts
-export declare const toBigInt: (positiveCoin: PositiveCoin) => bigint
 ```
 
 Added in v2.0.0
@@ -189,20 +147,6 @@ export declare const compare: (a: PositiveCoin, b: PositiveCoin) => -1 | 0 | 1
 
 Added in v2.0.0
 
-# parsing
-
-## fromBigInt
-
-Parse PositiveCoin from bigint value.
-
-**Signature**
-
-```ts
-export declare const fromBigInt: (value: bigint) => PositiveCoin
-```
-
-Added in v2.0.0
-
 # predicates
 
 ## is
@@ -212,7 +156,7 @@ Check if a value is a valid PositiveCoin.
 **Signature**
 
 ```ts
-export declare const is: (value: unknown) => value is PositiveCoin
+export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is bigint
 ```
 
 Added in v2.0.0
@@ -255,18 +199,6 @@ Note: Result must still be positive.
 
 ```ts
 export declare const subtract: (a: PositiveCoin, b: PositiveCoin) => PositiveCoin
-```
-
-Added in v2.0.0
-
-## toCoin
-
-Convert a PositiveCoin to a regular Coin.
-
-**Signature**
-
-```ts
-export declare const toCoin: (positiveCoin: PositiveCoin) => Coin.Coin
 ```
 
 Added in v2.0.0

@@ -1,7 +1,8 @@
-import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
+import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as Url from "./Url.js"
 
 /**
@@ -36,7 +37,7 @@ export class PoolMetadata extends Schema.TaggedClass<PoolMetadata>()("PoolMetada
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(
+export const FromCDDL = Schema.transform(
   Schema.Tuple(
     CBOR.Text, // url as CBOR text string
     CBOR.ByteArray // hash as CBOR byte string
@@ -44,12 +45,13 @@ export const FromCDDL = Schema.transformOrFail(
   Schema.typeSchema(PoolMetadata),
   {
     strict: true,
-    encode: (poolMetadata) => Eff.succeed([poolMetadata.url, poolMetadata.hash] as const),
-    decode: ([urlText, hash]) =>
-      Eff.gen(function* () {
-        const url = yield* ParseResult.decode(Url.Url)(urlText)
-        return new PoolMetadata({ url, hash })
+    encode: (poolMetadata) => [poolMetadata.url.href, poolMetadata.hash] as const,
+    decode: ([urlText, hash]) => {
+      const url = Url.Url.make({
+        href: urlText
       })
+      return new PoolMetadata({ url, hash })
+    }
   }
 ).annotations({
   identifier: "PoolMetadata.FromCDDL",
@@ -122,18 +124,14 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Convert CBOR bytes to PoolMetadata using Effect
    *
    * @since 2.0.0
    * @category conversion
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.decode(FromCBORBytes(options))(bytes),
-      (cause) => new PoolMetadataError({ message: "Failed to decode from CBOR bytes", cause })
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, PoolMetadataError)
 
   /**
    * Convert CBOR hex string to PoolMetadata using Effect
@@ -141,11 +139,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category conversion
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.decode(FromCBORHex(options))(hex),
-      (cause) => new PoolMetadataError({ message: "Failed to decode from CBOR hex", cause })
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, PoolMetadataError)
 
   /**
    * Convert PoolMetadata to CBOR bytes using Effect
@@ -153,11 +147,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORBytes = (metadata: PoolMetadata, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.encode(FromCBORBytes(options))(metadata),
-      (cause) => new PoolMetadataError({ message: "Failed to encode to CBOR bytes", cause })
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, PoolMetadataError)
 
   /**
    * Convert PoolMetadata to CBOR hex string using Effect
@@ -165,11 +155,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORHex = (metadata: PoolMetadata, options?: CBOR.CodecOptions) =>
-    Eff.mapError(
-      Schema.encode(FromCBORHex(options))(metadata),
-      (cause) => new PoolMetadataError({ message: "Failed to encode to CBOR hex", cause })
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, PoolMetadataError)
 }
 
 /**
@@ -178,8 +164,7 @@ export namespace Effect {
  * @since 2.0.0
  * @category conversion
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): PoolMetadata =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, PoolMetadataError, "PoolMetadata.fromCBORBytes")
 
 /**
  * Convert CBOR hex string to PoolMetadata (unsafe)
@@ -187,8 +172,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): P
  * @since 2.0.0
  * @category conversion
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): PoolMetadata =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, PoolMetadataError, "PoolMetadata.fromCBORHex")
 
 /**
  * Convert PoolMetadata to CBOR bytes (unsafe)
@@ -196,8 +180,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): PoolMetad
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORBytes = (metadata: PoolMetadata, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(metadata, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, PoolMetadataError, "PoolMetadata.toCBORBytes")
 
 /**
  * Convert PoolMetadata to CBOR hex string (unsafe)
@@ -205,5 +188,4 @@ export const toCBORBytes = (metadata: PoolMetadata, options?: CBOR.CodecOptions)
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORHex = (metadata: PoolMetadata, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(metadata, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, PoolMetadataError, "PoolMetadata.toCBORHex")

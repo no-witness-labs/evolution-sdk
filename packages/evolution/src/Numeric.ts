@@ -21,7 +21,7 @@ export const UINT8_MAX = 255n
  * @category schemas
  */
 export const Uint8Schema = Schema.BigIntFromSelf.pipe(
-  Schema.filter((number) => Number.isInteger(number) && number >= UINT8_MIN && number <= UINT8_MAX),
+  Schema.filter((value) => value >= UINT8_MIN && value <= UINT8_MAX),
   Schema.annotations({
     identifier: "Uint8",
     title: "8-bit Unsigned Integer",
@@ -56,11 +56,11 @@ export const Uint8Generator = FastCheck.bigInt({
   max: UINT8_MAX
 }).map(Uint8Make)
 
-export const UINT16_MIN = 0
-export const UINT16_MAX = 65535
+export const UINT16_MIN = 0n
+export const UINT16_MAX = 65535n
 
-export const Uint16Schema = Schema.Number.pipe(
-  Schema.filter((number) => Number.isInteger(number) && number >= UINT16_MIN && number <= UINT16_MAX),
+export const Uint16Schema = Schema.BigIntFromSelf.pipe(
+  Schema.filter((value) => value >= UINT16_MIN && value <= UINT16_MAX),
   Schema.annotations({
     identifier: "Uint16",
     title: "16-bit Unsigned Integer",
@@ -78,16 +78,16 @@ export type Uint16 = typeof Uint16Schema.Type
  */
 export const Uint16Make = Uint16Schema.make
 
-export const Uint16Arbitrary = FastCheck.integer({
+export const Uint16Arbitrary = FastCheck.bigInt({
   min: UINT16_MIN,
   max: UINT16_MAX
 }).map(Uint16Make)
 
-export const UINT32_MIN = 0
-export const UINT32_MAX = 4294967295
+export const UINT32_MIN = 0n
+export const UINT32_MAX = 4294967295n
 
-export const Uint32Schema = Schema.Number.pipe(
-  Schema.filter((number) => Number.isInteger(number) && number >= UINT32_MIN && number <= UINT32_MAX),
+export const Uint32Schema = Schema.BigIntFromSelf.pipe(
+  Schema.filter((value) => value >= UINT32_MIN && value <= UINT32_MAX),
   Schema.annotations({
     identifier: "Uint32",
     title: "32-bit Unsigned Integer",
@@ -105,7 +105,7 @@ export type Uint32 = typeof Uint32Schema.Type
  */
 export const Uint32Make = Uint32Schema.make
 
-export const Uint32Generator = FastCheck.integer({
+export const Uint32Arbitrary = FastCheck.bigInt({
   min: UINT32_MIN,
   max: UINT32_MAX
 }).map(Uint32Make)
@@ -130,16 +130,16 @@ export type Uint64 = typeof Uint64Schema.Type
  */
 export const Uint64Make = Uint64Schema.make
 
-export const Uint64Generator = FastCheck.bigInt({
+export const Uint64Arbitrary = FastCheck.bigInt({
   min: UINT64_MIN,
   max: UINT64_MAX
 }).map(Uint64Make)
 
-export const INT8_MIN = -128
-export const INT8_MAX = 127
+export const INT8_MIN = -128n
+export const INT8_MAX = 127n
 
-export const Int8 = Schema.Number.pipe(
-  Schema.filter((number) => Number.isInteger(number) && number >= INT8_MIN && number <= INT8_MAX),
+export const Int8 = Schema.BigIntFromSelf.pipe(
+  Schema.filter((value) => value >= INT8_MIN && value <= INT8_MAX),
   Schema.annotations({
     identifier: "Int8",
     title: "8-bit Signed Integer",
@@ -157,16 +157,16 @@ export type Int8 = typeof Int8.Type
  */
 export const Int8Make = Int8.make
 
-export const Int8Generator = FastCheck.integer({
+export const Int8Generator = FastCheck.bigInt({
   min: INT8_MIN,
   max: INT8_MAX
 }).map(Int8Make)
 
-export const INT16_MIN = -32768
-export const INT16_MAX = 32767
+export const INT16_MIN = -32768n
+export const INT16_MAX = 32767n
 
-export const Int16 = Schema.Number.pipe(
-  Schema.filter((number) => Number.isInteger(number) && number >= INT16_MIN && number <= INT16_MAX),
+export const Int16 = Schema.BigIntFromSelf.pipe(
+  Schema.filter((value) => value >= INT16_MIN && value <= INT16_MAX),
   Schema.annotations({
     identifier: "Int16",
     title: "16-bit Signed Integer",
@@ -184,16 +184,16 @@ export type Int16 = typeof Int16.Type
  */
 export const Int16Make = Int16.make
 
-export const Int16Generator = FastCheck.integer({
+export const Int16Generator = FastCheck.bigInt({
   min: INT16_MIN,
   max: INT16_MAX
 }).map(Int16Make)
 
-export const INT32_MIN = -2147483648
-export const INT32_MAX = 2147483647
+export const INT32_MIN = -2147483648n
+export const INT32_MAX = 2147483647n
 
-export const Int32 = Schema.Number.pipe(
-  Schema.filter((number) => Number.isInteger(number) && number >= INT32_MIN && number <= INT32_MAX),
+export const Int32 = Schema.BigIntFromSelf.pipe(
+  Schema.filter((value) => value >= INT32_MIN && value <= INT32_MAX),
   Schema.annotations({
     identifier: "Int32",
     title: "32-bit Signed Integer",
@@ -211,7 +211,7 @@ export type Int32 = typeof Int32.Type
  */
 export const Int32Make = Int32.make
 
-export const Int32Generator = FastCheck.integer({
+export const Int32Generator = FastCheck.bigInt({
   min: INT32_MIN,
   max: INT32_MAX
 }).map(Int32Make)

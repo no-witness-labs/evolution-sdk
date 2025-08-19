@@ -17,7 +17,7 @@ parent: Modules
   - [fromEntries](#fromentries)
   - [singleton](#singleton)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -114,7 +114,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -129,7 +129,10 @@ Encode Mint to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (mint: Mint, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (
+  input: Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint & Brand<"NonZeroInt64">>> & Brand<"Mint">,
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -141,7 +144,10 @@ Encode Mint to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (mint: Mint, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (
+  input: Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint & Brand<"NonZeroInt64">>> & Brand<"Mint">,
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0
@@ -199,7 +205,10 @@ Parse Mint from CBOR bytes.
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => Mint
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) => Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint & Brand<"NonZeroInt64">>> & Brand<"Mint">
 ```
 
 Added in v2.0.0
@@ -211,7 +220,10 @@ Parse Mint from CBOR hex string.
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => Mint
+export declare const fromCBORHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) => Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint & Brand<"NonZeroInt64">>> & Brand<"Mint">
 ```
 
 Added in v2.0.0

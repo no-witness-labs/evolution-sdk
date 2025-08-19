@@ -22,7 +22,7 @@ parent: Modules
   - [no](#no)
   - [yes](#yes)
 - [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
+  - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
@@ -109,7 +109,13 @@ Create a VotingProcedures instance.
 
 ```ts
 export declare const make: (
-  procedures: Map<Voter, Map<GovernanceAction.GovActionId, VotingProcedure>>
+  props: {
+    readonly procedures: Map<
+      ConstitutionalCommitteeVoter | DRepVoter | StakePoolVoter,
+      Map<GovernanceAction.GovActionId, VotingProcedure>
+    >
+  },
+  options?: Schema.MakeOptions | undefined
 ) => VotingProcedures
 ```
 
@@ -189,7 +195,7 @@ Added in v2.0.0
 
 # effect
 
-## Effect (namespace)
+## Either (namespace)
 
 Effect-based error handling variants for functions that can fail.
 
@@ -204,7 +210,7 @@ Encode VotingProcedures to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (votingProcedures: VotingProcedures, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: VotingProcedures, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -216,7 +222,7 @@ Encode VotingProcedures to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (votingProcedures: VotingProcedures, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: VotingProcedures, options?: CBOR.CodecOptions) => string
 ```
 
 Added in v2.0.0

@@ -16,10 +16,11 @@ parent: Modules
 - [conversion](#conversion)
   - [fromCBORBytes](#fromcborbytes)
   - [fromCBORHex](#fromcborhex)
+- [either](#either)
+  - [Either (namespace)](#either-namespace)
+- [encoding](#encoding)
   - [toCBORBytes](#tocborbytes)
   - [toCBORHex](#tocborhex)
-- [effect](#effect)
-  - [Effect (namespace)](#effect-namespace)
 - [equality](#equality)
   - [equals](#equals)
 - [errors](#errors)
@@ -35,6 +36,7 @@ parent: Modules
   - [DatumOptionSchema](#datumoptionschema)
   - [FromCBORBytes](#fromcborbytes-1)
   - [FromCBORHex](#fromcborhex-1)
+  - [FromCDDL](#fromcddl)
   - [InlineDatum (class)](#inlinedatum-class)
 - [testing](#testing)
   - [arbitrary](#arbitrary)
@@ -86,7 +88,7 @@ Convert CBOR bytes to DatumOption (unsafe)
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => DatumOption
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => DatumHash | InlineDatum
 ```
 
 Added in v2.0.0
@@ -98,40 +100,42 @@ Convert CBOR hex string to DatumOption (unsafe)
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => DatumOption
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => DatumHash | InlineDatum
 ```
 
 Added in v2.0.0
 
+# either
+
+## Either (namespace)
+
+Either namespace for DatumOption operations that can fail
+
+Added in v2.0.0
+
+# encoding
+
 ## toCBORBytes
 
-Convert DatumOption to CBOR bytes (unsafe)
+Convert DatumOption to CBOR bytes (unsafe).
 
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (datumOption: DatumOption, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (input: DatumHash | InlineDatum, options?: CBOR.CodecOptions) => Uint8Array
 ```
 
 Added in v2.0.0
 
 ## toCBORHex
 
-Convert DatumOption to CBOR hex string (unsafe)
+Convert DatumOption to CBOR hex (unsafe).
 
 **Signature**
 
 ```ts
-export declare const toCBORHex: (datumOption: DatumOption, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (input: DatumHash | InlineDatum, options?: CBOR.CodecOptions) => string
 ```
-
-Added in v2.0.0
-
-# effect
-
-## Effect (namespace)
-
-Effect namespace for DatumOption operations that can fail
 
 Added in v2.0.0
 
@@ -325,6 +329,27 @@ export declare const FromCBORHex: (
       never
     >
   >
+>
+```
+
+Added in v2.0.0
+
+## FromCDDL
+
+CDDL schema for DatumOption.
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.Union<
+    [
+      Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[1n]>, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>
+    ]
+  >,
+  Schema.SchemaClass<DatumHash | InlineDatum, DatumHash | InlineDatum, never>,
+  never
 >
 ```
 

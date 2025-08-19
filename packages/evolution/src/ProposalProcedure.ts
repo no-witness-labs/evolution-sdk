@@ -4,6 +4,7 @@ import * as Anchor from "./Anchor.js"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
+import * as Function from "./Function.js"
 import * as GovernanceAction from "./GovernanceAction.js"
 import * as RewardAccount from "./RewardAccount.js"
 
@@ -139,18 +140,8 @@ export const equals = (a: ProposalProcedure, b: ProposalProcedure): boolean =>
  * @since 2.0.0
  * @category constructors
  */
-export const make = (params: {
-  deposit: Coin.Coin
-  rewardAccount: RewardAccount.RewardAccount
-  governanceAction: GovernanceAction.GovernanceAction
-  anchor?: Anchor.Anchor | null
-}): ProposalProcedure =>
-  new ProposalProcedure({
-    deposit: params.deposit,
-    rewardAccount: params.rewardAccount,
-    governanceAction: params.governanceAction,
-    anchor: params.anchor ?? null
-  })
+
+export const make = (...args: ConstructorParameters<typeof ProposalProcedure>) => new ProposalProcedure(...args)
 
 // ============================================================================
 // Root Functions
@@ -162,8 +153,11 @@ export const make = (params: {
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): ProposalProcedure =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  ProposalProcedureError,
+  "ProposalProcedure.fromCBORBytes"
+)
 
 /**
  * Parse individual ProposalProcedure from CBOR hex string.
@@ -171,8 +165,11 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): P
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): ProposalProcedure =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(
+  FromCDDL,
+  ProposalProcedureError,
+  "ProposalProcedure.fromCBORHex"
+)
 
 /**
  * Encode individual ProposalProcedure to CBOR bytes.
@@ -180,8 +177,11 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): ProposalP
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (procedure: ProposalProcedure, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(procedure, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(
+  FromCDDL,
+  ProposalProcedureError,
+  "ProposalProcedure.toCBORBytes"
+)
 
 /**
  * Encode individual ProposalProcedure to CBOR hex string.
@@ -189,8 +189,7 @@ export const toCBORBytes = (procedure: ProposalProcedure, options?: CBOR.CodecOp
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (procedure: ProposalProcedure, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(procedure, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, ProposalProcedureError, "ProposalProcedure.toCBORHex")
 
 // ============================================================================
 // Effect Namespace
@@ -202,26 +201,14 @@ export const toCBORHex = (procedure: ProposalProcedure, options?: CBOR.CodecOpti
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse ProposalProcedure from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<ProposalProcedure, ProposalProcedureError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (cause) =>
-          new ProposalProcedureError({
-            message: "Failed to parse ProposalProcedure from bytes",
-            cause
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, ProposalProcedureError)
 
   /**
    * Parse ProposalProcedure from CBOR hex string with Effect error handling.
@@ -229,19 +216,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = (
-    hex: string,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<ProposalProcedure, ProposalProcedureError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (cause) =>
-          new ProposalProcedureError({
-            message: "Failed to parse ProposalProcedure from hex",
-            cause
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, ProposalProcedureError)
 
   /**
    * Encode ProposalProcedure to CBOR bytes with Effect error handling.
@@ -249,19 +224,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = (
-    procedure: ProposalProcedure,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<Uint8Array, ProposalProcedureError> =>
-    Schema.encode(FromCBORBytes(options))(procedure).pipe(
-      Eff.mapError(
-        (cause) =>
-          new ProposalProcedureError({
-            message: "Failed to encode ProposalProcedure to bytes",
-            cause
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, ProposalProcedureError)
 
   /**
    * Encode ProposalProcedure to CBOR hex string with Effect error handling.
@@ -269,17 +232,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = (
-    procedure: ProposalProcedure,
-    options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS
-  ): Eff.Effect<string, ProposalProcedureError> =>
-    Schema.encode(FromCBORHex(options))(procedure).pipe(
-      Eff.mapError(
-        (cause) =>
-          new ProposalProcedureError({
-            message: "Failed to encode ProposalProcedure to hex",
-            cause
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, ProposalProcedureError)
 }

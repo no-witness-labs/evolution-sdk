@@ -3,6 +3,7 @@ import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 import * as CBOR from "./CBOR.js"
 import * as PlutusData from "./Data.js"
 import * as Ed25519Signature from "./Ed25519Signature.js"
+import * as Function from "./Function.js"
 import * as NativeScripts from "./NativeScripts.js"
 import * as PlutusV1 from "./PlutusV1.js"
 import * as PlutusV2 from "./PlutusV2.js"
@@ -438,8 +439,11 @@ export const arbitrary: FastCheck.Arbitrary<TransactionWitnessSet> = FastCheck.r
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): TransactionWitnessSet =>
-  Eff.runSync(Effect.fromCBORBytes(bytes, options))
+export const fromCBORBytes = Function.makeCBORDecodeSync(
+  FromCDDL,
+  TransactionWitnessSetError,
+  "TransactionWitnessSet.fromCBORBytes"
+)
 
 /**
  * Parse a TransactionWitnessSet from CBOR hex string.
@@ -447,8 +451,11 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): T
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): TransactionWitnessSet =>
-  Eff.runSync(Effect.fromCBORHex(hex, options))
+export const fromCBORHex = Function.makeCBORDecodeHexSync(
+  FromCDDL,
+  TransactionWitnessSetError,
+  "TransactionWitnessSet.fromCBORHex"
+)
 
 // ============================================================================
 // Encoding Functions
@@ -460,8 +467,11 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): Transacti
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = (witnessSet: TransactionWitnessSet, options?: CBOR.CodecOptions): Uint8Array =>
-  Eff.runSync(Effect.toCBORBytes(witnessSet, options))
+export const toCBORBytes = Function.makeCBOREncodeSync(
+  FromCDDL,
+  TransactionWitnessSetError,
+  "TransactionWitnessSet.toCBORBytes"
+)
 
 /**
  * Convert a TransactionWitnessSet to CBOR hex string.
@@ -469,8 +479,11 @@ export const toCBORBytes = (witnessSet: TransactionWitnessSet, options?: CBOR.Co
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = (witnessSet: TransactionWitnessSet, options?: CBOR.CodecOptions): string =>
-  Eff.runSync(Effect.toCBORHex(witnessSet, options))
+export const toCBORHex = Function.makeCBOREncodeHexSync(
+  FromCDDL,
+  TransactionWitnessSetError,
+  "TransactionWitnessSet.toCBORHex"
+)
 
 // ============================================================================
 // Factory Functions
@@ -512,26 +525,14 @@ export const fromNativeScripts = (scripts: Array<NativeScripts.Native>): Transac
  * @since 2.0.0
  * @category effect
  */
-export namespace Effect {
+export namespace Either {
   /**
    * Parse a TransactionWitnessSet from CBOR bytes with Effect error handling.
    *
    * @since 2.0.0
    * @category effect
    */
-  export const fromCBORBytes = (
-    bytes: Uint8Array,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<TransactionWitnessSet, TransactionWitnessSetError> =>
-    Schema.decode(FromCBORBytes(options))(bytes).pipe(
-      Eff.mapError(
-        (error) =>
-          new TransactionWitnessSetError({
-            message: "Failed to decode TransactionWitnessSet from CBOR bytes",
-            cause: error
-          })
-      )
-    )
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, TransactionWitnessSetError)
 
   /**
    * Parse a TransactionWitnessSet from CBOR hex string with Effect error handling.
@@ -539,19 +540,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category effect
    */
-  export const fromCBORHex = (
-    hex: string,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<TransactionWitnessSet, TransactionWitnessSetError> =>
-    Schema.decode(FromCBORHex(options))(hex).pipe(
-      Eff.mapError(
-        (error) =>
-          new TransactionWitnessSetError({
-            message: "Failed to decode TransactionWitnessSet from CBOR hex",
-            cause: error
-          })
-      )
-    )
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, TransactionWitnessSetError)
 
   /**
    * Convert a TransactionWitnessSet to CBOR bytes with Effect error handling.
@@ -559,19 +548,7 @@ export namespace Effect {
    * @since 2.0.0
    * @category effect
    */
-  export const toCBORBytes = (
-    witnessSet: TransactionWitnessSet,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<Uint8Array, TransactionWitnessSetError> =>
-    Schema.encode(FromCBORBytes(options))(witnessSet).pipe(
-      Eff.mapError(
-        (error) =>
-          new TransactionWitnessSetError({
-            message: "Failed to encode TransactionWitnessSet to CBOR bytes",
-            cause: error
-          })
-      )
-    )
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, TransactionWitnessSetError)
 
   /**
    * Convert a TransactionWitnessSet to CBOR hex string with Effect error handling.
@@ -579,17 +556,5 @@ export namespace Effect {
    * @since 2.0.0
    * @category effect
    */
-  export const toCBORHex = (
-    witnessSet: TransactionWitnessSet,
-    options?: CBOR.CodecOptions
-  ): Eff.Effect<string, TransactionWitnessSetError> =>
-    Schema.encode(FromCBORHex(options))(witnessSet).pipe(
-      Eff.mapError(
-        (error) =>
-          new TransactionWitnessSetError({
-            message: "Failed to encode TransactionWitnessSet to CBOR hex",
-            cause: error
-          })
-      )
-    )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, TransactionWitnessSetError)
 }

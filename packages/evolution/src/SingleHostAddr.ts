@@ -134,8 +134,7 @@ export const FromCDDL = Schema.transformOrFail(
       }),
     decode: ([, portValue, ipv4Value, ipv6Value]) =>
       Eff.gen(function* () {
-        const port =
-          portValue === null || portValue === undefined ? Option.none() : Option.some(Port.make(Number(portValue)))
+        const port = portValue === null || portValue === undefined ? Option.none() : Option.some(Port.make(portValue))
 
         const ipv4 =
           ipv4Value === null || ipv4Value === undefined
@@ -228,8 +227,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORBytes(options), SingleHostAddrError)(bytes)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, SingleHostAddrError)
 
   /**
    * Convert CBOR hex string to SingleHostAddr using Either
@@ -237,8 +235,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions) =>
-    Function.makeDecodeEither(FromCBORHex(options), SingleHostAddrError)(hex)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, SingleHostAddrError)
 
   /**
    * Convert SingleHostAddr to CBOR bytes using Either
@@ -246,8 +243,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORBytes = (value: SingleHostAddr, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORBytes(options), SingleHostAddrError)(value)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, SingleHostAddrError)
 
   /**
    * Convert SingleHostAddr to CBOR hex string using Either
@@ -255,8 +251,7 @@ export namespace Either {
    * @since 2.0.0
    * @category conversion
    */
-  export const toCBORHex = (value: SingleHostAddr, options?: CBOR.CodecOptions) =>
-    Function.makeEncodeEither(FromCBORHex(options), SingleHostAddrError)(value)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, SingleHostAddrError)
 }
 
 /**
@@ -265,8 +260,7 @@ export namespace Either {
  * @since 2.0.0
  * @category conversion
  */
-export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): SingleHostAddr =>
-  Function.makeDecodeSync(FromCBORBytes(options), SingleHostAddrError, "SingleHostAddr.fromCBORBytes")(bytes)
+export const fromCBORBytes = Function.makeCBORDecodeSync(FromCDDL, SingleHostAddrError, "SingleHostAddr.fromCBORBytes")
 
 /**
  * Convert CBOR hex string to SingleHostAddr (unsafe)
@@ -274,8 +268,7 @@ export const fromCBORBytes = (bytes: Uint8Array, options?: CBOR.CodecOptions): S
  * @since 2.0.0
  * @category conversion
  */
-export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): SingleHostAddr =>
-  Function.makeDecodeSync(FromCBORHex(options), SingleHostAddrError, "SingleHostAddr.fromCBORHex")(hex)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, SingleHostAddrError, "SingleHostAddr.fromCBORHex")
 
 /**
  * Convert SingleHostAddr to CBOR bytes (unsafe)
@@ -283,8 +276,7 @@ export const fromCBORHex = (hex: string, options?: CBOR.CodecOptions): SingleHos
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORBytes = (value: SingleHostAddr, options?: CBOR.CodecOptions): Uint8Array =>
-  Function.makeEncodeSync(FromCBORBytes(options), SingleHostAddrError, "SingleHostAddr.toCBORBytes")(value)
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, SingleHostAddrError, "SingleHostAddr.toCBORBytes")
 
 /**
  * Convert SingleHostAddr to CBOR hex string (unsafe)
@@ -292,5 +284,4 @@ export const toCBORBytes = (value: SingleHostAddr, options?: CBOR.CodecOptions):
  * @since 2.0.0
  * @category conversion
  */
-export const toCBORHex = (value: SingleHostAddr, options?: CBOR.CodecOptions): string =>
-  Function.makeEncodeSync(FromCBORHex(options), SingleHostAddrError, "SingleHostAddr.toCBORHex")(value)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, SingleHostAddrError, "SingleHostAddr.toCBORHex")

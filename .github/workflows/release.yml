@@ -6,7 +6,10 @@ on:
       - main
   workflow_dispatch:
 
-permissions: write-all
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -43,6 +46,7 @@ jobs:
       - name: 🦋 Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
+        continue-on-error: true
         with:
           # This uses our custom publish script that builds before publishing
           publish: pnpm changeset-publish

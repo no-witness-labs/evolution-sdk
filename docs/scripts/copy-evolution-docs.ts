@@ -30,7 +30,7 @@ async function copyFile(src: string, dest: string) {
     await fs.writeFile(dest, convertedContent)
     console.log(`Copied: ${path.relative(process.cwd(), src)} → ${path.relative(process.cwd(), dest)}`)
   } catch (error) {
-    console.error(`Error copying ${src} to ${dest}: ${error.message}`)
+    console.error(`Error copying ${src} to ${dest}: ${(error as Error).message}`)
     throw error
   }
 }
@@ -67,7 +67,7 @@ async function copyDirectory(source: string, target: string) {
 async function createMetaJson(directory: string) {
   try {
     const entries = await fs.readdir(directory)
-    const metaEntries = {}
+    const metaEntries: Record<string, string> = {}
 
     // Filter only the .mdx files (converted from .md)
     const mdxFiles = entries.filter((entry) => entry.endsWith(".mdx") && entry !== "index.mdx")
@@ -85,7 +85,7 @@ async function createMetaJson(directory: string) {
 
     console.log(`Created _meta.json in ${path.relative(process.cwd(), directory)}`)
   } catch (error) {
-    console.error(`Error creating _meta.json: ${error.message}`)
+    console.error(`Error creating _meta.json: ${(error as Error).message}`)
   }
 }
 
@@ -109,7 +109,7 @@ async function main() {
 
     console.log("Documentation copy completed successfully!")
   } catch (error) {
-    console.error("Error copying documentation:", error.message)
+    console.error("Error copying documentation:", (error as Error).message)
     process.exit(1)
   }
 }

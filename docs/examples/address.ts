@@ -1,12 +1,6 @@
-# Address
+// Examples for Address getting-started page
+// Run with: pnpm -w -C docs ts-node examples/address.ts (or a small runner)
 
-Address module provides functionality for working with address types in Cardano.
-
-## Address Example
-
-{/* BEGIN:snippet file=address.ts region=address-example lang=typescript */}
-
-```typescript
 // #region address-example
 import assert from "node:assert/strict"
 import { Address } from "@evolution-sdk/evolution"
@@ -22,10 +16,8 @@ const actualBech32 = Address.toBech32(address)
 
 // Verify the conversion is correct
 assert.strictEqual(actualBech32, expectedBech32)
-```
+// #endregion address-example
 
-{/* END:snippet */}
-
-## API Reference
-
-For detailed API documentation, see the generated TypeDoc documentation.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  console.log("Address example OK")
+}

@@ -1,0 +1,12 @@
+# Roundtrip encode/decode
+
+Encode a Data value to CBOR hex and decode back.
+
+```typescript
+// #region main
+const original = new Data.Constr({ index: 0n, fields: ["beef", 19n] })
+const hexCbor = Data.toCBORHex(original, CBOR.CANONICAL_OPTIONS)
+const back = Data.fromCBORHex(hexCbor)
+assert.deepStrictEqual(back, original)
+
+```

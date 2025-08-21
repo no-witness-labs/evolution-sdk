@@ -1,0 +1,35 @@
+# Basic Data Construction
+
+Learn how to create fundamental Data types using constructors.
+
+```typescript
+// #region main
+// Create a simple constructor with no fields
+const unit = new Data.Constr({ index: 0n, fields: [] })
+console.log("Unit constructor:", unit)
+
+// Create a constructor with primitive fields
+const person = new Data.Constr({
+  index: 1n,
+  fields: ["416c696365", 30n] // 'Alice' as hex and age
+})
+console.log("Person constructor:", person)
+
+// Create a constructor with mixed field types
+const record = new Data.Constr({
+  index: 2n,
+  fields: [
+    "deadbeef", // bytes as hex string (ByteArray)
+    42n, // big integer (Int)
+    [1n, 2n, 3n], // array of big integers (List)
+    new Data.Constr({ index: 0n, fields: [] }) // nested constructor
+  ]
+})
+
+// Verify the construction worked
+assert.equal(person.index, 1n)
+assert.equal(person.fields.length, 2)
+assert.equal(person.fields[0], "416c696365") // 'Alice' in hex
+assert.equal(person.fields[1], 30n)
+
+```

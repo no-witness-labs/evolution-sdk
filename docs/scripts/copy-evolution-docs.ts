@@ -6,7 +6,7 @@ import * as path from "path"
 const sourceDir = path.resolve(process.cwd(), "../packages/evolution/docs/modules")
 const targetDir = path.resolve(process.cwd(), "./pages/reference/modules")
 
-async function ensureDirectoryExists(dir) {
+async function ensureDirectoryExists(dir: string) {
   try {
     await fs.access(dir)
   } catch (error) {
@@ -15,7 +15,7 @@ async function ensureDirectoryExists(dir) {
   }
 }
 
-function convertMdToMdx(content) {
+function convertMdToMdx(content: string) {
   // Convert HTML class attributes to className for React/MDX compatibility
   content = content.replace(/class="/g, 'className="')
 
@@ -23,7 +23,7 @@ function convertMdToMdx(content) {
   return content
 }
 
-async function copyFile(src, dest) {
+async function copyFile(src: string, dest: string) {
   try {
     const content = await fs.readFile(src, "utf8")
     const convertedContent = convertMdToMdx(content)
@@ -35,7 +35,7 @@ async function copyFile(src, dest) {
   }
 }
 
-async function copyDirectory(source, target) {
+async function copyDirectory(source: string, target: string) {
   await ensureDirectoryExists(target)
 
   const entries = await fs.readdir(source, { withFileTypes: true })
@@ -64,7 +64,7 @@ async function copyDirectory(source, target) {
   }
 }
 
-async function createMetaJson(directory) {
+async function createMetaJson(directory: string) {
   try {
     const entries = await fs.readdir(directory)
     const metaEntries = {}

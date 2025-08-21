@@ -1,6 +1,6 @@
 ---
 title: TransactionInput.ts
-nav_order: 106
+nav_order: 109
 parent: Modules
 ---
 
@@ -50,7 +50,7 @@ Smart constructor for creating TransactionInput instances
 
 ```ts
 export declare const make: (
-  props: { readonly transactionId: TransactionHash.TransactionHash; readonly index: number },
+  props: { readonly transactionId: TransactionHash.TransactionHash; readonly index: bigint },
   options?: Schema.MakeOptions | undefined
 ) => TransactionInput
 ```

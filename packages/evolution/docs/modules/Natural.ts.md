@@ -1,6 +1,6 @@
 ---
 title: Natural.ts
-nav_order: 66
+nav_order: 68
 parent: Modules
 ---
 
@@ -42,7 +42,7 @@ FastCheck arbitrary for generating random Natural instances.
 **Signature**
 
 ```ts
-export declare const arbitrary: FastCheck.Arbitrary<number & Brand<"Natural">>
+export declare const arbitrary: FastCheck.Arbitrary<number>
 ```
 
 Added in v2.0.0
@@ -56,7 +56,7 @@ Smart constructor for Natural that validates and applies branding.
 **Signature**
 
 ```ts
-export declare const make: (a: number, options?: Schema.MakeOptions) => number & Brand<"Natural">
+export declare const make: (a: number, options?: Schema.MakeOptions) => number
 ```
 
 Added in v2.0.0
@@ -148,7 +148,7 @@ Check if the given value is a valid Natural
 **Signature**
 
 ```ts
-export declare const isNatural: (u: unknown, overrideOptions?: ParseOptions | number) => u is number & Brand<"Natural">
+export declare const isNatural: (u: unknown, overrideOptions?: ParseOptions | number) => u is number
 ```
 
 Added in v2.0.0
@@ -163,7 +163,7 @@ Used for validating non-negative integers greater than 0.
 **Signature**
 
 ```ts
-export declare const Natural: Schema.brand<typeof Schema.Positive, "Natural">
+export declare const Natural: Schema.refine<number, typeof Schema.Number>
 ```
 
 Added in v2.0.0

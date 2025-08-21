@@ -1,6 +1,6 @@
 ---
 title: SingleHostName.ts
-nav_order: 97
+nav_order: 101
 parent: Modules
 ---
 
@@ -36,6 +36,8 @@ parent: Modules
   - [FromBytes](#frombytes)
   - [FromCDDL](#fromcddl)
   - [FromHex](#fromhex)
+- [testing](#testing)
+  - [arbitrary](#arbitrary)
 - [transformation](#transformation)
   - [getDnsName](#getdnsname)
   - [getPort](#getport)
@@ -277,6 +279,21 @@ export declare const FromHex: (
     >
   >
 >
+```
+
+Added in v2.0.0
+
+# testing
+
+## arbitrary
+
+FastCheck arbitrary for SingleHostName instances.
+Alias to `generator` for consistency with other modules.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<SingleHostName>
 ```
 
 Added in v2.0.0

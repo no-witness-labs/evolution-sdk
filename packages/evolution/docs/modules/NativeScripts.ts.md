@@ -1,6 +1,6 @@
 ---
 title: NativeScripts.ts
-nav_order: 65
+nav_order: 67
 parent: Modules
 ---
 
@@ -36,6 +36,7 @@ parent: Modules
 - [utils](#utils)
   - [CDDLSchema](#cddlschema)
   - [Native](#native)
+  - [arbitrary](#arbitrary)
 
 ---
 
@@ -376,4 +377,12 @@ export declare const CDDLSchema: Schema.Union<
 
 ```ts
 export declare const Native: Schema.Schema<Native, Native, never>
+```
+
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<Native>
 ```

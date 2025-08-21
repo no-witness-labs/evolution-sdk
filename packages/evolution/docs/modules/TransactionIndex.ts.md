@@ -1,6 +1,6 @@
 ---
 title: TransactionIndex.ts
-nav_order: 104
+nav_order: 108
 parent: Modules
 ---
 
@@ -36,7 +36,7 @@ FastCheck arbitrary for generating random TransactionIndex instances.
 **Signature**
 
 ```ts
-export declare const arbitrary: FastCheck.Arbitrary<number & Brand<"TransactionIndex">>
+export declare const arbitrary: FastCheck.Arbitrary<bigint>
 ```
 
 Added in v2.0.0
@@ -50,7 +50,7 @@ Smart constructor for TransactionIndex that validates and applies branding.
 **Signature**
 
 ```ts
-export declare const make: (a: number, options?: Schema.MakeOptions) => number & Brand<"TransactionIndex">
+export declare const make: (a: bigint, options?: Schema.MakeOptions) => bigint
 ```
 
 Added in v2.0.0
@@ -92,10 +92,7 @@ Check if a value is a valid TransactionIndex.
 **Signature**
 
 ```ts
-export declare const is: (
-  u: unknown,
-  overrideOptions?: ParseOptions | number
-) => u is number & Brand<"TransactionIndex">
+export declare const is: (u: unknown, overrideOptions?: ParseOptions | number) => u is bigint
 ```
 
 Added in v2.0.0
@@ -110,7 +107,7 @@ CDDL: transaction_index = uint .size 2
 **Signature**
 
 ```ts
-export declare const TransactionIndex: Schema.brand<Schema.refine<number, typeof Schema.Number>, "TransactionIndex">
+export declare const TransactionIndex: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
 ```
 
 Added in v2.0.0

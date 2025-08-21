@@ -1,6 +1,6 @@
 ---
 title: PointerAddress.ts
-nav_order: 78
+nav_order: 80
 parent: Modules
 ---
 
@@ -31,6 +31,7 @@ parent: Modules
   - [fromHex](#fromhex)
 - [schemas](#schemas)
   - [PointerAddress (class)](#pointeraddress-class)
+    - [toString (method)](#tostring-method)
     - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
 - [utils](#utils)
   - [FromBytes](#frombytes-1)
@@ -108,7 +109,7 @@ Added in v2.0.0
 
 ## decodeVariableLength
 
-Decode a variable length integer from a Uint8Array
+Decode a variable length integer from a Uint8Array (LEB128-like)
 Following the Cardano ledger implementation for variable-length integers
 
 **Signature**
@@ -117,14 +118,17 @@ Following the Cardano ledger implementation for variable-length integers
 export declare const decodeVariableLength: (
   bytes: Uint8Array,
   offset?: number | undefined
-) => Eff.Effect<[Natural.Natural, number], PointerAddressError | ParseResult.ParseIssue>
+) => Eff.Effect<[Natural.Natural, number], ParseResult.ParseIssue>
 ```
 
 Added in v2.0.0
 
 ## encodeVariableLength
 
-Encode a number as a variable length integer following the Cardano ledger specification
+Encode a positive integer using Cardano pointer varint (LEB128-like) encoding.
+
+- Little-endian base-128: emit 7-bit groups, low to high, set MSB (0x80) on all but last.
+- Matches decodeVariableLength below and Cardano pointer address spec.
 
 **Signature**
 
@@ -204,12 +208,20 @@ export declare class PointerAddress
 
 Added in v2.0.0
 
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
 ### [Symbol.for("nodejs.util.inspect.custom")] (method)
 
 **Signature**
 
 ```ts
-;[Symbol.for("nodejs.util.inspect.custom")]()
+[Symbol.for("nodejs.util.inspect.custom")](): string
 ```
 
 # utils

@@ -1,6 +1,6 @@
 ---
 title: TransactionOutput.ts
-nav_order: 109
+nav_order: 112
 parent: Modules
 ---
 
@@ -27,7 +27,11 @@ parent: Modules
   - [equals](#equals)
 - [model](#model)
   - [BabbageTransactionOutput (class)](#babbagetransactionoutput-class)
+    - [toString (method)](#tostring-method)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
   - [ShelleyTransactionOutput (class)](#shelleytransactionoutput-class)
+    - [toString (method)](#tostring-method-1)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method-1)
 - [schemas](#schemas)
   - [FromBabbageTransactionOutputCDDLSchema](#frombabbagetransactionoutputcddlschema)
   - [FromCBORBytes](#fromcborbytes-1)
@@ -195,6 +199,22 @@ export declare class BabbageTransactionOutput
 
 Added in v2.0.0
 
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+[Symbol.for("nodejs.util.inspect.custom")](): string
+```
+
 ## ShelleyTransactionOutput (class)
 
 Shelley-era transaction output format
@@ -210,6 +230,22 @@ export declare class ShelleyTransactionOutput
 ```
 
 Added in v2.0.0
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+[Symbol.for("nodejs.util.inspect.custom")](): string
+```
 
 # schemas
 
@@ -234,8 +270,8 @@ export declare const FromBabbageTransactionOutputCDDLSchema: Schema.transformOrF
     >
     2: Schema.optional<
       Schema.SchemaClass<
-        readonly [0n, any] | readonly [1n, CBOR.CBOR],
-        readonly [0n, any] | readonly [1n, CBOR.CBOR],
+        readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
+        readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
         never
       >
     >
@@ -305,8 +341,8 @@ export declare const FromCBORBytes: (
           >
           2: Schema.optional<
             Schema.SchemaClass<
-              readonly [0n, any] | readonly [1n, CBOR.CBOR],
-              readonly [0n, any] | readonly [1n, CBOR.CBOR],
+              readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
+              readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
               never
             >
           >
@@ -381,8 +417,8 @@ export declare const FromCBORHex: (
             >
             2: Schema.optional<
               Schema.SchemaClass<
-                readonly [0n, any] | readonly [1n, CBOR.CBOR],
-                readonly [0n, any] | readonly [1n, CBOR.CBOR],
+                readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
+                readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
                 never
               >
             >
@@ -453,8 +489,8 @@ export declare const FromCDDL: Schema.Union<
         >
         2: Schema.optional<
           Schema.SchemaClass<
-            readonly [0n, any] | readonly [1n, CBOR.CBOR],
-            readonly [0n, any] | readonly [1n, CBOR.CBOR],
+            readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
+            readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
             never
           >
         >
@@ -566,8 +602,8 @@ export declare const CDDLSchema: Schema.Union<
       >
       2: Schema.optional<
         Schema.SchemaClass<
-          readonly [0n, any] | readonly [1n, CBOR.CBOR],
-          readonly [0n, any] | readonly [1n, CBOR.CBOR],
+          readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
+          readonly [0n, any] | readonly [1n, { readonly _tag: "Tag"; readonly tag: 24; readonly value: any }],
           never
         >
       >

@@ -26,6 +26,10 @@ parent: Modules
   - [is](#is)
 - [schemas](#schemas)
   - [EpochNoSchema](#epochnoschema)
+- [utils](#utils)
+  - [CDDLSchema](#cddlschema)
+  - [FromCDDL](#fromcddl)
+  - [arbitrary](#arbitrary)
 
 ---
 
@@ -140,3 +144,35 @@ export declare const EpochNoSchema: Schema.brand<Schema.refine<bigint, typeof Sc
 ```
 
 Added in v2.0.0
+
+# utils
+
+## CDDLSchema
+
+CDDL schema bridge for epoch_no = uint .size 8
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: typeof Schema.BigIntFromSelf
+```
+
+## FromCDDL
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  typeof Schema.BigIntFromSelf,
+  Schema.brand<Schema.refine<bigint, typeof Schema.BigIntFromSelf>, "EpochNo">,
+  never
+>
+```
+
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: Arbitrary<bigint>
+```

@@ -1,6 +1,6 @@
 ---
 title: MultiAsset.ts
-nav_order: 62
+nav_order: 64
 parent: Modules
 ---
 
@@ -59,9 +59,7 @@ Change generator to arbitrary and rename CBOR schemas.
 **Signature**
 
 ```ts
-export declare const arbitrary: FastCheck.Arbitrary<
-  Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">
->
+export declare const arbitrary: FastCheck.Arbitrary<MultiAsset>
 ```
 
 Added in v2.0.0

@@ -1,0 +1,348 @@
+---
+title: ProtocolParamUpdate.ts
+nav_order: 90
+parent: Modules
+---
+
+## ProtocolParamUpdate overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [utils](#utils)
+  - [CDDLSchema](#cddlschema)
+  - [CDDLSchema (type alias)](#cddlschema-type-alias)
+  - [DRepVotingThresholds](#drepvotingthresholds)
+  - [DRepVotingThresholds (type alias)](#drepvotingthresholds-type-alias)
+  - [ExUnitPrices](#exunitprices)
+  - [ExUnitPrices (type alias)](#exunitprices-type-alias)
+  - [ExUnits](#exunits)
+  - [ExUnits (type alias)](#exunits-type-alias)
+  - [FromCDDL](#fromcddl)
+  - [PoolVotingThresholds](#poolvotingthresholds)
+  - [PoolVotingThresholds (type alias)](#poolvotingthresholds-type-alias)
+  - [ProtocolParamUpdate (class)](#protocolparamupdate-class)
+  - [ProtocolParamUpdateError (class)](#protocolparamupdateerror-class)
+  - [arbitrary](#arbitrary)
+  - [fromCBOR](#fromcbor)
+  - [fromCBORBytes](#fromcborbytes)
+  - [fromCBORHex](#fromcborhex)
+  - [toCBOR](#tocbor)
+  - [toCBORBytes](#tocborbytes)
+  - [toCBORHex](#tocborhex)
+
+---
+
+# utils
+
+## CDDLSchema
+
+ProtocolParamUpdate CDDL record with optional fields keyed by indexes.
+Mirrors Conway CDDL `protocol_param_update`.
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.MapFromSelf<
+  typeof Schema.BigIntFromSelf,
+  Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+>
+```
+
+## CDDLSchema (type alias)
+
+**Signature**
+
+```ts
+export type CDDLSchema = typeof CDDLSchema.Type
+```
+
+## DRepVotingThresholds
+
+drep_voting_thresholds (domain) = [10 unit_intervals]
+
+**Signature**
+
+```ts
+export declare const DRepVotingThresholds: Schema.Tuple<
+  [
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >
+  ]
+>
+```
+
+## DRepVotingThresholds (type alias)
+
+**Signature**
+
+```ts
+export type DRepVotingThresholds = typeof DRepVotingThresholds.Type
+```
+
+## ExUnitPrices
+
+ex_unit_prices (domain) = [mem_price : NonnegativeInterval, step_price : NonnegativeInterval]
+
+**Signature**
+
+```ts
+export declare const ExUnitPrices: Schema.Tuple2<
+  Schema.refine<
+    { readonly numerator: bigint; readonly denominator: bigint },
+    Schema.Struct<{
+      numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+    }>
+  >,
+  Schema.refine<
+    { readonly numerator: bigint; readonly denominator: bigint },
+    Schema.Struct<{
+      numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+    }>
+  >
+>
+```
+
+## ExUnitPrices (type alias)
+
+**Signature**
+
+```ts
+export type ExUnitPrices = typeof ExUnitPrices.Type
+```
+
+## ExUnits
+
+ex_units = [mem : uint, steps : uint]
+
+**Signature**
+
+```ts
+export declare const ExUnits: Schema.Tuple2<
+  Schema.refine<bigint, typeof Schema.BigIntFromSelf>,
+  Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+>
+```
+
+## ExUnits (type alias)
+
+**Signature**
+
+```ts
+export type ExUnits = typeof ExUnits.Type
+```
+
+## FromCDDL
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>,
+  Schema.SchemaClass<ProtocolParamUpdate, ProtocolParamUpdate, never>,
+  never
+>
+```
+
+## PoolVotingThresholds
+
+pool_voting_thresholds (domain) = [u,u,u,u,u] (5 unit_intervals)
+
+**Signature**
+
+```ts
+export declare const PoolVotingThresholds: Schema.Tuple<
+  [
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >
+  ]
+>
+```
+
+## PoolVotingThresholds (type alias)
+
+**Signature**
+
+```ts
+export type PoolVotingThresholds = typeof PoolVotingThresholds.Type
+```
+
+## ProtocolParamUpdate (class)
+
+Convenience domain class mirroring the same structure.
+
+**Signature**
+
+```ts
+export declare class ProtocolParamUpdate
+```
+
+## ProtocolParamUpdateError (class)
+
+Error class for ProtocolParamUpdate related operations.
+
+**Signature**
+
+```ts
+export declare class ProtocolParamUpdateError
+```
+
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<ProtocolParamUpdate>
+```
+
+## fromCBOR
+
+**Signature**
+
+```ts
+export declare const fromCBOR: (bytes: Uint8Array, options?: CBOR.CodecOptions) => ProtocolParamUpdate
+```
+
+## fromCBORBytes
+
+**Signature**
+
+```ts
+export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => ProtocolParamUpdate
+```
+
+## fromCBORHex
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => ProtocolParamUpdate
+```
+
+## toCBOR
+
+**Signature**
+
+```ts
+export declare const toCBOR: (input: ProtocolParamUpdate, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+## toCBORBytes
+
+**Signature**
+
+```ts
+export declare const toCBORBytes: (input: ProtocolParamUpdate, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+## toCBORHex
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (input: ProtocolParamUpdate, options?: CBOR.CodecOptions) => string
+```

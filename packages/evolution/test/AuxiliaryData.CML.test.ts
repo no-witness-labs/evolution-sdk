@@ -39,7 +39,7 @@ describe("AuxiliaryData CML Compatibility", () => {
     const cmlNativeScript = CML.NativeScript.new_script_pubkey(CML.Ed25519KeyHash.from_raw_bytes(keyHashBytes))
 
     // Create auxiliary data with native scripts
-    const evolutionAuxData = new AuxiliaryData.AuxiliaryData({
+    const evolutionAuxData = AuxiliaryData.conway({
       nativeScripts: [evolutionNativeScript]
     })
 
@@ -80,7 +80,7 @@ describe("AuxiliaryData CML Compatibility", () => {
     const cmlScript2 = CML.NativeScript.new_script_pubkey(CML.Ed25519KeyHash.from_raw_bytes(keyHash2))
 
     // Create auxiliary data with native scripts
-    const evolutionAuxData = new AuxiliaryData.AuxiliaryData({
+    const evolutionAuxData = AuxiliaryData.conway({
       nativeScripts: [evolutionScript1, evolutionScript2]
     })
 

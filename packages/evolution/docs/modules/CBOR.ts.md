@@ -46,7 +46,9 @@ parent: Modules
   - [Simple](#simple)
   - [Tag](#tag)
   - [Text](#text)
-  - [internalDecode](#internaldecode)
+  - [encodeArrayAsDefinite](#encodearrayasdefinite)
+  - [encodeArrayAsIndefinite](#encodearrayasindefinite)
+  - [encodeTaggedValue](#encodetaggedvalue)
   - [internalDecodeSync](#internaldecodesync)
   - [internalEncodeSync](#internalencodesync)
   - [isArray](#isarray)
@@ -434,12 +436,37 @@ export declare const Tag: Schema.TaggedStruct<
 export declare const Text: typeof Schema.String
 ```
 
-## internalDecode
+## encodeArrayAsDefinite
+
+Encode a CBOR definite-length array from already-encoded item bytes.
+This is a low-level function that constructs: definite_array_header + items.
 
 **Signature**
 
 ```ts
-export declare const internalDecode: (data: Uint8Array, options?: CodecOptions) => Eff.Effect<CBOR, CBORError>
+export declare const encodeArrayAsDefinite: (items: ReadonlyArray<Uint8Array>) => Uint8Array
+```
+
+## encodeArrayAsIndefinite
+
+Encode a CBOR indefinite-length array from already-encoded item bytes.
+This is a low-level function that constructs: 0x9f + items + 0xff.
+
+**Signature**
+
+```ts
+export declare const encodeArrayAsIndefinite: (items: ReadonlyArray<Uint8Array>) => Uint8Array
+```
+
+## encodeTaggedValue
+
+Encode a CBOR tagged value from already-encoded value bytes.
+This is a low-level function that constructs: tag_header + value_bytes.
+
+**Signature**
+
+```ts
+export declare const encodeTaggedValue: (tag: number, valueBytes: Uint8Array) => Uint8Array
 ```
 
 ## internalDecodeSync

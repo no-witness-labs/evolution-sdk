@@ -1,6 +1,6 @@
 ---
 title: Value.ts
-nav_order: 113
+nav_order: 118
 parent: Modules
 ---
 
@@ -38,6 +38,8 @@ parent: Modules
   - [FromCBORHex](#fromcborhex-1)
   - [FromCDDL](#fromcddl)
   - [OnlyCoin (class)](#onlycoin-class)
+    - [toString (method)](#tostring-method)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
 - [transformation](#transformation)
   - [add](#add)
   - [getAda](#getada)
@@ -48,6 +50,8 @@ parent: Modules
   - [Value](#value)
   - [Value (type alias)](#value-type-alias)
   - [WithAssets (class)](#withassets-class)
+    - [toString (method)](#tostring-method-1)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method-1)
 
 ---
 
@@ -148,14 +152,7 @@ Generate a random Value.
 **Signature**
 
 ```ts
-export declare const arbitrary: FastCheck.Arbitrary<
-  | { _tag: string; coin: bigint }
-  | {
-      _tag: string
-      coin: bigint
-      assets: Map<PolicyId.PolicyId, Map<AssetName.AssetName, bigint>> & Brand<"MultiAsset">
-    }
->
+export declare const arbitrary: FastCheck.Arbitrary<OnlyCoin | WithAssets>
 ```
 
 Added in v2.0.0
@@ -378,6 +375,22 @@ export declare class OnlyCoin
 
 Added in v2.0.0
 
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+[Symbol.for("nodejs.util.inspect.custom")](): string
+```
+
 # transformation
 
 ## add
@@ -470,4 +483,20 @@ export type Value = typeof Value.Type
 
 ```ts
 export declare class WithAssets
+```
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+[Symbol.for("nodejs.util.inspect.custom")](): string
 ```

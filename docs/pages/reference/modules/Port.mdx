@@ -1,6 +1,6 @@
 ---
 title: Port.ts
-nav_order: 83
+nav_order: 85
 parent: Modules
 ---
 
@@ -48,7 +48,7 @@ Generate a random Port.
 **Signature**
 
 ```ts
-export declare const arbitrary: Arbitrary<number>
+export declare const arbitrary: Arbitrary<bigint>
 ```
 
 Added in v2.0.0
@@ -66,7 +66,7 @@ port = uint .le 65535
 **Signature**
 
 ```ts
-export declare const PORT_MIN_VALUE: 0
+export declare const PORT_MIN_VALUE: 0n
 ```
 
 Added in v2.0.0
@@ -80,7 +80,7 @@ Smart constructor for creating Port values.
 **Signature**
 
 ```ts
-export declare const make: (value: number) => Port
+export declare const make: (value: bigint) => Port
 ```
 
 Added in v2.0.0
@@ -94,7 +94,7 @@ Synchronous encoding/decoding utilities.
 **Signature**
 
 ```ts
-export declare const Encode: { sync: (a: number, overrideOptions?: ParseOptions) => number }
+export declare const Encode: { sync: (a: bigint, overrideOptions?: ParseOptions) => bigint }
 ```
 
 Added in v2.0.0
@@ -106,7 +106,7 @@ Either encoding/decoding utilities.
 **Signature**
 
 ```ts
-export declare const EncodeEither: { either: (a: number, overrideOptions?: ParseOptions) => Either<number, ParseError> }
+export declare const EncodeEither: { either: (a: bigint, overrideOptions?: ParseOptions) => Either<bigint, ParseError> }
 ```
 
 Added in v2.0.0
@@ -213,7 +213,7 @@ Schema for validating port numbers (0-65535).
 **Signature**
 
 ```ts
-export declare const PortSchema: Schema.refine<number, typeof Schema.Number>
+export declare const PortSchema: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
 ```
 
 Added in v2.0.0
@@ -225,7 +225,7 @@ Added in v2.0.0
 **Signature**
 
 ```ts
-export declare const Decode: { sync: (u: unknown, overrideOptions?: ParseOptions) => number }
+export declare const Decode: { sync: (u: unknown, overrideOptions?: ParseOptions) => bigint }
 ```
 
 ## DecodeEither
@@ -234,7 +234,7 @@ export declare const Decode: { sync: (u: unknown, overrideOptions?: ParseOptions
 
 ```ts
 export declare const DecodeEither: {
-  either: (u: unknown, overrideOptions?: ParseOptions) => Either<number, ParseError>
+  either: (u: unknown, overrideOptions?: ParseOptions) => Either<bigint, ParseError>
 }
 ```
 
@@ -243,5 +243,5 @@ export declare const DecodeEither: {
 **Signature**
 
 ```ts
-export declare const PORT_MAX_VALUE: 65535
+export declare const PORT_MAX_VALUE: 65535n
 ```

@@ -12,9 +12,12 @@ parent: Modules
 
 - [arbitrary](#arbitrary)
   - [arbitrary](#arbitrary-1)
+  - [conwayArbitrary](#conwayarbitrary)
 - [constructors](#constructors)
-  - [empty](#empty)
-  - [make](#make)
+  - [conway](#conway)
+  - [emptyConwayAuxiliaryData](#emptyconwayauxiliarydata)
+  - [shelley](#shelley)
+  - [shelleyMA](#shelleyma)
 - [either](#either)
   - [Either (namespace)](#either-namespace)
 - [encoding](#encoding)
@@ -25,7 +28,11 @@ parent: Modules
 - [errors](#errors)
   - [AuxiliaryDataError (class)](#auxiliarydataerror-class)
 - [model](#model)
-  - [AuxiliaryData (class)](#auxiliarydata-class)
+  - [AuxiliaryData](#auxiliarydata)
+  - [AuxiliaryData (type alias)](#auxiliarydata-type-alias)
+  - [ConwayAuxiliaryData (class)](#conwayauxiliarydata-class)
+  - [ShelleyAuxiliaryData (class)](#shelleyauxiliarydata-class)
+  - [ShelleyMAAuxiliaryData (class)](#shelleymaauxiliarydata-class)
 - [parsing](#parsing)
   - [fromCBORBytes](#fromcborbytes)
   - [fromCBORHex](#fromcborhex)
@@ -33,7 +40,11 @@ parent: Modules
   - [CDDLSchema](#cddlschema)
   - [FromCBORBytes](#fromcborbytes-1)
   - [FromCBORHex](#fromcborhex-1)
+- [utils](#utils)
   - [FromCDDL](#fromcddl)
+  - [empty](#empty)
+  - [shelleyArbitrary](#shelleyarbitrary)
+  - [shelleyMAArbitrary](#shelleymaarbitrary)
 
 ---
 
@@ -42,37 +53,84 @@ parent: Modules
 ## arbitrary
 
 FastCheck arbitrary for generating random AuxiliaryData instances.
+Generates all three era formats with equal probability.
 
 **Signature**
 
 ```ts
-export declare const arbitrary: FastCheck.Arbitrary<AuxiliaryData>
+export declare const arbitrary: FastCheck.Arbitrary<ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData>
+```
+
+Added in v2.0.0
+
+## conwayArbitrary
+
+FastCheck arbitrary for generating Conway-era AuxiliaryData instances.
+Conway era supports all features: metadata, native scripts, and all Plutus script versions.
+
+**Signature**
+
+```ts
+export declare const conwayArbitrary: FastCheck.Arbitrary<ConwayAuxiliaryData>
 ```
 
 Added in v2.0.0
 
 # constructors
 
-## empty
+## conway
 
-Create an empty AuxiliaryData instance.
+Create a Conway-era AuxiliaryData instance.
 
 **Signature**
 
 ```ts
-export declare const empty: () => AuxiliaryData
+export declare const conway: (input: {
+  metadata?: Metadata.Metadata
+  nativeScripts?: Array<NativeScripts.Native>
+  plutusV1Scripts?: Array<PlutusV1.PlutusV1>
+  plutusV2Scripts?: Array<PlutusV2.PlutusV2>
+  plutusV3Scripts?: Array<PlutusV3.PlutusV3>
+}) => AuxiliaryData
 ```
 
 Added in v2.0.0
 
-## make
+## emptyConwayAuxiliaryData
 
-Smart constructor for AuxiliaryData with validation.
+Create an empty Conway AuxiliaryData instance.
 
 **Signature**
 
 ```ts
-export declare const make: <C>(this: C, ...args: ConstructorParameters<C>) => InstanceType<C>
+export declare const emptyConwayAuxiliaryData: () => AuxiliaryData
+```
+
+Added in v2.0.0
+
+## shelley
+
+Create a Shelley-era AuxiliaryData instance.
+
+**Signature**
+
+```ts
+export declare const shelley: (input: { metadata: Metadata.Metadata }) => AuxiliaryData
+```
+
+Added in v2.0.0
+
+## shelleyMA
+
+Create a ShelleyMA-era AuxiliaryData instance.
+
+**Signature**
+
+```ts
+export declare const shelleyMA: (input: {
+  metadata?: Metadata.Metadata
+  nativeScripts?: Array<NativeScripts.Native>
+}) => AuxiliaryData
 ```
 
 Added in v2.0.0
@@ -94,7 +152,10 @@ Encode AuxiliaryData to CBOR bytes.
 **Signature**
 
 ```ts
-export declare const toCBORBytes: (input: AuxiliaryData, options?: CBOR.CodecOptions) => Uint8Array
+export declare const toCBORBytes: (
+  input: ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData,
+  options?: CBOR.CodecOptions
+) => Uint8Array
 ```
 
 Added in v2.0.0
@@ -106,7 +167,10 @@ Encode AuxiliaryData to CBOR hex string.
 **Signature**
 
 ```ts
-export declare const toCBORHex: (input: AuxiliaryData, options?: CBOR.CodecOptions) => string
+export declare const toCBORHex: (
+  input: ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData,
+  options?: CBOR.CodecOptions
+) => string
 ```
 
 Added in v2.0.0
@@ -141,7 +205,33 @@ Added in v2.0.0
 
 # model
 
-## AuxiliaryData (class)
+## AuxiliaryData
+
+Union of all AuxiliaryData era formats.
+
+**Signature**
+
+```ts
+export declare const AuxiliaryData: Schema.Union<
+  [typeof ConwayAuxiliaryData, typeof ShelleyMAAuxiliaryData, typeof ShelleyAuxiliaryData]
+>
+```
+
+Added in v2.0.0
+
+## AuxiliaryData (type alias)
+
+Type representing any AuxiliaryData format.
+
+**Signature**
+
+```ts
+export type AuxiliaryData = Schema.Schema.Type<typeof AuxiliaryData>
+```
+
+Added in v2.0.0
+
+## ConwayAuxiliaryData (class)
 
 AuxiliaryData based on Conway CDDL specification.
 
@@ -162,7 +252,43 @@ Uses map format with numeric keys as per Conway specification.
 **Signature**
 
 ```ts
-export declare class AuxiliaryData
+export declare class ConwayAuxiliaryData
+```
+
+Added in v2.0.0
+
+## ShelleyAuxiliaryData (class)
+
+AuxiliaryData for Shelley era (direct metadata).
+
+CDDL (Shelley era):
+
+```
+auxiliary_data = metadata
+```
+
+**Signature**
+
+```ts
+export declare class ShelleyAuxiliaryData
+```
+
+Added in v2.0.0
+
+## ShelleyMAAuxiliaryData (class)
+
+AuxiliaryData for ShelleyMA era (array format).
+
+CDDL (ShelleyMA era):
+
+```
+auxiliary_data = [ metadata?, [* native_script]? ]
+```
+
+**Signature**
+
+```ts
+export declare class ShelleyMAAuxiliaryData
 ```
 
 Added in v2.0.0
@@ -176,7 +302,10 @@ Decode AuxiliaryData from CBOR bytes.
 **Signature**
 
 ```ts
-export declare const fromCBORBytes: (bytes: Uint8Array, options?: CBOR.CodecOptions) => AuxiliaryData
+export declare const fromCBORBytes: (
+  bytes: Uint8Array,
+  options?: CBOR.CodecOptions
+) => ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData
 ```
 
 Added in v2.0.0
@@ -188,7 +317,10 @@ Decode AuxiliaryData from CBOR hex string.
 **Signature**
 
 ```ts
-export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => AuxiliaryData
+export declare const fromCBORHex: (
+  hex: string,
+  options?: CBOR.CodecOptions
+) => ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData
 ```
 
 Added in v2.0.0
@@ -261,47 +393,57 @@ export declare const FromCBORBytes: (
     never
   >,
   Schema.transformOrFail<
-    Schema.TaggedStruct<
-      "Tag",
-      {
-        tag: Schema.Literal<[259]>
-        value: Schema.Struct<{
-          0: Schema.optional<
-            Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CDDLSchema, CDDLSchema, never>>
-          >
-          1: Schema.optional<
-            Schema.Array$<
-              Schema.Union<
-                [
-                  Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-                  Schema.Tuple2<
-                    Schema.Literal<[1n]>,
-                    Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
-                  >,
-                  Schema.Tuple2<
-                    Schema.Literal<[2n]>,
-                    Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
-                  >,
-                  Schema.Tuple<
-                    [
-                      Schema.Literal<[3n]>,
-                      typeof Schema.BigIntFromSelf,
-                      Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
-                    ]
-                  >,
-                  Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.BigIntFromSelf>,
-                  Schema.Tuple2<Schema.Literal<[5n]>, typeof Schema.BigIntFromSelf>
-                ]
+    Schema.Union<
+      [
+        Schema.TaggedStruct<
+          "Tag",
+          {
+            tag: Schema.Literal<[259]>
+            value: Schema.Struct<{
+              0: Schema.optional<
+                Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CDDLSchema, CDDLSchema, never>>
               >
-            >
-          >
-          2: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
-          3: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
-          4: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
-        }>
-      }
+              1: Schema.optional<
+                Schema.Array$<
+                  Schema.Union<
+                    [
+                      Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+                      Schema.Tuple2<
+                        Schema.Literal<[1n]>,
+                        Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
+                      >,
+                      Schema.Tuple2<
+                        Schema.Literal<[2n]>,
+                        Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
+                      >,
+                      Schema.Tuple<
+                        [
+                          Schema.Literal<[3n]>,
+                          typeof Schema.BigIntFromSelf,
+                          Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
+                        ]
+                      >,
+                      Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.BigIntFromSelf>,
+                      Schema.Tuple2<Schema.Literal<[5n]>, typeof Schema.BigIntFromSelf>
+                    ]
+                  >
+                >
+              >
+              2: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
+              3: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
+              4: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
+            }>
+          }
+        >,
+        Schema.Array$<Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+        Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CDDLSchema, CDDLSchema, never>>
+      ]
     >,
-    Schema.SchemaClass<AuxiliaryData, AuxiliaryData, never>,
+    Schema.SchemaClass<
+      ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData,
+      ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData,
+      never
+    >,
     never
   >
 >
@@ -328,6 +470,75 @@ export declare const FromCBORHex: (
       never
     >,
     Schema.transformOrFail<
+      Schema.Union<
+        [
+          Schema.TaggedStruct<
+            "Tag",
+            {
+              tag: Schema.Literal<[259]>
+              value: Schema.Struct<{
+                0: Schema.optional<
+                  Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CDDLSchema, CDDLSchema, never>>
+                >
+                1: Schema.optional<
+                  Schema.Array$<
+                    Schema.Union<
+                      [
+                        Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+                        Schema.Tuple2<
+                          Schema.Literal<[1n]>,
+                          Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
+                        >,
+                        Schema.Tuple2<
+                          Schema.Literal<[2n]>,
+                          Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
+                        >,
+                        Schema.Tuple<
+                          [
+                            Schema.Literal<[3n]>,
+                            typeof Schema.BigIntFromSelf,
+                            Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
+                          ]
+                        >,
+                        Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.BigIntFromSelf>,
+                        Schema.Tuple2<Schema.Literal<[5n]>, typeof Schema.BigIntFromSelf>
+                      ]
+                    >
+                  >
+                >
+                2: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
+                3: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
+                4: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
+              }>
+            }
+          >,
+          Schema.Array$<Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+          Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CDDLSchema, CDDLSchema, never>>
+        ]
+      >,
+      Schema.SchemaClass<
+        ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData,
+        ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData,
+        never
+      >,
+      never
+    >
+  >
+>
+```
+
+Added in v2.0.0
+
+# utils
+
+## FromCDDL
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.Union<
+    [
       Schema.TaggedStruct<
         "Tag",
         {
@@ -368,66 +579,42 @@ export declare const FromCBORHex: (
           }>
         }
       >,
-      Schema.SchemaClass<AuxiliaryData, AuxiliaryData, never>,
-      never
-    >
-  >
->
-```
-
-Added in v2.0.0
-
-## FromCDDL
-
-Transform between tagged CDDL (tag 259) and AuxiliaryData class.
-
-**Signature**
-
-```ts
-export declare const FromCDDL: Schema.transformOrFail<
-  Schema.TaggedStruct<
-    "Tag",
-    {
-      tag: Schema.Literal<[259]>
-      value: Schema.Struct<{
-        0: Schema.optional<
-          Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CDDLSchema, CDDLSchema, never>>
-        >
-        1: Schema.optional<
-          Schema.Array$<
-            Schema.Union<
-              [
-                Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-                Schema.Tuple2<
-                  Schema.Literal<[1n]>,
-                  Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
-                >,
-                Schema.Tuple2<
-                  Schema.Literal<[2n]>,
-                  Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
-                >,
-                Schema.Tuple<
-                  [
-                    Schema.Literal<[3n]>,
-                    typeof Schema.BigIntFromSelf,
-                    Schema.Array$<Schema.suspend<NativeScripts.NativeCDDL, NativeScripts.NativeCDDL, never>>
-                  ]
-                >,
-                Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.BigIntFromSelf>,
-                Schema.Tuple2<Schema.Literal<[5n]>, typeof Schema.BigIntFromSelf>
-              ]
-            >
-          >
-        >
-        2: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
-        3: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
-        4: Schema.optional<Schema.Array$<typeof Schema.Uint8ArrayFromSelf>>
-      }>
-    }
+      Schema.Array$<Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+      Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CDDLSchema, CDDLSchema, never>>
+    ]
   >,
-  Schema.SchemaClass<AuxiliaryData, AuxiliaryData, never>,
+  Schema.SchemaClass<
+    ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData,
+    ConwayAuxiliaryData | ShelleyMAAuxiliaryData | ShelleyAuxiliaryData,
+    never
+  >,
   never
 >
 ```
 
-Added in v2.0.0
+## empty
+
+Backwards-friendly helper returning empty Conway-format auxiliary data.
+Alias kept for ergonomics and CML-compat tests.
+
+**Signature**
+
+```ts
+export declare const empty: () => AuxiliaryData
+```
+
+## shelleyArbitrary
+
+**Signature**
+
+```ts
+export declare const shelleyArbitrary: FastCheck.Arbitrary<ShelleyAuxiliaryData>
+```
+
+## shelleyMAArbitrary
+
+**Signature**
+
+```ts
+export declare const shelleyMAArbitrary: FastCheck.Arbitrary<ShelleyMAAuxiliaryData>
+```

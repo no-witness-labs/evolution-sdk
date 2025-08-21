@@ -156,7 +156,8 @@ export const make = (...args: ConstructorParameters<typeof ProposalProcedure>) =
 export const fromCBORBytes = Function.makeCBORDecodeSync(
   FromCDDL,
   ProposalProcedureError,
-  "ProposalProcedure.fromCBORBytes"
+  "ProposalProcedure.fromCBORBytes",
+  CBOR.CML_DEFAULT_OPTIONS
 )
 
 /**
@@ -168,7 +169,8 @@ export const fromCBORBytes = Function.makeCBORDecodeSync(
 export const fromCBORHex = Function.makeCBORDecodeHexSync(
   FromCDDL,
   ProposalProcedureError,
-  "ProposalProcedure.fromCBORHex"
+  "ProposalProcedure.fromCBORHex",
+  CBOR.CML_DEFAULT_OPTIONS
 )
 
 /**
@@ -180,7 +182,8 @@ export const fromCBORHex = Function.makeCBORDecodeHexSync(
 export const toCBORBytes = Function.makeCBOREncodeSync(
   FromCDDL,
   ProposalProcedureError,
-  "ProposalProcedure.toCBORBytes"
+  "ProposalProcedure.toCBORBytes",
+  CBOR.CML_DEFAULT_OPTIONS
 )
 
 /**
@@ -189,7 +192,12 @@ export const toCBORBytes = Function.makeCBOREncodeSync(
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, ProposalProcedureError, "ProposalProcedure.toCBORHex")
+export const toCBORHex = Function.makeCBOREncodeHexSync(
+  FromCDDL,
+  ProposalProcedureError,
+  "ProposalProcedure.toCBORHex",
+  CBOR.CML_DEFAULT_OPTIONS
+)
 
 // ============================================================================
 // Effect Namespace
@@ -208,7 +216,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, ProposalProcedureError)
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, ProposalProcedureError, CBOR.CML_DEFAULT_OPTIONS)
 
   /**
    * Parse ProposalProcedure from CBOR hex string with Effect error handling.
@@ -216,7 +224,11 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, ProposalProcedureError)
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(
+    FromCDDL,
+    ProposalProcedureError,
+    CBOR.CML_DEFAULT_OPTIONS
+  )
 
   /**
    * Encode ProposalProcedure to CBOR bytes with Effect error handling.
@@ -224,7 +236,7 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, ProposalProcedureError)
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, ProposalProcedureError, CBOR.CML_DEFAULT_OPTIONS)
 
   /**
    * Encode ProposalProcedure to CBOR hex string with Effect error handling.
@@ -232,5 +244,5 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, ProposalProcedureError)
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, ProposalProcedureError, CBOR.CML_DEFAULT_OPTIONS)
 }

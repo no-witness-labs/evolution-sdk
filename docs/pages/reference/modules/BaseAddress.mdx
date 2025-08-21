@@ -26,6 +26,8 @@ parent: Modules
   - [fromHex](#fromhex)
 - [schemas](#schemas)
   - [BaseAddress (class)](#baseaddress-class)
+    - [toString (method)](#tostring-method)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
 - [utils](#utils)
   - [BaseAddressError (class)](#baseaddresserror-class)
   - [FromBytes](#frombytes-1)
@@ -160,6 +162,22 @@ export declare class BaseAddress
 ```
 
 Added in v2.0.0
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+[Symbol.for("nodejs.util.inspect.custom")](): string
+```
 
 # utils
 

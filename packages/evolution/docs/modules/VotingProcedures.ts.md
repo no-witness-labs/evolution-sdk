@@ -1,6 +1,6 @@
 ---
 title: VotingProcedures.ts
-nav_order: 115
+nav_order: 120
 parent: Modules
 ---
 
@@ -447,19 +447,11 @@ CDDL schema for VotingProcedures map structure.
 export declare const CDDLSchema: Schema.MapFromSelf<
   Schema.Union<
     [
-      Schema.Tuple2<Schema.Literal<[0n]>, Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
-      Schema.Tuple2<
-        Schema.Literal<[1n]>,
-        Schema.Union<
-          [
-            Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-            Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
-            Schema.Tuple<[Schema.Literal<[2n]>]>,
-            Schema.Tuple<[Schema.Literal<[3n]>]>
-          ]
-        >
-      >,
-      Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>
+      Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[3n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf>
     ]
   >,
   Schema.MapFromSelf<
@@ -478,12 +470,13 @@ Added in v2.0.0
 
 Voter types based on Conway CDDL specification.
 
-```
-voter =
-  [ 0, committee_hot_credential ]  // Constitutional Committee
-/ [ 1, drep ]                     // DRep
-/ [ 2, pool_keyhash ]             // Stake Pool Operator
-```
+Conway / CML mapping:
+
+- [0, addr_keyhash] ConstitutionalCommitteeHotKeyHash
+- [1, script_hash] ConstitutionalCommitteeHotScriptHash
+- [2, addr_keyhash] DRepKeyHash
+- [3, script_hash] DRepScriptHash
+- [4, pool_keyhash] StakingPoolKeyHash
 
 **Signature**
 
@@ -512,22 +505,11 @@ export declare const FromCBORBytes: (
     Schema.MapFromSelf<
       Schema.Union<
         [
-          Schema.Tuple2<
-            Schema.Literal<[0n]>,
-            Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
-          >,
-          Schema.Tuple2<
-            Schema.Literal<[1n]>,
-            Schema.Union<
-              [
-                Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-                Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
-                Schema.Tuple<[Schema.Literal<[2n]>]>,
-                Schema.Tuple<[Schema.Literal<[3n]>]>
-              ]
-            >
-          >,
-          Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>
+          Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple2<Schema.Literal<[3n]>, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf>
         ]
       >,
       Schema.MapFromSelf<
@@ -567,22 +549,11 @@ export declare const FromCBORHex: (
       Schema.MapFromSelf<
         Schema.Union<
           [
-            Schema.Tuple2<
-              Schema.Literal<[0n]>,
-              Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
-            >,
-            Schema.Tuple2<
-              Schema.Literal<[1n]>,
-              Schema.Union<
-                [
-                  Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-                  Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
-                  Schema.Tuple<[Schema.Literal<[2n]>]>,
-                  Schema.Tuple<[Schema.Literal<[3n]>]>
-                ]
-              >
-            >,
-            Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>
+            Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+            Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
+            Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>,
+            Schema.Tuple2<Schema.Literal<[3n]>, typeof Schema.Uint8ArrayFromSelf>,
+            Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf>
           ]
         >,
         Schema.MapFromSelf<
@@ -613,19 +584,11 @@ export declare const FromCDDL: Schema.transformOrFail<
   Schema.MapFromSelf<
     Schema.Union<
       [
-        Schema.Tuple2<Schema.Literal<[0n]>, Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
-        Schema.Tuple2<
-          Schema.Literal<[1n]>,
-          Schema.Union<
-            [
-              Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-              Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
-              Schema.Tuple<[Schema.Literal<[2n]>]>,
-              Schema.Tuple<[Schema.Literal<[3n]>]>
-            ]
-          >
-        >,
-        Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>
+        Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple2<Schema.Literal<[3n]>, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf>
       ]
     >,
     Schema.MapFromSelf<
@@ -721,19 +684,11 @@ Maps to: [voter_type, voter_data]
 ```ts
 export declare const VoterCDDL: Schema.Union<
   [
-    Schema.Tuple2<Schema.Literal<[0n]>, Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
-    Schema.Tuple2<
-      Schema.Literal<[1n]>,
-      Schema.Union<
-        [
-          Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-          Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
-          Schema.Tuple<[Schema.Literal<[2n]>]>,
-          Schema.Tuple<[Schema.Literal<[3n]>]>
-        ]
-      >
-    >,
-    Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>
+    Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.Tuple2<Schema.Literal<[3n]>, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf>
   ]
 >
 ```
@@ -750,19 +705,11 @@ CDDL transformation schema for Voter.
 export declare const VoterFromCDDL: Schema.transformOrFail<
   Schema.Union<
     [
-      Schema.Tuple2<Schema.Literal<[0n]>, Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
-      Schema.Tuple2<
-        Schema.Literal<[1n]>,
-        Schema.Union<
-          [
-            Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-            Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
-            Schema.Tuple<[Schema.Literal<[2n]>]>,
-            Schema.Tuple<[Schema.Literal<[3n]>]>
-          ]
-        >
-      >,
-      Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>
+      Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[1n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[2n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[3n]>, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.Tuple2<Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf>
     ]
   >,
   Schema.SchemaClass<

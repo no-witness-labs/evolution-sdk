@@ -1,5 +1,6 @@
-import { Data, Schema } from "effect"
+import { Data, ParseResult, Schema } from "effect"
 
+import * as CBOR from "./CBOR.js"
 import * as Numeric from "./Numeric.js"
 
 /**
@@ -27,7 +28,7 @@ export class EpochNoError extends Data.TaggedError("EpochNoError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const EpochNoSchema = Numeric.Uint8Schema.pipe(Schema.brand("EpochNo"))
+export const EpochNoSchema = Numeric.Uint64Schema.pipe(Schema.brand("EpochNo"))
 
 /**
  * Type alias for EpochNo representing blockchain epoch numbers.
@@ -79,4 +80,17 @@ export const compare = (a: EpochNo, b: EpochNo): -1 | 0 | 1 => {
  * @since 2.0.0
  * @category generators
  */
-export const generator = Numeric.Uint8Generator
+export const generator = Numeric.Uint64Arbitrary
+
+/**
+ * CDDL schema bridge for epoch_no = uint .size 8
+ */
+export const CDDLSchema = CBOR.Integer
+
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, EpochNoSchema, {
+  strict: true,
+  encode: (epoch) => ParseResult.succeed(epoch as unknown as bigint),
+  decode: (n) => ParseResult.decode(EpochNoSchema)(n as unknown as bigint)
+}).annotations({ identifier: "EpochNo.CDDL" })
+
+export const arbitrary = Numeric.Uint64Arbitrary

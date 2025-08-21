@@ -6,10 +6,7 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
+permissions: write-all
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 

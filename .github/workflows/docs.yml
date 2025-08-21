@@ -59,7 +59,7 @@ jobs:
         working-directory: packages/evolution
 
       - name: 📚 Copy Evolution docs to website
-        run: node scripts/copy-evolution-docs.mjs
+        run: pnpm run copy-evolution-docs
         working-directory: docs
 
       - name: 🏗 Build documentation

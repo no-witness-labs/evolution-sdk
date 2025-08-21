@@ -1,5 +1,8 @@
 {
-  "changelog": "@changesets/changelog-github",
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "no-witness-labs/evolution-sdk" }
+  ],
   "commit": false,
   "fixed": [],
   "linked": [],

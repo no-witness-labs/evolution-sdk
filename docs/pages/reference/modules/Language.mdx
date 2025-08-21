@@ -1,0 +1,114 @@
+---
+title: Language.ts
+nav_order: 61
+parent: Modules
+---
+
+## Language overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [errors](#errors)
+  - [LanguageError (class)](#languageerror-class)
+- [utils](#utils)
+  - [CDDLSchema](#cddlschema)
+  - [FromCDDL](#fromcddl)
+  - [Language](#language)
+  - [Language (type alias)](#language-type-alias)
+  - [arbitrary](#arbitrary)
+  - [equals](#equals)
+  - [fromCDDL](#fromcddl-1)
+  - [toCDDL](#tocddl)
+
+---
+
+# errors
+
+## LanguageError (class)
+
+Error class for Language related operations.
+
+**Signature**
+
+```ts
+export declare class LanguageError
+```
+
+Added in v2.0.0
+
+# utils
+
+## CDDLSchema
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.Literal<[0n, 1n, 2n]>
+```
+
+## FromCDDL
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transform<
+  Schema.Literal<[0n, 1n, 2n]>,
+  Schema.SchemaClass<"PlutusV1" | "PlutusV2" | "PlutusV3", "PlutusV1" | "PlutusV2" | "PlutusV3", never>
+>
+```
+
+## Language
+
+Plutus languages supported in cost models.
+
+CDDL: language = 0 / 1 / 2 ; plutus_v1 / plutus_v2 / plutus_v3
+
+**Signature**
+
+```ts
+export declare const Language: Schema.Literal<["PlutusV1", "PlutusV2", "PlutusV3"]>
+```
+
+Added in v2.0.0
+
+## Language (type alias)
+
+**Signature**
+
+```ts
+export type Language = typeof Language.Type
+```
+
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<"PlutusV1" | "PlutusV2" | "PlutusV3">
+```
+
+## equals
+
+**Signature**
+
+```ts
+export declare const equals: (a: Language, b: Language) => boolean
+```
+
+## fromCDDL
+
+**Signature**
+
+```ts
+export declare const fromCDDL: (tag: 0n | 1n | 2n) => Language
+```
+
+## toCDDL
+
+**Signature**
+
+```ts
+export declare const toCDDL: (lang: Language) => bigint
+```

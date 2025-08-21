@@ -243,21 +243,25 @@ export const equals = (a: TransactionMetadatum, b: TransactionMetadatum): boolea
  * @since 2.0.0
  * @category testing
  */
+const I64_MIN = -(1n << 63n)
+const I64_MAX = (1n << 63n) - 1n
+const int64Arbitrary = FastCheck.bigInt({ min: I64_MIN, max: I64_MAX })
+
 export const arbitrary: FastCheck.Arbitrary<TransactionMetadatum> = FastCheck.oneof(
   FastCheck.string().map((value) => new TextMetadatum({ value })),
-  FastCheck.bigInt().map((value) => new IntMetadatum({ value })),
+  int64Arbitrary.map((value) => new IntMetadatum({ value })),
   FastCheck.uint8Array({ maxLength: 10 }).map((value) => new BytesMetadatum({ value })),
   FastCheck.array(
     FastCheck.oneof(
       FastCheck.string().map((value) => new TextMetadatum({ value })),
-      FastCheck.bigInt().map((value) => new IntMetadatum({ value }))
+      int64Arbitrary.map((value) => new IntMetadatum({ value }))
     ),
     { maxLength: 3 }
   ).map((value) => new ArrayMetadatum({ value })),
   FastCheck.array(
     FastCheck.tuple(
       FastCheck.string().map((value) => new TextMetadatum({ value })),
-      FastCheck.bigInt().map((value) => new IntMetadatum({ value }))
+      int64Arbitrary.map((value) => new IntMetadatum({ value }))
     ),
     { maxLength: 3 }
   ).map((entries) => {

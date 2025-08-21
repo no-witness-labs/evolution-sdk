@@ -11,7 +11,7 @@ parent: Modules
 <h2 className="text-delta">Table of contents</h2>
 
 - [arbitrary](#arbitrary)
-  - [arbitrary](#arbitrary-1)
+  - [infoArbitrary](#infoarbitrary)
 - [constructors](#constructors)
   - [makeHardForkInitiation](#makehardforkinitiation)
   - [makeInfo](#makeinfo)
@@ -22,6 +22,7 @@ parent: Modules
   - [makeUpdateCommittee](#makeupdatecommittee)
 - [equality](#equality)
   - [equals](#equals)
+  - [govActionIdEquals](#govactionidequals)
 - [errors](#errors)
   - [GovernanceActionError (class)](#governanceactionerror-class)
 - [model](#model)
@@ -61,25 +62,37 @@ parent: Modules
 - [type guards](#type-guards)
   - [isParameterChangeAction](#isparameterchangeaction)
 - [utils](#utils)
+  - [arbitrary](#arbitrary-1)
+  - [fromCBOR](#fromcbor)
+  - [fromCBORHex](#fromcborhex)
+  - [govActionIdArbitrary](#govactionidarbitrary)
+  - [hardForkInitiationArbitrary](#hardforkinitiationarbitrary)
   - [isHardForkInitiationAction](#ishardforkinitiationaction)
   - [isInfoAction](#isinfoaction)
   - [isNewConstitutionAction](#isnewconstitutionaction)
   - [isNoConfidenceAction](#isnoconfidenceaction)
   - [isTreasuryWithdrawalsAction](#istreasurywithdrawalsaction)
   - [isUpdateCommitteeAction](#isupdatecommitteeaction)
+  - [newConstitutionArbitrary](#newconstitutionarbitrary)
+  - [noConfidenceArbitrary](#noconfidencearbitrary)
+  - [parameterChangeArbitrary](#parameterchangearbitrary)
+  - [toCBOR](#tocbor)
+  - [toCBORHex](#tocborhex)
+  - [treasuryWithdrawalsArbitrary](#treasurywithdrawalsarbitrary)
+  - [updateCommitteeArbitrary](#updatecommitteearbitrary)
 
 ---
 
 # arbitrary
 
-## arbitrary
+## infoArbitrary
 
 FastCheck arbitrary for GovernanceAction.
 
 **Signature**
 
 ```ts
-export declare const arbitrary: FastCheck.Arbitrary<NoConfidenceAction | InfoAction>
+export declare const infoArbitrary: FastCheck.Arbitrary<InfoAction>
 ```
 
 Added in v2.0.0
@@ -95,8 +108,7 @@ Create a hard fork initiation governance action.
 ```ts
 export declare const makeHardForkInitiation: (
   govActionId: GovActionId | null,
-  protocolVersion: readonly [number, number],
-  policyHash?: ScriptHash.ScriptHash | null
+  protocolVersion: ProtocolVersion.ProtocolVersion
 ) => HardForkInitiationAction
 ```
 
@@ -123,7 +135,7 @@ Create a new constitution governance action.
 ```ts
 export declare const makeNewConstitution: (
   govActionId: GovActionId | null,
-  constitution: CBOR.CBOR
+  constitution: Constituion.Constitution
 ) => NewConstitutionAction
 ```
 
@@ -150,7 +162,7 @@ Create a parameter change governance action.
 ```ts
 export declare const makeParameterChange: (
   govActionId: GovActionId | null,
-  protocolParamUpdate: Record<string, CBOR.CBOR>,
+  protocolParamUpdate: ProtocolParamUpdate.ProtocolParamUpdate,
   policyHash?: ScriptHash.ScriptHash | null
 ) => ParameterChangeAction
 ```
@@ -182,10 +194,7 @@ Create an update committee governance action.
 export declare const makeUpdateCommittee: (
   govActionId: GovActionId | null,
   membersToRemove: ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type>,
-  membersToAdd: Map<
-    typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
-    typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
-  >,
+  membersToAdd: Map<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type, EpochNo.EpochNo>,
   threshold: UnitInterval.UnitInterval
 ) => UpdateCommitteeAction
 ```
@@ -202,6 +211,18 @@ Check if two GovernanceAction instances are equal.
 
 ```ts
 export declare const equals: (a: GovernanceAction, b: GovernanceAction) => boolean
+```
+
+Added in v2.0.0
+
+## govActionIdEquals
+
+Check if two GovActionId instances are equal.
+
+**Signature**
+
+```ts
+export declare const govActionIdEquals: (a: GovActionId, b: GovActionId) => boolean
 ```
 
 Added in v2.0.0
@@ -248,14 +269,10 @@ export declare const match: <R>(
   patterns: {
     ParameterChangeAction: (
       govActionId: GovActionId | null,
-      protocolParams: Record<string, CBOR.CBOR>,
+      protocolParams: ProtocolParamUpdate.ProtocolParamUpdate,
       policyHash: ScriptHash.ScriptHash | null
     ) => R
-    HardForkInitiationAction: (
-      govActionId: GovActionId | null,
-      protocolVersion: readonly [number, number],
-      policyHash: ScriptHash.ScriptHash | null
-    ) => R
+    HardForkInitiationAction: (govActionId: GovActionId | null, protocolVersion: ProtocolVersion.ProtocolVersion) => R
     TreasuryWithdrawalsAction: (
       withdrawals: Map<RewardAccount.RewardAccount, Coin.Coin>,
       policyHash: ScriptHash.ScriptHash | null
@@ -264,13 +281,10 @@ export declare const match: <R>(
     UpdateCommitteeAction: (
       govActionId: GovActionId | null,
       membersToRemove: ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type>,
-      membersToAdd: ReadonlyMap<
-        typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
-        typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
-      >,
+      membersToAdd: ReadonlyMap<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type, EpochNo.EpochNo>,
       threshold: UnitInterval.UnitInterval
     ) => R
-    NewConstitutionAction: (govActionId: GovActionId | null, constitution: CBOR.CBOR) => R
+    NewConstitutionAction: (govActionId: GovActionId | null, constitution: Constituion.Constitution) => R
     InfoAction: () => R
   }
 ) => R
@@ -318,7 +332,7 @@ export declare const CDDLSchema: Schema.Union<
       [
         Schema.Literal<[0n]>,
         Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-        Schema.Record$<typeof Schema.String, Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+        Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>,
         Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
       ]
     >,
@@ -326,8 +340,7 @@ export declare const CDDLSchema: Schema.Union<
       [
         Schema.Literal<[1n]>,
         Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-        Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
-        Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+        Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
       ]
     >,
     Schema.Tuple<
@@ -345,10 +358,21 @@ export declare const CDDLSchema: Schema.Union<
       [
         Schema.Literal<[4n]>,
         Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-        Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
+        Schema.Union<
+          [
+            Schema.TaggedStruct<
+              "Tag",
+              {
+                tag: Schema.Literal<[258]>
+                value: Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>
+              }
+            >,
+            Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>
+          ]
+        >,
         Schema.MapFromSelf<
           Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>,
-          Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
+          typeof Schema.BigIntFromSelf
         >,
         Schema.TaggedStruct<
           "Tag",
@@ -363,7 +387,10 @@ export declare const CDDLSchema: Schema.Union<
       [
         Schema.Literal<[5n]>,
         Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-        Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+        Schema.Tuple2<
+          Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+          Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+        >
       ]
     >,
     Schema.Tuple<[Schema.Literal<[6n]>]>
@@ -387,7 +414,7 @@ export declare const FromCDDL: Schema.Union<
         [
           Schema.Literal<[0n]>,
           Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-          Schema.Record$<typeof Schema.String, Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+          Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>,
           Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
         ]
       >,
@@ -399,8 +426,7 @@ export declare const FromCDDL: Schema.Union<
         [
           Schema.Literal<[1n]>,
           Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-          Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
-          Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+          Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
         ]
       >,
       Schema.SchemaClass<HardForkInitiationAction, HardForkInitiationAction, never>,
@@ -430,10 +456,21 @@ export declare const FromCDDL: Schema.Union<
         [
           Schema.Literal<[4n]>,
           Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-          Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
+          Schema.Union<
+            [
+              Schema.TaggedStruct<
+                "Tag",
+                {
+                  tag: Schema.Literal<[258]>
+                  value: Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>
+                }
+              >,
+              Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>
+            ]
+          >,
           Schema.MapFromSelf<
             Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>,
-            Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
+            typeof Schema.BigIntFromSelf
           >,
           Schema.TaggedStruct<
             "Tag",
@@ -452,7 +489,10 @@ export declare const FromCDDL: Schema.Union<
         [
           Schema.Literal<[5n]>,
           Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-          Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+          Schema.Tuple2<
+            Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+            Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+          >
         ]
       >,
       Schema.SchemaClass<NewConstitutionAction, NewConstitutionAction, never>,
@@ -582,8 +622,7 @@ export declare const HardForkInitiationActionCDDL: Schema.Tuple<
   [
     Schema.Literal<[1n]>,
     Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-    Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
-    Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+    Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
   ]
 >
 ```
@@ -602,8 +641,7 @@ export declare const HardForkInitiationActionFromCDDL: Schema.transformOrFail<
     [
       Schema.Literal<[1n]>,
       Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-      Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>,
-      Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+      Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
     ]
   >,
   Schema.SchemaClass<HardForkInitiationAction, HardForkInitiationAction, never>,
@@ -687,7 +725,10 @@ export declare const NewConstitutionActionCDDL: Schema.Tuple<
   [
     Schema.Literal<[5n]>,
     Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-    Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+    Schema.Tuple2<
+      Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+      Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+    >
   ]
 >
 ```
@@ -706,7 +747,10 @@ export declare const NewConstitutionActionFromCDDL: Schema.transformOrFail<
     [
       Schema.Literal<[5n]>,
       Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-      Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
+      Schema.Tuple2<
+        Schema.Tuple2<typeof Schema.String, typeof Schema.Uint8ArrayFromSelf>,
+        Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
+      >
     ]
   >,
   Schema.SchemaClass<NewConstitutionAction, NewConstitutionAction, never>,
@@ -797,7 +841,7 @@ export declare const ParameterChangeActionCDDL: Schema.Tuple<
   [
     Schema.Literal<[0n]>,
     Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-    Schema.Record$<typeof Schema.String, Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+    Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>,
     Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
   ]
 >
@@ -817,7 +861,7 @@ export declare const ParameterChangeActionFromCDDL: Schema.transformOrFail<
     [
       Schema.Literal<[0n]>,
       Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-      Schema.Record$<typeof Schema.String, Schema.suspend<CBOR.CBOR, CBOR.CBOR, never>>,
+      Schema.MapFromSelf<typeof Schema.BigIntFromSelf, Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>>,
       Schema.NullOr<typeof Schema.Uint8ArrayFromSelf>
     ]
   >,
@@ -921,10 +965,21 @@ export declare const UpdateCommitteeActionCDDL: Schema.Tuple<
   [
     Schema.Literal<[4n]>,
     Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-    Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
+    Schema.Union<
+      [
+        Schema.TaggedStruct<
+          "Tag",
+          {
+            tag: Schema.Literal<[258]>
+            value: Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>
+          }
+        >,
+        Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>
+      ]
+    >,
     Schema.MapFromSelf<
       Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>,
-      Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
+      typeof Schema.BigIntFromSelf
     >,
     Schema.TaggedStruct<
       "Tag",
@@ -948,10 +1003,21 @@ export declare const UpdateCommitteeActionFromCDDL: Schema.transformOrFail<
     [
       Schema.Literal<[4n]>,
       Schema.NullOr<Schema.Tuple2<typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf>>,
-      Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>,
+      Schema.Union<
+        [
+          Schema.TaggedStruct<
+            "Tag",
+            {
+              tag: Schema.Literal<[258]>
+              value: Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>
+            }
+          >,
+          Schema.Array$<Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>>
+        ]
+      >,
       Schema.MapFromSelf<
         Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>,
-        Schema.Tuple2<Schema.Literal<[0n, 1n]>, typeof Schema.Uint8ArrayFromSelf>
+        typeof Schema.BigIntFromSelf
       >,
       Schema.TaggedStruct<
         "Tag",
@@ -975,19 +1041,73 @@ Type guards for each governance action variant.
 **Signature**
 
 ```ts
-export declare const isParameterChangeAction: (action: GovernanceAction) => action is ParameterChangeAction
+export declare const isParameterChangeAction: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is ParameterChangeAction
 ```
 
 Added in v2.0.0
 
 # utils
 
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<
+  | ParameterChangeAction
+  | HardForkInitiationAction
+  | TreasuryWithdrawalsAction
+  | NoConfidenceAction
+  | UpdateCommitteeAction
+  | NewConstitutionAction
+  | InfoAction
+>
+```
+
+## fromCBOR
+
+**Signature**
+
+```ts
+export declare const fromCBOR: (bytes: Uint8Array, options?: CBOR.CodecOptions) => any
+```
+
+## fromCBORHex
+
+**Signature**
+
+```ts
+export declare const fromCBORHex: (hex: string, options?: CBOR.CodecOptions) => any
+```
+
+## govActionIdArbitrary
+
+**Signature**
+
+```ts
+export declare const govActionIdArbitrary: FastCheck.Arbitrary<GovActionId>
+```
+
+## hardForkInitiationArbitrary
+
+**Signature**
+
+```ts
+export declare const hardForkInitiationArbitrary: FastCheck.Arbitrary<HardForkInitiationAction>
+```
+
 ## isHardForkInitiationAction
 
 **Signature**
 
 ```ts
-export declare const isHardForkInitiationAction: (action: GovernanceAction) => action is HardForkInitiationAction
+export declare const isHardForkInitiationAction: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is HardForkInitiationAction
 ```
 
 ## isInfoAction
@@ -995,7 +1115,7 @@ export declare const isHardForkInitiationAction: (action: GovernanceAction) => a
 **Signature**
 
 ```ts
-export declare const isInfoAction: (action: GovernanceAction) => action is InfoAction
+export declare const isInfoAction: (u: unknown, overrideOptions?: ParseOptions | number) => u is InfoAction
 ```
 
 ## isNewConstitutionAction
@@ -1003,7 +1123,10 @@ export declare const isInfoAction: (action: GovernanceAction) => action is InfoA
 **Signature**
 
 ```ts
-export declare const isNewConstitutionAction: (action: GovernanceAction) => action is NewConstitutionAction
+export declare const isNewConstitutionAction: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is NewConstitutionAction
 ```
 
 ## isNoConfidenceAction
@@ -1011,7 +1134,10 @@ export declare const isNewConstitutionAction: (action: GovernanceAction) => acti
 **Signature**
 
 ```ts
-export declare const isNoConfidenceAction: (action: GovernanceAction) => action is NoConfidenceAction
+export declare const isNoConfidenceAction: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is NoConfidenceAction
 ```
 
 ## isTreasuryWithdrawalsAction
@@ -1019,7 +1145,10 @@ export declare const isNoConfidenceAction: (action: GovernanceAction) => action 
 **Signature**
 
 ```ts
-export declare const isTreasuryWithdrawalsAction: (action: GovernanceAction) => action is TreasuryWithdrawalsAction
+export declare const isTreasuryWithdrawalsAction: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is TreasuryWithdrawalsAction
 ```
 
 ## isUpdateCommitteeAction
@@ -1027,5 +1156,64 @@ export declare const isTreasuryWithdrawalsAction: (action: GovernanceAction) => 
 **Signature**
 
 ```ts
-export declare const isUpdateCommitteeAction: (action: GovernanceAction) => action is UpdateCommitteeAction
+export declare const isUpdateCommitteeAction: (
+  u: unknown,
+  overrideOptions?: ParseOptions | number
+) => u is UpdateCommitteeAction
+```
+
+## newConstitutionArbitrary
+
+**Signature**
+
+```ts
+export declare const newConstitutionArbitrary: FastCheck.Arbitrary<NewConstitutionAction>
+```
+
+## noConfidenceArbitrary
+
+**Signature**
+
+```ts
+export declare const noConfidenceArbitrary: FastCheck.Arbitrary<NoConfidenceAction>
+```
+
+## parameterChangeArbitrary
+
+**Signature**
+
+```ts
+export declare const parameterChangeArbitrary: FastCheck.Arbitrary<ParameterChangeAction>
+```
+
+## toCBOR
+
+**Signature**
+
+```ts
+export declare const toCBOR: (input: any, options?: CBOR.CodecOptions) => Uint8Array
+```
+
+## toCBORHex
+
+**Signature**
+
+```ts
+export declare const toCBORHex: (input: any, options?: CBOR.CodecOptions) => string
+```
+
+## treasuryWithdrawalsArbitrary
+
+**Signature**
+
+```ts
+export declare const treasuryWithdrawalsArbitrary: FastCheck.Arbitrary<TreasuryWithdrawalsAction>
+```
+
+## updateCommitteeArbitrary
+
+**Signature**
+
+```ts
+export declare const updateCommitteeArbitrary: FastCheck.Arbitrary<UpdateCommitteeAction>
 ```

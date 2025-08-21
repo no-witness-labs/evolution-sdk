@@ -1,6 +1,6 @@
 ---
 title: RewardAccount.ts
-nav_order: 90
+nav_order: 94
 parent: Modules
 ---
 
@@ -26,6 +26,8 @@ parent: Modules
   - [fromHex](#fromhex)
 - [schemas](#schemas)
   - [RewardAccount (class)](#rewardaccount-class)
+    - [toString (method)](#tostring-method)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
 - [utils](#utils)
   - [FromBytes](#frombytes-1)
   - [FromHex](#fromhex-1)
@@ -151,6 +153,22 @@ export declare class RewardAccount
 ```
 
 Added in v2.0.0
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+[Symbol.for("nodejs.util.inspect.custom")](): string
+```
 
 # utils
 

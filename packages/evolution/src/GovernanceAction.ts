@@ -1,9 +1,16 @@
 import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
+import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as Coin from "./Coin.js"
 import * as CommiteeColdCredential from "./CommitteeColdCredential.js"
-import * as CommiteeHotCredential from "./CommitteeHotCredential.js"
+import * as Constituion from "./Constitution.js"
+import type { Credential as CredentialT } from "./Credential.js"
+import * as Credential from "./Credential.js"
+import * as EpochNo from "./EpochNo.js"
+import * as Function from "./Function.js"
+import * as ProtocolParamUpdate from "./ProtocolParamUpdate.js"
+import * as ProtocolVersion from "./ProtocolVersion.js"
 import * as RewardAccount from "./RewardAccount.js"
 import * as ScriptHash from "./ScriptHash.js"
 import * as TransactionHash from "./TransactionHash.js"
@@ -34,6 +41,16 @@ export class GovActionId extends Schema.TaggedClass<GovActionId>()("GovActionId"
   transactionId: TransactionHash.TransactionHash, // transaction_id (hash32)
   govActionIndex: TransactionIndex.TransactionIndex // uint .size 2 (governance action index)
 }) {}
+
+/**
+ * Check if two GovActionId instances are equal.
+ *
+ * @since 2.0.0
+ * @category equality
+ */
+export const govActionIdEquals = (a: GovActionId, b: GovActionId): boolean =>
+  TransactionHash.equals(a.transactionId, b.transactionId) &&
+  TransactionIndex.equals(a.govActionIndex, b.govActionIndex)
 
 /**
  * CDDL schema for GovActionId tuple structure.
@@ -86,7 +103,7 @@ export const GovActionIdFromCDDL = Schema.transformOrFail(GovActionIdCDDL, GovAc
  */
 export class ParameterChangeAction extends Schema.TaggedClass<ParameterChangeAction>()("ParameterChangeAction", {
   govActionId: Schema.NullOr(GovActionId), // gov_action_id / nil
-  protocolParamUpdate: CBOR.RecordSchema, // protocol_param_update as CBOR record
+  protocolParamUpdate: ProtocolParamUpdate.ProtocolParamUpdate, // protocol_param_update
   policyHash: Schema.NullOr(ScriptHash.ScriptHash) // policy_hash / nil
 }) {}
 
@@ -100,7 +117,7 @@ export class ParameterChangeAction extends Schema.TaggedClass<ParameterChangeAct
 export const ParameterChangeActionCDDL = Schema.Tuple(
   Schema.Literal(0n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
-  CBOR.RecordSchema, // protocol_param_update
+  ProtocolParamUpdate.CDDLSchema, // protocol_param_update
   Schema.NullOr(CBOR.ByteArray) // policy_hash / nil
 )
 
@@ -120,7 +137,11 @@ export const ParameterChangeActionFromCDDL = Schema.transformOrFail(
         const govActionId = action.govActionId
           ? yield* ParseResult.encode(GovActionIdFromCDDL)(action.govActionId)
           : null
-        const protocolParamUpdate = yield* ParseResult.encode(CBOR.RecordSchema)(action.protocolParamUpdate)
+        const protocolParamUpdateRO = yield* ParseResult.encode(ProtocolParamUpdate.FromCDDL)(
+          action.protocolParamUpdate
+        )
+        const protocolParamUpdate = new Map<bigint, CBOR.CBOR>()
+        for (const [k, v] of protocolParamUpdateRO) protocolParamUpdate.set(k, v)
         const policyHash = action.policyHash ? yield* ParseResult.encode(ScriptHash.FromBytes)(action.policyHash) : null
 
         // Return as CBOR tuple
@@ -128,8 +149,9 @@ export const ParameterChangeActionFromCDDL = Schema.transformOrFail(
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
-        const [, govActionIdCDDL, protocolParamUpdate, policyHash] = cddl
+        const [, govActionIdCDDL, protocolParamUpdateCDDL, policyHash] = cddl
         const govActionId = govActionIdCDDL ? yield* ParseResult.decode(GovActionIdFromCDDL)(govActionIdCDDL) : null
+        const protocolParamUpdate = yield* ParseResult.decode(ProtocolParamUpdate.FromCDDL)(protocolParamUpdateCDDL)
         const policyHashValue = policyHash ? yield* ParseResult.decode(ScriptHash.FromBytes)(policyHash) : null
 
         return new ParameterChangeAction({
@@ -155,8 +177,7 @@ export class HardForkInitiationAction extends Schema.TaggedClass<HardForkInitiat
   "HardForkInitiationAction",
   {
     govActionId: Schema.NullOr(GovActionId), // gov_action_id / nil
-    protocolVersion: Schema.Tuple(Schema.Number, Schema.Number), // protocol_version = [major, minor]
-    policyHash: Schema.NullOr(ScriptHash.ScriptHash) // policy_hash / nil
+    protocolVersion: ProtocolVersion.ProtocolVersion // protocol_version = [major, minor]
   }
 ) {}
 
@@ -172,8 +193,7 @@ export class HardForkInitiationAction extends Schema.TaggedClass<HardForkInitiat
 export const HardForkInitiationActionCDDL = Schema.Tuple(
   Schema.Literal(1n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
-  Schema.Tuple(CBOR.Integer, CBOR.Integer), // protocol_version = [major, minor]
-  Schema.NullOr(CBOR.ByteArray) // policy_hash / nil
+  ProtocolVersion.CDDLSchema // protocol_version = [major, minor]
 )
 
 /**
@@ -192,26 +212,20 @@ export const HardForkInitiationActionFromCDDL = Schema.transformOrFail(
         const govActionId = action.govActionId
           ? yield* ParseResult.encode(GovActionIdFromCDDL)(action.govActionId)
           : null
-        const policyHash = action.policyHash ? yield* ParseResult.encode(ScriptHash.FromBytes)(action.policyHash) : null
+        const protocolVersion = yield* ParseResult.encode(ProtocolVersion.FromCDDL)(action.protocolVersion)
 
         // Return as CBOR tuple
-        return [
-          1n,
-          govActionId,
-          [BigInt(action.protocolVersion[0]), BigInt(action.protocolVersion[1])],
-          policyHash
-        ] as const
+        return [1n, govActionId, protocolVersion] as const
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
-        const [, govActionIdCDDL, protocolVersion, policyHash] = cddl
+        const [, govActionIdCDDL, protocolVersion] = cddl
         const govActionId = govActionIdCDDL ? yield* ParseResult.decode(GovActionIdFromCDDL)(govActionIdCDDL) : null
-        const policyHashValue = policyHash ? yield* ParseResult.decode(ScriptHash.FromBytes)(policyHash) : null
+        const protocolVersionValue = yield* ParseResult.decode(ProtocolVersion.FromCDDL)(protocolVersion)
 
         return new HardForkInitiationAction({
           govActionId,
-          protocolVersion: [Number(protocolVersion[0]), Number(protocolVersion[1])],
-          policyHash: policyHashValue
+          protocolVersion: protocolVersionValue
         })
       })
   }
@@ -370,7 +384,7 @@ export class UpdateCommitteeAction extends Schema.TaggedClass<UpdateCommitteeAct
   membersToRemove: Schema.Array(CommiteeColdCredential.CommitteeColdCredential.Credential), // set<committee_cold_credential>
   membersToAdd: Schema.MapFromSelf({
     key: CommiteeColdCredential.CommitteeColdCredential.Credential, // committee_cold_credential
-    value: CommiteeHotCredential.CommitteeHotCredential.Credential // committee_hot_credential
+    value: EpochNo.EpochNoSchema // epoch_no
   }),
   threshold: UnitInterval.UnitInterval
 }) {}
@@ -387,10 +401,15 @@ export class UpdateCommitteeAction extends Schema.TaggedClass<UpdateCommitteeAct
 export const UpdateCommitteeActionCDDL = Schema.Tuple(
   Schema.Literal(4n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
-  Schema.Array(CommiteeColdCredential.CommitteeColdCredential.CDDLSchema), // set<committee_cold_credential>
+  // set<committee_cold_credential> = #6.258([* a0]) / [* a0]
+  Schema.Union(
+    CBOR.tag(258, Schema.Array(CommiteeColdCredential.CommitteeColdCredential.CDDLSchema)),
+    Schema.Array(CommiteeColdCredential.CommitteeColdCredential.CDDLSchema)
+  ),
+  // { * committee_cold_credential => epoch_no }
   Schema.MapFromSelf({
-    key: CommiteeColdCredential.CommitteeColdCredential.CDDLSchema, // committee_cold_credential
-    value: CommiteeHotCredential.CommitteeHotCredential.CDDLSchema // committee_hot_credential
+    key: CommiteeColdCredential.CommitteeColdCredential.CDDLSchema,
+    value: EpochNo.CDDLSchema
   }),
   UnitInterval.CDDLSchema // unit_interval
 )
@@ -411,21 +430,25 @@ export const UpdateCommitteeActionFromCDDL = Schema.transformOrFail(
         const govActionId = action.govActionId
           ? yield* ParseResult.encode(GovActionIdFromCDDL)(action.govActionId)
           : null
-        const membersToRemove = (yield* Eff.all(
-          action.membersToRemove.map((cred) =>
-            ParseResult.encode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(cred)
-          )
-        )) as ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.CDDLSchema.Type>
+        // Encode membersToRemove as tagged set (tag 258) per CDDL
+        const removeArr: Array<typeof CommiteeColdCredential.CommitteeColdCredential.CDDLSchema.Type> = []
+        for (const cred of action.membersToRemove) {
+          const coldCred = yield* ParseResult.encode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(cred)
+          removeArr.push(coldCred)
+        }
+        const membersToRemove = CBOR.Tag.make({ tag: 258, value: removeArr }, { disableValidation: true }) as any
+
+        // Encode membersToAdd as map<committee_cold_credential => epoch_no>
         const membersToAdd = new Map<
           typeof CommiteeColdCredential.CommitteeColdCredential.CDDLSchema.Type,
-          typeof CommiteeHotCredential.CommitteeHotCredential.CDDLSchema.Type
+          typeof EpochNo.CDDLSchema.Type
         >()
-        for (const [coldCred, hotCred] of action.membersToAdd) {
+        for (const [coldCred, epoch] of action.membersToAdd) {
           const coldCredBytes = yield* ParseResult.encode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(
             coldCred
           )
-          const hotCredBytes = yield* ParseResult.encode(CommiteeHotCredential.CommitteeHotCredential.FromCDDL)(hotCred)
-          membersToAdd.set(coldCredBytes, hotCredBytes)
+          const epochNo = yield* ParseResult.encode(EpochNo.FromCDDL)(epoch)
+          membersToAdd.set(coldCredBytes, epochNo)
         }
         // Encode threshold as UnitInterval
         const threshold = yield* ParseResult.encode(UnitInterval.FromCDDL)(action.threshold)
@@ -438,21 +461,29 @@ export const UpdateCommitteeActionFromCDDL = Schema.transformOrFail(
         const [, govActionIdCDDL, membersToRemoveCDDL, membersToAddCDDL, thresholdCDDL] = cddl
         const govActionId = govActionIdCDDL ? yield* ParseResult.decode(GovActionIdFromCDDL)(govActionIdCDDL) : null
         const threshold = yield* ParseResult.decode(UnitInterval.FromCDDL)(thresholdCDDL)
-        const membersToRemove = yield* Eff.all(
-          membersToRemoveCDDL.map((cred) =>
-            ParseResult.decode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(cred)
-          )
-        )
-        const membersToAdd = new Map<
-          typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
-          typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
-        >()
-        for (const [coldCredCDDL, hotCredCDDL] of membersToAddCDDL) {
+        // Decode set into an array of credentials (accept tag 258 or plain array)
+        const membersToRemove: Array<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type> = []
+        const removeArr = CBOR.isTag(membersToRemoveCDDL)
+          ? membersToRemoveCDDL.tag === 258
+            ? (membersToRemoveCDDL.value as ReadonlyArray<any>)
+            : []
+          : (membersToRemoveCDDL as ReadonlyArray<any>)
+        for (const coldCredCDDL of removeArr) {
           const coldCred = yield* ParseResult.decode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(
             coldCredCDDL
           )
-          const hotCred = yield* ParseResult.decode(CommiteeHotCredential.CommitteeHotCredential.FromCDDL)(hotCredCDDL)
-          membersToAdd.set(coldCred, hotCred)
+          membersToRemove.push(coldCred)
+        }
+        const membersToAdd = new Map<
+          typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
+          EpochNo.EpochNo
+        >()
+        for (const [coldCredCDDL, epochNoCDDL] of membersToAddCDDL) {
+          const coldCred = yield* ParseResult.decode(CommiteeColdCredential.CommitteeColdCredential.FromCDDL)(
+            coldCredCDDL
+          )
+          const epoch = yield* ParseResult.decode(EpochNo.FromCDDL)(epochNoCDDL)
+          membersToAdd.set(coldCred, epoch)
         }
 
         return new UpdateCommitteeAction({
@@ -475,7 +506,7 @@ export const UpdateCommitteeActionFromCDDL = Schema.transformOrFail(
  */
 export class NewConstitutionAction extends Schema.TaggedClass<NewConstitutionAction>()("NewConstitutionAction", {
   govActionId: Schema.NullOr(GovActionId), // gov_action_id / nil
-  constitution: CBOR.CBORSchema // constitution as CBOR
+  constitution: Constituion.Constitution // constitution as CBOR
 }) {}
 
 /**
@@ -490,7 +521,7 @@ export class NewConstitutionAction extends Schema.TaggedClass<NewConstitutionAct
 export const NewConstitutionActionCDDL = Schema.Tuple(
   Schema.Literal(5n), // action type
   Schema.NullOr(GovActionIdCDDL), // gov_action_id / nil
-  CBOR.CBORSchema // constitution
+  Constituion.CDDLSchema // constitution as CBOR
 )
 
 /**
@@ -509,15 +540,16 @@ export const NewConstitutionActionFromCDDL = Schema.transformOrFail(
         const govActionId = action.govActionId
           ? yield* ParseResult.encode(GovActionIdFromCDDL)(action.govActionId)
           : null
-        const constitution = yield* ParseResult.encode(CBOR.CBORSchema)(action.constitution)
+        const constitution = yield* ParseResult.encode(Constituion.FromCDDL)(action.constitution)
 
         // Return as CBOR tuple
         return [5n, govActionId, constitution] as const
       }),
     decode: (cddl) =>
       Eff.gen(function* () {
-        const [, govActionIdCDDL, constitution] = cddl
+        const [, govActionIdCDDL, constitutionCDDL] = cddl
         const govActionId = govActionIdCDDL ? yield* ParseResult.decode(GovActionIdFromCDDL)(govActionIdCDDL) : null
+        const constitution = yield* ParseResult.decode(Constituion.FromCDDL)(constitutionCDDL)
 
         return new NewConstitutionAction({
           govActionId,
@@ -647,42 +679,101 @@ export const FromCDDL = Schema.Union(
 export const equals = (a: GovernanceAction, b: GovernanceAction): boolean => {
   if (a._tag !== b._tag) return false
 
+  const eqGovActionId = (x: GovActionId | null, y: GovActionId | null) =>
+    x === y || (x !== null && y !== null && govActionIdEquals(x, y))
+
+  const eqNullableScriptHash = (x: ScriptHash.ScriptHash | null, y: ScriptHash.ScriptHash | null) =>
+    x === y || (x !== null && y !== null && ScriptHash.equals(x, y))
+
+  const eqProtocolParamUpdate = (
+    x: ProtocolParamUpdate.ProtocolParamUpdate,
+    y: ProtocolParamUpdate.ProtocolParamUpdate
+  ) => Bytes.equals(ProtocolParamUpdate.toCBORBytes(x), ProtocolParamUpdate.toCBORBytes(y))
+
+  const eqWithdrawals = (
+    aMap: ReadonlyMap<RewardAccount.RewardAccount, Coin.Coin>,
+    bMap: ReadonlyMap<RewardAccount.RewardAccount, Coin.Coin>
+  ): boolean => {
+    if (aMap.size !== bMap.size) return false
+    // For each entry in aMap, find a key-equal entry in bMap with same coin
+    for (const [aKey, aVal] of aMap) {
+      let found = false
+      for (const [bKey, bVal] of bMap) {
+        if (RewardAccount.equals(aKey, bKey)) {
+          if (aVal !== bVal) return false
+          found = true
+          break
+        }
+      }
+      if (!found) return false
+    }
+    return true
+  }
+
+  const eqCredential = (a: CredentialT, b: CredentialT): boolean => a._tag === b._tag && Bytes.equals(a.hash, b.hash)
+
+  const eqCredentialsArray = (xs: ReadonlyArray<CredentialT>, ys: ReadonlyArray<CredentialT>): boolean => {
+    if (xs.length !== ys.length) return false
+    for (let i = 0; i < xs.length; i++) {
+      if (!eqCredential(xs[i], ys[i])) return false
+    }
+    return true
+  }
+
+  const eqCredentialEpochMap = (
+    aMap: ReadonlyMap<CredentialT, EpochNo.EpochNo>,
+    bMap: ReadonlyMap<CredentialT, EpochNo.EpochNo>
+  ): boolean => {
+    if (aMap.size !== bMap.size) return false
+    for (const [aKey, aVal] of aMap) {
+      let matched = false
+      for (const [bKey, bVal] of bMap) {
+        if (eqCredential(aKey, bKey)) {
+          if (aVal !== bVal) return false
+          matched = true
+          break
+        }
+      }
+      if (!matched) return false
+    }
+    return true
+  }
+
   switch (a._tag) {
     case "ParameterChangeAction":
       return (
         b._tag === "ParameterChangeAction" &&
-        JSON.stringify(a.protocolParamUpdate) === JSON.stringify(b.protocolParamUpdate) &&
-        JSON.stringify(a.policyHash) === JSON.stringify(b.policyHash) &&
-        JSON.stringify(a.govActionId) === JSON.stringify(b.govActionId)
+        eqProtocolParamUpdate(a.protocolParamUpdate, b.protocolParamUpdate) &&
+        eqNullableScriptHash(a.policyHash, b.policyHash) &&
+        eqGovActionId(a.govActionId, b.govActionId)
       )
     case "HardForkInitiationAction":
       return (
         b._tag === "HardForkInitiationAction" &&
-        JSON.stringify(a.protocolVersion) === JSON.stringify(b.protocolVersion) &&
-        JSON.stringify(a.policyHash) === JSON.stringify(b.policyHash) &&
-        JSON.stringify(a.govActionId) === JSON.stringify(b.govActionId)
+        ProtocolVersion.equals(a.protocolVersion, b.protocolVersion) &&
+        eqGovActionId(a.govActionId, b.govActionId)
       )
     case "TreasuryWithdrawalsAction":
       return (
         b._tag === "TreasuryWithdrawalsAction" &&
-        JSON.stringify(a.withdrawals) === JSON.stringify(b.withdrawals) &&
-        JSON.stringify(a.policyHash) === JSON.stringify(b.policyHash)
+        eqWithdrawals(a.withdrawals, b.withdrawals) &&
+        eqNullableScriptHash(a.policyHash, b.policyHash)
       )
     case "NoConfidenceAction":
-      return b._tag === "NoConfidenceAction" && JSON.stringify(a.govActionId) === JSON.stringify(b.govActionId)
+      return b._tag === "NoConfidenceAction" && eqGovActionId(a.govActionId, b.govActionId)
     case "UpdateCommitteeAction":
       return (
         b._tag === "UpdateCommitteeAction" &&
-        JSON.stringify(a.membersToRemove) === JSON.stringify(b.membersToRemove) &&
-        JSON.stringify(a.membersToAdd) === JSON.stringify(b.membersToAdd) &&
-        JSON.stringify(a.threshold) === JSON.stringify(b.threshold) &&
-        JSON.stringify(a.govActionId) === JSON.stringify(b.govActionId)
+        eqCredentialsArray(a.membersToRemove, b.membersToRemove) &&
+        eqCredentialEpochMap(a.membersToAdd, b.membersToAdd) &&
+        UnitInterval.equals(a.threshold, b.threshold) &&
+        eqGovActionId(a.govActionId, b.govActionId)
       )
     case "NewConstitutionAction":
       return (
         b._tag === "NewConstitutionAction" &&
-        JSON.stringify(a.constitution) === JSON.stringify(b.constitution) &&
-        JSON.stringify(a.govActionId) === JSON.stringify(b.govActionId)
+        Constituion.equals(a.constitution, b.constitution) &&
+        eqGovActionId(a.govActionId, b.govActionId)
       )
     case "InfoAction":
       return b._tag === "InfoAction"
@@ -697,7 +788,7 @@ export const equals = (a: GovernanceAction, b: GovernanceAction): boolean => {
  */
 export const makeParameterChange = (
   govActionId: GovActionId | null,
-  protocolParamUpdate: Record<string, CBOR.CBOR>,
+  protocolParamUpdate: ProtocolParamUpdate.ProtocolParamUpdate,
   policyHash: ScriptHash.ScriptHash | null = null
 ): ParameterChangeAction =>
   new ParameterChangeAction({
@@ -714,13 +805,11 @@ export const makeParameterChange = (
  */
 export const makeHardForkInitiation = (
   govActionId: GovActionId | null,
-  protocolVersion: readonly [number, number],
-  policyHash: ScriptHash.ScriptHash | null = null
+  protocolVersion: ProtocolVersion.ProtocolVersion
 ): HardForkInitiationAction =>
   new HardForkInitiationAction({
     govActionId,
-    protocolVersion,
-    policyHash
+    protocolVersion
   })
 
 /**
@@ -758,10 +847,7 @@ export const makeNoConfidence = (govActionId: GovActionId | null): NoConfidenceA
 export const makeUpdateCommittee = (
   govActionId: GovActionId | null,
   membersToRemove: ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type>,
-  membersToAdd: Map<
-    typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
-    typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
-  >,
+  membersToAdd: Map<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type, EpochNo.EpochNo>,
   threshold: UnitInterval.UnitInterval
 ): UpdateCommitteeAction =>
   new UpdateCommitteeAction({
@@ -777,7 +863,10 @@ export const makeUpdateCommittee = (
  * @since 2.0.0
  * @category constructors
  */
-export const makeNewConstitution = (govActionId: GovActionId | null, constitution: CBOR.CBOR): NewConstitutionAction =>
+export const makeNewConstitution = (
+  govActionId: GovActionId | null,
+  constitution: Constituion.Constitution
+): NewConstitutionAction =>
   new NewConstitutionAction({
     govActionId,
     constitution
@@ -797,7 +886,95 @@ export const makeInfo = (): InfoAction => new InfoAction({})
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = FastCheck.oneof(FastCheck.constant(makeNoConfidence(null)), FastCheck.constant(makeInfo()))
+// Per-variant arbitraries and main arbitrary
+
+export const infoArbitrary: FastCheck.Arbitrary<InfoAction> = FastCheck.constant(new InfoAction({}))
+
+export const govActionIdArbitrary: FastCheck.Arbitrary<GovActionId> = FastCheck.tuple(
+  TransactionHash.arbitrary,
+  TransactionIndex.arbitrary
+).map(([transactionId, govActionIndex]) => new GovActionId({ transactionId, govActionIndex }))
+
+export const parameterChangeArbitrary: FastCheck.Arbitrary<ParameterChangeAction> = FastCheck.tuple(
+  FastCheck.option(govActionIdArbitrary, { nil: null }),
+  ProtocolParamUpdate.arbitrary,
+  FastCheck.option(ScriptHash.arbitrary, { nil: null })
+).map(
+  ([govActionId, protocolParamUpdate, policyHash]) =>
+    new ParameterChangeAction({ govActionId, protocolParamUpdate, policyHash })
+)
+
+export const hardForkInitiationArbitrary: FastCheck.Arbitrary<HardForkInitiationAction> = FastCheck.tuple(
+  FastCheck.option(govActionIdArbitrary, { nil: null }),
+  ProtocolVersion.arbitrary
+).map(([govActionId, protocolVersion]) => new HardForkInitiationAction({ govActionId, protocolVersion }))
+
+const withdrawalsMapArbitrary: FastCheck.Arbitrary<Map<RewardAccount.RewardAccount, Coin.Coin>> = FastCheck.uniqueArray(
+  RewardAccount.arbitrary,
+  {
+    maxLength: 5,
+    selector: (ra) => RewardAccount.toHex(ra)
+  }
+).chain((accounts) =>
+  FastCheck.array(Coin.arbitrary, { minLength: accounts.length, maxLength: accounts.length }).map(
+    (coins) => new Map(accounts.map((a, i) => [a, coins[i]] as const))
+  )
+)
+
+export const treasuryWithdrawalsArbitrary: FastCheck.Arbitrary<TreasuryWithdrawalsAction> = FastCheck.tuple(
+  withdrawalsMapArbitrary,
+  FastCheck.option(ScriptHash.arbitrary, { nil: null })
+).map(([withdrawals, policyHash]) => new TreasuryWithdrawalsAction({ withdrawals, policyHash }))
+
+export const noConfidenceArbitrary: FastCheck.Arbitrary<NoConfidenceAction> = FastCheck.option(govActionIdArbitrary, {
+  nil: null
+}).map((govActionId) => new NoConfidenceAction({ govActionId }))
+
+const uniqueCredArray: FastCheck.Arbitrary<ReadonlyArray<Credential.Credential>> = FastCheck.uniqueArray(
+  Credential.arbitrary,
+  {
+    maxLength: 5,
+    selector: (c) => `${c._tag}:${Bytes.toHex(c.hash)}`
+  }
+)
+
+const membersToAddMapArbitrary: FastCheck.Arbitrary<Map<Credential.Credential, EpochNo.EpochNo>> =
+  uniqueCredArray.chain((colds) =>
+    FastCheck.array(EpochNo.arbitrary, {
+      minLength: colds.length,
+      maxLength: colds.length
+    }).map((epochsRaw) => {
+      const epochs = epochsRaw.map((e) => EpochNo.make(e))
+      const m = new Map<Credential.Credential, EpochNo.EpochNo>()
+      for (let i = 0; i < colds.length; i++) m.set(colds[i], epochs[i])
+      return m
+    })
+  )
+
+export const updateCommitteeArbitrary: FastCheck.Arbitrary<UpdateCommitteeAction> = FastCheck.tuple(
+  FastCheck.option(govActionIdArbitrary, { nil: null }),
+  uniqueCredArray,
+  membersToAddMapArbitrary,
+  UnitInterval.arbitrary
+).map(
+  ([govActionId, membersToRemove, membersToAdd, threshold]) =>
+    new UpdateCommitteeAction({ govActionId, membersToRemove, membersToAdd, threshold })
+)
+
+export const newConstitutionArbitrary: FastCheck.Arbitrary<NewConstitutionAction> = FastCheck.tuple(
+  FastCheck.option(govActionIdArbitrary, { nil: null }),
+  Constituion.arbitrary
+).map(([govActionId, constitution]) => new NewConstitutionAction({ govActionId, constitution }))
+
+export const arbitrary: FastCheck.Arbitrary<GovernanceAction> = FastCheck.oneof(
+  parameterChangeArbitrary,
+  hardForkInitiationArbitrary,
+  updateCommitteeArbitrary,
+  treasuryWithdrawalsArbitrary,
+  noConfidenceArbitrary,
+  newConstitutionArbitrary,
+  infoArbitrary
+)
 
 /**
  * Check if a value is a valid GovernanceAction.
@@ -813,25 +990,19 @@ export const is = Schema.is(GovernanceAction)
  * @since 2.0.0
  * @category type guards
  */
-export const isParameterChangeAction = (action: GovernanceAction): action is ParameterChangeAction =>
-  action._tag === "ParameterChangeAction"
+export const isParameterChangeAction = Schema.is(ParameterChangeAction)
 
-export const isHardForkInitiationAction = (action: GovernanceAction): action is HardForkInitiationAction =>
-  action._tag === "HardForkInitiationAction"
+export const isHardForkInitiationAction = Schema.is(HardForkInitiationAction)
 
-export const isTreasuryWithdrawalsAction = (action: GovernanceAction): action is TreasuryWithdrawalsAction =>
-  action._tag === "TreasuryWithdrawalsAction"
+export const isTreasuryWithdrawalsAction = Schema.is(TreasuryWithdrawalsAction)
 
-export const isNoConfidenceAction = (action: GovernanceAction): action is NoConfidenceAction =>
-  action._tag === "NoConfidenceAction"
+export const isNoConfidenceAction = Schema.is(NoConfidenceAction)
 
-export const isUpdateCommitteeAction = (action: GovernanceAction): action is UpdateCommitteeAction =>
-  action._tag === "UpdateCommitteeAction"
+export const isUpdateCommitteeAction = Schema.is(UpdateCommitteeAction)
 
-export const isNewConstitutionAction = (action: GovernanceAction): action is NewConstitutionAction =>
-  action._tag === "NewConstitutionAction"
+export const isNewConstitutionAction = Schema.is(NewConstitutionAction)
 
-export const isInfoAction = (action: GovernanceAction): action is InfoAction => action._tag === "InfoAction"
+export const isInfoAction = Schema.is(InfoAction)
 
 /**
  * Pattern matching utility for GovernanceAction.
@@ -844,14 +1015,10 @@ export const match = <R>(
   patterns: {
     ParameterChangeAction: (
       govActionId: GovActionId | null,
-      protocolParams: Record<string, CBOR.CBOR>,
+      protocolParams: ProtocolParamUpdate.ProtocolParamUpdate,
       policyHash: ScriptHash.ScriptHash | null
     ) => R
-    HardForkInitiationAction: (
-      govActionId: GovActionId | null,
-      protocolVersion: readonly [number, number],
-      policyHash: ScriptHash.ScriptHash | null
-    ) => R
+    HardForkInitiationAction: (govActionId: GovActionId | null, protocolVersion: ProtocolVersion.ProtocolVersion) => R
     TreasuryWithdrawalsAction: (
       withdrawals: Map<RewardAccount.RewardAccount, Coin.Coin>,
       policyHash: ScriptHash.ScriptHash | null
@@ -860,13 +1027,10 @@ export const match = <R>(
     UpdateCommitteeAction: (
       govActionId: GovActionId | null,
       membersToRemove: ReadonlyArray<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type>,
-      membersToAdd: ReadonlyMap<
-        typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type,
-        typeof CommiteeHotCredential.CommitteeHotCredential.Credential.Type
-      >,
+      membersToAdd: ReadonlyMap<typeof CommiteeColdCredential.CommitteeColdCredential.Credential.Type, EpochNo.EpochNo>,
       threshold: UnitInterval.UnitInterval
     ) => R
-    NewConstitutionAction: (govActionId: GovActionId | null, constitution: CBOR.CBOR) => R
+    NewConstitutionAction: (govActionId: GovActionId | null, constitution: Constituion.Constitution) => R
     InfoAction: () => R
   }
 ): R => {
@@ -874,7 +1038,7 @@ export const match = <R>(
     case "ParameterChangeAction":
       return patterns.ParameterChangeAction(action.govActionId, action.protocolParamUpdate, action.policyHash)
     case "HardForkInitiationAction":
-      return patterns.HardForkInitiationAction(action.govActionId, action.protocolVersion, action.policyHash)
+      return patterns.HardForkInitiationAction(action.govActionId, action.protocolVersion)
     case "TreasuryWithdrawalsAction":
       return patterns.TreasuryWithdrawalsAction(action.withdrawals, action.policyHash)
     case "NoConfidenceAction":
@@ -892,3 +1056,28 @@ export const match = <R>(
       return patterns.InfoAction()
   }
 }
+
+export const fromCBORHex = Function.makeCBORDecodeHexSync(
+  FromCDDL as unknown as Schema.Schema<any, any, never>,
+  GovernanceActionError,
+  "GovernanceAction.fromCBORHex",
+  CBOR.CML_DEFAULT_OPTIONS
+)
+export const toCBORHex = Function.makeCBOREncodeHexSync(
+  FromCDDL as unknown as Schema.Schema<any, any, never>,
+  GovernanceActionError,
+  "GovernanceAction.toCBORHex",
+  CBOR.CML_DEFAULT_OPTIONS
+)
+export const fromCBOR = Function.makeCBORDecodeSync(
+  FromCDDL as unknown as Schema.Schema<any, any, never>,
+  GovernanceActionError,
+  "GovernanceAction.fromCBORBytes",
+  CBOR.CML_DEFAULT_OPTIONS
+)
+export const toCBOR = Function.makeCBOREncodeSync(
+  FromCDDL as unknown as Schema.Schema<any, any, never>,
+  GovernanceActionError,
+  "GovernanceAction.toCBORBytes",
+  CBOR.CML_DEFAULT_OPTIONS
+)

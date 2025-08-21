@@ -1,6 +1,6 @@
 ---
 title: Numeric.ts
-nav_order: 71
+nav_order: 73
 parent: Modules
 ---
 
@@ -91,7 +91,7 @@ Smart constructor for Int16 that validates and applies branding.
 **Signature**
 
 ```ts
-export declare const Int16Make: (a: number, options?: Schema.MakeOptions) => number
+export declare const Int16Make: (a: bigint, options?: Schema.MakeOptions) => bigint
 ```
 
 Added in v2.0.0
@@ -103,7 +103,7 @@ Smart constructor for Int32 that validates and applies branding.
 **Signature**
 
 ```ts
-export declare const Int32Make: (a: number, options?: Schema.MakeOptions) => number
+export declare const Int32Make: (a: bigint, options?: Schema.MakeOptions) => bigint
 ```
 
 Added in v2.0.0
@@ -127,7 +127,7 @@ Smart constructor for Int8 that validates and applies branding.
 **Signature**
 
 ```ts
-export declare const Int8Make: (a: number, options?: Schema.MakeOptions) => number
+export declare const Int8Make: (a: bigint, options?: Schema.MakeOptions) => bigint
 ```
 
 Added in v2.0.0
@@ -139,7 +139,7 @@ Smart constructor for Uint16 that validates and applies branding.
 **Signature**
 
 ```ts
-export declare const Uint16Make: (a: number, options?: Schema.MakeOptions) => number
+export declare const Uint16Make: (a: bigint, options?: Schema.MakeOptions) => bigint
 ```
 
 Added in v2.0.0
@@ -229,7 +229,7 @@ Added in v2.0.0
 **Signature**
 
 ```ts
-export declare const INT16_MAX: 32767
+export declare const INT16_MAX: 32767n
 ```
 
 ## INT16_MIN
@@ -237,7 +237,7 @@ export declare const INT16_MAX: 32767
 **Signature**
 
 ```ts
-export declare const INT16_MIN: -32768
+export declare const INT16_MIN: -32768n
 ```
 
 ## INT32_MAX
@@ -245,7 +245,7 @@ export declare const INT16_MIN: -32768
 **Signature**
 
 ```ts
-export declare const INT32_MAX: 2147483647
+export declare const INT32_MAX: 2147483647n
 ```
 
 ## INT32_MIN
@@ -253,7 +253,7 @@ export declare const INT32_MAX: 2147483647
 **Signature**
 
 ```ts
-export declare const INT32_MIN: -2147483648
+export declare const INT32_MIN: -2147483648n
 ```
 
 ## INT64_MAX
@@ -277,7 +277,7 @@ export declare const INT64_MIN: -9223372036854775808n
 **Signature**
 
 ```ts
-export declare const INT8_MAX: 127
+export declare const INT8_MAX: 127n
 ```
 
 ## INT8_MIN
@@ -285,7 +285,7 @@ export declare const INT8_MAX: 127
 **Signature**
 
 ```ts
-export declare const INT8_MIN: -128
+export declare const INT8_MIN: -128n
 ```
 
 ## Int16
@@ -293,7 +293,7 @@ export declare const INT8_MIN: -128
 **Signature**
 
 ```ts
-export declare const Int16: Schema.refine<number, typeof Schema.Number>
+export declare const Int16: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
 ```
 
 ## Int16 (type alias)
@@ -309,7 +309,7 @@ export type Int16 = typeof Int16.Type
 **Signature**
 
 ```ts
-export declare const Int16Generator: FastCheck.Arbitrary<number>
+export declare const Int16Generator: FastCheck.Arbitrary<bigint>
 ```
 
 ## Int32
@@ -317,7 +317,7 @@ export declare const Int16Generator: FastCheck.Arbitrary<number>
 **Signature**
 
 ```ts
-export declare const Int32: Schema.refine<number, typeof Schema.Number>
+export declare const Int32: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
 ```
 
 ## Int32 (type alias)
@@ -333,7 +333,7 @@ export type Int32 = typeof Int32.Type
 **Signature**
 
 ```ts
-export declare const Int32Generator: FastCheck.Arbitrary<number>
+export declare const Int32Generator: FastCheck.Arbitrary<bigint>
 ```
 
 ## Int64
@@ -365,7 +365,7 @@ export declare const Int64Generator: FastCheck.Arbitrary<bigint>
 **Signature**
 
 ```ts
-export declare const Int8: Schema.refine<number, typeof Schema.Number>
+export declare const Int8: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
 ```
 
 ## Int8 (type alias)
@@ -381,7 +381,7 @@ export type Int8 = typeof Int8.Type
 **Signature**
 
 ```ts
-export declare const Int8Generator: FastCheck.Arbitrary<number>
+export declare const Int8Generator: FastCheck.Arbitrary<bigint>
 ```
 
 ## UINT16_MAX
@@ -389,7 +389,7 @@ export declare const Int8Generator: FastCheck.Arbitrary<number>
 **Signature**
 
 ```ts
-export declare const UINT16_MAX: 65535
+export declare const UINT16_MAX: 65535n
 ```
 
 ## UINT16_MIN
@@ -397,7 +397,7 @@ export declare const UINT16_MAX: 65535
 **Signature**
 
 ```ts
-export declare const UINT16_MIN: 0
+export declare const UINT16_MIN: 0n
 ```
 
 ## UINT32_MAX
@@ -461,7 +461,7 @@ export type Uint16 = typeof Uint16Schema.Type
 **Signature**
 
 ```ts
-export declare const Uint16Arbitrary: FastCheck.Arbitrary<number>
+export declare const Uint16Arbitrary: FastCheck.Arbitrary<bigint>
 ```
 
 ## Uint16Schema
@@ -469,7 +469,7 @@ export declare const Uint16Arbitrary: FastCheck.Arbitrary<number>
 **Signature**
 
 ```ts
-export declare const Uint16Schema: Schema.refine<number, typeof Schema.Number>
+export declare const Uint16Schema: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
 ```
 
 ## Uint32 (type alias)

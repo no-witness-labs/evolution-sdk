@@ -1,6 +1,6 @@
 ---
 title: ProposalProcedures.ts
-nav_order: 87
+nav_order: 89
 parent: Modules
 ---
 
@@ -188,31 +188,37 @@ export declare const CDDLSchema: Schema.Array$<
       typeof Schema.BigIntFromSelf,
       typeof Schema.Uint8ArrayFromSelf,
       Schema.SchemaClass<
-        | readonly [0n, readonly [any, bigint] | null, { readonly [x: string]: CBOR.CBOR }, any]
-        | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint], any]
+        | readonly [0n, readonly [any, bigint] | null, ReadonlyMap<bigint, CBOR.CBOR>, any]
+        | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint]]
         | readonly [2n, ReadonlyMap<any, bigint>, any]
         | readonly [3n, readonly [any, bigint] | null]
         | readonly [
             4n,
             readonly [any, bigint] | null,
-            readonly (readonly [0n | 1n, any])[],
-            ReadonlyMap<readonly [0n | 1n, any], readonly [0n | 1n, any]>,
+            (
+              | readonly (readonly [0n | 1n, any])[]
+              | { readonly _tag: "Tag"; readonly tag: 258; readonly value: readonly (readonly [0n | 1n, any])[] }
+            ),
+            ReadonlyMap<readonly [0n | 1n, any], bigint>,
             { readonly _tag: "Tag"; readonly tag: 30; readonly value: readonly [bigint, bigint] }
           ]
-        | readonly [5n, readonly [any, bigint] | null, CBOR.CBOR]
+        | readonly [5n, readonly [any, bigint] | null, readonly [readonly [string, any], any]]
         | readonly [6n],
-        | readonly [0n, readonly [any, bigint] | null, { readonly [x: string]: CBOR.CBOR }, any]
-        | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint], any]
+        | readonly [0n, readonly [any, bigint] | null, ReadonlyMap<bigint, CBOR.CBOR>, any]
+        | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint]]
         | readonly [2n, ReadonlyMap<any, bigint>, any]
         | readonly [3n, readonly [any, bigint] | null]
         | readonly [
             4n,
             readonly [any, bigint] | null,
-            readonly (readonly [0n | 1n, any])[],
-            ReadonlyMap<readonly [0n | 1n, any], readonly [0n | 1n, any]>,
+            (
+              | readonly (readonly [0n | 1n, any])[]
+              | { readonly _tag: "Tag"; readonly tag: 258; readonly value: readonly (readonly [0n | 1n, any])[] }
+            ),
+            ReadonlyMap<readonly [0n | 1n, any], bigint>,
             { readonly _tag: "Tag"; readonly tag: 30; readonly value: readonly [bigint, bigint] }
           ]
-        | readonly [5n, readonly [any, bigint] | null, CBOR.CBOR]
+        | readonly [5n, readonly [any, bigint] | null, readonly [readonly [string, any], any]]
         | readonly [6n],
         never
       >,
@@ -246,31 +252,37 @@ export declare const FromCBORBytes: (
           typeof Schema.BigIntFromSelf,
           typeof Schema.Uint8ArrayFromSelf,
           Schema.SchemaClass<
-            | readonly [0n, readonly [any, bigint] | null, { readonly [x: string]: CBOR.CBOR }, any]
-            | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint], any]
+            | readonly [0n, readonly [any, bigint] | null, ReadonlyMap<bigint, CBOR.CBOR>, any]
+            | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint]]
             | readonly [2n, ReadonlyMap<any, bigint>, any]
             | readonly [3n, readonly [any, bigint] | null]
             | readonly [
                 4n,
                 readonly [any, bigint] | null,
-                readonly (readonly [0n | 1n, any])[],
-                ReadonlyMap<readonly [0n | 1n, any], readonly [0n | 1n, any]>,
+                (
+                  | readonly (readonly [0n | 1n, any])[]
+                  | { readonly _tag: "Tag"; readonly tag: 258; readonly value: readonly (readonly [0n | 1n, any])[] }
+                ),
+                ReadonlyMap<readonly [0n | 1n, any], bigint>,
                 { readonly _tag: "Tag"; readonly tag: 30; readonly value: readonly [bigint, bigint] }
               ]
-            | readonly [5n, readonly [any, bigint] | null, CBOR.CBOR]
+            | readonly [5n, readonly [any, bigint] | null, readonly [readonly [string, any], any]]
             | readonly [6n],
-            | readonly [0n, readonly [any, bigint] | null, { readonly [x: string]: CBOR.CBOR }, any]
-            | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint], any]
+            | readonly [0n, readonly [any, bigint] | null, ReadonlyMap<bigint, CBOR.CBOR>, any]
+            | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint]]
             | readonly [2n, ReadonlyMap<any, bigint>, any]
             | readonly [3n, readonly [any, bigint] | null]
             | readonly [
                 4n,
                 readonly [any, bigint] | null,
-                readonly (readonly [0n | 1n, any])[],
-                ReadonlyMap<readonly [0n | 1n, any], readonly [0n | 1n, any]>,
+                (
+                  | readonly (readonly [0n | 1n, any])[]
+                  | { readonly _tag: "Tag"; readonly tag: 258; readonly value: readonly (readonly [0n | 1n, any])[] }
+                ),
+                ReadonlyMap<readonly [0n | 1n, any], bigint>,
                 { readonly _tag: "Tag"; readonly tag: 30; readonly value: readonly [bigint, bigint] }
               ]
-            | readonly [5n, readonly [any, bigint] | null, CBOR.CBOR]
+            | readonly [5n, readonly [any, bigint] | null, readonly [readonly [string, any], any]]
             | readonly [6n],
             never
           >,
@@ -310,31 +322,37 @@ export declare const FromCBORHex: (
             typeof Schema.BigIntFromSelf,
             typeof Schema.Uint8ArrayFromSelf,
             Schema.SchemaClass<
-              | readonly [0n, readonly [any, bigint] | null, { readonly [x: string]: CBOR.CBOR }, any]
-              | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint], any]
+              | readonly [0n, readonly [any, bigint] | null, ReadonlyMap<bigint, CBOR.CBOR>, any]
+              | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint]]
               | readonly [2n, ReadonlyMap<any, bigint>, any]
               | readonly [3n, readonly [any, bigint] | null]
               | readonly [
                   4n,
                   readonly [any, bigint] | null,
-                  readonly (readonly [0n | 1n, any])[],
-                  ReadonlyMap<readonly [0n | 1n, any], readonly [0n | 1n, any]>,
+                  (
+                    | readonly (readonly [0n | 1n, any])[]
+                    | { readonly _tag: "Tag"; readonly tag: 258; readonly value: readonly (readonly [0n | 1n, any])[] }
+                  ),
+                  ReadonlyMap<readonly [0n | 1n, any], bigint>,
                   { readonly _tag: "Tag"; readonly tag: 30; readonly value: readonly [bigint, bigint] }
                 ]
-              | readonly [5n, readonly [any, bigint] | null, CBOR.CBOR]
+              | readonly [5n, readonly [any, bigint] | null, readonly [readonly [string, any], any]]
               | readonly [6n],
-              | readonly [0n, readonly [any, bigint] | null, { readonly [x: string]: CBOR.CBOR }, any]
-              | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint], any]
+              | readonly [0n, readonly [any, bigint] | null, ReadonlyMap<bigint, CBOR.CBOR>, any]
+              | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint]]
               | readonly [2n, ReadonlyMap<any, bigint>, any]
               | readonly [3n, readonly [any, bigint] | null]
               | readonly [
                   4n,
                   readonly [any, bigint] | null,
-                  readonly (readonly [0n | 1n, any])[],
-                  ReadonlyMap<readonly [0n | 1n, any], readonly [0n | 1n, any]>,
+                  (
+                    | readonly (readonly [0n | 1n, any])[]
+                    | { readonly _tag: "Tag"; readonly tag: 258; readonly value: readonly (readonly [0n | 1n, any])[] }
+                  ),
+                  ReadonlyMap<readonly [0n | 1n, any], bigint>,
                   { readonly _tag: "Tag"; readonly tag: 30; readonly value: readonly [bigint, bigint] }
                 ]
-              | readonly [5n, readonly [any, bigint] | null, CBOR.CBOR]
+              | readonly [5n, readonly [any, bigint] | null, readonly [readonly [string, any], any]]
               | readonly [6n],
               never
             >,
@@ -365,31 +383,37 @@ export declare const FromCDDL: Schema.transformOrFail<
         typeof Schema.BigIntFromSelf,
         typeof Schema.Uint8ArrayFromSelf,
         Schema.SchemaClass<
-          | readonly [0n, readonly [any, bigint] | null, { readonly [x: string]: CBOR.CBOR }, any]
-          | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint], any]
+          | readonly [0n, readonly [any, bigint] | null, ReadonlyMap<bigint, CBOR.CBOR>, any]
+          | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint]]
           | readonly [2n, ReadonlyMap<any, bigint>, any]
           | readonly [3n, readonly [any, bigint] | null]
           | readonly [
               4n,
               readonly [any, bigint] | null,
-              readonly (readonly [0n | 1n, any])[],
-              ReadonlyMap<readonly [0n | 1n, any], readonly [0n | 1n, any]>,
+              (
+                | readonly (readonly [0n | 1n, any])[]
+                | { readonly _tag: "Tag"; readonly tag: 258; readonly value: readonly (readonly [0n | 1n, any])[] }
+              ),
+              ReadonlyMap<readonly [0n | 1n, any], bigint>,
               { readonly _tag: "Tag"; readonly tag: 30; readonly value: readonly [bigint, bigint] }
             ]
-          | readonly [5n, readonly [any, bigint] | null, CBOR.CBOR]
+          | readonly [5n, readonly [any, bigint] | null, readonly [readonly [string, any], any]]
           | readonly [6n],
-          | readonly [0n, readonly [any, bigint] | null, { readonly [x: string]: CBOR.CBOR }, any]
-          | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint], any]
+          | readonly [0n, readonly [any, bigint] | null, ReadonlyMap<bigint, CBOR.CBOR>, any]
+          | readonly [1n, readonly [any, bigint] | null, readonly [bigint, bigint]]
           | readonly [2n, ReadonlyMap<any, bigint>, any]
           | readonly [3n, readonly [any, bigint] | null]
           | readonly [
               4n,
               readonly [any, bigint] | null,
-              readonly (readonly [0n | 1n, any])[],
-              ReadonlyMap<readonly [0n | 1n, any], readonly [0n | 1n, any]>,
+              (
+                | readonly (readonly [0n | 1n, any])[]
+                | { readonly _tag: "Tag"; readonly tag: 258; readonly value: readonly (readonly [0n | 1n, any])[] }
+              ),
+              ReadonlyMap<readonly [0n | 1n, any], bigint>,
               { readonly _tag: "Tag"; readonly tag: 30; readonly value: readonly [bigint, bigint] }
             ]
-          | readonly [5n, readonly [any, bigint] | null, CBOR.CBOR]
+          | readonly [5n, readonly [any, bigint] | null, readonly [readonly [string, any], any]]
           | readonly [6n],
           never
         >,

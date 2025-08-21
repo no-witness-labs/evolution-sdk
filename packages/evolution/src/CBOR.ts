@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, Either as E, ParseResult, Schema } from "effect"
+import { Data, Either as E, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 
@@ -157,6 +157,115 @@ const FLOAT32_BYTES = new Uint8Array(FLOAT32_BUF)
 const FLOAT64_BUF = new ArrayBuffer(8)
 const FLOAT64_VIEW = new DataView(FLOAT64_BUF)
 const FLOAT64_BYTES = new Uint8Array(FLOAT64_BUF)
+
+/**
+ * Encode a CBOR definite-length array from already-encoded item bytes.
+ * This is a low-level function that constructs: definite_array_header + items.
+ *
+ */
+export const encodeArrayAsDefinite = (items: ReadonlyArray<Uint8Array>): Uint8Array => {
+  const len = items.length
+  // Compute header length based on array length (major type 4: arrays)
+  let headerLen = 0
+  if (len < 24) headerLen = 1
+  else if (len < 256) headerLen = 2
+  else if (len < 65536) headerLen = 3
+  else headerLen = 5
+
+  const totalItemsLen = items.reduce((acc, b) => acc + b.length, 0)
+  const out = new Uint8Array(headerLen + totalItemsLen)
+  let offset = 0
+
+  // Write the definite-length array header inline
+  if (len < 24) {
+    out[offset++] = 0x80 + len
+  } else if (len < 256) {
+    out[offset++] = 0x98
+    out[offset++] = len
+  } else if (len < 65536) {
+    out[offset++] = 0x99
+    out[offset++] = (len >>> 8) & 0xff
+    out[offset++] = len & 0xff
+  } else {
+    out[offset++] = 0x9a
+    out[offset++] = (len >>> 24) & 0xff
+    out[offset++] = (len >>> 16) & 0xff
+    out[offset++] = (len >>> 8) & 0xff
+    out[offset++] = len & 0xff
+  }
+
+  for (const b of items) {
+    out.set(b, offset)
+    offset += b.length
+  }
+  return out
+}
+
+/**
+ * Encode a CBOR indefinite-length array from already-encoded item bytes.
+ * This is a low-level function that constructs: 0x9f + items + 0xff.
+ *
+ */
+export const encodeArrayAsIndefinite = (items: ReadonlyArray<Uint8Array>): Uint8Array => {
+  const totalItemsLen = items.reduce((acc, b) => acc + b.length, 0)
+  const out = new Uint8Array(1 + totalItemsLen + 1)
+  let offset = 0
+
+  // Indefinite array start marker
+  out[offset++] = 0x9f
+
+  // Copy all items
+  for (const b of items) {
+    out.set(b, offset)
+    offset += b.length
+  }
+
+  // Break marker
+  out[offset] = 0xff
+
+  return out
+}
+
+/**
+ * Encode a CBOR tagged value from already-encoded value bytes.
+ * This is a low-level function that constructs: tag_header + value_bytes.
+ *
+ */
+export const encodeTaggedValue = (tag: number, valueBytes: Uint8Array): Uint8Array => {
+  if (tag < 0) throw new Error("CBOR.encodeTaggedValue: negative tag")
+
+  // Compute header length based on tag value (major type 6: tags)
+  let headerLen = 0
+  if (tag < 24) headerLen = 1
+  else if (tag < 256) headerLen = 2
+  else if (tag < 65536) headerLen = 3
+  else headerLen = 5
+
+  const out = new Uint8Array(headerLen + valueBytes.length)
+  let offset = 0
+
+  // Write the tag header inline
+  if (tag < 24) {
+    out[offset++] = 0xc0 + tag
+  } else if (tag < 256) {
+    out[offset++] = 0xd8
+    out[offset++] = tag
+  } else if (tag < 65536) {
+    out[offset++] = 0xd9
+    out[offset++] = (tag >>> 8) & 0xff
+    out[offset++] = tag & 0xff
+  } else {
+    out[offset++] = 0xda
+    out[offset++] = (tag >>> 24) & 0xff
+    out[offset++] = (tag >>> 16) & 0xff
+    out[offset++] = (tag >>> 8) & 0xff
+    out[offset++] = tag & 0xff
+  }
+
+  // Append the already-encoded value bytes
+  out.set(valueBytes, offset)
+  return out
+}
 
 /**
  * Type representing a CBOR value with simplified, non-tagged structure
@@ -374,1187 +483,6 @@ export const match = <R>(
   throw new Error(`Unhandled CBOR value type: ${typeof value}`)
 }
 
-// Internal encoding function used by Schema.transformOrFail
-const internalEncode = (value: CBOR, options: CodecOptions = CML_DEFAULT_OPTIONS): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    if (typeof value === "bigint") {
-      if (value >= 0n) {
-        return yield* encodeUint(value, options)
-      } else {
-        return yield* encodeNint(value, options)
-      }
-    }
-    if (value instanceof Uint8Array) {
-      return yield* encodeBytes(value, options)
-    }
-    if (typeof value === "string") {
-      return yield* encodeText(value, options)
-    }
-    if (Array.isArray(value)) {
-      return yield* encodeArray(value, options)
-    }
-    if (value instanceof Map) {
-      return yield* encodeMap(value, options)
-    }
-    if (isTag(value)) {
-      return yield* encodeTag(value.tag, value.value, options)
-    }
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      !Array.isArray(value) &&
-      !(value instanceof Map) &&
-      !(value instanceof Uint8Array) &&
-      !(value instanceof Tag)
-    ) {
-      return yield* encodeRecord(value as { readonly [key: string | number]: CBOR }, options)
-    }
-    if (typeof value === "boolean" || value === null || value === undefined) {
-      return yield* encodeSimple(value)
-    }
-    if (typeof value === "number") {
-      return yield* encodeFloat(value, options)
-    }
-
-    return yield* new CBORError({
-      message: `Unsupported CBOR value type: ${typeof value}`
-    })
-  })
-
-// Internal decoding function used by Schema.transformOrFail
-export const internalDecode = (
-  data: Uint8Array,
-  options: CodecOptions = DEFAULT_OPTIONS
-): Eff.Effect<CBOR, CBORError> =>
-  Eff.gen(function* () {
-    if (data.length === 0) {
-      return yield* new CBORError({ message: "Empty CBOR data" })
-    }
-
-    const { bytesConsumed, item } = yield* decodeItemWithLength(data, options)
-
-    // Verify that all input bytes were consumed
-    if (bytesConsumed !== data.length) {
-      return yield* new CBORError({
-        message: `Invalid CBOR: expected to consume ${data.length} bytes, but consumed ${bytesConsumed}`
-      })
-    }
-
-    return item
-  })
-
-// Internal encoding functions
-
-const encodeUint = (value: bigint, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    if (value < 0n) {
-      return yield* new CBORError({
-        message: `Cannot encode negative value ${value} as unsigned integer`
-      })
-    }
-
-    // Check if value exceeds 64-bit limit and requires big_uint tag (2)
-    const maxUint64 = 18446744073709551615n // 2^64 - 1
-    if (value > maxUint64) {
-      // Use CBOR tag 2 (big_uint) for large positive integers
-      const bytes = bigintToBytes(value)
-      const bytesValue = bytes
-      return yield* encodeTag(2, bytesValue, options)
-    }
-
-    // Canonical encoding always uses minimal representation
-    const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
-
-    if (value < 24n) {
-      return new Uint8Array([Number(value)])
-    } else if (value < 256n && useMinimal) {
-      return new Uint8Array([24, Number(value)])
-    } else if (value < 65536n && useMinimal) {
-      return new Uint8Array([25, Number(value >> 8n), Number(value & 0xffn)])
-    } else if (value < 4294967296n && useMinimal) {
-      return new Uint8Array([
-        26,
-        Number((value >> 24n) & 0xffn),
-        Number((value >> 16n) & 0xffn),
-        Number((value >> 8n) & 0xffn),
-        Number(value & 0xffn)
-      ])
-    } else {
-      // 8-byte encoding for values <= 2^64-1
-      return new Uint8Array([
-        27,
-        Number((value >> 56n) & 0xffn),
-        Number((value >> 48n) & 0xffn),
-        Number((value >> 40n) & 0xffn),
-        Number((value >> 32n) & 0xffn),
-        Number((value >> 24n) & 0xffn),
-        Number((value >> 16n) & 0xffn),
-        Number((value >> 8n) & 0xffn),
-        Number(value & 0xffn)
-      ])
-    }
-  })
-
-const encodeNint = (value: bigint, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    if (value >= 0n) {
-      return yield* new CBORError({
-        message: `Cannot encode non-negative value ${value} as negative integer`
-      })
-    }
-
-    // Check if value exceeds 64-bit limit and requires big_nint tag (3)
-    const minInt64 = -18446744073709551615n // -(2^64 - 1)
-    if (value < minInt64) {
-      // Use CBOR tag 3 (big_nint) for large negative integers
-      // For tag 3, we encode the positive value (-(n+1))
-      const positiveValue = -(value + 1n)
-      const bytes = bigintToBytes(positiveValue)
-      const bytesValue = bytes
-      return yield* encodeTag(3, bytesValue, options)
-    }
-
-    // RFC 8949: negative integers are encoded as -1 - n
-    const positiveValue = -value - 1n
-    const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
-
-    if (positiveValue < 24n) {
-      return new Uint8Array([0x20 + Number(positiveValue)])
-    } else if (positiveValue < 256n && useMinimal) {
-      return new Uint8Array([0x38, Number(positiveValue)])
-    } else if (positiveValue < 65536n && useMinimal) {
-      return new Uint8Array([0x39, Number(positiveValue >> 8n), Number(positiveValue & 0xffn)])
-    } else if (positiveValue < 4294967296n && useMinimal) {
-      return new Uint8Array([
-        0x3a,
-        Number((positiveValue >> 24n) & 0xffn),
-        Number((positiveValue >> 16n) & 0xffn),
-        Number((positiveValue >> 8n) & 0xffn),
-        Number(positiveValue & 0xffn)
-      ])
-    } else {
-      // 8-byte encoding for values >= -(2^64-1)
-      return new Uint8Array([
-        0x3b,
-        Number((positiveValue >> 56n) & 0xffn),
-        Number((positiveValue >> 48n) & 0xffn),
-        Number((positiveValue >> 40n) & 0xffn),
-        Number((positiveValue >> 32n) & 0xffn),
-        Number((positiveValue >> 24n) & 0xffn),
-        Number((positiveValue >> 16n) & 0xffn),
-        Number((positiveValue >> 8n) & 0xffn),
-        Number(positiveValue & 0xffn)
-      ])
-    }
-  })
-
-const encodeBytes = (value: Uint8Array, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    const length = value.length
-    let headerBytes: Uint8Array
-    const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
-
-    if (length < 24) {
-      headerBytes = new Uint8Array([0x40 + length])
-    } else if (length < 256 && useMinimal) {
-      headerBytes = new Uint8Array([0x58, length])
-    } else if (length < 65536 && useMinimal) {
-      headerBytes = new Uint8Array([0x59, length >> 8, length & 0xff])
-    } else if (length < 4294967296 && useMinimal) {
-      headerBytes = new Uint8Array([
-        0x5a,
-        (length >> 24) & 0xff,
-        (length >> 16) & 0xff,
-        (length >> 8) & 0xff,
-        length & 0xff
-      ])
-    } else {
-      return yield* new CBORError({
-        message: `Byte string too long: ${length} bytes`
-      })
-    }
-
-    const result = new Uint8Array(headerBytes.length + length)
-    result.set(headerBytes, 0)
-    result.set(value, headerBytes.length)
-    return result
-  })
-
-const encodeText = (value: string, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    const utf8Bytes = TEXT_ENCODER.encode(value)
-    const length = utf8Bytes.length
-    let headerBytes: Uint8Array
-    const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
-
-    if (length < 24) {
-      headerBytes = new Uint8Array([0x60 + length])
-    } else if (length < 256 && useMinimal) {
-      headerBytes = new Uint8Array([0x78, length])
-    } else if (length < 65536 && useMinimal) {
-      headerBytes = new Uint8Array([0x79, length >> 8, length & 0xff])
-    } else if (length < 4294967296 && useMinimal) {
-      headerBytes = new Uint8Array([
-        0x7a,
-        (length >> 24) & 0xff,
-        (length >> 16) & 0xff,
-        (length >> 8) & 0xff,
-        length & 0xff
-      ])
-    } else {
-      return yield* new CBORError({
-        message: `Text string too long: ${length} bytes`
-      })
-    }
-
-    const result = new Uint8Array(headerBytes.length + length)
-    result.set(headerBytes, 0)
-    result.set(utf8Bytes, headerBytes.length)
-    return result
-  })
-
-const encodeArray = (value: ReadonlyArray<CBOR>, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    const length = value.length
-    const chunks: Array<Uint8Array> = []
-    const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
-    const useIndefinite = options.mode === "custom" && options.useIndefiniteArrays && length > 0
-
-    if (useIndefinite) {
-      // Indefinite-length array
-      chunks.push(new Uint8Array([0x9f])) // Start indefinite array
-
-      // Encode each item
-      for (const item of value) {
-        const encodedItem = yield* internalEncode(item, options)
-        chunks.push(encodedItem)
-      }
-
-      // Add break marker
-      chunks.push(new Uint8Array([0xff]))
-    } else {
-      // Definite-length array
-      if (length < 24) {
-        chunks.push(new Uint8Array([0x80 + length]))
-      } else if (length < 256 && useMinimal) {
-        chunks.push(new Uint8Array([0x98, length]))
-      } else if (length < 65536 && useMinimal) {
-        chunks.push(new Uint8Array([0x99, length >> 8, length & 0xff]))
-      } else if (length < 4294967296 && useMinimal) {
-        chunks.push(
-          new Uint8Array([0x9a, (length >> 24) & 0xff, (length >> 16) & 0xff, (length >> 8) & 0xff, length & 0xff])
-        )
-      } else {
-        return yield* new CBORError({
-          message: `Array too long: ${length} elements`
-        })
-      }
-
-      // Encode each item
-      for (const item of value) {
-        const encodedItem = yield* internalEncode(item, options)
-        chunks.push(encodedItem)
-      }
-    }
-
-    // Combine chunks
-    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-    const result = new Uint8Array(totalLength)
-    let offset = 0
-    for (const chunk of chunks) {
-      result.set(chunk, offset)
-      offset += chunk.length
-    }
-
-    return result
-  })
-
-const encodeMap = (value: ReadonlyMap<CBOR, CBOR>, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    // Convert Map to array of pairs for processing
-    const pairs = Array.from(value.entries())
-    const length = pairs.length
-    const chunks: Array<Uint8Array> = []
-    const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
-    const sortKeys = options.mode === "canonical" || (options.mode === "custom" && options.sortMapKeys)
-    const useIndefinite = options.mode === "custom" && options.useIndefiniteMaps && length > 0
-
-    // Sort keys if required (canonical CBOR requires sorted keys)
-    let encodedPairs: Array<{ encodedKey: Uint8Array; encodedValue: Uint8Array }> | undefined
-
-    if (sortKeys) {
-      // Sort by encoded key length only (matches old CBOR.ts behavior)
-      const tempEncodedPairs = yield* Eff.all(
-        pairs.map(([key, val]) =>
-          Eff.gen(function* () {
-            const encodedKey = yield* internalEncode(key, options)
-            const encodedValue = yield* internalEncode(val, options)
-            return { encodedKey, encodedValue }
-          })
-        )
-      )
-
-      // Sort by encoded key length only (not full lexicographic order)
-      tempEncodedPairs.sort((a, b) => {
-        return a.encodedKey.length - b.encodedKey.length
-      })
-
-      encodedPairs = tempEncodedPairs
-    }
-
-    if (useIndefinite) {
-      // Indefinite-length map
-      chunks.push(new Uint8Array([0xbf])) // Start indefinite map
-
-      // Encode each key-value pair
-      if (encodedPairs) {
-        // Use pre-encoded pairs for sorted output
-        for (const { encodedKey, encodedValue } of encodedPairs) {
-          chunks.push(encodedKey)
-          chunks.push(encodedValue)
-        }
-      } else {
-        // Encode pairs on-the-fly for unsorted output
-        for (const [key, val] of pairs) {
-          const encodedKey = yield* internalEncode(key, options)
-          const encodedValue = yield* internalEncode(val, options)
-          chunks.push(encodedKey)
-          chunks.push(encodedValue)
-        }
-      }
-
-      // Add break marker
-      chunks.push(new Uint8Array([0xff]))
-    } else {
-      // Definite-length map
-      if (length < 24) {
-        chunks.push(new Uint8Array([0xa0 + length]))
-      } else if (length < 256 && useMinimal) {
-        chunks.push(new Uint8Array([0xb8, length]))
-      } else if (length < 65536 && useMinimal) {
-        chunks.push(new Uint8Array([0xb9, length >> 8, length & 0xff]))
-      } else if (length < 4294967296 && useMinimal) {
-        chunks.push(
-          new Uint8Array([0xba, (length >> 24) & 0xff, (length >> 16) & 0xff, (length >> 8) & 0xff, length & 0xff])
-        )
-      } else {
-        return yield* new CBORError({
-          message: `Map too long: ${length} entries`
-        })
-      }
-
-      // Encode each key-value pair
-      if (encodedPairs) {
-        // Use pre-encoded pairs for sorted output
-        for (const { encodedKey, encodedValue } of encodedPairs) {
-          chunks.push(encodedKey)
-          chunks.push(encodedValue)
-        }
-      } else {
-        // Encode pairs on-the-fly for unsorted output
-        for (const [key, val] of pairs) {
-          const encodedKey = yield* internalEncode(key, options)
-          const encodedValue = yield* internalEncode(val, options)
-          chunks.push(encodedKey)
-          chunks.push(encodedValue)
-        }
-      }
-    }
-
-    // Combine chunks
-    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-    const result = new Uint8Array(totalLength)
-    let offset = 0
-    for (const chunk of chunks) {
-      result.set(chunk, offset)
-      offset += chunk.length
-    }
-
-    return result
-  })
-
-/**
- * Encode a Record (JavaScript object) as a CBOR Map.
- *
- * **Number Key Support:** Number keys (e.g., `42`) are automatically converted to
- * bigint and encoded as CBOR integers, not text strings.
- *
- * **Key Ordering:** Records follow JavaScript object property enumeration:
- * - Integer-like strings in ascending numeric order
- * - Other strings in insertion order
- * This may differ from Map insertion order with mixed key types.
- *
- * @param value - The record to encode
- * @param options - CBOR encoding options
- * @returns Effect that yields the encoded CBOR bytes
- *
- * @since 1.0.0
- * @category encoding
- */
-const encodeRecord = (
-  value: { readonly [key: string | number]: CBOR },
-  options: CodecOptions
-): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    // Convert Record to Map to preserve insertion order and reuse Map encoding logic
-    // Handle the case where number keys get converted to strings by Object.entries
-    const rawPairs = Object.entries(value)
-    const mapEntries = rawPairs.map(([key, val]) => {
-      // Check if the string key represents a number that should be encoded as bigint
-      const numKey = Number(key)
-      if (Number.isInteger(numKey) && !Number.isNaN(numKey) && key === String(numKey)) {
-        // Convert back to bigint for proper CBOR encoding
-        return [BigInt(numKey), val] as [CBOR, CBOR]
-      }
-      return [key, val] as [CBOR, CBOR]
-    })
-
-    // Create a Map from the processed entries and encode it
-    const map = new Map(mapEntries)
-    return yield* encodeMap(map, options)
-  })
-
-const encodeTag = (tag: number, value: CBOR, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    const chunks: Array<Uint8Array> = []
-    const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
-
-    // Encode tag
-    if (tag < 24) {
-      chunks.push(new Uint8Array([0xc0 + tag]))
-    } else if (tag < 256 && useMinimal) {
-      chunks.push(new Uint8Array([0xd8, tag]))
-    } else if (tag < 65536 && useMinimal) {
-      chunks.push(new Uint8Array([0xd9, tag >> 8, tag & 0xff]))
-    } else {
-      return yield* new CBORError({ message: `Tag ${tag} too large` })
-    }
-
-    // Encode tagged value
-    const encodedValue = yield* internalEncode(value, options)
-    chunks.push(encodedValue)
-
-    // Combine chunks
-    const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-    const result = new Uint8Array(totalLength)
-    let offset = 0
-    for (const chunk of chunks) {
-      result.set(chunk, offset)
-      offset += chunk.length
-    }
-
-    return result
-  })
-
-const encodeSimple = (value: boolean | null | undefined): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.gen(function* () {
-    if (value === false) return new Uint8Array([0xf4])
-    if (value === true) return new Uint8Array([0xf5])
-    if (value === null) return new Uint8Array([0xf6])
-    if (value === undefined) return new Uint8Array([0xf7])
-
-    return yield* new CBORError({
-      message: `Invalid simple value: ${value}`
-    })
-  })
-
-const encodeFloat = (value: number, options: CodecOptions): Eff.Effect<Uint8Array, CBORError> =>
-  Eff.succeed(
-    (() => {
-      if (Number.isNaN(value)) {
-        return new Uint8Array([0xf9, 0x7e, 0x00])
-      } else if (value === Infinity) {
-        return new Uint8Array([0xf9, 0x7c, 0x00])
-      } else if (value === -Infinity) {
-        return new Uint8Array([0xf9, 0xfc, 0x00])
-      } else {
-        if (options.mode === "canonical") {
-          const half = encodeFloat16(value)
-          if (decodeFloat16(half) === value) {
-            return new Uint8Array([0xf9, (half >> 8) & 0xff, half & 0xff])
-          }
-          FLOAT32_VIEW.setFloat32(0, value, false)
-          if (FLOAT32_VIEW.getFloat32(0, false) === value) {
-            const out = new Uint8Array(1 + 4)
-            out[0] = 0xfa
-            out.set(FLOAT32_BYTES, 1)
-            return out
-          }
-        }
-        FLOAT64_VIEW.setFloat64(0, value, false)
-        const out = new Uint8Array(1 + 8)
-        out[0] = 0xfb
-        out.set(FLOAT64_BYTES, 1)
-        return out
-      }
-    })()
-  )
-
-// Internal decoding functions
-
-const decodeUint = (data: Uint8Array): Eff.Effect<CBOR, CBORError> =>
-  Eff.gen(function* () {
-    const firstByte = data[0]
-    const additionalInfo = firstByte & 0x1f
-
-    if (additionalInfo < 24) {
-      return BigInt(additionalInfo)
-    } else if (additionalInfo === 24) {
-      if (data.length < 2) {
-        return yield* new CBORError({
-          message: "Insufficient data for 1-byte unsigned integer"
-        })
-      }
-      return BigInt(data[1])
-    } else if (additionalInfo === 25) {
-      if (data.length < 3) {
-        return yield* new CBORError({
-          message: "Insufficient data for 2-byte unsigned integer"
-        })
-      }
-      return BigInt(data[1]) * 256n + BigInt(data[2])
-    } else if (additionalInfo === 26) {
-      if (data.length < 5) {
-        return yield* new CBORError({
-          message: "Insufficient data for 4-byte unsigned integer"
-        })
-      }
-      return BigInt(data[1]) * 16777216n + BigInt(data[2]) * 65536n + BigInt(data[3]) * 256n + BigInt(data[4])
-    } else if (additionalInfo === 27) {
-      if (data.length < 9) {
-        return yield* new CBORError({
-          message: "Insufficient data for 8-byte unsigned integer"
-        })
-      }
-      let result = 0n
-      for (let i = 1; i <= 8; i++) {
-        result = result * 256n + BigInt(data[i])
-      }
-      return result
-    } else {
-      return yield* new CBORError({
-        message: `Unsupported additional info for unsigned integer: ${additionalInfo}`
-      })
-    }
-  })
-
-const decodeNint = (data: Uint8Array): Eff.Effect<CBOR, CBORError> =>
-  Eff.gen(function* () {
-    const firstByte = data[0]
-    const additionalInfo = firstByte & 0x1f
-
-    if (additionalInfo < 24) {
-      return -1n - BigInt(additionalInfo)
-    } else if (additionalInfo === 24) {
-      if (data.length < 2) {
-        return yield* new CBORError({
-          message: "Insufficient data for 1-byte negative integer"
-        })
-      }
-      return -1n - BigInt(data[1])
-    } else if (additionalInfo === 25) {
-      if (data.length < 3) {
-        return yield* new CBORError({
-          message: "Insufficient data for 2-byte negative integer"
-        })
-      }
-      return -1n - (BigInt(data[1]) * 256n + BigInt(data[2]))
-    } else if (additionalInfo === 26) {
-      if (data.length < 5) {
-        return yield* new CBORError({
-          message: "Insufficient data for 4-byte negative integer"
-        })
-      }
-      return -1n - (BigInt(data[1]) * 16777216n + BigInt(data[2]) * 65536n + BigInt(data[3]) * 256n + BigInt(data[4]))
-    } else if (additionalInfo === 27) {
-      if (data.length < 9) {
-        return yield* new CBORError({
-          message: "Insufficient data for 8-byte negative integer"
-        })
-      }
-      let result = 0n
-      for (let i = 1; i <= 8; i++) {
-        result = result * 256n + BigInt(data[i])
-      }
-      return -1n - result
-    } else {
-      return yield* new CBORError({
-        message: `Unsupported additional info for negative integer: ${additionalInfo}`
-      })
-    }
-  })
-
-const decodeBytesWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
-  Eff.gen(function* () {
-    const firstByte = data[0]
-    const additionalInfo = firstByte & 0x1f
-
-    if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
-      // Indefinite-length byte string - concatenate chunks until break
-      let offset = 1
-      const chunks: Array<Uint8Array> = []
-      let foundBreak = false
-
-      while (offset < data.length) {
-        if (data[offset] === 0xff) {
-          offset++
-          foundBreak = true
-          break
-        }
-
-        // Decode a definite-length byte string chunk
-        const chunkFirstByte = data[offset]
-        const chunkMajorType = (chunkFirstByte >> 5) & 0x07
-
-        if (chunkMajorType !== CBOR_MAJOR_TYPE.BYTE_STRING) {
-          return yield* new CBORError({
-            message: "Expected byte string chunk in indefinite byte string"
-          })
-        }
-
-        const chunkAdditionalInfo = chunkFirstByte & 0x1f
-        if (chunkAdditionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
-          return yield* new CBORError({
-            message: "Nested indefinite byte strings not allowed"
-          })
-        }
-
-        const { bytesRead, length: chunkLength } = yield* decodeLength(data, offset)
-        const chunkData = data.slice(offset + bytesRead, offset + bytesRead + chunkLength)
-        chunks.push(chunkData)
-        offset += bytesRead + chunkLength
-      }
-
-      if (!foundBreak) {
-        return yield* new CBORError({
-          message: "Missing break marker for indefinite byte string"
-        })
-      }
-
-      // Concatenate all chunks
-      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
-      const result = new Uint8Array(totalLength)
-      let resultOffset = 0
-      for (const chunk of chunks) {
-        result.set(chunk, resultOffset)
-        resultOffset += chunk.length
-      }
-
-      return { item: result, bytesConsumed: offset }
-    } else {
-      // Definite-length byte string
-      const { bytesRead, length } = yield* decodeLength(data, 0)
-
-      if (data.length < bytesRead + length) {
-        return yield* new CBORError({
-          message: `Insufficient data for byte string: expected ${bytesRead + length} bytes, got ${data.length}`
-        })
-      }
-
-      const result = data.slice(bytesRead, bytesRead + length)
-      return { item: result, bytesConsumed: bytesRead + length }
-    }
-  })
-
-const decodeTextWithLength = (data: Uint8Array): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
-  Eff.gen(function* () {
-    const firstByte = data[0]
-    const additionalInfo = firstByte & 0x1f
-
-    if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
-      // Indefinite-length text string - concatenate chunks until break
-      let offset = 1
-      const chunks: Array<string> = []
-      let foundBreak = false
-
-      while (offset < data.length) {
-        if (data[offset] === 0xff) {
-          offset++
-          foundBreak = true
-          break
-        }
-
-        // Decode a definite-length text string chunk
-        const chunkFirstByte = data[offset]
-        const chunkMajorType = (chunkFirstByte >> 5) & 0x07
-
-        if (chunkMajorType !== CBOR_MAJOR_TYPE.TEXT_STRING) {
-          return yield* new CBORError({
-            message: "Expected text string chunk in indefinite text string"
-          })
-        }
-
-        const chunkAdditionalInfo = chunkFirstByte & 0x1f
-        if (chunkAdditionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
-          return yield* new CBORError({
-            message: "Nested indefinite text strings not allowed"
-          })
-        }
-
-        const { bytesRead, length: chunkLength } = yield* decodeLength(data, offset)
-        const chunkBytes = data.slice(offset + bytesRead, offset + bytesRead + chunkLength)
-
-        try {
-          const chunkText = TEXT_DECODER.decode(chunkBytes)
-          chunks.push(chunkText)
-        } catch (error) {
-          return yield* new CBORError({
-            message: "Invalid UTF-8 in text string chunk",
-            cause: error
-          })
-        }
-
-        offset += bytesRead + chunkLength
-      }
-
-      if (!foundBreak) {
-        return yield* new CBORError({
-          message: "Missing break marker for indefinite text string"
-        })
-      }
-
-      // Concatenate all chunks
-      return { item: chunks.join(""), bytesConsumed: offset }
-    } else {
-      // Definite-length text string
-      const { bytesRead, length } = yield* decodeLength(data, 0)
-
-      if (data.length < bytesRead + length) {
-        return yield* new CBORError({
-          message: `Insufficient data for text string: expected ${bytesRead + length} bytes, got ${data.length}`
-        })
-      }
-
-      const textBytes = data.slice(bytesRead, bytesRead + length)
-      try {
-        const text = TEXT_DECODER.decode(textBytes)
-        return { item: text, bytesConsumed: bytesRead + length }
-      } catch (error) {
-        return yield* new CBORError({
-          message: "Invalid UTF-8 in text string",
-          cause: error
-        })
-      }
-    }
-  })
-
-// Helper function to decode an item and return both the item and bytes consumed
-const decodeItemWithLength = (
-  data: Uint8Array,
-  options: CodecOptions = CML_DEFAULT_OPTIONS
-): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
-  Eff.gen(function* () {
-    if (data.length === 0) {
-      return yield* new CBORError({ message: "Empty CBOR data" })
-    }
-
-    const firstByte = data[0]
-    const majorType = (firstByte >> 5) & 0x07
-    const additionalInfo = firstByte & 0x1f
-
-    let bytesConsumed = 0
-    let item: CBOR
-
-    switch (majorType) {
-      case CBOR_MAJOR_TYPE.UNSIGNED_INTEGER: {
-        item = yield* decodeUint(data)
-        if (additionalInfo < 24) {
-          bytesConsumed = 1
-        } else if (additionalInfo === 24) {
-          bytesConsumed = 2
-        } else if (additionalInfo === 25) {
-          bytesConsumed = 3
-        } else if (additionalInfo === 26) {
-          bytesConsumed = 5
-        } else if (additionalInfo === 27) {
-          bytesConsumed = 9
-        } else {
-          return yield* new CBORError({
-            message: `Unsupported additional info for unsigned integer: ${additionalInfo}`
-          })
-        }
-        break
-      }
-      case CBOR_MAJOR_TYPE.NEGATIVE_INTEGER: {
-        item = yield* decodeNint(data)
-        if (additionalInfo < 24) {
-          bytesConsumed = 1
-        } else if (additionalInfo === 24) {
-          bytesConsumed = 2
-        } else if (additionalInfo === 25) {
-          bytesConsumed = 3
-        } else if (additionalInfo === 26) {
-          bytesConsumed = 5
-        } else if (additionalInfo === 27) {
-          bytesConsumed = 9
-        } else {
-          return yield* new CBORError({
-            message: `Unsupported additional info for negative integer: ${additionalInfo}`
-          })
-        }
-        break
-      }
-      case CBOR_MAJOR_TYPE.BYTE_STRING: {
-        const { bytesConsumed: bytesBytes, item: bytesItem } = yield* decodeBytesWithLength(data)
-        item = bytesItem
-        bytesConsumed = bytesBytes
-        break
-      }
-      case CBOR_MAJOR_TYPE.TEXT_STRING: {
-        const { bytesConsumed: textBytes, item: textItem } = yield* decodeTextWithLength(data)
-        item = textItem
-        bytesConsumed = textBytes
-        break
-      }
-      case CBOR_MAJOR_TYPE.ARRAY: {
-        const { bytesConsumed: arrayBytes, item: arrayItem } = yield* decodeArrayWithLength(data, options)
-        item = arrayItem
-        bytesConsumed = arrayBytes
-        break
-      }
-      case CBOR_MAJOR_TYPE.MAP: {
-        const { bytesConsumed: mapBytes, item: mapItem } = yield* decodeMapWithLength(data, options)
-        item = mapItem
-        bytesConsumed = mapBytes
-        break
-      }
-      case CBOR_MAJOR_TYPE.TAG: {
-        const { bytesConsumed: tagBytes, item: tagItem } = yield* decodeTagWithLength(data, options)
-        item = tagItem
-        bytesConsumed = tagBytes
-        break
-      }
-      case CBOR_MAJOR_TYPE.SIMPLE_FLOAT: {
-        item = yield* decodeSimpleOrFloat(data)
-        if (additionalInfo < 24) {
-          bytesConsumed = 1
-        } else if (additionalInfo === 24) {
-          bytesConsumed = 2
-        } else if (additionalInfo === 25) {
-          bytesConsumed = 3
-        } else if (additionalInfo === 26) {
-          bytesConsumed = 5
-        } else if (additionalInfo === 27) {
-          bytesConsumed = 9
-        } else {
-          return yield* new CBORError({
-            message: `Unsupported simple/float encoding: ${additionalInfo}`
-          })
-        }
-        break
-      }
-      default:
-        return yield* new CBORError({
-          message: `Unknown CBOR major type: ${majorType}`
-        })
-    }
-
-    return { item, bytesConsumed }
-  })
-
-const decodeArrayWithLength = (
-  data: Uint8Array,
-  options: CodecOptions = CML_DEFAULT_OPTIONS
-): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
-  Eff.gen(function* () {
-    const firstByte = data[0]
-    const additionalInfo = firstByte & 0x1f
-
-    if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
-      // Indefinite-length array
-      let offset = 1
-      const result: Array<CBOR> = []
-      let foundBreak = false
-
-      while (offset < data.length) {
-        if (data[offset] === 0xff) {
-          offset++
-          foundBreak = true
-          break
-        }
-
-        const { bytesConsumed, item } = yield* decodeItemWithLength(data.slice(offset), options)
-        result.push(item)
-        offset += bytesConsumed
-      }
-
-      if (!foundBreak) {
-        return yield* new CBORError({
-          message: "Missing break marker for indefinite array"
-        })
-      }
-
-      return {
-        item: result,
-        bytesConsumed: offset
-      }
-    } else {
-      // Definite-length array
-      const { bytesRead, length } = yield* decodeLength(data, 0)
-      let offset = bytesRead
-      const result: Array<CBOR> = []
-
-      for (let i = 0; i < length; i++) {
-        if (offset >= data.length) {
-          return yield* new CBORError({
-            message: `Insufficient data for array element ${i}`
-          })
-        }
-
-        const { bytesConsumed, item } = yield* decodeItemWithLength(data.slice(offset), options)
-        result.push(item)
-        offset += bytesConsumed
-      }
-
-      return {
-        item: result,
-        bytesConsumed: offset
-      }
-    }
-  })
-
-/**
- * Helper function to convert Map entries to a plain object.
- * Used when mapsAsObjects option is enabled.
- */
-const convertEntriesToObject = (entries: Array<[CBOR, CBOR]>): Record<string | number, CBOR> => {
-  const obj: Record<string | number, CBOR> = {}
-  for (const [key, value] of entries) {
-    if (typeof key === "string" || typeof key === "number") {
-      obj[key] = value
-    } else if (typeof key === "bigint") {
-      obj[Number(key)] = value
-    } else {
-      // For non-primitive keys, convert to string
-      obj[String(key)] = value
-    }
-  }
-  return obj
-}
-
-const decodeMapWithLength = (
-  data: Uint8Array,
-  options: CodecOptions = CML_DEFAULT_OPTIONS
-): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
-  Eff.gen(function* () {
-    const firstByte = data[0]
-    const additionalInfo = firstByte & 0x1f
-
-    if (additionalInfo === CBOR_ADDITIONAL_INFO.INDEFINITE) {
-      // Indefinite-length map
-      let offset = 1
-      const entries: Array<[CBOR, CBOR]> = []
-      let foundBreak = false
-
-      while (offset < data.length) {
-        if (data[offset] === 0xff) {
-          offset++
-          foundBreak = true
-          break
-        }
-
-        // Decode key
-        const { bytesConsumed: keyBytes, item: key } = yield* decodeItemWithLength(data.slice(offset), options)
-        offset += keyBytes
-
-        // Decode value
-        if (offset >= data.length) {
-          return yield* new CBORError({
-            message: "Missing value in indefinite map"
-          })
-        }
-
-        const { bytesConsumed: valueBytes, item: value } = yield* decodeItemWithLength(data.slice(offset), options)
-        offset += valueBytes
-
-        entries.push([key, value])
-      }
-
-      if (!foundBreak) {
-        return yield* new CBORError({
-          message: "Missing break marker for indefinite map"
-        })
-      }
-
-      // Convert to Map or Object based on option
-      const result = options.mapsAsObjects ? convertEntriesToObject(entries) : new Map(entries)
-
-      return { item: result, bytesConsumed: offset }
-    } else {
-      // Definite-length map
-      const { bytesRead, length } = yield* decodeLength(data, 0)
-      let offset = bytesRead
-      const entries: Array<[CBOR, CBOR]> = []
-
-      for (let i = 0; i < length; i++) {
-        // Decode key
-        if (offset >= data.length) {
-          return yield* new CBORError({
-            message: `Insufficient data for map key ${i}`
-          })
-        }
-
-        const { bytesConsumed: keyBytes, item: key } = yield* decodeItemWithLength(data.slice(offset), options)
-        offset += keyBytes
-
-        // Decode value
-        if (offset >= data.length) {
-          return yield* new CBORError({
-            message: `Insufficient data for map value ${i}`
-          })
-        }
-
-        const { bytesConsumed: valueBytes, item: value } = yield* decodeItemWithLength(data.slice(offset), options)
-        offset += valueBytes
-
-        entries.push([key, value])
-      }
-
-      // Convert to Map or Object based on option
-      const result = options.mapsAsObjects ? convertEntriesToObject(entries) : new Map(entries)
-
-      return { item: result, bytesConsumed: offset }
-    }
-  })
-
-const decodeTagWithLength = (
-  data: Uint8Array,
-  options: CodecOptions = DEFAULT_OPTIONS
-): Eff.Effect<{ item: CBOR; bytesConsumed: number }, CBORError> =>
-  Eff.gen(function* () {
-    const firstByte = data[0]
-    const additionalInfo = firstByte & 0x1f
-    let tagValue: number
-    let dataOffset: number
-
-    if (additionalInfo < 24) {
-      tagValue = additionalInfo
-      dataOffset = 1
-    } else if (additionalInfo === 24) {
-      if (data.length < 2) {
-        return yield* new CBORError({
-          message: "Insufficient data for 1-byte tag"
-        })
-      }
-      tagValue = data[1]
-      dataOffset = 2
-    } else if (additionalInfo === 25) {
-      if (data.length < 3) {
-        return yield* new CBORError({
-          message: "Insufficient data for 2-byte tag"
-        })
-      }
-      tagValue = (data[1] << 8) | data[2]
-      dataOffset = 3
-    } else {
-      return yield* new CBORError({
-        message: `Unsupported tag encoding: ${additionalInfo}`
-      })
-    }
-
-    const { bytesConsumed, item: innerValue } = yield* decodeItemWithLength(data.slice(dataOffset), options)
-
-    // Handle special tags that should be converted to plain values
-    if (tagValue === 2) {
-      // Tag 2: positive big integer
-      if (innerValue instanceof Uint8Array) {
-        return {
-          item: bytesToBigint(innerValue),
-          bytesConsumed: dataOffset + bytesConsumed
-        }
-      } else {
-        return yield* new CBORError({
-          message: `Expected bytes for tag 2 (big_uint), got ${typeof innerValue}`
-        })
-      }
-    } else if (tagValue === 3) {
-      // Tag 3: negative big integer
-      if (innerValue instanceof Uint8Array) {
-        const positiveValue = bytesToBigint(innerValue)
-        return {
-          item: -(positiveValue + 1n),
-          bytesConsumed: dataOffset + bytesConsumed
-        }
-      } else {
-        return yield* new CBORError({
-          message: `Expected bytes for tag 3 (big_nint), got ${typeof innerValue}`
-        })
-      }
-    }
-
-    // For all other tags, return as tagged object
-    return {
-      item: Tag.make({
-        tag: tagValue,
-        value: innerValue
-      }),
-      bytesConsumed: dataOffset + bytesConsumed
-    }
-  })
-
-const decodeSimpleOrFloat = (data: Uint8Array): Eff.Effect<CBOR, CBORError> =>
-  Eff.gen(function* () {
-    const firstByte = data[0]
-    const additionalInfo = firstByte & 0x1f
-
-    if (additionalInfo === CBOR_SIMPLE.FALSE) {
-      return false
-    } else if (additionalInfo === CBOR_SIMPLE.TRUE) {
-      return true
-    } else if (additionalInfo === CBOR_SIMPLE.NULL) {
-      return null
-    } else if (additionalInfo === CBOR_SIMPLE.UNDEFINED) {
-      return undefined
-    } else if (additionalInfo < 24) {
-      // Unassigned simple values 0-19 (not 20-23 which are assigned above)
-      // Return them as numbers for compatibility with test vectors
-      return additionalInfo
-    } else if (additionalInfo === 24) {
-      // Simple value with 1-byte payload
-      if (data.length < 2) {
-        return yield* new CBORError({
-          message: "Insufficient data for 1-byte simple value"
-        })
-      }
-      const simpleValue = data[1]
-      // Return the simple value as a number
-      // RFC 8949 allows unassigned simple values to be decoded
-      return simpleValue
-    } else if (additionalInfo === 25) {
-      // Half-precision float
-      if (data.length < 3) {
-        return yield* new CBORError({
-          message: "Insufficient data for half-precision float"
-        })
-      }
-      const value = (data[1] << 8) | data[2]
-      const float = decodeFloat16(value)
-      return float
-    } else if (additionalInfo === 26) {
-      // Single-precision float
-      if (data.length < 5) {
-        return yield* new CBORError({
-          message: "Insufficient data for single-precision float"
-        })
-      }
-      const view = new DataView(data.buffer, data.byteOffset + 1, 4)
-      return view.getFloat32(0, false) // big-endian
-    } else if (additionalInfo === 27) {
-      // Double-precision float
-      if (data.length < 9) {
-        return yield* new CBORError({
-          message: "Insufficient data for double-precision float"
-        })
-      }
-      const view = new DataView(data.buffer, data.byteOffset + 1, 8)
-      return view.getFloat64(0, false) // big-endian
-    } else {
-      return yield* new CBORError({
-        message: `Unsupported simple/float encoding: ${additionalInfo}`
-      })
-    }
-  })
-
 // Helper functions for bigint conversion
 
 /**
@@ -1577,71 +505,7 @@ const bigintToBytes = (value: bigint): Uint8Array => {
   return new Uint8Array(bytes)
 }
 
-/**
- * Convert a big-endian byte array to a positive bigint
- * Used for CBOR tag 2/3 decoding
- */
-const bytesToBigint = (bytes: Uint8Array): bigint => {
-  if (bytes.length === 0) {
-    return 0n
-  }
-
-  let result = 0n
-  for (let i = 0; i < bytes.length; i++) {
-    result = (result << 8n) | BigInt(bytes[i])
-  }
-
-  return result
-}
-
-// Helper function for length decoding
-
-const decodeLength = (data: Uint8Array, offset: number): Eff.Effect<{ length: number; bytesRead: number }, CBORError> =>
-  Eff.gen(function* () {
-    if (offset >= data.length) {
-      return yield* new CBORError({
-        message: "Insufficient data for length decoding"
-      })
-    }
-
-    const firstByte = data[offset]
-    const additionalInfo = firstByte & 0x1f
-
-    if (additionalInfo < 24) {
-      return { length: additionalInfo, bytesRead: 1 }
-    } else if (additionalInfo === 24) {
-      if (data.length < offset + 2) {
-        return yield* new CBORError({
-          message: "Insufficient data for 1-byte length"
-        })
-      }
-      return { length: data[offset + 1], bytesRead: 2 }
-    } else if (additionalInfo === 25) {
-      if (data.length < offset + 3) {
-        return yield* new CBORError({
-          message: "Insufficient data for 2-byte length"
-        })
-      }
-      return {
-        length: (data[offset + 1] << 8) | data[offset + 2],
-        bytesRead: 3
-      }
-    } else if (additionalInfo === 26) {
-      if (data.length < offset + 5) {
-        return yield* new CBORError({
-          message: "Insufficient data for 4-byte length"
-        })
-      }
-      return {
-        length: (data[offset + 1] << 24) | (data[offset + 2] << 16) | (data[offset + 3] << 8) | data[offset + 4],
-        bytesRead: 5
-      }
-    } else {
-      return yield* new CBORError({
-        message: `Unsupported length encoding: ${additionalInfo}`
-      })
-    }
-  })
+// Note: bytesToBigint and Effect-based decodeLength removed in sync-only refactor
 
 const decodeFloat16 = (value: number): number => {
   const sign = (value & 0x8000) >> 15
@@ -1991,7 +855,6 @@ const encodeTextSync = (value: string, options: CodecOptions): Uint8Array => {
 
 const encodeArraySync = (value: ReadonlyArray<CBOR>, options: CodecOptions): Uint8Array => {
   const length = value.length
-  const useMinimal = options.mode === "canonical" || (options.mode === "custom" && options.useMinimalEncoding)
   const useIndefinite = options.mode === "custom" && options.useIndefiniteArrays && length > 0
 
   // Fast path for empty arrays
@@ -1999,69 +862,14 @@ const encodeArraySync = (value: ReadonlyArray<CBOR>, options: CodecOptions): Uin
     return new Uint8Array([0x80])
   }
 
-  // Pre-encode items and compute payload size
-  const encodedItems = new Array<Uint8Array>(length)
-  let payloadSize = 0
+  // Pre-encode items
+  const items = new Array<Uint8Array>(length)
   for (let i = 0; i < length; i++) {
-    const bytes = internalEncodeSync(value[i], options)
-    encodedItems[i] = bytes
-    payloadSize += bytes.length
+    items[i] = internalEncodeSync(value[i], options)
   }
 
-  // Compute header size and write header
-  if (useIndefinite) {
-    const totalSize = 1 + payloadSize + 1 // start + payload + break
-    const out = new Uint8Array(totalSize)
-    let off = 0
-    out[off++] = 0x9f
-    for (let i = 0; i < length; i++) {
-      const bytes = encodedItems[i]
-      out.set(bytes, off)
-      off += bytes.length
-    }
-    out[off] = 0xff
-    return out
-  } else {
-    // Optimize header encoding with fewer branches
-    let headerSize: number
-    let headerBytes: Uint8Array
-    if (length < 24) {
-      headerSize = 1
-      headerBytes = new Uint8Array([0x80 + length])
-    } else if (length < 256 && useMinimal) {
-      headerSize = 2
-      headerBytes = new Uint8Array([0x98, length])
-    } else if (length < 65536 && useMinimal) {
-      headerSize = 3
-      headerBytes = new Uint8Array([0x99, length >> 8, length & 0xff])
-    } else if (length < 4294967296 && useMinimal) {
-      headerSize = 5
-      headerBytes = new Uint8Array([
-        0x9a,
-        (length >> 24) & 0xff,
-        (length >> 16) & 0xff,
-        (length >> 8) & 0xff,
-        length & 0xff
-      ])
-    } else {
-      throw new CBORError({ message: `Array too long: ${length} elements` })
-    }
-
-    const totalSize = headerSize + payloadSize
-    const out = new Uint8Array(totalSize)
-
-    // Copy header
-    out.set(headerBytes, 0)
-
-    // Copy payload items
-    let off = headerSize
-    for (let i = 0; i < length; i++) {
-      const bytes = encodedItems[i]
-      out.set(bytes, off)
-      off += bytes.length
-    }
-    return out
-  }
+  // Use low-level helpers
+  return useIndefinite ? encodeArrayAsIndefinite(items) : encodeArrayAsDefinite(items)
 }
 
 const encodeMapEntriesSync = (pairs: Array<[CBOR, CBOR]>, options: CodecOptions): Uint8Array => {

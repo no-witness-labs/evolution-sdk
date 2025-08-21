@@ -11,7 +11,7 @@
   "enforceExports": false,
   "skipExamplesValidation": true,
   "skipModulesValidation": true,
-  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/test/**", "**/tests/**", "**/internal/**", "**/index.ts"],
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/test/**", "**/tests/**", "**/internal/**", "**/index.ts", "**/debug/**"],
   "projectHomepage": "https://github.com/no-witness-labs/evolution-sdk",
   "docsHomepage": "TBD",
   "projectName": "Evolution SDK",

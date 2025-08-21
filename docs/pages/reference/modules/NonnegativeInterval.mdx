@@ -1,0 +1,166 @@
+---
+title: NonnegativeInterval.ts
+nav_order: 71
+parent: Modules
+---
+
+## NonnegativeInterval overview
+
+---
+
+<h2 className="text-delta">Table of contents</h2>
+
+- [utils](#utils)
+  - [CDDLSchema](#cddlschema)
+  - [FromCBORBytes](#fromcborbytes)
+  - [FromCBORHex](#fromcborhex)
+  - [FromCDDL](#fromcddl)
+  - [NonnegativeInterval](#nonnegativeinterval)
+  - [NonnegativeInterval (type alias)](#nonnegativeinterval-type-alias)
+  - [NonnegativeIntervalError (class)](#nonnegativeintervalerror-class)
+  - [arbitrary](#arbitrary)
+
+---
+
+# utils
+
+## CDDLSchema
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.TaggedStruct<
+  "Tag",
+  { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+>
+```
+
+## FromCBORBytes
+
+**Signature**
+
+```ts
+export declare const FromCBORBytes: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transformOrFail<
+    typeof Schema.Uint8ArrayFromSelf,
+    Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+    never
+  >,
+  Schema.transformOrFail<
+    Schema.TaggedStruct<
+      "Tag",
+      { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+    >,
+    Schema.refine<
+      { readonly numerator: bigint; readonly denominator: bigint },
+      Schema.Struct<{
+        numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      }>
+    >,
+    never
+  >
+>
+```
+
+## FromCBORHex
+
+**Signature**
+
+```ts
+export declare const FromCBORHex: (
+  options?: CBOR.CodecOptions
+) => Schema.transform<
+  Schema.transform<Schema.Schema<string, string, never>, Schema.Schema<Uint8Array, Uint8Array, never>>,
+  Schema.transform<
+    Schema.transformOrFail<
+      typeof Schema.Uint8ArrayFromSelf,
+      Schema.declare<CBOR.CBOR, CBOR.CBOR, readonly [], never>,
+      never
+    >,
+    Schema.transformOrFail<
+      Schema.TaggedStruct<
+        "Tag",
+        { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+      >,
+      Schema.refine<
+        { readonly numerator: bigint; readonly denominator: bigint },
+        Schema.Struct<{
+          numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+          denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+        }>
+      >,
+      never
+    >
+  >
+>
+```
+
+## FromCDDL
+
+Transform between tag(30) tuple and NonnegativeInterval model.
+
+**Signature**
+
+```ts
+export declare const FromCDDL: Schema.transformOrFail<
+  Schema.TaggedStruct<
+    "Tag",
+    { tag: Schema.Literal<[30]>; value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf> }
+  >,
+  Schema.refine<
+    { readonly numerator: bigint; readonly denominator: bigint },
+    Schema.Struct<{
+      numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+      denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+    }>
+  >,
+  never
+>
+```
+
+## NonnegativeInterval
+
+Schema for NonnegativeInterval representing a fractional value >= 0.
+
+CDDL: nonnegative_interval = #6.30([uint, positive_int])
+
+**Signature**
+
+```ts
+export declare const NonnegativeInterval: Schema.refine<
+  { readonly numerator: bigint; readonly denominator: bigint },
+  Schema.Struct<{
+    numerator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+    denominator: Schema.refine<bigint, typeof Schema.BigIntFromSelf>
+  }>
+>
+```
+
+## NonnegativeInterval (type alias)
+
+**Signature**
+
+```ts
+export type NonnegativeInterval = typeof NonnegativeInterval.Type
+```
+
+## NonnegativeIntervalError (class)
+
+Error class for NonnegativeInterval related operations.
+
+**Signature**
+
+```ts
+export declare class NonnegativeIntervalError
+```
+
+## arbitrary
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<{ readonly numerator: bigint; readonly denominator: bigint }>
+```

@@ -361,8 +361,18 @@ export const make = TransactionWitnessSet.make
  * @category equality
  */
 export const equals = (a: TransactionWitnessSet, b: TransactionWitnessSet): boolean => {
-  // Deep equality check would be complex, so we use JSON comparison for now
-  return JSON.stringify(a) === JSON.stringify(b)
+  // Use CBOR byte comparison to avoid JSON.stringify and handle all cases correctly
+  try {
+    const aBytes = toCBORBytes(a)
+    const bBytes = toCBORBytes(b)
+    if (aBytes.length !== bBytes.length) return false
+    for (let i = 0; i < aBytes.length; i++) {
+      if (aBytes[i] !== bBytes[i]) return false
+    }
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**

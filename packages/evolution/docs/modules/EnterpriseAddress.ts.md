@@ -1,6 +1,6 @@
 ---
 title: EnterpriseAddress.ts
-nav_order: 47
+nav_order: 48
 parent: Modules
 ---
 
@@ -24,6 +24,8 @@ parent: Modules
   - [fromHex](#fromhex)
 - [schemas](#schemas)
   - [EnterpriseAddress (class)](#enterpriseaddress-class)
+    - [toString (method)](#tostring-method)
+    - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
 - [testing](#testing)
   - [arbitrary](#arbitrary)
 - [utils](#utils)
@@ -143,6 +145,22 @@ export declare class EnterpriseAddress
 ```
 
 Added in v2.0.0
+
+### toString (method)
+
+**Signature**
+
+```ts
+toString(): string
+```
+
+### [Symbol.for("nodejs.util.inspect.custom")] (method)
+
+**Signature**
+
+```ts
+[Symbol.for("nodejs.util.inspect.custom")](): string
+```
 
 # testing
 

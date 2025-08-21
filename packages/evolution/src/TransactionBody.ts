@@ -151,7 +151,8 @@ const decodeKeyHash = ParseResult.decodeEither(KeyHash.FromBytes)
  * @since 2.0.0
  * @category schemas
  */
-export const CDDLSchema = Schema.Struct({
+// Accept both Struct (object with numeric keys) and Map<bigint, CBOR>
+const CDDLAStruct = Schema.Struct({
   0: CBOR.tag(258, Schema.Array(TransactionInput.CDDLSchema)), // set<transaction_input> - required
   1: Schema.Array(TransactionOutput.CDDLSchema), // [* transaction_output] - required
   2: CBOR.Integer, // coin (fee) - required
@@ -173,6 +174,13 @@ export const CDDLSchema = Schema.Struct({
   21: Schema.optional(CBOR.Integer), // coin (current_treasury_value) - optional
   22: Schema.optional(CBOR.Integer) // positive_coin (donation) - optional
 })
+
+const CDDLMap = Schema.MapFromSelf({
+  key: CBOR.Integer,
+  value: CBOR.CBORSchema
+})
+
+export const CDDLSchema = Schema.Union(CDDLAStruct, CDDLMap)
 
 type CDDLSchema = typeof CDDLSchema.Type
 
@@ -280,8 +288,11 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
     }),
   decode: (fromA) =>
     E.gen(function* () {
-      // Required fields - access as record properties
-      const inputsTag = fromA[0] // CBOR.Tag 258
+      // Helpers to read from Map or Struct
+      const isMap = (v: any): v is ReadonlyMap<unknown, unknown> => v instanceof Map
+      const getKey = (src: any, key: number) => (isMap(src) ? src.get(BigInt(key)) : (src as any)[key])
+      // Required fields - access via helper
+      const inputsTag = getKey(fromA as any, 0) // CBOR.Tag 258
       const inputsArray = inputsTag.value
       const inputsLen = inputsArray.length
       const inputs = new Array(inputsLen)
@@ -289,18 +300,18 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         inputs[i] = yield* decodeTxInput(inputsArray[i])
       }
 
-      const outputsArray = fromA[1]
+      const outputsArray = getKey(fromA as any, 1)
       const outputsLen = outputsArray.length
       const outputs = new Array(outputsLen)
       for (let i = 0; i < outputsLen; i++) {
         outputs[i] = yield* decodeTxOutput(outputsArray[i])
       }
-      const fee = fromA[2]
+      const fee = getKey(fromA as any, 2)
 
       // Optional fields - access as record properties
-      const ttl = fromA[3]
+      const ttl = getKey(fromA as any, 3)
 
-      const certificatesArray = fromA[4]
+      const certificatesArray = getKey(fromA as any, 4)
       let certificates: NonEmptyArray<Certificate.Certificate> | undefined
       if (certificatesArray) {
         const len = certificatesArray.length
@@ -312,27 +323,30 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       }
 
       let withdrawals: Withdrawals.Withdrawals | undefined
-      const withdrawalsMap = fromA[5]
+      const withdrawalsMap = getKey(fromA as any, 5)
       if (withdrawalsMap) {
         const decodedWithdrawals = new Map<RewardAccount.RewardAccount, Coin.Coin>()
-        for (const [accountBytes, coinAmount] of withdrawalsMap.entries()) {
+        const entriesIter: Iterable<[Uint8Array, bigint]> = isMap(withdrawalsMap)
+          ? (withdrawalsMap as ReadonlyMap<Uint8Array, bigint>).entries()
+          : Object.entries(withdrawalsMap as Record<string, unknown>).map(([k, v]) => [Bytes.fromHex(k), v as bigint])
+        for (const [accountBytes, coinAmount] of entriesIter) {
           const rewardAccount = yield* decodeRewardAccountBytes(accountBytes)
           decodedWithdrawals.set(rewardAccount, coinAmount)
         }
         withdrawals = new Withdrawals.Withdrawals({ withdrawals: decodedWithdrawals })
       }
 
-      const auxiliaryDataHashBytes = fromA[7]
+      const auxiliaryDataHashBytes = getKey(fromA as any, 7)
       const auxiliaryDataHash = auxiliaryDataHashBytes
         ? yield* decodeAuxiliaryDataHash(auxiliaryDataHashBytes)
         : undefined
-      const validityIntervalStart = fromA[8]
-      const mintData = fromA[9]
+      const validityIntervalStart = getKey(fromA as any, 8)
+      const mintData = getKey(fromA as any, 9)
       const mint = mintData ? yield* decodeMint(mintData) : undefined
-      const scriptDataHashBytes = fromA[11]
+      const scriptDataHashBytes = getKey(fromA as any, 11)
       const scriptDataHash = scriptDataHashBytes ? yield* decodeScriptDataHash(scriptDataHashBytes) : undefined
 
-      const collateralInputsTag = fromA[13] // CBOR.Tag 258
+      const collateralInputsTag = getKey(fromA as any, 13) // CBOR.Tag 258
       const collateralInputsArray = collateralInputsTag ? collateralInputsTag.value : undefined
       let collateralInputs: NonEmptyArray<TransactionInput.TransactionInput> | undefined
       if (collateralInputsArray) {
@@ -344,7 +358,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         collateralInputs = arr as NonEmptyArray<TransactionInput.TransactionInput>
       }
 
-      const requiredSignersArray = fromA[14]
+      const requiredSignersArray = getKey(fromA as any, 14)
       let requiredSigners: NonEmptyArray<KeyHash.KeyHash> | undefined
       if (requiredSignersArray) {
         const len = requiredSignersArray.length
@@ -354,14 +368,13 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         }
         requiredSigners = arr as NonEmptyArray<KeyHash.KeyHash>
       }
-
-      const networkIdBigInt = fromA[15]
+      const networkIdBigInt = getKey(fromA as any, 15)
       const networkId = networkIdBigInt ? NetworkId.make(Number(networkIdBigInt)) : undefined
-      const collateralReturnData = fromA[16]
+      const collateralReturnData = getKey(fromA as any, 16)
       const collateralReturn = collateralReturnData ? yield* decodeTxOutput(collateralReturnData) : undefined
-      const totalCollateral = fromA[17]
+      const totalCollateral = getKey(fromA as any, 17)
 
-      const referenceInputsTag = fromA[18] // CBOR.Tag 258
+      const referenceInputsTag = getKey(fromA as any, 18) // CBOR.Tag 258
       const referenceInputsArray = referenceInputsTag ? referenceInputsTag.value : undefined
       let referenceInputs: NonEmptyArray<TransactionInput.TransactionInput> | undefined
       if (referenceInputsArray) {
@@ -372,9 +385,9 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         }
         referenceInputs = arr as NonEmptyArray<TransactionInput.TransactionInput>
       }
-      const votingProceduresData = fromA[19]
+      const votingProceduresData = getKey(fromA as any, 19)
       const votingProcedures = votingProceduresData ? yield* decodeVotingProcedures(votingProceduresData) : undefined
-      const proposalProceduresTag = fromA[20]
+      const proposalProceduresTag = getKey(fromA as any, 20)
       const proposalProceduresArray = proposalProceduresTag
         ? (proposalProceduresTag.value as ReadonlyArray<typeof ProposalProcedure.CDDLSchema.Type>)
         : undefined
@@ -383,8 +396,8 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
             procedures: yield* E.all(proposalProceduresArray.map((pp) => decodeProposalProcedure(pp)))
           })
         : undefined
-      const currentTreasuryValue = fromA[21]
-      const donation = fromA[22]
+      const currentTreasuryValue = getKey(fromA as any, 21)
+      const donation = getKey(fromA as any, 22)
 
       return new TransactionBody(
         {
@@ -421,8 +434,8 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
  * @since 2.0.0
  * @category schemas
  */
-export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
-  Schema.compose(CBOR.FromBytes(options), FromCDDL).annotations({
+export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+  Schema.compose(CBOR.FromBytes(options), FromCDDL as any).annotations({
     identifier: "TransactionBody.FromCBORBytes",
     title: "TransactionBody from CBOR bytes",
     description: "Decode TransactionBody from CBOR-encoded bytes using Conway CDDL specification"
@@ -435,8 +448,8 @@ export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_
  * @since 2.0.0
  * @category schemas
  */
-export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.STRUCT_FRIENDLY_OPTIONS) =>
-  Schema.compose(CBOR.FromHex(options), FromCDDL).annotations({
+export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
+  Schema.compose(CBOR.FromHex(options), FromCDDL as any).annotations({
     identifier: "TransactionBody.FromCBORHex",
     title: "TransactionBody from CBOR hex",
     description: "Decode TransactionBody from CBOR-encoded hex string using Conway CDDL specification"
@@ -450,29 +463,30 @@ export const isTransactionBody = Schema.is(TransactionBody)
 
 /**
  * Parse a TransactionBody from CBOR bytes.
- * Default options use STRUCT_FRIENDLY_OPTIONS for better readability.
+ * Default options use CML_DEFAULT_OPTIONS for CDDL/CML parity.
  *
  * @since 2.0.0
  * @category parsing
  */
 export const fromCBORBytes = Function.makeCBORDecodeSync(
-  FromCDDL,
+  FromCDDL as any,
   TransactionBodyError,
-  "TransactionBody.fromCBORBytes"
+  "TransactionBody.fromCBORBytes",
+  CBOR.CML_DEFAULT_OPTIONS
 )
 
 /**
  * Parse a TransactionBody from CBOR hex string.
- * Default options use STRUCT_FRIENDLY_OPTIONS for better readability.
+ * Default options use CML_DEFAULT_OPTIONS for CDDL/CML parity.
  *
  * @since 2.0.0
  * @category parsing
  */
 export const fromCBORHex = Function.makeCBORDecodeHexSync(
-  FromCDDL,
+  FromCDDL as any,
   TransactionBodyError,
   "TransactionBody.fromCBORHex",
-  CBOR.STRUCT_FRIENDLY_OPTIONS
+  CBOR.CML_DEFAULT_OPTIONS
 )
 
 // ============================================================================
@@ -481,30 +495,30 @@ export const fromCBORHex = Function.makeCBORDecodeHexSync(
 
 /**
  * Convert a TransactionBody to CBOR bytes.
- * Default options use STRUCT_FRIENDLY_OPTIONS for better readability.
+ * Default options use CML_DEFAULT_OPTIONS for CDDL/CML parity.
  *
  * @since 2.0.0
  * @category encoding
  */
 export const toCBORBytes = Function.makeCBOREncodeSync(
-  FromCDDL,
+  FromCDDL as any,
   TransactionBodyError,
   "TransactionBody.toCBORBytes",
-  CBOR.STRUCT_FRIENDLY_OPTIONS
+  CBOR.CML_DEFAULT_OPTIONS
 )
 
 /**
  * Convert a TransactionBody to CBOR hex string.
- * Default options use STRUCT_FRIENDLY_OPTIONS for better readability.
+ * Default options use CML_DEFAULT_OPTIONS for CDDL/CML parity.
  *
  * @since 2.0.0
  * @category encoding
  */
 export const toCBORHex = Function.makeCBOREncodeHexSync(
-  FromCDDL,
+  FromCDDL as any,
   TransactionBodyError,
   "TransactionBody.toCBORHex",
-  CBOR.STRUCT_FRIENDLY_OPTIONS
+  CBOR.CML_DEFAULT_OPTIONS
 )
 
 // ============================================================================
@@ -519,20 +533,24 @@ export const toCBORHex = Function.makeCBOREncodeHexSync(
  */
 export namespace Either {
   export const fromCBORBytes = Function.makeCBORDecodeEither(
-    FromCDDL,
+    FromCDDL as any,
     TransactionBodyError,
-    CBOR.STRUCT_FRIENDLY_OPTIONS
+    CBOR.CML_DEFAULT_OPTIONS
   )
   export const fromCBORHex = Function.makeCBORDecodeHexEither(
-    FromCDDL,
+    FromCDDL as any,
     TransactionBodyError,
-    CBOR.STRUCT_FRIENDLY_OPTIONS
+    CBOR.CML_DEFAULT_OPTIONS
   )
-  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, TransactionBodyError, CBOR.STRUCT_FRIENDLY_OPTIONS)
-  export const toCBORHex = Function.makeCBOREncodeHexEither(
-    FromCDDL,
+  export const toCBORBytes = Function.makeCBOREncodeEither(
+    FromCDDL as any,
     TransactionBodyError,
-    CBOR.STRUCT_FRIENDLY_OPTIONS
+    CBOR.CML_DEFAULT_OPTIONS
+  )
+  export const toCBORHex = Function.makeCBOREncodeHexEither(
+    FromCDDL as any,
+    TransactionBodyError,
+    CBOR.CML_DEFAULT_OPTIONS
   )
 }
 

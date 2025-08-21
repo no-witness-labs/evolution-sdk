@@ -371,33 +371,31 @@ export declare const FromCBORBytes: (
             typeof Schema.Uint8ArrayFromSelf
           ]
         >,
-        Schema.Tuple2<
-          Schema.Literal<[3n]>,
-          Schema.Tuple<
-            [
-              typeof Schema.Uint8ArrayFromSelf,
-              typeof Schema.Uint8ArrayFromSelf,
-              typeof Schema.BigIntFromSelf,
-              typeof Schema.BigIntFromSelf,
-              Schema.TaggedStruct<
-                "Tag",
-                {
-                  tag: Schema.Literal<[30]>
-                  value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
-                }
-              >,
-              typeof Schema.Uint8ArrayFromSelf,
-              Schema.Array$<typeof Schema.Uint8ArrayFromSelf>,
-              Schema.Array$<
-                Schema.SchemaClass<
-                  readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
-                  readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
-                  never
-                >
-              >,
-              Schema.NullOr<Schema.SchemaClass<readonly [string, any], readonly [string, any], never>>
-            ]
-          >
+        Schema.Tuple<
+          [
+            Schema.Literal<[3n]>,
+            typeof Schema.Uint8ArrayFromSelf,
+            typeof Schema.Uint8ArrayFromSelf,
+            typeof Schema.BigIntFromSelf,
+            typeof Schema.BigIntFromSelf,
+            Schema.TaggedStruct<
+              "Tag",
+              {
+                tag: Schema.Literal<[30]>
+                value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
+              }
+            >,
+            typeof Schema.Uint8ArrayFromSelf,
+            Schema.Array$<typeof Schema.Uint8ArrayFromSelf>,
+            Schema.Array$<
+              Schema.SchemaClass<
+                readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
+                readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
+                never
+              >
+            >,
+            Schema.NullOr<Schema.SchemaClass<readonly [string, any], readonly [string, any], never>>
+          ]
         >,
         Schema.Tuple<[Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf]>,
         Schema.Tuple<
@@ -599,37 +597,31 @@ export declare const FromCBORHex: (
               typeof Schema.Uint8ArrayFromSelf
             ]
           >,
-          Schema.Tuple2<
-            Schema.Literal<[3n]>,
-            Schema.Tuple<
-              [
-                typeof Schema.Uint8ArrayFromSelf,
-                typeof Schema.Uint8ArrayFromSelf,
-                typeof Schema.BigIntFromSelf,
-                typeof Schema.BigIntFromSelf,
-                Schema.TaggedStruct<
-                  "Tag",
-                  {
-                    tag: Schema.Literal<[30]>
-                    value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
-                  }
-                >,
-                typeof Schema.Uint8ArrayFromSelf,
-                Schema.Array$<typeof Schema.Uint8ArrayFromSelf>,
-                Schema.Array$<
-                  Schema.SchemaClass<
-                    | readonly [0n, bigint | null, any, any]
-                    | readonly [1n, bigint | null, string]
-                    | readonly [2n, string],
-                    | readonly [0n, bigint | null, any, any]
-                    | readonly [1n, bigint | null, string]
-                    | readonly [2n, string],
-                    never
-                  >
-                >,
-                Schema.NullOr<Schema.SchemaClass<readonly [string, any], readonly [string, any], never>>
-              ]
-            >
+          Schema.Tuple<
+            [
+              Schema.Literal<[3n]>,
+              typeof Schema.Uint8ArrayFromSelf,
+              typeof Schema.Uint8ArrayFromSelf,
+              typeof Schema.BigIntFromSelf,
+              typeof Schema.BigIntFromSelf,
+              Schema.TaggedStruct<
+                "Tag",
+                {
+                  tag: Schema.Literal<[30]>
+                  value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
+                }
+              >,
+              typeof Schema.Uint8ArrayFromSelf,
+              Schema.Array$<typeof Schema.Uint8ArrayFromSelf>,
+              Schema.Array$<
+                Schema.SchemaClass<
+                  readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
+                  readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
+                  never
+                >
+              >,
+              Schema.NullOr<Schema.SchemaClass<readonly [string, any], readonly [string, any], never>>
+            ]
           >,
           Schema.Tuple<[Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf]>,
           Schema.Tuple<
@@ -819,33 +811,31 @@ export declare const FromCDDL: Schema.transformOrFail<
           typeof Schema.Uint8ArrayFromSelf
         ]
       >,
-      Schema.Tuple2<
-        Schema.Literal<[3n]>,
-        Schema.Tuple<
-          [
-            typeof Schema.Uint8ArrayFromSelf,
-            typeof Schema.Uint8ArrayFromSelf,
-            typeof Schema.BigIntFromSelf,
-            typeof Schema.BigIntFromSelf,
-            Schema.TaggedStruct<
-              "Tag",
-              {
-                tag: Schema.Literal<[30]>
-                value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
-              }
-            >,
-            typeof Schema.Uint8ArrayFromSelf,
-            Schema.Array$<typeof Schema.Uint8ArrayFromSelf>,
-            Schema.Array$<
-              Schema.SchemaClass<
-                readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
-                readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
-                never
-              >
-            >,
-            Schema.NullOr<Schema.SchemaClass<readonly [string, any], readonly [string, any], never>>
-          ]
-        >
+      Schema.Tuple<
+        [
+          Schema.Literal<[3n]>,
+          typeof Schema.Uint8ArrayFromSelf,
+          typeof Schema.Uint8ArrayFromSelf,
+          typeof Schema.BigIntFromSelf,
+          typeof Schema.BigIntFromSelf,
+          Schema.TaggedStruct<
+            "Tag",
+            {
+              tag: Schema.Literal<[30]>
+              value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
+            }
+          >,
+          typeof Schema.Uint8ArrayFromSelf,
+          Schema.Array$<typeof Schema.Uint8ArrayFromSelf>,
+          Schema.Array$<
+            Schema.SchemaClass<
+              readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
+              readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
+              never
+            >
+          >,
+          Schema.NullOr<Schema.SchemaClass<readonly [string, any], readonly [string, any], never>>
+        ]
       >,
       Schema.Tuple<[Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf]>,
       Schema.Tuple<
@@ -1069,33 +1059,31 @@ export declare const CDDLSchema: Schema.Union<
         typeof Schema.Uint8ArrayFromSelf
       ]
     >,
-    Schema.Tuple2<
-      Schema.Literal<[3n]>,
-      Schema.Tuple<
-        [
-          typeof Schema.Uint8ArrayFromSelf,
-          typeof Schema.Uint8ArrayFromSelf,
-          typeof Schema.BigIntFromSelf,
-          typeof Schema.BigIntFromSelf,
-          Schema.TaggedStruct<
-            "Tag",
-            {
-              tag: Schema.Literal<[30]>
-              value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
-            }
-          >,
-          typeof Schema.Uint8ArrayFromSelf,
-          Schema.Array$<typeof Schema.Uint8ArrayFromSelf>,
-          Schema.Array$<
-            Schema.SchemaClass<
-              readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
-              readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
-              never
-            >
-          >,
-          Schema.NullOr<Schema.SchemaClass<readonly [string, any], readonly [string, any], never>>
-        ]
-      >
+    Schema.Tuple<
+      [
+        Schema.Literal<[3n]>,
+        typeof Schema.Uint8ArrayFromSelf,
+        typeof Schema.Uint8ArrayFromSelf,
+        typeof Schema.BigIntFromSelf,
+        typeof Schema.BigIntFromSelf,
+        Schema.TaggedStruct<
+          "Tag",
+          {
+            tag: Schema.Literal<[30]>
+            value: Schema.Tuple2<typeof Schema.BigIntFromSelf, typeof Schema.BigIntFromSelf>
+          }
+        >,
+        typeof Schema.Uint8ArrayFromSelf,
+        Schema.Array$<typeof Schema.Uint8ArrayFromSelf>,
+        Schema.Array$<
+          Schema.SchemaClass<
+            readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
+            readonly [0n, bigint | null, any, any] | readonly [1n, bigint | null, string] | readonly [2n, string],
+            never
+          >
+        >,
+        Schema.NullOr<Schema.SchemaClass<readonly [string, any], readonly [string, any], never>>
+      ]
     >,
     Schema.Tuple<[Schema.Literal<[4n]>, typeof Schema.Uint8ArrayFromSelf, typeof Schema.BigIntFromSelf]>,
     Schema.Tuple<

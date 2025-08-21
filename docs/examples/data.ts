@@ -1,0 +1,51 @@
+// Examples for Data getting-started page
+
+// #region data-nested-canonical
+import assert from "node:assert/strict"
+import { CBOR, Data } from "@evolution-sdk/evolution"
+// Create a complex nested data structure with:
+// - Constructor with index 1 containing multiple fields
+// - Nested constructors with different indices
+// - A Map with mixed key-value pairs
+// - An array of numbers
+const nestedUnsortedData = new Data.Constr({
+  index: 1n,
+  fields: [
+    // Nested constructor: 121_0([123_0([])])
+    new Data.Constr({
+      index: 0n,
+      fields: [
+        new Data.Constr({
+          index: 2n,
+          fields: []
+        })
+      ]
+    }),
+    // Map with unsorted keys (will be sorted in canonical mode)
+    new Map<Data.Data, Data.Data>([
+      ["deadbeef01", new Data.Constr({ index: 0n, fields: [] })],
+      ["beef", 19n],
+      ["deadbeef03", new Data.Constr({ index: 1n, fields: [] })]
+    ]),
+    // Array of numbers
+    [10n, 5n, 2n, 3n, 1n, 4n]
+  ]
+})
+
+// Encode using default options (indefinite-length encoding for Data)
+const cborHex = Data.toCBORHex(nestedUnsortedData)
+
+const decodedData = Data.fromCBORHex(cborHex)
+
+// Create a canonical codec for deterministic encoding
+// This ensures consistent output and sorted map keys
+// Encode using canonical mode (definite-length, sorted keys)
+const canonicalCborHex = Data.toCBORHex(nestedUnsortedData, CBOR.CANONICAL_OPTIONS)
+
+// Verify that decoding works correctly
+assert.deepStrictEqual(decodedData, nestedUnsortedData)
+// #endregion data-nested-canonical
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  console.log("Data example OK")
+}

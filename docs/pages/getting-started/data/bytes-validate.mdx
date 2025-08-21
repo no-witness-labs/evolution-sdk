@@ -1,0 +1,13 @@
+# Validate bytes
+
+Quick check for hex-like bytes strings using Data.isBytes.
+
+```typescript
+// #region main
+const hex = "deadbeef"
+assert.equal(Data.isBytes(hex), true)
+
+const invalid = "not-hex"
+assert.equal(Data.isBytes(invalid), false)
+
+```

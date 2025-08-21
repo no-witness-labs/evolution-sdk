@@ -111,6 +111,9 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
     devDependencies:
+      '@evolution-sdk/evolution':
+        specifier: workspace:*
+        version: link:../packages/evolution
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.9
@@ -120,6 +123,12 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.0
         version: 18.3.7(@types/react@18.3.23)
+      effect:
+        specifier: ^3.17.3
+        version: 3.17.3
+      tsx:
+        specifier: ^4.20.3
+        version: 4.20.3
       typescript:
         specifier: ^5.0.0
         version: 5.8.3

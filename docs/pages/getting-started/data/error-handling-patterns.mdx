@@ -1,0 +1,71 @@
+# Error Handling Patterns
+
+Use Either patterns for safe data operations with proper error handling.
+
+```typescript
+// #region main
+// Use built-in Either-based functions for safe operations
+const safeData = new Data.Constr({ index: 0n, fields: ["74657374", 42n] }) // 'test' as hex
+
+// Safe encoding using Data.Either namespace
+const encodingResult = Data.Either.toCBORHex(safeData)
+assert.equal(Either.isRight(encodingResult), true)
+
+// Extract values using Either.match for type safety
+const encodedHex = Either.match(encodingResult, {
+  onLeft: (error: Data.DataError) => {
+    throw new Error(`Encoding failed: ${error.message}`)
+  },
+  onRight: (hex: string) => {
+    console.log("Encoded successfully:", hex)
+    return hex
+  }
+})
+
+// Safe decoding using the encoded hex
+const decodingResult = Data.Either.fromCBORHex(encodedHex)
+assert.equal(Either.isRight(decodingResult), true)
+
+Either.match(decodingResult, {
+  onLeft: (error: Data.DataError) => {
+    throw new Error(`Decoding failed: ${error.message}`)
+  },
+  onRight: (decoded: Data.Data) => {
+    console.log("Decoded successfully")
+    assert.deepStrictEqual(decoded, safeData)
+  }
+})
+
+// Test error handling with invalid input
+const invalidResult = Data.Either.fromCBORHex("invalid-hex-data")
+assert.equal(Either.isLeft(invalidResult), true)
+
+Either.match(invalidResult, {
+  onLeft: (error: Data.DataError) => {
+    console.log("Expected error:", error.message)
+  },
+  onRight: () => {
+    throw new Error("Should not succeed with invalid input")
+  }
+})
+
+// Compose operations using pipe and Either
+const processDataSafely = (data: Data.Data) =>
+  pipe(
+    Data.Either.toCBORHex(data),
+    Either.flatMap((hex: string) => Data.Either.fromCBORHex(hex)),
+    Either.map((result: Data.Data) => `Roundtrip successful`)
+  )
+
+const pipeResult = processDataSafely(safeData)
+assert.equal(Either.isRight(pipeResult), true)
+
+// Pattern matching for comprehensive error handling
+const finalMessage = Either.match(pipeResult, {
+  onLeft: (error: Data.DataError) => `Operation failed: ${error.message}`,
+  onRight: (value: string) => `Operation succeeded: ${value}`
+})
+
+console.log("Final result:", finalMessage)
+
+```

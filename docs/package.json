@@ -2,14 +2,17 @@
   "name": "@evolution-sdk/docs",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Documentation for Evolution SDK",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "export": "next build",
-    "copy-evolution-docs": "node scripts/copy-evolution-docs.mjs",
-    "prebuild": "pnpm run copy-evolution-docs"
+    "copy-evolution-docs": "tsx scripts/copy-evolution-docs.ts",
+    "snippets": "tsx scripts/generate-getting-started.ts",
+    "test-examples": "./scripts/run-examples-and-generate.sh",
+    "prebuild": "pnpm run copy-evolution-docs && pnpm run test-examples"
   },
   "dependencies": {
     "next": "^14.0.0",
@@ -19,9 +22,12 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@evolution-sdk/evolution": "workspace:*",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "effect": "^3.17.3",
+    "tsx": "^4.20.3",
     "typescript": "^5.0.0"
   }
 }

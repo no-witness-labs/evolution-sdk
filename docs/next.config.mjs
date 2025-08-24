@@ -1,8 +1,9 @@
 import nextra from 'nextra'
 
+// Configure Nextra v2.13 with top-level options
 const withNextra = nextra({
   theme: 'nextra-theme-docs',
-  themeConfig: './theme.config.tsx',
+  themeConfig: './theme.config.tsx'
 })
 
 const isCI = !!process.env.GITHUB_ACTIONS
@@ -14,5 +15,5 @@ export default withNextra({
   output: 'export',
   distDir: 'out',
   images: { unoptimized: true },
-  basePath: isCI && isProd ? '/evolution-sdk' : '',
+  basePath: isCI && isProd ? '/evolution-sdk' : ''
 })

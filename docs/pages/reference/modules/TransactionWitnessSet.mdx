@@ -1,6 +1,6 @@
 ---
 title: TransactionWitnessSet.ts
-nav_order: 113
+nav_order: 114
 parent: Modules
 ---
 
@@ -27,7 +27,6 @@ parent: Modules
 - [errors](#errors)
   - [TransactionWitnessSetError (class)](#transactionwitnessseterror-class)
 - [model](#model)
-  - [BootstrapWitness (class)](#bootstrapwitness-class)
   - [PlutusScript](#plutusscript)
   - [TransactionWitnessSet (class)](#transactionwitnessset-class)
   - [VKeyWitness (class)](#vkeywitness-class)
@@ -103,7 +102,22 @@ Smart constructor for TransactionWitnessSet that validates and applies branding.
 **Signature**
 
 ```ts
-export declare const make: <C>(this: C, ...args: ConstructorParameters<C>) => InstanceType<C>
+export declare const make: (
+  props?:
+    | void
+    | {
+        readonly vkeyWitnesses?: readonly VKeyWitness[] | undefined
+        readonly nativeScripts?: readonly NativeScripts.Native[] | undefined
+        readonly bootstrapWitnesses?: readonly Bootstrap.BootstrapWitness[] | undefined
+        readonly plutusV1Scripts?: readonly PlutusV1.PlutusV1[] | undefined
+        readonly plutusData?: readonly PlutusData.Data[] | undefined
+        readonly redeemers?: readonly Redeemer.Redeemer[] | undefined
+        readonly plutusV2Scripts?: readonly PlutusV2.PlutusV2[] | undefined
+        readonly plutusV3Scripts?: readonly PlutusV3.PlutusV3[] | undefined
+      }
+    | undefined,
+  options?: Schema.MakeOptions | undefined
+) => TransactionWitnessSet
 ```
 
 Added in v2.0.0
@@ -171,25 +185,6 @@ export declare class TransactionWitnessSetError
 Added in v2.0.0
 
 # model
-
-## BootstrapWitness (class)
-
-Bootstrap witness for Byron-era addresses.
-
-CDDL: bootstrap_witness = [
-public_key : vkey,
-signature : ed25519_signature,
-chain_code : bytes .size 32,
-attributes : bytes
-]
-
-**Signature**
-
-```ts
-export declare class BootstrapWitness
-```
-
-Added in v2.0.0
 
 ## PlutusScript
 

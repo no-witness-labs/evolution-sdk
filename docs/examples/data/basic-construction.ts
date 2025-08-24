@@ -1,9 +1,9 @@
 // @title: Basic Data Construction
 // @description: Learn how to create fundamental Data types using constructors.
+// #region main
 import assert from "node:assert/strict"
 import { Data } from "@evolution-sdk/evolution"
 
-// #region main
 // Create a simple constructor with no fields
 const unit = new Data.Constr({ index: 0n, fields: [] })
 console.log("Unit constructor:", unit)

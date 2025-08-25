@@ -24,10 +24,19 @@ function initOrama() {
 
 export default function DefaultSearchDialog(props: SharedProps) {
   const { locale } = useI18n() // (optional) for i18n
+  // Determine API base path at build/runtime. When deployed to GitHub Pages
+  // the site lives under a subpath (e.g. /evolution-sdk). Set
+  // NEXT_PUBLIC_BASE_PATH=/evolution-sdk in CI so the client requests the
+  // correct static search JSON. Falls back to empty string for local dev.
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+  const normalizedBase = basePath.endsWith('/') && basePath.length > 1 ? basePath.slice(0, -1) : basePath
+  const apiFrom = `${normalizedBase}/api/search`
+
   const { search, setSearch, query } = useDocsSearch({
     type: "static",
     initOrama,
-    locale
+    locale,
+    from: apiFrom,
   })
 
   return (

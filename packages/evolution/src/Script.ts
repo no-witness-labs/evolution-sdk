@@ -21,11 +21,13 @@ export class ScriptError extends Data.TaggedError("ScriptError")<{
  * Script union type following Conway CDDL specification.
  *
  * CDDL:
+ * ```
  * script =
  *   [ 0, native_script ]
  * / [ 1, plutus_v1_script ]
  * / [ 2, plutus_v2_script ]
  * / [ 3, plutus_v3_script ]
+ * ```
  *
  * @since 2.0.0
  * @category model
@@ -71,7 +73,7 @@ export const FromCDDL = Schema.transformOrFail(ScriptCDDL, Script, {
   encode: (value, _, ast) => {
     // Handle native scripts (no _tag property, has type property)
     if ("type" in value) {
-      return NativeScripts.internalEncodeCDDL(value as NativeScripts.Native).pipe(
+      return NativeScripts.internalEncodeCDDL(value).pipe(
         Eff.map((nativeCDDL) => [0n, nativeCDDL] as const),
         Eff.mapError((cause) => new ParseResult.Type(ast, value, `Failed to encode native script: ${cause}`))
       )
@@ -82,11 +84,11 @@ export const FromCDDL = Schema.transformOrFail(ScriptCDDL, Script, {
       const plutusScript = value as PlutusV1.PlutusV1 | PlutusV2.PlutusV2 | PlutusV3.PlutusV3
       switch (plutusScript._tag) {
         case "PlutusV1":
-          return Eff.succeed([1n, plutusScript.script] as const)
+          return Eff.succeed([1n, plutusScript.bytes] as const)
         case "PlutusV2":
-          return Eff.succeed([2n, plutusScript.script] as const)
+          return Eff.succeed([2n, plutusScript.bytes] as const)
         case "PlutusV3":
-          return Eff.succeed([3n, plutusScript.script] as const)
+          return Eff.succeed([3n, plutusScript.bytes] as const)
         default:
           return Eff.fail(new ParseResult.Type(ast, value, `Unknown Plutus script type: ${(plutusScript as any)._tag}`))
       }
@@ -95,22 +97,22 @@ export const FromCDDL = Schema.transformOrFail(ScriptCDDL, Script, {
     return Eff.fail(new ParseResult.Type(ast, value, "Invalid script structure"))
   },
   decode: (tuple, _, ast) => {
-    const [tag, data] = tuple
+    const [tag, bytes] = tuple
     switch (tag) {
       case 0n:
         // Native script
-        return NativeScripts.internalDecodeCDDL(data as NativeScripts.NativeCDDL).pipe(
+        return NativeScripts.internalDecodeCDDL(bytes).pipe(
           Eff.mapError((cause) => new ParseResult.Type(ast, tuple, `Failed to decode native script: ${cause}`))
         )
       case 1n:
         // PlutusV1
-        return Eff.succeed(new PlutusV1.PlutusV1({ script: data as Uint8Array }))
+        return Eff.succeed(new PlutusV1.PlutusV1({ bytes }))
       case 2n:
         // PlutusV2
-        return Eff.succeed(new PlutusV2.PlutusV2({ script: data as Uint8Array }))
+        return Eff.succeed(new PlutusV2.PlutusV2({ bytes }))
       case 3n:
         // PlutusV3
-        return Eff.succeed(new PlutusV3.PlutusV3({ script: data as Uint8Array }))
+        return Eff.succeed(new PlutusV3.PlutusV3({ bytes }))
       default:
         return Eff.fail(new ParseResult.Type(ast, tuple, `Unknown script tag: ${tag}`))
     }

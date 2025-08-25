@@ -1,4 +1,5 @@
 import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
+import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
 import * as Ed25519Signature from "../src/Ed25519Signature.js"
@@ -109,11 +110,11 @@ describe("TransactionWitnessSet CML Compatibility", () => {
 
   it("validates encoding Plutus V1 scripts", () => {
     // Create test script data
-    const scriptBytes = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05])
+    const bytes = new Uint8Array([0x01, 0x02, 0x03, 0x04, 0x05])
 
     // Create Evolution SDK witness set with Plutus V1 script
     const evolutionPlutusV1Script = new PlutusV1.PlutusV1({
-      script: scriptBytes
+      bytes
     })
     const evolutionWitnessSet = new TransactionWitnessSet.TransactionWitnessSet({
       plutusV1Scripts: [evolutionPlutusV1Script]
@@ -122,7 +123,7 @@ describe("TransactionWitnessSet CML Compatibility", () => {
     // Create equivalent CML witness set with Plutus V1 script
     const cmlWitnessSet = CML.TransactionWitnessSet.new()
     const cmlPlutusV1Scripts = CML.PlutusV1ScriptList.new()
-    const cmlPlutusV1Script = CML.PlutusV1Script.from_raw_bytes(scriptBytes)
+    const cmlPlutusV1Script = CML.PlutusV1Script.from_raw_bytes(bytes)
     cmlPlutusV1Scripts.add(cmlPlutusV1Script)
     cmlWitnessSet.set_plutus_v1_scripts(cmlPlutusV1Scripts)
 
@@ -136,11 +137,11 @@ describe("TransactionWitnessSet CML Compatibility", () => {
 
   it("validates encoding Plutus V2 scripts", () => {
     // Create test script data
-    const scriptBytes = new Uint8Array([0x10, 0x20, 0x30, 0x40, 0x50])
+    const bytes = new Uint8Array([0x10, 0x20, 0x30, 0x40, 0x50])
 
     // Create Evolution SDK witness set with Plutus V2 script
     const evolutionPlutusV2Script = new PlutusV2.PlutusV2({
-      script: scriptBytes
+      bytes
     })
     const evolutionWitnessSet = new TransactionWitnessSet.TransactionWitnessSet({
       plutusV2Scripts: [evolutionPlutusV2Script]
@@ -149,7 +150,7 @@ describe("TransactionWitnessSet CML Compatibility", () => {
     // Create equivalent CML witness set with Plutus V2 script
     const cmlWitnessSet = CML.TransactionWitnessSet.new()
     const cmlPlutusV2Scripts = CML.PlutusV2ScriptList.new()
-    const cmlPlutusV2Script = CML.PlutusV2Script.from_raw_bytes(scriptBytes)
+    const cmlPlutusV2Script = CML.PlutusV2Script.from_raw_bytes(bytes)
     cmlPlutusV2Scripts.add(cmlPlutusV2Script)
     cmlWitnessSet.set_plutus_v2_scripts(cmlPlutusV2Scripts)
 
@@ -165,7 +166,7 @@ describe("TransactionWitnessSet CML Compatibility", () => {
     // Create test data for mixed witness types
     const publicKeyBytes = new Uint8Array(32).fill(7)
     const signatureBytes = new Uint8Array(64).fill(8)
-    const scriptBytes = new Uint8Array([0xa1, 0xb2, 0xc3])
+    const bytes = new Uint8Array([0xa1, 0xb2, 0xc3])
 
     // Create Evolution SDK witness set with mixed types
     const evolutionVKey = VKey.fromBytes(publicKeyBytes)
@@ -175,7 +176,7 @@ describe("TransactionWitnessSet CML Compatibility", () => {
       signature: evolutionSignature
     })
     const evolutionPlutusV1Script = new PlutusV1.PlutusV1({
-      script: scriptBytes
+      bytes
     })
 
     const evolutionWitnessSet = new TransactionWitnessSet.TransactionWitnessSet({
@@ -196,7 +197,7 @@ describe("TransactionWitnessSet CML Compatibility", () => {
 
     // Add Plutus V1 script
     const cmlPlutusV1Scripts = CML.PlutusV1ScriptList.new()
-    const cmlPlutusV1Script = CML.PlutusV1Script.from_raw_bytes(scriptBytes)
+    const cmlPlutusV1Script = CML.PlutusV1Script.from_raw_bytes(bytes)
     cmlPlutusV1Scripts.add(cmlPlutusV1Script)
     cmlWitnessSet.set_plutus_v1_scripts(cmlPlutusV1Scripts)
 
@@ -237,5 +238,15 @@ describe("TransactionWitnessSet CML Compatibility", () => {
 
     // Check if they're identical
     expect(evolutionCbor).toBe(cmlCbor)
+  })
+
+  it("property: Evolution TransactionWitnessSet CBOR is parseable by CML and roundtrips CBOR", () => {
+    FastCheck.assert(
+      FastCheck.property(TransactionWitnessSet.arbitrary, (wset) => {
+        const evoHex = TransactionWitnessSet.toCBORHex(wset)
+        const cml = CML.TransactionWitnessSet.from_cbor_hex(evoHex)
+        expect(cml.to_cbor_hex()).toBe(evoHex)
+      })
+    )
   })
 })

@@ -40,8 +40,8 @@
     "@dcspark/cardano-multiplatform-lib-nodejs": "^6.2.0",
     "@types/dockerode": "^3.3.43",
     "@types/libsodium-wrappers-sumo": "^0.7.8",
-    "tinybench": "^5.0.0",
-    "tsx": "^4.20.4",
+    "tinybench": "^5.0.1",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   },
   "dependencies": {

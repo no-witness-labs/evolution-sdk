@@ -95,6 +95,9 @@ importers:
 
   docs:
     dependencies:
+      '@orama/orama':
+        specifier: ^3.1.11
+        version: 3.1.11
       fumadocs-core:
         specifier: 15.7.2
         version: 15.7.2(@types/react@19.1.11)(next@15.5.0(@babel/core@7.28.3)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)

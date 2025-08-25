@@ -1,6 +1,6 @@
 ---
 title: Script.ts
-nav_order: 96
+nav_order: 97
 parent: Modules
 ---
 
@@ -78,11 +78,14 @@ Added in v2.0.0
 Script union type following Conway CDDL specification.
 
 CDDL:
+
+```
 script =
-[ 0, native_script ]
+  [ 0, native_script ]
 / [ 1, plutus_v1_script ]
 / [ 2, plutus_v2_script ]
 / [ 3, plutus_v3_script ]
+```
 
 **Signature**
 

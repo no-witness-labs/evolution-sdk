@@ -1,6 +1,6 @@
 ---
 title: Bytes29.ts
-nav_order: 21
+nav_order: 22
 parent: Modules
 ---
 

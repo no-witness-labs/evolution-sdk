@@ -20,7 +20,7 @@ export class PlutusV1Error extends Data.TaggedError("PlutusV1Error")<{
  * @category model
  */
 export class PlutusV1 extends Schema.TaggedClass<PlutusV1>("PlutusV1")("PlutusV1", {
-  script: Schema.Uint8ArrayFromSelf
+  bytes: Schema.Uint8ArrayFromSelf
 }) {}
 
 /**
@@ -39,8 +39,8 @@ export const CDDLSchema = CBOR.ByteArray
  */
 export const FromCDDL = Schema.transform(CDDLSchema, PlutusV1, {
   strict: true,
-  encode: (toI) => toI.script,
-  decode: (fromA) => new PlutusV1({ script: fromA })
+  encode: (toI) => toI.bytes,
+  decode: (fromA) => new PlutusV1({ bytes: fromA })
 })
 
 /**
@@ -62,7 +62,7 @@ const eqBytes = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: PlutusV1, b: PlutusV1): boolean => eqBytes(a.script, b.script)
+export const equals = (a: PlutusV1, b: PlutusV1): boolean => eqBytes(a.bytes, b.bytes)
 
 /**
  * FastCheck arbitrary for PlutusV1.
@@ -71,5 +71,5 @@ export const equals = (a: PlutusV1, b: PlutusV1): boolean => eqBytes(a.script, b
  * @category arbitrary
  */
 export const arbitrary: FastCheck.Arbitrary<PlutusV1> = FastCheck.uint8Array({ minLength: 1, maxLength: 512 }).map(
-  (script) => new PlutusV1({ script })
+  (script) => new PlutusV1({ bytes: script })
 )

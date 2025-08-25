@@ -1,33 +1,34 @@
 {
-  "name": "@evolution-sdk/docs",
-  "version": "0.1.0",
+  "name": "docs",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Documentation for Evolution SDK",
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
+    "dev": "next dev --turbo",
     "start": "next start",
-    "export": "next build",
     "copy-evolution-docs": "tsx scripts/copy-evolution-docs.ts",
-    "snippets": "tsx scripts/generate-getting-started.ts",
-    "test-examples": "./scripts/run-examples-and-generate.sh",
-    "prebuild": "pnpm run copy-evolution-docs && pnpm run test-examples"
+    "generate-examples": "./scripts/run-examples-and-generate.sh",
+    "prebuild": "pnpm run copy-evolution-docs && pnpm run generate-examples",
+    "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
-    "next": "^15.5.0",
-    "nextra": "^4.4.0",
-    "nextra-theme-docs": "^4.4.0",
+    "fumadocs-core": "15.7.2",
+    "fumadocs-mdx": "11.8.0",
+    "fumadocs-ui": "15.7.2",
+    "next": "15.5.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "@evolution-sdk/evolution": "workspace:*",
-    "@types/node": "^24.3.0",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@types/mdx": "^2.0.13",
+    "@types/node": "24.3.0",
     "@types/react": "^19.1.11",
     "@types/react-dom": "^19.1.7",
-    "effect": "^3.17.9",
-    "tsx": "^4.20.4",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2"
   }
 }

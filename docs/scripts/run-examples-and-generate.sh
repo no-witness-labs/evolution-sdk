@@ -29,30 +29,27 @@ run_example() {
     fi
 }
 
-# Function to run examples in a directory
-run_examples_in_dir() {
-    local dir="$1"
+# Function to run examples found by a recursive find
+run_examples_recursive() {
+    local root="$1"
     local failures=0
-    
-    if [[ -d "$dir" ]]; then
-        echo ""
-        echo "📁 Running examples in: ${dir#$EXAMPLES_DIR/}"
-        echo "-------------------------------------------"
-        
-        # Find all .ts files in the directory
-        while IFS= read -r -d '' file; do
-            if ! run_example "$file"; then
-                ((failures++))
-            fi
-        done < <(find "$dir" -name "*.ts" -type f -print0 | sort -z)
-        
-        if [[ $failures -gt 0 ]]; then
-            echo "❌ $failures example(s) failed in ${dir#$EXAMPLES_DIR/}"
-            return 1
-        else
-            echo "✅ All examples passed in ${dir#$EXAMPLES_DIR/}"
-            return 0
+    echo ""
+    echo "📁 Running all examples under: ${root#$EXAMPLES_DIR/} (recursively)"
+    echo "----------------------------------------------------------------"
+
+    # Find all .ts and .tsx files recursively
+    while IFS= read -r -d '' file; do
+        if ! run_example "$file"; then
+            ((failures++))
         fi
+    done < <(find "$root" -type f \( -name "*.ts" -o -name "*.tsx" \) -print0 | sort -z)
+
+    if [[ $failures -gt 0 ]]; then
+        echo "❌ $failures example(s) failed under ${root#$EXAMPLES_DIR/}"
+        return 1
+    else
+        echo "✅ All examples passed under ${root#$EXAMPLES_DIR/}"
+        return 0
     fi
 }
 
@@ -62,39 +59,16 @@ main() {
     
     # Change to docs directory
     cd "$DOCS_DIR"
+
+    # Note: do not build docs here; just run examples then the generator
     
-    # Run individual example files in root examples directory
+    # Run all examples recursively under examples/ (includes nested folders)
     if [[ -d "$EXAMPLES_DIR" ]]; then
-        echo ""
-        echo "📄 Running individual examples..."
-        echo "--------------------------------"
-        
-        local found_individual=0
-        while IFS= read -r -d '' file; do
-            found_individual=1
-            if ! run_example "$file"; then
-                ((total_failures++))
-            fi
-        done < <(find "$EXAMPLES_DIR" -maxdepth 1 -name "*.ts" -type f -print0 | sort -z)
-        
-        if [[ $found_individual -eq 0 ]]; then
-            echo "ℹ️  No individual examples found"
+        if ! run_examples_recursive "$EXAMPLES_DIR"; then
+            ((total_failures++))
         fi
-    fi
-    
-    # Run examples in subdirectories (like data/, address/, etc.)
-    if [[ -d "$EXAMPLES_DIR" ]]; then
-        local found_dirs=0
-        while IFS= read -r -d '' dir; do
-            found_dirs=1
-            if ! run_examples_in_dir "$dir"; then
-                ((total_failures++))
-            fi
-        done < <(find "$EXAMPLES_DIR" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
-        
-        if [[ $found_dirs -eq 0 ]]; then
-            echo "ℹ️  No example directories found"
-        fi
+    else
+        echo "ℹ️  No examples directory found"
     fi
     
     echo ""
@@ -106,9 +80,9 @@ main() {
         echo ""
         echo "🔄 Generating MDX documentation..."
         echo "--------------------------------"
-        
-        # Run the snippet generation script
-        if pnpm exec tsx "scripts/generate-getting-started.ts"; then
+
+        # Run the snippet generation script (new generator)
+        if pnpm exec tsx "scripts/generate-mdx-examples.ts"; then
             echo "✅ MDX documentation generated successfully!"
             echo ""
             echo "🎉 Documentation build complete!"

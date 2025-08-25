@@ -1,0 +1,29 @@
+---
+title: "Address Format"
+---
+
+```typescript
+// Examples for Address getting-started page
+// Run with: pnpm -w -C docs ts-node examples/address.ts (or a small runner)
+
+// #region address-example
+import assert from "node:assert/strict"
+import { Address } from "@evolution-sdk/evolution"
+
+const hexAddress = "60ba1d6b6283c219a0530e3682c316215d55819cf97bbf26552c6f8530"
+const expectedBech32 = "addr_test1vzap66mzs0ppngznpcmg9scky9w4tqvul9am7fj493hc2vq4ry02m"
+
+// Decode from hex
+const address = Address.fromHex(hexAddress)
+
+// Encode to bech32
+const actualBech32 = Address.toBech32(address)
+
+// Verify the conversion is correct
+assert.strictEqual(actualBech32, expectedBech32)
+// #endregion address-example
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  console.log("Address example OK")
+}
+```

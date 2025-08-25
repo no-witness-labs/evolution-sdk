@@ -105,7 +105,7 @@ async function processMdxFile(mdxPath: string): Promise<boolean> {
     const defaultTitle = toTitleCase(fileName)
 
     // If frontmatter exists, validate/insert title if missing or invalid
-    const fmMatch = mdx.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/) 
+    const fmMatch = mdx.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
     if (fmMatch) {
       const fmContent = fmMatch[1]
       const titleMatch = fmContent.match(/(^|\n)title:\s*(?:"([^"]*)"|'([^']*)'|([^\n]+))/)
@@ -182,7 +182,7 @@ async function processMdxFile(mdxPath: string): Promise<boolean> {
 async function findMdxFiles(dir: string): Promise<string[]> {
   const results: string[] = []
   async function walk(current: string) {
-    let entries: import('fs').Dirent[] = []
+    let entries: import("fs").Dirent[] = []
     try {
       entries = await fs.readdir(current, { withFileTypes: true })
     } catch {
@@ -192,7 +192,7 @@ async function findMdxFiles(dir: string): Promise<string[]> {
       const p = path.join(current, e.name)
       if (e.isDirectory()) {
         await walk(p)
-      } else if (e.isFile() && p.endsWith('.mdx')) {
+      } else if (e.isFile() && p.endsWith(".mdx")) {
         results.push(p)
       }
     }
@@ -261,10 +261,10 @@ async function cleanPagesExceptModules() {
   try {
     const entries = await fs.readdir(PAGES_DIR, { withFileTypes: true })
     for (const e of entries) {
-    const name = e.name
-    // Preserve important top-level files/directories.
-    // Don't remove the 'modules' folder and keep a root index.mdx if present.
-    if (name === "modules" || name === "index.mdx") continue
+      const name = e.name
+      // Preserve important top-level files/directories.
+      // Don't remove the 'modules' folder and keep a root index.mdx if present.
+      if (name === "modules" || name === "index.mdx") continue
       const target = path.join(PAGES_DIR, name)
       try {
         await fs.rm(target, { recursive: true, force: true })
@@ -362,14 +362,14 @@ async function generateGroupPages(groupName: string): Promise<number> {
 
     // Produce MDX with YAML frontmatter required by fumadocs-mdx
     const frontmatter = [
-      '---',
-      `title: "${title.replace(/"/g, '\\"') }"`,
+      "---",
+      `title: "${title.replace(/"/g, '\\"')}"`,
       ...(desc ? [`description: "${desc.replace(/"/g, '\\"')}"`] : []),
-      '---',
-      ''
-    ].join('\n')
+      "---",
+      ""
+    ].join("\n")
 
-    const mdx = [frontmatter, '```typescript', code, '```', ''].join('\n')
+    const mdx = [frontmatter, "```typescript", code, "```", ""].join("\n")
 
     const outFile = path.join(outDir, `${slug}.mdx`)
     let shouldWrite = true
@@ -420,7 +420,7 @@ async function generateGroupPages(groupName: string): Promise<number> {
 async function generateFromExamples(srcDir: string, relativeOutDir: string): Promise<number> {
   let created = 0
   const absSrc = path.join(srcDir, relativeOutDir)
-  let entries: import('fs').Dirent[] = []
+  let entries: import("fs").Dirent[] = []
   try {
     entries = await fs.readdir(absSrc, { withFileTypes: true })
   } catch {
@@ -434,7 +434,7 @@ async function generateFromExamples(srcDir: string, relativeOutDir: string): Pro
   const dirs: string[] = []
   for (const e of entries) {
     if (e.isDirectory()) dirs.push(e.name)
-    else if (e.isFile() && (e.name.endsWith('.ts') || e.name.endsWith('.tsx'))) files.push(e.name)
+    else if (e.isFile() && (e.name.endsWith(".ts") || e.name.endsWith(".tsx"))) files.push(e.name)
   }
 
   // Create MDX for each file
@@ -442,23 +442,23 @@ async function generateFromExamples(srcDir: string, relativeOutDir: string): Pro
     const abs = path.join(absSrc, f)
     const content = await readText(abs)
     const code = await getExampleCodeForFile(abs)
-    const title = extractDirective(content, 'title') || toTitleCase(f.replace(/\.(ts|tsx)$/i, ''))
-    const desc = extractDirective(content, 'description')
-    const slug = toSlug(f.replace(/\.(ts|tsx)$/i, ''))
+    const title = extractDirective(content, "title") || toTitleCase(f.replace(/\.(ts|tsx)$/i, ""))
+    const desc = extractDirective(content, "description")
+    const slug = toSlug(f.replace(/\.(ts|tsx)$/i, ""))
 
     const frontmatter = [
-      '---',
-      `title: "${title.replace(/"/g, '\\"') }"`,
+      "---",
+      `title: "${title.replace(/"/g, '\\"')}"`,
       ...(desc ? [`description: "${desc.replace(/"/g, '\\"')}"`] : []),
-      '---',
-      ''
-    ].join('\n')
+      "---",
+      ""
+    ].join("\n")
 
-    const mdx = [frontmatter, '```typescript', code, '```', ''].join('\n')
+    const mdx = [frontmatter, "```typescript", code, "```", ""].join("\n")
     const outFile = path.join(outDir, `${slug}.mdx`)
     let shouldWrite = true
     try {
-      const existing = await fs.readFile(outFile, 'utf8')
+      const existing = await fs.readFile(outFile, "utf8")
       if (existing === mdx) shouldWrite = false
     } catch {}
     if (shouldWrite) {
@@ -474,31 +474,35 @@ async function generateFromExamples(srcDir: string, relativeOutDir: string): Pro
   }
 
   // Create or refresh index.mdx for this directory (skip root-level index to avoid top-level "Examples")
-  if (relativeOutDir !== '') {
-    const indexTitle = toTitleCase(path.basename(relativeOutDir || srcDir)) || 'Examples'
+  if (relativeOutDir !== "") {
+    const indexTitle = toTitleCase(path.basename(relativeOutDir || srcDir)) || "Examples"
     const indexLines: string[] = []
     // YAML frontmatter with title required by fumadocs-mdx
-    indexLines.push('---')
-    indexLines.push(`title: "${indexTitle.replace(/"/g, '\\"') }"`)
-    indexLines.push('---')
-    indexLines.push('')
+    indexLines.push("---")
+    indexLines.push(`title: "${indexTitle.replace(/"/g, '\\"')}"`)
+    indexLines.push("---")
+    indexLines.push("")
     indexLines.push(`# ${indexTitle}`)
-    indexLines.push('')
+    indexLines.push("")
     for (const d of dirs) {
-      indexLines.push(`- [${toTitleCase(d)}](/${path.join(path.relative(path.join(DOCS_ROOT, 'pages'), path.join(outDir, d)).replace(/\\/g, '/'))})`)
+      indexLines.push(
+        `- [${toTitleCase(d)}](/${path.join(path.relative(path.join(DOCS_ROOT, "pages"), path.join(outDir, d)).replace(/\\/g, "/"))})`
+      )
     }
     for (const f of files) {
-      const name = f.replace(/\.(ts|tsx)$/i, '')
-      const title = extractDirective(await readText(path.join(absSrc, f)), 'title') || toTitleCase(name)
+      const name = f.replace(/\.(ts|tsx)$/i, "")
+      const title = extractDirective(await readText(path.join(absSrc, f)), "title") || toTitleCase(name)
       const slug = toSlug(name)
-      indexLines.push(`- [${title}](/${path.relative(path.join(DOCS_ROOT, 'pages'), path.join(outDir, slug)).replace(/\\/g, '/')})`)
+      indexLines.push(
+        `- [${title}](/${path.relative(path.join(DOCS_ROOT, "pages"), path.join(outDir, slug)).replace(/\\/g, "/")})`
+      )
     }
-    indexLines.push('')
+    indexLines.push("")
 
-    const indexPath = path.join(outDir, 'index.mdx')
-    const indexContent = indexLines.join('\n')
+    const indexPath = path.join(outDir, "index.mdx")
+    const indexContent = indexLines.join("\n")
     try {
-      const existing = await fs.readFile(indexPath, 'utf8')
+      const existing = await fs.readFile(indexPath, "utf8")
       if (existing !== indexContent) {
         await fs.writeFile(indexPath, indexContent)
         created++

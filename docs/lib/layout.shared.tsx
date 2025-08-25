@@ -1,4 +1,4 @@
-import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared"
 
 /**
  * Shared layout configurations
@@ -10,9 +10,9 @@ import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
-  title: 'Evolution SDK',
+      title: "Evolution SDK"
     },
     // see https://fumadocs.dev/docs/ui/navigation/links
-    links: [],
-  };
+    links: []
+  }
 }

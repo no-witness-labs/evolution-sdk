@@ -68,6 +68,8 @@ export const FromHex = Schema.compose(
   identifier: "ScriptRef.FromHex"
 })
 
+export const CDDLSchema = CBOR.tag(24, Schema.Uint8ArrayFromSelf)
+
 /**
  * CDDL schema for ScriptRef following the Conway specification.
  *
@@ -80,7 +82,7 @@ export const FromHex = Schema.compose(
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(CBOR.tag(24, Schema.Uint8ArrayFromSelf), ScriptRef, {
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, ScriptRef, {
   strict: true,
   encode: (_, __, ___, toA) =>
     Effect.succeed({

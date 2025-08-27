@@ -695,6 +695,12 @@ export const equals = (a: Certificate, b: Certificate): boolean => {
         Credential.equals(a.stakeCredential, b.stakeCredential) &&
         PoolKeyHash.equals(a.poolKeyHash, b.poolKeyHash)
       )
+    case "PoolRegistration":
+      return (
+        b._tag === "PoolRegistration" &&
+        // Delegate to PoolParams.equals for deep comparison
+        PoolParams.equals(a.poolParams, (b as any).poolParams)
+      )
     case "PoolRetirement":
       return (
         b._tag === "PoolRetirement" &&
@@ -714,6 +720,70 @@ export const equals = (a: Certificate, b: Certificate): boolean => {
         b._tag === "VoteDelegCert" &&
         Credential.equals(a.stakeCredential, b.stakeCredential) &&
         DRep.equals(a.drep, b.drep)
+      )
+    case "StakeVoteDelegCert":
+      return (
+        b._tag === "StakeVoteDelegCert" &&
+        Credential.equals(a.stakeCredential, b.stakeCredential) &&
+        PoolKeyHash.equals(a.poolKeyHash, b.poolKeyHash) &&
+        DRep.equals(a.drep, b.drep)
+      )
+    case "StakeRegDelegCert":
+      return (
+        b._tag === "StakeRegDelegCert" &&
+        Credential.equals(a.stakeCredential, b.stakeCredential) &&
+        PoolKeyHash.equals(a.poolKeyHash, b.poolKeyHash) &&
+        Coin.equals(a.coin, b.coin)
+      )
+    case "VoteRegDelegCert":
+      return (
+        b._tag === "VoteRegDelegCert" &&
+        Credential.equals(a.stakeCredential, b.stakeCredential) &&
+        DRep.equals(a.drep, b.drep) &&
+        Coin.equals(a.coin, b.coin)
+      )
+    case "StakeVoteRegDelegCert":
+      return (
+        b._tag === "StakeVoteRegDelegCert" &&
+        Credential.equals(a.stakeCredential, b.stakeCredential) &&
+        PoolKeyHash.equals(a.poolKeyHash, b.poolKeyHash) &&
+        DRep.equals(a.drep, b.drep) &&
+        Coin.equals(a.coin, b.coin)
+      )
+    case "AuthCommitteeHotCert":
+      return (
+        b._tag === "AuthCommitteeHotCert" &&
+        Credential.equals(a.committeeColdCredential, b.committeeColdCredential) &&
+        Credential.equals(a.committeeHotCredential, b.committeeHotCredential)
+      )
+    case "ResignCommitteeColdCert":
+      return (
+        b._tag === "ResignCommitteeColdCert" &&
+        Credential.equals(a.committeeColdCredential, b.committeeColdCredential) &&
+        // anchor may be null/undefined
+        ((a.anchor === undefined && b.anchor === undefined) ||
+          (a.anchor !== undefined && b.anchor !== undefined && Anchor.equals(a.anchor as any, b.anchor as any)))
+      )
+    case "RegDrepCert":
+      return (
+        b._tag === "RegDrepCert" &&
+        Credential.equals(a.drepCredential, b.drepCredential) &&
+        Coin.equals(a.coin, b.coin) &&
+        ((a.anchor === undefined && b.anchor === undefined) ||
+          (a.anchor !== undefined && b.anchor !== undefined && Anchor.equals(a.anchor as any, b.anchor as any)))
+      )
+    case "UnregDrepCert":
+      return (
+        b._tag === "UnregDrepCert" &&
+        Credential.equals(a.drepCredential, b.drepCredential) &&
+        Coin.equals(a.coin, b.coin)
+      )
+    case "UpdateDrepCert":
+      return (
+        b._tag === "UpdateDrepCert" &&
+        Credential.equals(a.drepCredential, b.drepCredential) &&
+        ((a.anchor === undefined && b.anchor === undefined) ||
+          (a.anchor !== undefined && b.anchor !== undefined && Anchor.equals(a.anchor as any, b.anchor as any)))
       )
     // Add other cases as needed
     default:

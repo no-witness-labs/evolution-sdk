@@ -196,20 +196,50 @@ export const FromHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: PoolParams, b: PoolParams): boolean =>
-  PoolKeyHash.equals(a.operator, b.operator) &&
-  VrfKeyHash.equals(a.vrfKeyhash, b.vrfKeyhash) &&
-  a.pledge === b.pledge &&
-  a.cost === b.cost &&
-  UnitInterval.equals(a.margin, b.margin) &&
-  a.rewardAccount.networkId === b.rewardAccount.networkId &&
-  a.rewardAccount.stakeCredential._tag === b.rewardAccount.stakeCredential._tag &&
-  a.poolOwners.length === b.poolOwners.length &&
-  a.poolOwners.every((owner, index) => KeyHash.equals(owner, b.poolOwners[index])) &&
-  a.relays.length === b.relays.length &&
-  // Note: Relay equality comparison would need to be implemented
-  ((a.poolMetadata === undefined && b.poolMetadata === undefined) ||
-    (a.poolMetadata !== undefined && b.poolMetadata !== undefined && a.poolMetadata.url === b.poolMetadata.url))
+export const equals = (a: PoolParams, b: PoolParams): boolean => {
+  if (!PoolKeyHash.equals(a.operator, b.operator)) return false
+
+  if (!VrfKeyHash.equals(a.vrfKeyhash, b.vrfKeyhash)) return false
+
+  if (a.pledge !== b.pledge) return false
+
+  if (a.cost !== b.cost) return false
+
+  if (!UnitInterval.equals(a.margin, b.margin)) return false
+
+  // compare reward accounts structurally
+  if (!RewardAccount.equals(a.rewardAccount, b.rewardAccount)) return false
+
+  if (a.poolOwners.length !== b.poolOwners.length) return false
+
+  for (let i = 0; i < a.poolOwners.length; i++) {
+    if (!KeyHash.equals(a.poolOwners[i], b.poolOwners[i])) return false
+  }
+
+  if (a.relays.length !== b.relays.length) return false
+
+  for (let i = 0; i < a.relays.length; i++) {
+    // Relay.equals exists and performs structural equality
+    if (!Relay.equals(a.relays[i], b.relays[i])) return false
+  }
+
+  if (a.poolMetadata === undefined && b.poolMetadata === undefined) return true
+
+  if (a.poolMetadata !== undefined && b.poolMetadata !== undefined) {
+    // Prefer structural PoolMetadata.equals when available
+    if (typeof (PoolMetadata as any).equals === "function") {
+      return (PoolMetadata as any).equals(a.poolMetadata, b.poolMetadata)
+    }
+
+    // Fallback to url equality
+    if (a.poolMetadata.url !== b.poolMetadata.url) return false
+
+    return true
+  }
+
+  // One side has poolMetadata while the other doesn't
+  return false
+}
 
 /**
  * Create a PoolParams instance with validation.

@@ -2,6 +2,7 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
+// diagnoseTransactionBody is optional during lint/type-check; load only on failure
 import * as Coin from "../src/Coin.js"
 import * as NetworkId from "../src/NetworkId.js"
 import * as TransactionBody from "../src/TransactionBody.js"
@@ -316,19 +317,16 @@ describe("TransactionBody CML Compatibility", () => {
       FastCheck.property(TransactionBody.arbitrary, (evolutionTxBody) => {
         // Step 1: Evolution → CBOR hex
         const evolutionCbor = TransactionBody.toCBORHex(evolutionTxBody)
-
         // Step 2: CBOR hex → CML (validates our CBOR is CML-compatible)
         const cmlTxBody = CML.TransactionBody.from_cbor_hex(evolutionCbor)
         // Step 3: CML → CBOR hex
         const cmlCbor = cmlTxBody.to_cbor_hex()
         // Step 4: Verify identical CBOR encoding
         expect(evolutionCbor).toBe(cmlCbor)
-
-        // Skip round-trip for now - focus on CBOR compatibility first
-        // const decodedEvolution = TransactionBody.fromCBORHex(cmlCbor)
-        // expect(decodedEvolution).toEqual(evolutionTxBody)
-      }),
-      { numRuns: 10, seed: 43 } // Smaller runs, different seed to avoid the failing case
+        // round trip
+        const decodedEvolution = TransactionBody.fromCBORHex(cmlCbor)
+        expect(TransactionBody.equals(decodedEvolution, evolutionTxBody)).toBe(true)
+      })
     )
   })
 })

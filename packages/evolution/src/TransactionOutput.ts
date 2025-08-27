@@ -8,6 +8,12 @@ import * as Function from "./Function.js"
 import * as ScriptRef from "./ScriptRef.js"
 import * as Value from "./Value.js"
 
+/**
+ * Error class for TransactionOutput related operations.
+ *
+ * @since 2.0.0
+ * @category errors
+ */
 export class TransactionOutputError extends Data.TaggedError("TransactionOutputError")<{
   message?: string
   cause?: unknown
@@ -15,36 +21,21 @@ export class TransactionOutputError extends Data.TaggedError("TransactionOutputE
 
 // Pre-bind frequently used ParseResult helpers for hot paths
 const encAddress = ParseResult.encodeEither(Address.FromBytes)
-const decAddress = ParseResult.decodeEither(Address.FromBytes)
+const decAddress = ParseResult.decodeUnknownEither(Address.FromBytes)
 const encValue = ParseResult.encodeEither(Value.FromCDDL)
-const decValue = ParseResult.decodeEither(Value.FromCDDL)
-const encDatumOption = ParseResult.encodeEither(DatumOption.DatumOptionCDDLSchema)
-const decDatumOption = ParseResult.decodeEither(DatumOption.DatumOptionCDDLSchema)
+const decValue = ParseResult.decodeUnknownEither(Value.FromCDDL)
+const encDatumOption = ParseResult.encodeEither(DatumOption.FromCDDL)
+const decDatumOption = ParseResult.decodeUnknownEither(DatumOption.FromCDDL)
 const decDatumHash = ParseResult.decodeEither(DatumOption.DatumHashFromBytes)
 const encScriptRef = ParseResult.encodeEither(ScriptRef.FromCDDL)
-const decScriptRef = ParseResult.decodeEither(ScriptRef.FromCDDL)
-
-/**
- * TransactionOutput types based on Conway CDDL specification
- *
- * ```
- * CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
- *
- * shelley_transaction_output = [address, amount : value, ? Bytes32]
- *
- * babbage_transaction_output =
- *   {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
- * ```
- *
- * @since 2.0.0
- * @category model
- */
+const decScriptRef = ParseResult.decodeUnknownEither(ScriptRef.FromCDDL)
 
 /**
  * Shelley-era transaction output format
  *
+ * CDDL:
  * ```
- * CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
+ * shelley_transaction_output = [address, amount : value, ? Bytes32]
  * ```
  *
  * @since 2.0.0
@@ -72,8 +63,9 @@ export class ShelleyTransactionOutput extends Schema.TaggedClass<ShelleyTransact
 /**
  * Babbage-era transaction output format
  *
+ * CDDL:
  * ```
- * CDDL: babbage_transaction_output =
+ * babbage_transaction_output =
  *   {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
  * ```
  *
@@ -104,8 +96,9 @@ export class BabbageTransactionOutput extends Schema.TaggedClass<BabbageTransact
 /**
  * Union type for transaction outputs
  *
+ * CDDL:
  * ```
- * CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
+ * transaction_output = shelley_transaction_output / babbage_transaction_output
  * ```
  *
  * @since 2.0.0
@@ -124,12 +117,8 @@ export const ShelleyTransactionOutputCDDL = Schema.Tuple(
 /**
  * CDDL schema for Shelley transaction outputs
  *
- * ```
- * CDDL: shelley_transaction_output = [address, amount : value, ? Bytes32]
- * ```
- *
  * @since 2.0.0
- * @category schemas
+ * @category transformation
  */
 export const FromShelleyTransactionOutputCDDLSchema = Schema.transformOrFail(
   ShelleyTransactionOutputCDDL,
@@ -151,8 +140,12 @@ export const FromShelleyTransactionOutputCDDLSchema = Schema.transformOrFail(
       E.gen(function* () {
         const [addressBytes, valueBytes, datumHashBytes] = fromI
 
+        // Validate addressBytes is a byte array before decoding (avoid instanceof)
+        if (Object.prototype.toString.call(addressBytes) !== "[object Uint8Array]") {
+          return yield* E.left(new ParseResult.Type(BabbageTransactionOutputCDDL.ast, fromI))
+        }
         const address = yield* decAddress(addressBytes)
-        const amount = yield* decValue(valueBytes)
+        const amount = yield* decValue(valueBytes as any)
         let datumHash: DatumOption.DatumHash | undefined
         if (datumHashBytes !== undefined) {
           datumHash = yield* decDatumHash(datumHashBytes)
@@ -170,22 +163,16 @@ export const FromShelleyTransactionOutputCDDLSchema = Schema.transformOrFail(
   }
 )
 
-const BabbageTransactionOutputCDDL = Schema.Struct({
-  0: Schema.Uint8ArrayFromSelf, // address as bytes
-  1: Schema.encodedSchema(Value.FromCDDL), // value
-  2: Schema.optional(Schema.encodedSchema(DatumOption.DatumOptionCDDLSchema)), // optional datum_option
-  3: Schema.optional(Schema.encodedSchema(ScriptRef.FromCDDL)) // optional script_ref
+const BabbageTransactionOutputCDDL = Schema.MapFromSelf({
+  key: CBOR.Integer,
+  value: CBOR.CBORSchema
 })
 
 /**
  * CDDL schema for Babbage transaction outputs
  *
- * ```
- * CDDL: babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
- * ```
- *
  * @since 2.0.0
- * @category schemas
+ * @category transformation
  */
 export const FromBabbageTransactionOutputCDDLSchema = Schema.transformOrFail(
   BabbageTransactionOutputCDDL,
@@ -194,46 +181,38 @@ export const FromBabbageTransactionOutputCDDLSchema = Schema.transformOrFail(
     strict: true,
     encode: (toI) =>
       E.gen(function* () {
+        const outputMap = new Map<bigint, CBOR.CBOR>()
         const addressBytes = yield* encAddress(toI.address)
         const valueBytes = yield* encValue(toI.amount)
-
         // Prepare optional fields
         const datumOptionBytes = toI.datumOption !== undefined ? yield* encDatumOption(toI.datumOption) : undefined
-
         const scriptRefBytes = toI.scriptRef !== undefined ? yield* encScriptRef(toI.scriptRef) : undefined
 
         // Build result object with conditional properties
-        return {
-          0: addressBytes,
-          1: valueBytes,
-          ...(datumOptionBytes !== undefined && { 2: datumOptionBytes }),
-          ...(scriptRefBytes !== undefined && { 3: scriptRefBytes })
+        outputMap.set(0n, addressBytes)
+        outputMap.set(1n, valueBytes)
+        if (datumOptionBytes !== undefined) {
+          outputMap.set(2n, datumOptionBytes)
         }
+        if (scriptRefBytes !== undefined) {
+          outputMap.set(3n, scriptRefBytes)
+        }
+        return outputMap
       }),
     decode: (fromI) =>
       E.gen(function* () {
-        const addressBytes = fromI[0]
-        const valueBytes = fromI[1]
-        const datumOptionBytes = fromI[2]
-        const scriptRefBytes = fromI[3]
-
-        if (addressBytes === undefined || valueBytes === undefined) {
-          // The input should match the BabbageTransactionOutput CDDL struct (keys 0 and 1 are required)
-          return yield* E.left(new ParseResult.Type(BabbageTransactionOutputCDDL.ast, fromI))
-        }
+        // Assume `fromI` is a CBOR Map and read keys directly.
+        const addressBytes = fromI.get(0n)
+        const valueBytes = fromI.get(1n)
+        const datumOptionBytes = fromI.get(2n)
+        const scriptRefBytes = fromI.get(3n)
 
         const address = yield* decAddress(addressBytes)
         const amount = yield* decValue(valueBytes)
 
-        let datumOption: DatumOption.DatumOption | undefined
-        if (datumOptionBytes !== undefined) {
-          datumOption = yield* decDatumOption(datumOptionBytes)
-        }
+        const datumOption = datumOptionBytes !== undefined ? yield* decDatumOption(datumOptionBytes) : undefined
 
-        let scriptRef: ScriptRef.ScriptRef | undefined
-        if (scriptRefBytes !== undefined) {
-          scriptRef = yield* decScriptRef(scriptRefBytes)
-        }
+        const scriptRef = scriptRefBytes !== undefined ? yield* decScriptRef(scriptRefBytes) : undefined
 
         return new BabbageTransactionOutput(
           {
@@ -253,23 +232,16 @@ export const CDDLSchema = Schema.Union(ShelleyTransactionOutputCDDL, BabbageTran
 /**
  * CDDL schema for transaction outputs
  *
- * ```
- * CDDL: transaction_output = shelley_transaction_output / babbage_transaction_output
- * shelley_transaction_output = [address, amount : value, ? Bytes32]
- * babbage_transaction_output = {0 : address, 1 : value, ? 2 : datum_option, ? 3 : script_ref}
- * ```
- *
  * @since 2.0.0
- * @category schemas
+ * @category transformer
  */
 export const FromCDDL = Schema.Union(FromShelleyTransactionOutputCDDLSchema, FromBabbageTransactionOutputCDDLSchema)
 
 /**
  * CBOR bytes transformation schema for TransactionOutput.
- * Transforms between CBOR bytes and TransactionOutput.
  *
  * @since 2.0.0
- * @category schemas
+ * @category transformer
  */
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
@@ -283,10 +255,9 @@ export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTI
 
 /**
  * CBOR hex transformation schema for TransactionOutput.
- * Transforms between CBOR hex string and TransactionOutput.
  *
  * @since 2.0.0
- * @category schemas
+ * @category transformer
  */
 export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
@@ -307,14 +278,26 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
 export const equals = (a: TransactionOutput, b: TransactionOutput): boolean => {
   if (a._tag !== b._tag) return false
 
+  // helper for optional fields: both undefined => equal, one undefined => not equal, otherwise use provided comparator
+  const optionalEquals = <T>(x: T | undefined, y: T | undefined, cmp: (u: T, v: T) => boolean): boolean => {
+    if (x === undefined && y === undefined) return true
+    if (x === undefined || y === undefined) return false
+    return cmp(x, y)
+  }
+
   if (a._tag === "ShelleyTransactionOutput" && b._tag === "ShelleyTransactionOutput") {
-    return a.address === b.address && a.amount === b.amount && a.datumHash === b.datumHash
+    const addrEq = Address.equals(a.address, b.address)
+    const amountEq = Value.equals(a.amount, b.amount)
+    const datumEq = optionalEquals(a.datumHash, b.datumHash, DatumOption.equals)
+    return addrEq && amountEq && datumEq
   }
 
   if (a._tag === "BabbageTransactionOutput" && b._tag === "BabbageTransactionOutput") {
-    return (
-      a.address === b.address && a.amount === b.amount && a.datumOption === b.datumOption && a.scriptRef === b.scriptRef
-    )
+    const addrEq = Address.equals(a.address, b.address)
+    const amountEq = Value.equals(a.amount, b.amount)
+    const datumEq = optionalEquals(a.datumOption, b.datumOption, DatumOption.equals)
+    const scriptEq = optionalEquals(a.scriptRef, b.scriptRef, ScriptRef.equals)
+    return addrEq && amountEq && datumEq && scriptEq
   }
 
   return false
@@ -326,11 +309,8 @@ export const equals = (a: TransactionOutput, b: TransactionOutput): boolean => {
  * @since 2.0.0
  * @category constructors
  */
-export const makeShelley = (
-  address: Address.Address,
-  amount: Value.Value,
-  datumHash?: DatumOption.DatumHash
-): ShelleyTransactionOutput => new ShelleyTransactionOutput({ address, amount, datumHash })
+export const makeShelley = (...args: ConstructorParameters<typeof ShelleyTransactionOutput>) =>
+  new ShelleyTransactionOutput(...args)
 
 /**
  * Create a Babbage transaction output.
@@ -338,16 +318,12 @@ export const makeShelley = (
  * @since 2.0.0
  * @category constructors
  */
-export const makeBabbage = (
-  address: Address.Address,
-  amount: Value.Value,
-  datumOption?: DatumOption.DatumOption,
-  scriptRef?: ScriptRef.ScriptRef
-): BabbageTransactionOutput => new BabbageTransactionOutput({ address, amount, datumOption, scriptRef })
+export const makeBabbage = (...args: ConstructorParameters<typeof BabbageTransactionOutput>) =>
+  new BabbageTransactionOutput(...args)
 
 /**
  * @since 2.0.0
- * @category FastCheck
+ * @category arbitrary
  */
 export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
   FastCheck.oneof(
@@ -366,46 +342,6 @@ export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
       scriptRef: FastCheck.option(ScriptRef.arbitrary, { nil: undefined })
     }).map((props) => new BabbageTransactionOutput(props))
   )
-
-/**
- * Either namespace containing schema decode and encode operations.
- *
- * @since 2.0.0
- * @category Either
- */
-export namespace Either {
-  /**
-   * Parse a TransactionOutput from CBOR bytes using Either error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, TransactionOutputError)
-
-  /**
-   * Parse a TransactionOutput from CBOR hex using Either error handling.
-   *
-   * @since 2.0.0
-   * @category parsing
-   */
-  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, TransactionOutputError)
-
-  /**
-   * Convert a TransactionOutput to CBOR bytes using Either error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, TransactionOutputError)
-
-  /**
-   * Convert a TransactionOutput to CBOR hex using Either error handling.
-   *
-   * @since 2.0.0
-   * @category encoding
-   */
-  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, TransactionOutputError)
-}
 
 /**
  * Convert TransactionOutput to CBOR bytes (unsafe).
@@ -450,3 +386,43 @@ export const fromCBORHex = Function.makeCBORDecodeHexSync(
   TransactionOutputError,
   "TransactionOutput.fromCBORHex"
 )
+
+/**
+ * Either namespace containing schema decode and encode operations.
+ *
+ * @since 2.0.0
+ * @category Either
+ */
+export namespace Either {
+  /**
+   * Parse a TransactionOutput from CBOR bytes using Either error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORBytes = Function.makeCBORDecodeEither(FromCDDL, TransactionOutputError)
+
+  /**
+   * Parse a TransactionOutput from CBOR hex using Either error handling.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromCBORHex = Function.makeCBORDecodeHexEither(FromCDDL, TransactionOutputError)
+
+  /**
+   * Convert a TransactionOutput to CBOR bytes using Either error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORBytes = Function.makeCBOREncodeEither(FromCDDL, TransactionOutputError)
+
+  /**
+   * Convert a TransactionOutput to CBOR hex using Either error handling.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toCBORHex = Function.makeCBOREncodeHexEither(FromCDDL, TransactionOutputError)
+}

@@ -12,8 +12,10 @@ describe("TransactionOutput CML Compatibility", () => {
         const cmlOut = CML.TransactionOutput.from_cbor_hex(evCbor)
         const cmlCbor = cmlOut.to_cbor_hex()
         expect(evCbor).toBe(cmlCbor)
-      }),
-      { numRuns: 10, seed: 123 }
+
+        const evFromCml = TransactionOutput.fromCBORHex(evCbor)
+        expect(TransactionOutput.equals(evOut, evFromCml)).toBe(true)
+      })
     )
   })
 })

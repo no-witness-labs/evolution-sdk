@@ -39,6 +39,8 @@ parent: Modules
   - [ScriptRef (class)](#scriptref-class)
     - [toJSON (method)](#tojson-method)
     - [toString (method)](#tostring-method)
+- [utils](#utils)
+  - [CDDLSchema](#cddlschema)
 
 ---
 
@@ -343,4 +345,17 @@ toJSON(): string
 
 ```ts
 toString(): string
+```
+
+# utils
+
+## CDDLSchema
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.TaggedStruct<
+  "Tag",
+  { tag: Schema.Literal<[24]>; value: typeof Schema.Uint8ArrayFromSelf }
+>
 ```

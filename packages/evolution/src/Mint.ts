@@ -1,4 +1,4 @@
-import { Data, Effect as Eff, Equal, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as AssetName from "./AssetName.js"
 import * as Bytes from "./Bytes.js"
@@ -217,7 +217,38 @@ export const policyCount = (mint: Mint): number => mint.size
  * @since 2.0.0
  * @category equality
  */
-export const equals = (self: Mint, that: Mint): boolean => Equal.equals(self, that)
+export const equals = (self: Mint, that: Mint): boolean => {
+  if (self.size !== that.size) return false
+
+  for (const [policyId, assetMap] of self.entries()) {
+    // find matching policyId in `that`
+    let foundPolicy = false
+    for (const [otherPolicyId, otherAssetMap] of that.entries()) {
+      if (PolicyId.equals(policyId, otherPolicyId)) {
+        foundPolicy = true
+
+        // compare inner asset maps
+        if (assetMap.size !== otherAssetMap.size) return false
+
+        for (const [assetName, amount] of assetMap.entries()) {
+          let foundAsset = false
+          for (const [otherAssetName, otherAmount] of otherAssetMap.entries()) {
+            if (AssetName.equals(assetName, otherAssetName) && amount === otherAmount) {
+              foundAsset = true
+              break
+            }
+          }
+          if (!foundAsset) return false
+        }
+
+        break
+      }
+    }
+    if (!foundPolicy) return false
+  }
+
+  return true
+}
 
 export const CDDLSchema = Schema.MapFromSelf({
   key: CBOR.ByteArray, // Policy ID as 28-byte Uint8Array

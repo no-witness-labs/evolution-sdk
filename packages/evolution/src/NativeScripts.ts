@@ -362,6 +362,39 @@ const nativeArbitrary = (depth: number): FastCheck.Arbitrary<Native> => {
 export const arbitrary: FastCheck.Arbitrary<Native> = nativeArbitrary(2)
 
 /**
+ * Deep structural equality for Native scripts.
+ * Compares shape, values and recurses into nested scripts.
+ */
+export const equals = (a: Native, b: Native): boolean => {
+  if (a.type !== b.type) return false
+  switch (a.type) {
+    case "sig":
+      return a.keyHash === (b as any).keyHash
+    case "before":
+      return a.slot === (b as any).slot
+    case "after":
+      return a.slot === (b as any).slot
+    case "all":
+    case "any": {
+      const as = a.scripts
+      const bs = (b as any).scripts as ReadonlyArray<Native>
+      if (as.length !== bs.length) return false
+      for (let i = 0; i < as.length; i++) if (!equals(as[i], bs[i])) return false
+      return true
+    }
+    case "atLeast": {
+      const bs = b as any
+      if (a.required !== bs.required) return false
+      const as = a.scripts
+      const bscripts = bs.scripts as ReadonlyArray<Native>
+      if (as.length !== bscripts.length) return false
+      for (let i = 0; i < as.length; i++) if (!equals(as[i], bscripts[i])) return false
+      return true
+    }
+  }
+}
+
+/**
  * CBOR bytes transformation schema for Native.
  * Transforms between CBOR bytes and Native using CBOR encoding.
  *

@@ -132,7 +132,7 @@ export const equals = (a: DatumOption, b: DatumOption): boolean => {
     return Bytes32.equals(a.hash, b.hash)
   }
   if (a._tag === "InlineDatum" && b._tag === "InlineDatum") {
-    return a.data === b.data
+    return PlutusData.equals(a.data, b.data)
   }
   return false
 }
@@ -150,6 +150,11 @@ export const inlineDatumArbitrary = PlutusData.arbitrary.map((data) => new Inlin
  */
 export const arbitrary = FastCheck.oneof(datumHashArbitrary, inlineDatumArbitrary)
 
+export const CDDLSchema = Schema.Union(
+  Schema.Tuple(Schema.Literal(0n), CBOR.ByteArray), // [0, Bytes32]
+  Schema.Tuple(Schema.Literal(1n), CBOR.tag(24, Schema.Uint8ArrayFromSelf)) // [1, tag(24, bytes)] - PlutusData as bytes in tag 24
+)
+
 /**
  * CDDL schema for DatumOption.
  * datum_option = [0, Bytes32] / [1, #6.24(bytes)]
@@ -161,65 +166,48 @@ export const arbitrary = FastCheck.oneof(datumHashArbitrary, inlineDatumArbitrar
  * @since 2.0.0
  * @category schemas
  */
-export const DatumOptionCDDLSchema = Schema.transformOrFail(
-  Schema.Union(
-    Schema.Tuple(Schema.Literal(0n), CBOR.ByteArray), // [0, Bytes32]
-    Schema.Tuple(Schema.Literal(1n), CBOR.tag(24, Schema.Uint8ArrayFromSelf)) // [1, tag(24, bytes)] - PlutusData as bytes in tag 24
-  ),
-  Schema.typeSchema(DatumOptionSchema),
-  {
-    strict: true,
-    encode: (toA) =>
-      E.gen(function* () {
-        const result =
-          toA._tag === "DatumHash"
-            ? ([0n, toA.hash] as const) // Encode as [0, Bytes32]
-            : ([1n, { _tag: "Tag" as const, tag: 24 as const, value: PlutusData.toCBORBytes(toA.data) }] as const) // Encode as [1, tag(24, bytes)]
-        return yield* E.right(result)
-      }),
-    decode: ([tag, value], _, ast) =>
-      E.gen(function* () {
-        if (tag === 0n) {
-          // Decode as DatumHash
-          return yield* E.right(new DatumHash({ hash: value }, { disableValidation: true }))
-        } else if (tag === 1n) {
-          // Decode as InlineDatum - value is now a CBOR tag 24 wrapper containing bytes
-          const taggedValue = value as { _tag: "Tag"; tag: number; value: Uint8Array }
-          if (taggedValue._tag !== "Tag" || taggedValue.tag !== 24) {
-            return yield* E.left(
-              new ParseResult.Type(
-                ast,
-                [tag, value],
-                `Invalid InlineDatum format: expected tag 24, got ${taggedValue._tag} with tag ${taggedValue.tag}`
-              )
-            )
-          }
-          return yield* E.right(
-            new InlineDatum(
-              {
-                data: PlutusData.fromCBORBytes(taggedValue.value)
-              },
-              { disableValidation: true }
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(DatumOptionSchema), {
+  strict: true,
+  encode: (toA) =>
+    E.gen(function* () {
+      const result =
+        toA._tag === "DatumHash"
+          ? ([0n, toA.hash] as const) // Encode as [0, Bytes32]
+          : ([1n, { _tag: "Tag" as const, tag: 24 as const, value: PlutusData.toCBORBytes(toA.data) }] as const) // Encode as [1, tag(24, bytes)]
+      return yield* E.right(result)
+    }),
+  decode: ([tag, value], _, ast) =>
+    E.gen(function* () {
+      if (tag === 0n) {
+        // Decode as DatumHash
+        return yield* E.right(new DatumHash({ hash: value }, { disableValidation: true }))
+      } else if (tag === 1n) {
+        // Decode as InlineDatum - value is now a CBOR tag 24 wrapper containing bytes
+        const taggedValue = value as { _tag: "Tag"; tag: number; value: Uint8Array }
+        if (taggedValue._tag !== "Tag" || taggedValue.tag !== 24) {
+          return yield* E.left(
+            new ParseResult.Type(
+              ast,
+              [tag, value],
+              `Invalid InlineDatum format: expected tag 24, got ${taggedValue._tag} with tag ${taggedValue.tag}`
             )
           )
         }
-        return yield* E.left(
-          new ParseResult.Type(ast, [tag, value], `Invalid DatumOption tag: ${tag}. Expected 0 or 1.`)
+        return yield* E.right(
+          new InlineDatum(
+            {
+              data: PlutusData.fromCBORBytes(taggedValue.value)
+            },
+            { disableValidation: true }
+          )
         )
-      })
-  }
-).annotations({
+      }
+      return yield* E.left(new ParseResult.Type(ast, [tag, value], `Invalid DatumOption tag: ${tag}. Expected 0 or 1.`))
+    })
+}).annotations({
   identifier: "DatumOption.DatumOptionCDDLSchema",
   description: "Transforms CBOR structure to DatumOption"
 })
-
-/**
- * CDDL schema for DatumOption.
- *
- * @since 2.0.0
- * @category schemas
- */
-export const FromCDDL = DatumOptionCDDLSchema
 
 /**
  * CBOR bytes transformation schema for DatumOption.
@@ -231,7 +219,7 @@ export const FromCDDL = DatumOptionCDDLSchema
 export const FromCBORBytes = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTIONS) =>
   Schema.compose(
     CBOR.FromBytes(options), // Uint8Array → CBOR
-    DatumOptionCDDLSchema // CBOR → DatumOption
+    FromCDDL // CBOR → DatumOption
   ).annotations({
     identifier: "DatumOption.FromCBORBytes",
     description: "Transforms CBOR bytes to DatumOption"

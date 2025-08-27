@@ -10,11 +10,17 @@ parent: Modules
 
 <h2 className="text-delta">Table of contents</h2>
 
+- [arbitrary](#arbitrary)
+  - [arbitrary](#arbitrary-1)
 - [constructors](#constructors)
+  - [fromPrivateKey](#fromprivatekey)
+  - [fromVKey](#fromvkey)
   - [make](#make)
-- [effect](#effect)
+- [either](#either)
   - [Either (namespace)](#either-namespace)
-- [encoding](#encoding)
+- [encoding/decoding](#encodingdecoding)
+  - [fromBytes](#frombytes)
+  - [fromHex](#fromhex)
   - [toBytes](#tobytes)
   - [toHex](#tohex)
 - [equality](#equality)
@@ -25,25 +31,55 @@ parent: Modules
   - [KeyHash (class)](#keyhash-class)
     - [toJSON (method)](#tojson-method)
     - [toString (method)](#tostring-method)
-- [parsing](#parsing)
-  - [fromBytes](#frombytes)
-  - [fromHex](#fromhex)
-- [schemas](#schemas)
+- [transformer](#transformer)
   - [FromBytes](#frombytes-1)
   - [FromHex](#fromhex-1)
-- [testing](#testing)
-  - [arbitrary](#arbitrary)
-- [utils](#utils)
-  - [fromPrivateKey](#fromprivatekey)
-  - [fromVKey](#fromvkey)
 
 ---
 
+# arbitrary
+
+## arbitrary
+
+FastCheck arbitrary for generating random KeyHash instances.
+
+**Signature**
+
+```ts
+export declare const arbitrary: FastCheck.Arbitrary<KeyHash>
+```
+
+Added in v2.0.0
+
 # constructors
+
+## fromPrivateKey
+
+Create a KeyHash from a PrivateKey
+
+**Signature**
+
+```ts
+export declare const fromPrivateKey: (privateKey: PrivateKey) => KeyHash
+```
+
+Added in v2.0.0
+
+## fromVKey
+
+Create a KeyHash from a VKey
+
+**Signature**
+
+```ts
+export declare const fromVKey: (vkey: VKey.VKey) => KeyHash
+```
+
+Added in v2.0.0
 
 ## make
 
-Smart constructor for KeyHash that validates and applies branding.
+Smart constructor for KeyHash
 
 **Signature**
 
@@ -53,15 +89,39 @@ export declare const make: (props: { readonly hash: any }, options?: Schema.Make
 
 Added in v2.0.0
 
-# effect
+# either
 
 ## Either (namespace)
 
-Effect-based error handling variants for functions that can fail.
+Either-based error handling variants for functions that can fail.
 
 Added in v2.0.0
 
-# encoding
+# encoding/decoding
+
+## fromBytes
+
+Decode a KeyHash from raw bytes.
+
+**Signature**
+
+```ts
+export declare const fromBytes: (input: any) => KeyHash
+```
+
+Added in v2.0.0
+
+## fromHex
+
+Decode a KeyHash from a hex string.
+
+**Signature**
+
+```ts
+export declare const fromHex: (input: string) => KeyHash
+```
+
+Added in v2.0.0
 
 ## toBytes
 
@@ -119,15 +179,13 @@ Added in v2.0.0
 
 ## KeyHash (class)
 
-KeyHash as a TaggedClass (breaking change from branded hex string).
+KeyHash
+
+CDDL:
 
 ```
 addr_keyhash = hash28
 ```
-
-Follows CIP-0019 binary representation.
-
-Stores raw 28-byte value for performance.
 
 **Signature**
 
@@ -153,35 +211,7 @@ toJSON(): string
 toString(): string
 ```
 
-# parsing
-
-## fromBytes
-
-Parse a KeyHash from raw bytes.
-Expects exactly 28 bytes.
-
-**Signature**
-
-```ts
-export declare const fromBytes: (input: any) => KeyHash
-```
-
-Added in v2.0.0
-
-## fromHex
-
-Parse a KeyHash from a hex string.
-Expects exactly 56 hex characters (28 bytes).
-
-**Signature**
-
-```ts
-export declare const fromHex: (input: string) => KeyHash
-```
-
-Added in v2.0.0
-
-# schemas
+# transformer
 
 ## FromBytes
 
@@ -209,42 +239,3 @@ export declare const FromHex: Schema.transform<
 ```
 
 Added in v2.0.0
-
-# testing
-
-## arbitrary
-
-FastCheck arbitrary for generating random KeyHash instances.
-Used for property-based testing to generate valid test data.
-
-**Signature**
-
-```ts
-export declare const arbitrary: FastCheck.Arbitrary<KeyHash>
-```
-
-Added in v2.0.0
-
-# utils
-
-## fromPrivateKey
-
-Create a KeyHash from a PrivateKey (sync version that throws KeyHashError).
-All errors are normalized to KeyHashError with contextual information.
-
-**Signature**
-
-```ts
-export declare const fromPrivateKey: (privateKey: PrivateKey) => KeyHash
-```
-
-## fromVKey
-
-Create a KeyHash from a VKey (sync version that throws KeyHashError).
-All errors are normalized to KeyHashError with contextual information.
-
-**Signature**
-
-```ts
-export declare const fromVKey: (vkey: VKey.VKey) => KeyHash
-```

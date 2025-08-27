@@ -685,6 +685,46 @@ export const cborValueToPlutusData = (cborValue: CBOR.CBOR): Data => {
   })
 }
 
+/**
+ * Deep structural equality for Plutus Data values.
+ * Handles maps, lists, ints, bytes, and constrs.
+ */
+export const equals = (a: Data, b: Data): boolean => {
+  if (typeof a === "bigint" || typeof b === "bigint") return a === b
+
+  if (typeof a === "string" || typeof b === "string") return a === b
+
+  // Arrays (Lists)
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false
+    for (let i = 0; i < a.length; i++) if (!equals(a[i] as Data, b[i] as Data)) return false
+    return true
+  }
+
+  // Constr
+  if (a instanceof Constr && b instanceof Constr) {
+    if (a.index !== b.index) return false
+    if (a.fields.length !== b.fields.length) return false
+    for (let i = 0; i < a.fields.length; i++) if (!equals(a.fields[i] as Data, b.fields[i] as Data)) return false
+    return true
+  }
+
+  // Map
+  if (a instanceof Map && b instanceof Map) {
+    if (a.size !== b.size) return false
+    const aEntries = Array.from(a.entries())
+    for (const [ak, av] of aEntries) {
+      // find equivalent key in b
+      const match = Array.from(b.entries()).find(([bk]) => equals(ak as Data, bk as Data))
+      if (!match) return false
+      if (!equals(av as Data, match[1] as Data)) return false
+    }
+    return true
+  }
+
+  return false
+}
+
 export const CDDLSchema = CBOR.CBORSchema
 
 /**

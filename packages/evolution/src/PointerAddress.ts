@@ -99,7 +99,12 @@ export const decodeVariableLength: (
     bytesRead++
 
     // Big-endian base-128 accumulate
-    number = (number << 7) | (b & 0x7f)
+    // Use arithmetic multiplication instead of bitwise shift to avoid
+    // 32-bit signed integer overflow caused by JS bitwise operators.
+    // (number << 7) coerces to a 32-bit signed int which can become
+    // negative for large values; using multiplication keeps the
+    // full JS Number precision for large varints.
+    number = number * 128 + (b & 0x7f)
 
     if ((b & 0x80) === 0) {
       const value = yield* ParseResult.decode(Natural.Natural)(number)

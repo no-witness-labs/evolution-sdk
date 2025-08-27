@@ -34,7 +34,6 @@ parent: Modules
   - [DatumHash (class)](#datumhash-class)
     - [toString (method)](#tostring-method)
     - [[Symbol.for("nodejs.util.inspect.custom")] (method)](#symbolfornodejsutilinspectcustom-method)
-  - [DatumOptionCDDLSchema](#datumoptioncddlschema)
   - [DatumOptionSchema](#datumoptionschema)
   - [FromCBORBytes](#fromcborbytes-1)
   - [FromCBORHex](#fromcborhex-1)
@@ -45,6 +44,7 @@ parent: Modules
 - [testing](#testing)
   - [arbitrary](#arbitrary)
 - [utils](#utils)
+  - [CDDLSchema](#cddlschema)
   - [DatumHashFromBytes](#datumhashfrombytes)
   - [datumHashArbitrary](#datumhasharbitrary)
   - [inlineDatumArbitrary](#inlinedatumarbitrary)
@@ -243,36 +243,6 @@ toString(): string
 [Symbol.for("nodejs.util.inspect.custom")](): string
 ```
 
-## DatumOptionCDDLSchema
-
-CDDL schema for DatumOption.
-datum_option = [0, Bytes32] / [1, #6.24(bytes)]
-
-Where:
-
-- [0, Bytes32] represents a datum hash (tag 0 with 32-byte hash)
-- [1, #6.24(bytes)] represents inline data (tag 1 with CBOR tag 24 containing plutus data as bytes)
-
-**Signature**
-
-```ts
-export declare const DatumOptionCDDLSchema: Schema.transformOrFail<
-  Schema.Union<
-    [
-      Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
-      Schema.Tuple2<
-        Schema.Literal<[1n]>,
-        Schema.TaggedStruct<"Tag", { tag: Schema.Literal<[24]>; value: typeof Schema.Uint8ArrayFromSelf }>
-      >
-    ]
-  >,
-  Schema.SchemaClass<DatumHash | InlineDatum, DatumHash | InlineDatum, never>,
-  never
->
-```
-
-Added in v2.0.0
-
 ## DatumOptionSchema
 
 Schema for DatumOption representing optional datum information in transaction outputs.
@@ -366,6 +336,12 @@ Added in v2.0.0
 ## FromCDDL
 
 CDDL schema for DatumOption.
+datum_option = [0, Bytes32] / [1, #6.24(bytes)]
+
+Where:
+
+- [0, Bytes32] represents a datum hash (tag 0 with 32-byte hash)
+- [1, #6.24(bytes)] represents inline data (tag 1 with CBOR tag 24 containing plutus data as bytes)
 
 **Signature**
 
@@ -431,6 +407,22 @@ export declare const arbitrary: FastCheck.Arbitrary<DatumHash | InlineDatum>
 Added in v2.0.0
 
 # utils
+
+## CDDLSchema
+
+**Signature**
+
+```ts
+export declare const CDDLSchema: Schema.Union<
+  [
+    Schema.Tuple2<Schema.Literal<[0n]>, typeof Schema.Uint8ArrayFromSelf>,
+    Schema.Tuple2<
+      Schema.Literal<[1n]>,
+      Schema.TaggedStruct<"Tag", { tag: Schema.Literal<[24]>; value: typeof Schema.Uint8ArrayFromSelf }>
+    >
+  ]
+>
+```
 
 ## DatumHashFromBytes
 

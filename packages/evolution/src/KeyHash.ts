@@ -19,13 +19,12 @@ export class KeyHashError extends Data.TaggedError("KeyHashError")<{
 }> {}
 
 /**
- * KeyHash as a TaggedClass (breaking change from branded hex string).
+ * KeyHash
+ *
+ * CDDL:
  * ```
  * addr_keyhash = hash28
  * ```
- * Follows CIP-0019 binary representation.
- *
- * Stores raw 28-byte value for performance.
  *
  * @since 2.0.0
  * @category model
@@ -46,7 +45,7 @@ export class KeyHash extends Schema.TaggedClass<KeyHash>()("KeyHash", {
  * Schema transformer from bytes to KeyHash.
  *
  * @since 2.0.0
- * @category schemas
+ * @category transformer
  */
 export const FromBytes = Schema.transform(Hash28.BytesSchema, KeyHash, {
   strict: true,
@@ -60,7 +59,7 @@ export const FromBytes = Schema.transform(Hash28.BytesSchema, KeyHash, {
  * Schema transformer from hex string to KeyHash.
  *
  * @since 2.0.0
- * @category schemas
+ * @category transformer
  */
 export const FromHex = Schema.compose(
   Bytes.FromHex, // string -> Uint8Array
@@ -70,7 +69,7 @@ export const FromHex = Schema.compose(
 })
 
 /**
- * Smart constructor for KeyHash that validates and applies branding.
+ * Smart constructor for KeyHash
  *
  * @since 2.0.0
  * @category constructors
@@ -86,33 +85,30 @@ export const make = (...args: ConstructorParameters<typeof KeyHash>) => new KeyH
 export const equals = (a: KeyHash, b: KeyHash): boolean => Bytes.equals(a.hash, b.hash)
 
 // ============================================================================
-// Parsing Functions
+// Decoding Functions
 // ============================================================================
 
 /**
- * Parse a KeyHash from raw bytes.
- * Expects exactly 28 bytes.
+ * Decode a KeyHash from raw bytes.
  *
  * @since 2.0.0
- * @category parsing
+ * @category encoding/decoding
  */
 export const fromBytes = Function.makeDecodeSync(FromBytes, KeyHashError, "KeyHash.fromBytes")
 
 /**
- * Parse a KeyHash from a hex string.
- * Expects exactly 56 hex characters (28 bytes).
+ * Decode a KeyHash from a hex string.
  *
  * @since 2.0.0
- * @category parsing
+ * @category encoding/decoding
  */
 export const fromHex = Function.makeDecodeSync(FromHex, KeyHashError, "KeyHash.fromHex")
 
 /**
  * FastCheck arbitrary for generating random KeyHash instances.
- * Used for property-based testing to generate valid test data.
  *
  * @since 2.0.0
- * @category testing
+ * @category arbitrary
  */
 export const arbitrary: FastCheck.Arbitrary<KeyHash> = FastCheck.uint8Array({ minLength: 28, maxLength: 28 }).map(
   (bytes) => make({ hash: bytes }, { disableValidation: true })
@@ -126,7 +122,7 @@ export const arbitrary: FastCheck.Arbitrary<KeyHash> = FastCheck.uint8Array({ mi
  * Convert a KeyHash to raw bytes.
  *
  * @since 2.0.0
- * @category encoding
+ * @category encoding/decoding
  */
 export const toBytes = (keyhash: KeyHash): Uint8Array => new Uint8Array(keyhash.hash) // Return a copy of the underlying bytes
 
@@ -134,44 +130,44 @@ export const toBytes = (keyhash: KeyHash): Uint8Array => new Uint8Array(keyhash.
  * Convert a KeyHash to a hex string.
  *
  * @since 2.0.0
- * @category encoding
+ * @category encoding/decoding
  */
 export const toHex = (keyhash: KeyHash): string => Bytes.toHex(keyhash.hash)
 
-// ============================================================================
-// Cryptographic Operations (throwing)
-// ============================================================================
-
 /**
- * Create a KeyHash from a PrivateKey (sync version that throws KeyHashError).
- * All errors are normalized to KeyHashError with contextual information.
+ * Create a KeyHash from a PrivateKey
+ *
+ * @since 2.0.0
+ * @category constructors
  */
 export const fromPrivateKey = (privateKey: PrivateKey): KeyHash => {
   const vkey = VKey.fromPrivateKey(privateKey)
-  const publicKeyBytes = VKey.toBytes(vkey)
+  const publicKeyBytes = vkey.bytes
   const keyHashBytes = blake2b(publicKeyBytes, { dkLen: 28 })
-  return KeyHash.make({ hash: keyHashBytes })
+  return KeyHash.make({ hash: keyHashBytes }, { disableValidation: true })
 }
 
 /**
- * Create a KeyHash from a VKey (sync version that throws KeyHashError).
- * All errors are normalized to KeyHashError with contextual information.
- */
-export const fromVKey = (vkey: VKey.VKey): KeyHash => {
-  const publicKeyBytes = VKey.toBytes(vkey)
-  const keyHashBytes = blake2b(publicKeyBytes, { dkLen: 28 })
-  return KeyHash.make({ hash: keyHashBytes })
-}
-
-// ============================================================================
-// Effect Namespace - Effect-based Error Handling
-// ============================================================================
-
-/**
- * Effect-based error handling variants for functions that can fail.
+ * Create a KeyHash from a VKey
  *
  * @since 2.0.0
- * @category effect
+ * @category constructors
+ */
+export const fromVKey = (vkey: VKey.VKey): KeyHash => {
+  const publicKeyBytes = vkey.bytes
+  const keyHashBytes = blake2b(publicKeyBytes, { dkLen: 28 })
+  return KeyHash.make({ hash: keyHashBytes }, { disableValidation: true })
+}
+
+// ============================================================================
+// Either Namespace - Either-based Error Handling
+// ============================================================================
+
+/**
+ * Either-based error handling variants for functions that can fail.
+ *
+ * @since 2.0.0
+ * @category either
  */
 export namespace Either {
   export const fromBytes = Function.makeDecodeEither(FromBytes, KeyHashError)

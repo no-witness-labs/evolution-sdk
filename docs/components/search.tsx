@@ -28,15 +28,15 @@ export default function DefaultSearchDialog(props: SharedProps) {
   // the site lives under a subpath (e.g. /evolution-sdk). Set
   // NEXT_PUBLIC_BASE_PATH=/evolution-sdk in CI so the client requests the
   // correct static search JSON. Falls back to empty string for local dev.
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
-  const normalizedBase = basePath.endsWith('/') && basePath.length > 1 ? basePath.slice(0, -1) : basePath
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+  const normalizedBase = basePath.endsWith("/") && basePath.length > 1 ? basePath.slice(0, -1) : basePath
   const apiFrom = `${normalizedBase}/api/search`
 
   const { search, setSearch, query } = useDocsSearch({
     type: "static",
     initOrama,
     locale,
-    from: apiFrom,
+    from: apiFrom
   })
 
   return (

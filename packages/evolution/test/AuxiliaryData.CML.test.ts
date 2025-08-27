@@ -1,4 +1,5 @@
 import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
+import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
 import * as AuxiliaryData from "../src/AuxiliaryData.js"
@@ -96,5 +97,62 @@ describe("AuxiliaryData CML Compatibility", () => {
     const cmlCbor = cmlAuxData.to_cbor_hex()
 
     expect(evolutionCbor).toBe(cmlCbor)
+  })
+
+  it("property: Evolution SDK CBOR matches CML CBOR for any generated AuxiliaryData", () => {
+    FastCheck.assert(
+      FastCheck.property(AuxiliaryData.arbitrary, (evolutionAuxData) => {
+        // Evolution → CBOR hex
+        const evolutionCbor = AuxiliaryData.toCBORHex(evolutionAuxData)
+
+        // CBOR hex → CML (ensures parity)
+        const cmlAux = CML.AuxiliaryData.from_cbor_hex(evolutionCbor)
+        const cmlCbor = cmlAux.to_cbor_hex()
+
+        // Evolution and CML CBOR must match
+        expect(evolutionCbor).toBe(cmlCbor)
+
+        const decoded = AuxiliaryData.fromCBORHex(cmlCbor)
+        expect(AuxiliaryData.equals(decoded, evolutionAuxData)).toBe(true)
+      })
+    )
+  })
+
+  it("property: ShelleyMAAuxiliaryData  ", () => {
+    FastCheck.assert(
+      FastCheck.property(AuxiliaryData.shelleyMAArbitrary, (evolutionAuxData) => {
+        // Evolution → CBOR hex
+        const evolutionCbor = AuxiliaryData.toCBORHex(evolutionAuxData)
+
+        // CBOR hex → CML (ensures parity)
+        const cmlAux = CML.ShelleyMAFormatAuxData.from_cbor_hex(evolutionCbor)
+        const cmlCbor = cmlAux.to_cbor_hex()
+
+        // Evolution and CML CBOR must match
+        expect(evolutionCbor).toBe(cmlCbor)
+
+        const decoded = AuxiliaryData.fromCBORHex(cmlCbor)
+        expect(AuxiliaryData.equals(decoded, evolutionAuxData)).toBe(true)
+      })
+    )
+  })
+
+  it("property: ShelleyAuxiliaryData", () => {
+    FastCheck.assert(
+      FastCheck.property(AuxiliaryData.shelleyArbitrary, (evolutionAuxData) => {
+        // Evolution → CBOR hex
+        const evolutionCbor = AuxiliaryData.toCBORHex(evolutionAuxData)
+
+        // CBOR hex → CML (ensures parity)
+        const cmlAux = CML.AuxiliaryData.from_cbor_hex(evolutionCbor)
+        const cmlCbor = cmlAux.to_cbor_hex()
+
+        // Evolution and CML CBOR must match
+        expect(evolutionCbor).toBe(cmlCbor)
+
+        const decoded = AuxiliaryData.fromCBORHex(cmlCbor)
+        expect(AuxiliaryData.equals(decoded, evolutionAuxData)).toBe(true)
+      })
+    )
   })
 })

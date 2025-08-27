@@ -66,6 +66,7 @@ parent: Modules
   - [ByteArray (type alias)](#bytearray-type-alias)
   - [CDDLSchema](#cddlschema)
   - [Int (type alias)](#int-type-alias)
+  - [equals](#equals)
 
 ---
 
@@ -741,4 +742,15 @@ export declare const CDDLSchema: Schema.Schema<CBOR.CBOR, CBOR.CBOR, never>
 
 ```ts
 export type Int = typeof IntSchema.Type
+```
+
+## equals
+
+Deep structural equality for Plutus Data values.
+Handles maps, lists, ints, bytes, and constrs.
+
+**Signature**
+
+```ts
+export declare const equals: (a: Data, b: Data) => boolean
 ```

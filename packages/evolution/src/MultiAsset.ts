@@ -199,21 +199,25 @@ export const getAssetsByPolicy = (multiAsset: MultiAsset, policyId: PolicyId.Pol
 export const equals = (a: MultiAsset, b: MultiAsset): boolean =>
   a.size === b.size &&
   Array.from(a.keys()).every((policyId) => {
+    // find corresponding policy key in `b` by value (PolicyId.equals)
+    const bPolicyKey = Array.from(b.keys()).find((k) => PolicyId.equals(k, policyId))
     const aAssets = a.get(policyId)
-    const bAssets = b.get(policyId)
+    const bAssets = bPolicyKey === undefined ? undefined : b.get(bPolicyKey)
 
     if ((aAssets === undefined) !== (bAssets === undefined)) return false
     if (aAssets === undefined) return true
     if (bAssets === undefined) return false
 
-    return (
-      aAssets.size === bAssets.size &&
-      Array.from(aAssets.keys()).every((assetName) => {
-        const aAmount = aAssets.get(assetName)
-        const bAmount = bAssets.get(assetName)
-        return aAmount === bAmount
-      })
-    )
+    if (aAssets.size !== bAssets.size) return false
+
+    // compare assetName keys by value (AssetName.equals)
+    return Array.from(aAssets.keys()).every((assetName) => {
+      const bAssetKey = Array.from(bAssets.keys()).find((k) => AssetName.equals(k, assetName))
+      if (bAssetKey === undefined) return false
+      const aAmount = aAssets.get(assetName)
+      const bAmount = bAssets.get(bAssetKey)
+      return aAmount === bAmount
+    })
   })
 
 /**
@@ -251,8 +255,16 @@ export const arbitrary: FastCheck.Arbitrary<MultiAsset> = FastCheck.uniqueArray(
 
   return FastCheck.array(assetsForPolicy(), { minLength: policies.length, maxLength: policies.length }).map(
     (assetMaps) => {
-      const entries = policies.map((policy, idx) => [policy, assetMaps[idx]] as const)
-      return make(new Map(entries))
+      // Build a properly typed Map<PolicyId, AssetMap>
+      const result = new Map<PolicyId.PolicyId, Map<AssetName.AssetName, PositiveCoin.PositiveCoin>>()
+      for (let i = 0; i < policies.length; i++) {
+        const policy = policies[i]!
+        const assetMap = assetMaps[i]!
+        // assetMap is generated to be a Map<AssetName, PositiveCoin>
+        result.set(policy, assetMap as Map<AssetName.AssetName, PositiveCoin.PositiveCoin>)
+      }
+
+      return make(result)
     }
   )
 })

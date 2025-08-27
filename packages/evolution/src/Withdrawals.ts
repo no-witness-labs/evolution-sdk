@@ -113,9 +113,17 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
 export const equals = (self: Withdrawals, that: Withdrawals): boolean => {
   if (self.withdrawals.size !== that.withdrawals.size) return false
 
+  // Map keys are RewardAccount instances which may be different object
+  // identities after decoding; compare keys structurally using RewardAccount.equals
   for (const [account, coin] of self.withdrawals) {
-    const otherCoin = that.withdrawals.get(account)
-    if (!otherCoin || !Coin.equals(coin, otherCoin)) return false
+    let found = false
+    for (const [otherAccount, otherCoin] of that.withdrawals) {
+      if (RewardAccount.equals(account, otherAccount) && Coin.equals(coin, otherCoin)) {
+        found = true
+        break
+      }
+    }
+    if (!found) return false
   }
 
   return true

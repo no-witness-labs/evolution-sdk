@@ -250,7 +250,7 @@ const int64Arbitrary = FastCheck.bigInt({ min: I64_MIN, max: I64_MAX })
 export const arbitrary: FastCheck.Arbitrary<TransactionMetadatum> = FastCheck.oneof(
   FastCheck.string().map((value) => new TextMetadatum({ value })),
   int64Arbitrary.map((value) => new IntMetadatum({ value })),
-  FastCheck.uint8Array({ maxLength: 10 }).map((value) => new BytesMetadatum({ value })),
+  FastCheck.uint8Array({ minLength: 1, maxLength: 10 }).map((value) => new BytesMetadatum({ value })),
   FastCheck.array(
     FastCheck.oneof(
       FastCheck.string().map((value) => new TextMetadatum({ value })),

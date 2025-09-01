@@ -1,9 +1,11 @@
 import { Data, Either as E, FastCheck, ParseResult, Schema } from "effect"
 
-import * as Address from "./Address.js"
+import * as AddressEras from "./AddressEras.js"
+import * as BaseAddress from "./BaseAddress.js"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 import * as DatumOption from "./DatumOption.js"
+import * as EnterpriseAddress from "./EnterpriseAddress.js"
 import * as Function from "./Function.js"
 import * as ScriptRef from "./ScriptRef.js"
 import * as Value from "./Value.js"
@@ -20,8 +22,8 @@ export class TransactionOutputError extends Data.TaggedError("TransactionOutputE
 }> {}
 
 // Pre-bind frequently used ParseResult helpers for hot paths
-const encAddress = ParseResult.encodeEither(Address.FromBytes)
-const decAddress = ParseResult.decodeUnknownEither(Address.FromBytes)
+const encAddress = ParseResult.encodeEither(AddressEras.FromBytes)
+const decAddress = ParseResult.decodeUnknownEither(Schema.Union(BaseAddress.FromBytes, EnterpriseAddress.FromBytes))
 const encValue = ParseResult.encodeEither(Value.FromCDDL)
 const decValue = ParseResult.decodeUnknownEither(Value.FromCDDL)
 const encDatumOption = ParseResult.encodeEither(DatumOption.FromCDDL)
@@ -44,7 +46,7 @@ const decScriptRef = ParseResult.decodeUnknownEither(ScriptRef.FromCDDL)
 export class ShelleyTransactionOutput extends Schema.TaggedClass<ShelleyTransactionOutput>()(
   "ShelleyTransactionOutput",
   {
-    address: Address.Address,
+    address: Schema.Union(BaseAddress.BaseAddress, EnterpriseAddress.EnterpriseAddress),
     amount: Value.Value,
     datumHash: Schema.optional(DatumOption.DatumHash)
   }
@@ -75,7 +77,7 @@ export class ShelleyTransactionOutput extends Schema.TaggedClass<ShelleyTransact
 export class BabbageTransactionOutput extends Schema.TaggedClass<BabbageTransactionOutput>()(
   "BabbageTransactionOutput",
   {
-    address: Address.Address, // 0
+    address: Schema.Union(BaseAddress.BaseAddress, EnterpriseAddress.EnterpriseAddress),
     amount: Value.Value, // 1
     datumOption: Schema.optional(DatumOption.DatumOptionSchema), // 2
     scriptRef: Schema.optional(ScriptRef.ScriptRef) // 3
@@ -286,14 +288,14 @@ export const equals = (a: TransactionOutput, b: TransactionOutput): boolean => {
   }
 
   if (a._tag === "ShelleyTransactionOutput" && b._tag === "ShelleyTransactionOutput") {
-    const addrEq = Address.equals(a.address, b.address)
+    const addrEq = AddressEras.equals(a.address, b.address)
     const amountEq = Value.equals(a.amount, b.amount)
     const datumEq = optionalEquals(a.datumHash, b.datumHash, DatumOption.equals)
     return addrEq && amountEq && datumEq
   }
 
   if (a._tag === "BabbageTransactionOutput" && b._tag === "BabbageTransactionOutput") {
-    const addrEq = Address.equals(a.address, b.address)
+    const addrEq = AddressEras.equals(a.address, b.address)
     const amountEq = Value.equals(a.amount, b.amount)
     const datumEq = optionalEquals(a.datumOption, b.datumOption, DatumOption.equals)
     const scriptEq = optionalEquals(a.scriptRef, b.scriptRef, ScriptRef.equals)
@@ -329,14 +331,14 @@ export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
   FastCheck.oneof(
     // Shelley TransactionOutput
     FastCheck.record({
-      address: Address.arbitrary,
+      address: FastCheck.oneof(BaseAddress.arbitrary, EnterpriseAddress.arbitrary),
       amount: Value.arbitrary,
       datumHash: FastCheck.option(DatumOption.datumHashArbitrary, { nil: undefined })
     }).map((props) => new ShelleyTransactionOutput(props)),
 
     // Babbage TransactionOutput
     FastCheck.record({
-      address: Address.arbitrary,
+      address: FastCheck.oneof(BaseAddress.arbitrary, EnterpriseAddress.arbitrary),
       amount: Value.arbitrary,
       datumOption: FastCheck.option(DatumOption.arbitrary, { nil: undefined }),
       scriptRef: FastCheck.option(ScriptRef.arbitrary, { nil: undefined })

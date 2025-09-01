@@ -18,7 +18,7 @@ export class NetworkIdError extends Data.TaggedError("NetworkIdError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const NetworkId = Schema.NonNegativeInt.pipe(Schema.brand("NetworkId")).annotations({
+export const NetworkId = Schema.NonNegativeInt.annotations({
   identifier: "NetworkId"
 })
 

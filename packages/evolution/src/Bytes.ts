@@ -189,14 +189,12 @@ export const BytesFromHexLenient = makeBytesTransformation({
  * @category composition
  */
 export const hexLengthEquals =
-  (byteLength: number, moduleName: string) =>
+  (byteLength: number) =>
   <S extends Schema.Schema<any, string>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter((hex: string) => hex.length === byteLength * 2, {
         message: (issue) =>
-          `${issue.actual} Must be exactly ${byteLength * 2} hex characters (${byteLength} bytes), got ${(issue.actual as string).length}`,
-
-        identifier: `${moduleName}.LengthEquals${byteLength}`
+          `${issue.actual} Must be exactly ${byteLength * 2} hex characters (${byteLength} bytes), got ${(issue.actual as string).length}`
       })
     )
 
@@ -232,12 +230,11 @@ export const hexLengthBetween =
  * @category composition
  */
 export const hexLengthMin =
-  (minBytes: number, moduleName: string) =>
+  (minBytes: number) =>
   <S extends Schema.Schema<any, string>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter((hex: string) => hex.length >= minBytes * 2, {
-        message: () => `Must be at least ${minBytes} bytes (${minBytes * 2} hex characters)`,
-        identifier: `${moduleName}.LengthMin${minBytes}`
+        message: () => `Must be at least ${minBytes} bytes (${minBytes * 2} hex characters)`
       })
     )
 
@@ -249,12 +246,11 @@ export const hexLengthMin =
  * @category composition
  */
 export const hexLengthMax =
-  (maxBytes: number, moduleName: string) =>
+  (maxBytes: number) =>
   <S extends Schema.Schema<any, string>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter((hex: string) => hex.length <= maxBytes * 2, {
-        message: () => `Must be at most ${maxBytes} bytes (${maxBytes * 2} hex characters)`,
-        identifier: `${moduleName}.LengthMax${maxBytes}`
+        message: () => `Must be at most ${maxBytes} bytes (${maxBytes * 2} hex characters)`
       })
     )
 
@@ -266,12 +262,11 @@ export const hexLengthMax =
  * @category composition
  */
 export const hexStartsWithPrefix =
-  (prefix: string, moduleName: string) =>
+  (prefix: string) =>
   <S extends Schema.Schema<any, string>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter((hex: string) => hex.toLowerCase().startsWith(prefix.toLowerCase()), {
-        message: () => `Must start with prefix "${prefix}"`,
-        identifier: `${moduleName}.StartsWithPrefix`
+        message: () => `Must start with prefix "${prefix}"`
       })
     )
 
@@ -284,13 +279,12 @@ export const hexStartsWithPrefix =
  * @category composition
  */
 export const bytesLengthEquals =
-  (byteLength: number, moduleName: string) =>
+  (byteLength: number) =>
   <S extends Schema.Schema<any, any>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter((bytes: Uint8Array) => bytes.length === byteLength, {
         message: (issue) =>
-          `${issue.actual} Must be exactly ${byteLength} bytes, got ${(issue.actual as Uint8Array).length}`,
-        identifier: `${moduleName}.BytesLengthEquals${byteLength}`
+          `${issue.actual} Must be exactly ${byteLength} bytes, got ${(issue.actual as Uint8Array).length}`
       })
     )
 
@@ -302,12 +296,11 @@ export const bytesLengthEquals =
  * @category composition
  */
 export const bytesLengthBetween =
-  (minBytes: number, maxBytes: number, moduleName: string) =>
+  (minBytes: number, maxBytes: number) =>
   <S extends Schema.Schema<any, Uint8Array>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter((bytes: Uint8Array) => bytes.length >= minBytes && bytes.length <= maxBytes, {
-        message: () => `Must be between ${minBytes} and ${maxBytes} bytes`,
-        identifier: `${moduleName}.BytesLengthBetween${minBytes}And${maxBytes}`
+        message: () => `Must be between ${minBytes} and ${maxBytes} bytes`
       })
     )
 
@@ -319,12 +312,11 @@ export const bytesLengthBetween =
  * @category composition
  */
 export const bytesLengthMin =
-  (minBytes: number, moduleName: string) =>
+  (minBytes: number) =>
   <S extends Schema.Schema<any, Uint8Array>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter((bytes: Uint8Array) => bytes.length >= minBytes, {
-        message: () => `Must be at least ${minBytes} bytes`,
-        identifier: `${moduleName}.BytesLengthMin${minBytes}`
+        message: () => `Must be at least ${minBytes} bytes`
       })
     )
 
@@ -353,7 +345,7 @@ export const bytesLengthMax =
  * @category composition
  */
 export const bytesStartsWithPrefix =
-  (prefix: Uint8Array, moduleName: string) =>
+  (prefix: Uint8Array) =>
   <S extends Schema.Schema<any, Uint8Array>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter(
@@ -365,8 +357,7 @@ export const bytesStartsWithPrefix =
           return true
         },
         {
-          message: () => `Must start with prefix [${Array.from(prefix).join(", ")}]`,
-          identifier: `${moduleName}.BytesStartsWithPrefix`
+          message: () => `Must start with prefix [${Array.from(prefix).join(", ")}]`
         }
       )
     )

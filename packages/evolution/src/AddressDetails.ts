@@ -1,6 +1,6 @@
 import { Data, Effect as Eff, ParseResult, Schema } from "effect"
 
-import * as Address from "./Address.js"
+import * as AddressEras from "./AddressEras.js"
 import * as Bytes from "./Bytes.js"
 import * as Function from "./Function.js"
 import * as NetworkId from "./NetworkId.js"
@@ -26,7 +26,7 @@ export class AddressDetails extends Schema.Class<AddressDetails>("AddressDetails
     Schema.Literal("RewardAccount"),
     Schema.Literal("ByronAddress")
   ),
-  address: Address.Address,
+  address: AddressEras.AddressEras,
   bech32: Schema.String,
   hex: Bytes.HexSchema
 }) {}
@@ -36,8 +36,8 @@ export const FromBech32 = Schema.transformOrFail(Schema.String, AddressDetails, 
   encode: (_, __, ___, toA) => ParseResult.succeed(toA.bech32),
   decode: (_, __, ___, fromA) =>
     Eff.gen(function* () {
-      const address = yield* ParseResult.decode(Address.FromBech32)(fromA)
-      const hex = yield* ParseResult.encode(Address.FromHex)(address)
+      const address = yield* ParseResult.decode(AddressEras.FromBech32)(fromA)
+      const hex = yield* ParseResult.encode(AddressEras.FromHex)(address)
       return new AddressDetails({
         networkId: address.networkId,
         type: address._tag,
@@ -53,8 +53,8 @@ export const FromHex = Schema.transformOrFail(Bytes.HexSchema, AddressDetails, {
   encode: (_, __, ___, toA) => ParseResult.succeed(toA.hex),
   decode: (_, __, ___, fromA) =>
     Eff.gen(function* () {
-      const address = yield* ParseResult.decode(Address.FromHex)(fromA)
-      const bech32 = yield* ParseResult.encode(Address.FromBech32)(address)
+      const address = yield* ParseResult.decode(AddressEras.FromHex)(fromA)
+      const bech32 = yield* ParseResult.encode(AddressEras.FromBech32)(address)
       return new AddressDetails({
         networkId: address.networkId,
         type: address._tag,
@@ -83,7 +83,7 @@ export const equals = (self: AddressDetails, that: AddressDetails): boolean => {
   return (
     self.networkId === that.networkId &&
     self.type === that.type &&
-    Address.equals(self.address, that.address) &&
+    AddressEras.equals(self.address, that.address) &&
     self.bech32 === that.bech32 &&
     self.hex === that.hex
   )
@@ -95,7 +95,7 @@ export const equals = (self: AddressDetails, that: AddressDetails): boolean => {
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = Address.arbitrary.map((address) => fromAddress(address))
+export const arbitrary = AddressEras.arbitrary.map((address) => fromAddress(address))
 
 /**
  * Create AddressDetails from an Address.
@@ -103,10 +103,10 @@ export const arbitrary = Address.arbitrary.map((address) => fromAddress(address)
  * @since 2.0.0
  * @category constructors
  */
-export const fromAddress = (address: Address.Address): AddressDetails => {
+export const fromAddress = (address: AddressEras.AddressEras): AddressDetails => {
   // Use schema encoding to get the serialized formats
-  const bech32 = Eff.runSync(Schema.encode(Address.FromBech32)(address))
-  const hex = Eff.runSync(Schema.encode(Address.FromHex)(address))
+  const bech32 = Eff.runSync(Schema.encode(AddressEras.FromBech32)(address))
+  const hex = Eff.runSync(Schema.encode(AddressEras.FromHex)(address))
   return new AddressDetails({
     networkId: address.networkId,
     type: address._tag,

@@ -28,11 +28,11 @@ export class Bytes128Error extends Data.TaggedError("Bytes128Error")<{
 export const BYTES_LENGTH = 128
 
 export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
-  Bytes.bytesLengthEquals(BYTES_LENGTH, `Bytes${BYTES_LENGTH}.Bytes${BYTES_LENGTH}`)
+  Bytes.bytesLengthEquals(BYTES_LENGTH)
 )
 
 export const HexSchema = Bytes.HexSchema.pipe(
-  Bytes.hexLengthEquals(BYTES_LENGTH, `Bytes${BYTES_LENGTH}.Hex${BYTES_LENGTH}`)
+  Bytes.hexLengthEquals(BYTES_LENGTH)
 )
 
 /**
@@ -50,7 +50,7 @@ export const FromHex = Bytes.makeBytesTransformation({
 })
 
 export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(
-  Bytes.bytesLengthBetween(0, BYTES_LENGTH, `Bytes${BYTES_LENGTH}.VariableBytes${BYTES_LENGTH}`)
+  Bytes.bytesLengthBetween(0, BYTES_LENGTH)
 )
 
 /**
@@ -62,7 +62,7 @@ export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(
 export const VariableBytesFromHex = Bytes.makeBytesTransformation({
   id: `Bytes${BYTES_LENGTH}.VariableBytes${BYTES_LENGTH}FromHex`,
   stringSchema: Bytes.HexLenientSchema.pipe(
-    Bytes.hexLengthBetween(0, BYTES_LENGTH, `Bytes${BYTES_LENGTH}.VariableHex${BYTES_LENGTH}`)
+    Bytes.hexLengthBetween(0, BYTES_LENGTH)
   ),
   uint8ArraySchema: VariableBytes,
   decode: Bytes.fromHexLenient,

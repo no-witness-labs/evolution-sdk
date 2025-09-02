@@ -1,9 +1,9 @@
 import type { Effect } from "effect"
 import { Context, Data } from "effect"
 
-import type { AddressEras } from "../AddressEras.js"
-import type { TransactionHash } from "../TransactionHash.js"
-import type { UTxO } from "../sdk/UTxO.js"
+import type { AddressEras } from "../../core/AddressEras.js"
+import type { TransactionHash } from "../../core/TransactionHash.js"
+import type { UTxO } from "../UTxO.js"
 import type { ProtocolParameters } from "./types.js"
 
 // Base Provider Error

@@ -5,7 +5,6 @@
 import { bech32 } from "@scure/base"
 import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
-import * as Address from "./Address.js"
 import * as Bytes from "./Bytes.js"
 import * as Bytes29 from "./Bytes29.js"
 import * as Bytes57 from "./Bytes57.js"

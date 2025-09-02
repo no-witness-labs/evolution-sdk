@@ -141,13 +141,8 @@ export const FromShelleyTransactionOutputCDDLSchema = Schema.transformOrFail(
     decode: (fromI) =>
       E.gen(function* () {
         const [addressBytes, valueBytes, datumHashBytes] = fromI
-
-        // Validate addressBytes is a byte array before decoding (avoid instanceof)
-        if (Object.prototype.toString.call(addressBytes) !== "[object Uint8Array]") {
-          return yield* E.left(new ParseResult.Type(BabbageTransactionOutputCDDL.ast, fromI))
-        }
         const address = yield* decAddress(addressBytes)
-        const amount = yield* decValue(valueBytes as any)
+        const amount = yield* decValue(valueBytes)
         let datumHash: DatumOption.DatumHash | undefined
         if (datumHashBytes !== undefined) {
           datumHash = yield* decDatumHash(datumHashBytes)

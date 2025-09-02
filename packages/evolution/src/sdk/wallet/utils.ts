@@ -1,14 +1,14 @@
 import { mnemonicToEntropy } from "@scure/bip39"
 import { wordlist as English } from "@scure/bip39/wordlists/english"
 
-import * as Address from "../AddressEras.js"
-import * as BaseAddress from "../BaseAddress.js"
-import * as Bip32PrivateKey from "../Bip32PrivateKey.js"
-import * as EnterpriseAddress from "../EnterpriseAddress.js"
-import * as KeyHash from "../KeyHash.js"
-import * as NetworkId from "../NetworkId.js"
-import * as PrivateKey from "../PrivateKey.js"
-import * as RewardAccount from "../RewardAccount.js"
+import * as Address from "../../core/Address.js"
+import * as BaseAddress from "../../core/BaseAddress.js"
+import * as Bip32PrivateKey from "../../core/Bip32PrivateKey.js"
+import * as EnterpriseAddress from "../../core/EnterpriseAddress.js"
+import * as KeyHash from "../../core/KeyHash.js"
+import * as NetworkId from "../../core/NetworkId.js"
+import * as PrivateKey from "../../core/PrivateKey.js"
+import * as RewardAccount from "../../core/RewardAccount.js"
 
 export type FromSeed = {
   address: string

@@ -1,7 +1,8 @@
 import { pipe } from "effect"
 
-import * as StrictScript from "../Script.js"
-import * as ScriptHashModule from "../ScriptHash.js"
+import * as CoreScript from "../core/Script.js"
+import * as CoreScriptHash from "../core/ScriptHash.js"
+import type * as Credential from "./Credential.js"
 
 export type Native = {
   type: "Native"
@@ -30,21 +31,12 @@ export type Validator = Script
 export type SpendingValidator = Script
 export type MintingPolicy = Script
 export type PolicyId = string // hex string
-export type ScriptHash = string // hex string
-
-// Supporting types for address generation
-export interface Credential {
-  type: "Key" | "Script"
-  hash: string // hex string
-}
-
-export type Network = "Mainnet" | "Testnet"
 
 /**
  * Convert user-facing Script to strict Script type for hash computation.
  */
-const toStrictScript = (script: Script): StrictScript.Script => {
-  const strict = StrictScript.fromCBORHex(script.script)
+const toCoreScript = (script: Script): CoreScript.Script => {
+  const strict = CoreScript.fromCBORHex(script.script)
 
   switch (script.type) {
     case "Native": {
@@ -80,8 +72,11 @@ const toStrictScript = (script: Script): StrictScript.Script => {
  * - PlutusV2 scripts: tag 2
  * - PlutusV3 scripts: tag 3
  */
-export const toScriptHash = (script: Script): ScriptHash =>
-  pipe(toStrictScript(script), ScriptHashModule.fromScript, ScriptHashModule.toHex)
+export const toScriptHash = (script: Script): Credential.ScriptHash =>
+  pipe(toCoreScript(script), CoreScriptHash.fromScript, CoreScriptHash.toHex, (hash) => ({
+    type: "Script",
+    hash
+  }))
 
 // Constructor Functions
 export const makeNativeScript = (cbor: string): Native => ({
@@ -106,11 +101,6 @@ export const makePlutusV3Script = (cbor: string): PlutusV3 => ({
 
 export const scriptEquals = (a: Script, b: Script): boolean => a.type === b.type && a.script === b.script
 
-export const makeScriptCredential = (script: Script): Credential => ({
-  type: "Script",
-  hash: toScriptHash(script)
-})
-
 // ============================================================================
 // Script Hash Generation
 // ============================================================================
@@ -119,6 +109,4 @@ export const makeScriptCredential = (script: Script): Credential => ({
  * Compute the policy ID for a minting policy script.
  * The policy ID is identical to the script hash.
  */
-export const mintingPolicyToId = (script: Script): ScriptHash => {
-  return toScriptHash(script)
-}
+export const mintingPolicyToId = (script: Script): Credential.ScriptHash => toScriptHash(script)

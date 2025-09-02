@@ -1,4 +1,3 @@
-import type * as Address from "../Address.js"
 import * as Assets from "./Assets.js"
 
 export type Datum =
@@ -107,7 +106,7 @@ export const fromArray = (utxos: Array<UTxO>): UTxOSet => utxos
 
 export const toArray = (utxoSet: UTxOSet): Array<UTxO> => utxoSet
 
-export const filterByAddress = (utxoSet: UTxOSet, address: Address.Address): UTxOSet =>
+export const filterByAddress = (utxoSet: UTxOSet, address: string): UTxOSet =>
   utxoSet.filter((utxo) => utxo.address === address)
 
 export const filterByAsset = (utxoSet: UTxOSet, unit: string): UTxOSet =>
@@ -170,7 +169,7 @@ export const reduce = <T>(utxos: UTxOSet, reducer: (acc: T, utxo: UTxO) => T, in
   utxos.reduce(reducer, initial)
 
 // Specialized finders
-export const findByAddress = (utxos: UTxOSet, address: Address.Address): UTxOSet =>
+export const findByAddress = (utxos: UTxOSet, address: string): UTxOSet =>
   filter(utxos, (utxo) => utxo.address === address)
 
 export const findWithDatumHash = (utxos: UTxOSet, hash: string): UTxOSet =>

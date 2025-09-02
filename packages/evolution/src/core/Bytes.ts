@@ -206,7 +206,7 @@ export const hexLengthEquals =
  * @category composition
  */
 export const hexLengthBetween =
-  (minBytes: number, maxBytes: number, moduleName: string) =>
+  (minBytes: number, maxBytes: number) =>
   <S extends Schema.Schema<any, string>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter(
@@ -216,8 +216,7 @@ export const hexLengthBetween =
         },
         {
           message: () =>
-            `Must be between ${minBytes} and ${maxBytes} bytes (${minBytes * 2}-${maxBytes * 2} hex characters)`,
-          identifier: `${moduleName}.LengthBetween${minBytes}And${maxBytes}`
+            `Must be between ${minBytes} and ${maxBytes} bytes (${minBytes * 2}-${maxBytes * 2} hex characters)`
         }
       )
     )

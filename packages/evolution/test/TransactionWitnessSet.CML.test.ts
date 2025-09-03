@@ -2,12 +2,12 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as Ed25519Signature from "../src/Ed25519Signature.js"
-import * as NativeScripts from "../src/NativeScripts.js"
-import * as PlutusV1 from "../src/PlutusV1.js"
-import * as PlutusV2 from "../src/PlutusV2.js"
-import * as TransactionWitnessSet from "../src/TransactionWitnessSet.js"
-import * as VKey from "../src/VKey.js"
+import * as Ed25519Signature from "../src/core/Ed25519Signature.js"
+import * as NativeScripts from "../src/core/NativeScripts.js"
+import * as PlutusV1 from "../src/core/PlutusV1.js"
+import * as PlutusV2 from "../src/core/PlutusV2.js"
+import * as TransactionWitnessSet from "../src/core/TransactionWitnessSet.js"
+import * as VKey from "../src/core/VKey.js"
 
 /**
  * CML compatibility test for TransactionWitnessSet CBOR serialization.

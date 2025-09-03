@@ -2,7 +2,7 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as TransactionOutput from "../src/TransactionOutput.js"
+import * as TransactionOutput from "../src/core/TransactionOutput.js"
 
 describe("TransactionOutput CML Compatibility", () => {
   it("property: Evolution SDK CBOR matches CML CBOR for any generated TransactionOutput", () => {

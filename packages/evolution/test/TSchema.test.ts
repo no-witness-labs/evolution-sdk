@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
-import * as Data from "../src/Data.js"
-import * as TSchema from "../src/TSchema.js"
+import * as Data from "../src/core/Data.js"
+import * as TSchema from "../src/core/TSchema.js"
 
 /**
  * Tests for TypeTaggedSchema module functionality -

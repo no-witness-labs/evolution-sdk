@@ -2,8 +2,8 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck, Schema } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as CBOR from "../src/CBOR.js"
-import * as Redeemer from "../src/Redeemer.js"
+import * as CBOR from "../src/core/CBOR.js"
+import * as Redeemer from "../src/core/Redeemer.js"
 
 describe("Redeemer CML Compatibility (property)", () => {
   it("Array of Redeemers encoded via Evolution CDDL is parseable by CML.Redeemers and roundtrips", () => {

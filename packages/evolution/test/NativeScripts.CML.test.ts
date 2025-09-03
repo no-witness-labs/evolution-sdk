@@ -1,7 +1,7 @@
 import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { describe, expect, it } from "vitest"
 
-import * as NativeScripts from "../src/NativeScripts.js"
+import * as NativeScripts from "../src/core/NativeScripts.js"
 
 describe("NativeScripts CML Compatibility", () => {
   it("validates native script sig compatibility", () => {

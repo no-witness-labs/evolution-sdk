@@ -3,11 +3,11 @@ import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
 // diagnoseTransactionBody is optional during lint/type-check; load only on failure
-import * as Coin from "../src/Coin.js"
-import * as NetworkId from "../src/NetworkId.js"
-import * as TransactionBody from "../src/TransactionBody.js"
-import * as TransactionHash from "../src/TransactionHash.js"
-import * as TransactionInput from "../src/TransactionInput.js"
+import * as Coin from "../src/core/Coin.js"
+import * as NetworkId from "../src/core/NetworkId.js"
+import * as TransactionBody from "../src/core/TransactionBody.js"
+import * as TransactionHash from "../src/core/TransactionHash.js"
+import * as TransactionInput from "../src/core/TransactionInput.js"
 
 /**
  * CML compatibility test for TransactionBody CBOR serialization.

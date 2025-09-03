@@ -1,9 +1,9 @@
 import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { describe, expect, it } from "vitest"
 
-import * as KeyHash from "../src/KeyHash.js"
-import * as NetworkId from "../src/NetworkId.js"
-import * as RewardAccount from "../src/RewardAccount.js"
+import * as KeyHash from "../src/core/KeyHash.js"
+import * as NetworkId from "../src/core/NetworkId.js"
+import * as RewardAccount from "../src/core/RewardAccount.js"
 
 describe("RewardAccount CML Compatibility", () => {
   it("validates hex compatibility with CML", () => {

@@ -2,9 +2,9 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as GovernanceAction from "../src/GovernanceAction.js"
-import * as ProtocolParams from "../src/ProtocolParamUpdate.js"
-import * as ScriptHash from "../src/ScriptHash.js"
+import * as GovernanceAction from "../src/core/GovernanceAction.js"
+import * as ProtocolParams from "../src/core/ProtocolParamUpdate.js"
+import * as ScriptHash from "../src/core/ScriptHash.js"
 
 describe("GovernanceAction CML Compatibility (property)", () => {
   it("Evolution GovernanceAction CBOR is parseable by CML GovAction and roundtrips CBOR", () => {

@@ -1,7 +1,7 @@
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as Data from "../src/Data.js"
+import * as Data from "../src/core/Data.js"
 
 /**
  * Property-based tests for Data module

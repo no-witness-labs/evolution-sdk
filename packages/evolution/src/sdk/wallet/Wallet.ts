@@ -1,7 +1,7 @@
 import { mnemonicToEntropy } from "@scure/bip39"
 import { wordlist as English } from "@scure/bip39/wordlists/english"
 
-import * as Address from "../../core/Address.js"
+import * as Address from "../../core/AddressEras.js"
 import * as BaseAddress from "../../core/BaseAddress.js"
 import * as Bip32PrivateKey from "../../core/Bip32PrivateKey.js"
 import * as EnterpriseAddress from "../../core/EnterpriseAddress.js"

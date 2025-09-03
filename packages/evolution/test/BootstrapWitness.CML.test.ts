@@ -2,10 +2,10 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as BootstrapWitness from "../src/BootstrapWitness.js"
-import * as CBOR from "../src/CBOR.js"
-import * as Ed25519Signature from "../src/Ed25519Signature.js"
-import * as VKey from "../src/VKey.js"
+import * as BootstrapWitness from "../src/core/BootstrapWitness.js"
+import * as CBOR from "../src/core/CBOR.js"
+import * as Ed25519Signature from "../src/core/Ed25519Signature.js"
+import * as VKey from "../src/core/VKey.js"
 
 // CML compatibility tests for BootstrapWitness
 

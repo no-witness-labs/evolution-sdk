@@ -1,5 +1,7 @@
 import { pipe } from "effect"
 
+import { fromHex } from "../core/Bytes.js"
+import * as CBOR from "../core/CBOR.js"
 import * as CoreScript from "../core/Script.js"
 import * as CoreScriptHash from "../core/ScriptHash.js"
 import type * as Credential from "./Credential.js"
@@ -110,3 +112,17 @@ export const scriptEquals = (a: Script, b: Script): boolean => a.type === b.type
  * The policy ID is identical to the script hash.
  */
 export const mintingPolicyToId = (script: Script): Credential.ScriptHash => toScriptHash(script)
+
+export const applyDoubleCborEncoding = (script: string): string => {
+  // Convert hex string to bytes, then encode as CBOR bytes, then back to hex
+  const bytes = fromHex(script)
+  const doubleCborBytes = CBOR.toCBORBytes(bytes)
+  return CBOR.toCBORHex(doubleCborBytes)
+}
+
+export const applySingleCborEncoding = (script: string): string => {
+  // Convert hex string to bytes, then encode as CBOR bytes, then back to hex
+  const bytes = fromHex(script)
+  const singleCborBytes = CBOR.toCBORBytes(bytes)
+  return CBOR.toCBORHex(singleCborBytes)
+}

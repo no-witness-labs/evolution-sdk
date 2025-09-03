@@ -1,7 +1,7 @@
 import { mnemonicToEntropy } from "@scure/bip39"
 import { wordlist as English } from "@scure/bip39/wordlists/english"
 
-import * as Address from "../../core/AddressEras.js"
+import * as AddressEras from "../../core/AddressEras.js"
 import * as BaseAddress from "../../core/BaseAddress.js"
 import * as Bip32PrivateKey from "../../core/Bip32PrivateKey.js"
 import * as EnterpriseAddress from "../../core/EnterpriseAddress.js"
@@ -12,9 +12,9 @@ import * as RewardAccount from "../../core/RewardAccount.js"
 
 export type Wallet = {
   address: string
-  rewardAddress: string | null
+  rewardAddress: string | undefined
   paymentKey: string
-  stakeKey: string | null
+  stakeKey: string | undefined
 }
 
 export function walletFromSeed(
@@ -50,14 +50,14 @@ export function walletFromSeed(
 
   const address =
     addressType === "Base"
-      ? Address.toBech32(
+      ? AddressEras.toBech32(
           new BaseAddress.BaseAddress({
             networkId: NetworkId.make(networkId),
             paymentCredential: paymentKeyHash,
             stakeCredential: stakeKeyHash
           })
         )
-      : Address.toBech32(
+      : AddressEras.toBech32(
           new EnterpriseAddress.EnterpriseAddress({
             networkId: NetworkId.make(networkId),
             paymentCredential: paymentKeyHash
@@ -66,18 +66,18 @@ export function walletFromSeed(
 
   const rewardAddress =
     addressType === "Base"
-      ? Address.toBech32(
+      ? AddressEras.toBech32(
           new RewardAccount.RewardAccount({
             networkId,
             stakeCredential: stakeKeyHash
           })
         )
-      : null
+      : undefined
 
   return {
     address,
     rewardAddress,
     paymentKey: PrivateKey.toBech32(paymentKey),
-    stakeKey: addressType === "Base" ? PrivateKey.toBech32(stakeKey) : null
+    stakeKey: addressType === "Base" ? PrivateKey.toBech32(stakeKey) : undefined
   }
 }

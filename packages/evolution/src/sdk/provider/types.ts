@@ -27,7 +27,7 @@ export type UTxO = {
 }
 
 export type Delegation = {
-  readonly poolId: string | null
+  readonly poolId: string | undefined
   readonly rewards: bigint
 }
 
@@ -75,9 +75,9 @@ export interface Provider {
 }
 
 // Helpers
-export const fromUnit = (unit: string): { policyId: string; assetName: string | null } => {
-  if (!unit || unit === "lovelace") return { policyId: "", assetName: null }
+export const fromUnit = (unit: string): { policyId: string; assetName: string | undefined } => {
+  if (!unit || unit === "lovelace") return { policyId: "", assetName: undefined }
   const policyId = unit.slice(0, 56)
   const assetName = unit.slice(56)
-  return { policyId, assetName: assetName.length > 0 ? assetName : null }
+  return { policyId, assetName: assetName.length > 0 ? assetName : undefined }
 }

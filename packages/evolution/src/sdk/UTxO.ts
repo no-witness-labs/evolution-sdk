@@ -1,13 +1,18 @@
 import * as Assets from "./Assets.js"
+import type * as Script from "./Script.js"
 
 export type Datum =
   | {
+      type: "datumHash"
       hash: string
     }
   | {
+      type: "inlineDatum"
       inline: string
     }
-  | undefined
+  | {
+      type: "noDatum"
+    }
 
 export interface OutRef {
   txHash: string
@@ -19,8 +24,8 @@ export interface UTxO {
   outputIndex: number
   address: string
   assets: Assets.Assets
-  datumOption?: Datum
-  scriptRef?: string
+  datumOption: Datum
+  scriptRef?: Script.Script
 }
 
 export const hasAssets = (utxo: UTxO): boolean => !Assets.isEmpty(utxo.assets)
@@ -54,9 +59,11 @@ export const makeOutRef = (txHash: string, outputIndex: number): OutRef => ({
 })
 
 // Datum type guards and utilities
-export const isDatumHash = (datum: Datum): datum is { hash: string } => datum !== undefined && "hash" in datum
+export const isDatumHash = (datum: Datum): datum is { type: "datumHash"; hash: string } =>
+  datum !== undefined && "hash" in datum
 
-export const isInlineDatum = (datum: Datum): datum is { inline: string } => datum !== undefined && "inline" in datum
+export const isInlineDatum = (datum: Datum): datum is { type: "inlineDatum"; inline: string } =>
+  datum !== undefined && "inline" in datum
 
 export const getDatumHash = (utxo: UTxO): string | undefined =>
   isDatumHash(utxo.datumOption) ? utxo.datumOption.hash : undefined
@@ -85,11 +92,13 @@ export const withDatum = (utxo: UTxO, datumOption: Datum): UTxO => ({
 
 export const withoutDatum = (utxo: UTxO): UTxO => ({
   ...utxo,
-  datumOption: undefined
+  datumOption: {
+    type: "noDatum"
+  }
 })
 
 // Script operations
-export const withScript = (utxo: UTxO, scriptRef: string): UTxO => ({
+export const withScript = (utxo: UTxO, scriptRef: Script.Script): UTxO => ({
   ...utxo,
   scriptRef
 })

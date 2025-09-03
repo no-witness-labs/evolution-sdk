@@ -74,10 +74,10 @@ test("WalletFromSeed - Custom Network", () => {
 test("WalletFromSeed - Address Enterprise", () => {
   const expectedFromSeed = {
     address: "addr1v98wl3hnya9l94rt58ky533deyqe9t8zz5n9su26k8e5g2srcn4hd",
-    rewardAddress: null,
+    rewardAddress: undefined,
     paymentKey:
       "ed25519e_sk1krszcw3ujfs3qnsjwl6wynw7dwudgnq69w9lrrtdf46yqnd25dgv4f5ttaqxr2v6n6azee489c7mryudvhu8n4x4tcvd5hvhtwswsuc4s4c2d",
-    stakeKey: null
+    stakeKey: undefined
   }
   expect(expectedFromSeed).toStrictEqual(
     walletFromSeed(seedPhrase, {

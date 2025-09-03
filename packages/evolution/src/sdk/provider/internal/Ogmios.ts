@@ -1,52 +1,55 @@
-import type * as CoreType from "@evolution-sdk/core-types"
-import { applySingleCborEncoding, fromUnit } from "@evolution-sdk/utils"
 import type { Record } from "effect"
-import { Schema as S } from "effect"
+import { Schema } from "effect"
 
-export const JSONRPCSchema = <A, I, R>(schema: S.Schema<A, I, R>) =>
-  S.Struct({
-    jsonrpc: S.String,
-    method: S.optional(S.String),
-    id: S.NullOr(S.Number),
+import type * as Assets from "../../Assets.js"
+import * as Script from "../../Script.js"
+import * as Unit from "../../Unit.js"
+import type * as UTxO from "../../UTxO.js"
+
+export const JSONRPCSchema = <A, I, R>(schema: Schema.Schema<A, I, R>) =>
+  Schema.Struct({
+    jsonrpc: Schema.String,
+    method: Schema.optional(Schema.String),
+    id: Schema.NullOr(Schema.Number),
     result: schema
   }).annotations({ identifier: "JSONRPCSchema" })
 
-const LovelaceAsset = S.Struct({
-  lovelace: S.Number
+const LovelaceAsset = Schema.Struct({
+  lovelace: Schema.Number
 })
 
-const TupleNumberFromString = S.compose(S.split("/"), S.Array(S.NumberFromString))
+const TupleNumberFromString = Schema.compose(Schema.split("/"), Schema.Array(Schema.NumberFromString))
 
-export const ProtocolParametersSchema = S.Struct({
-  minFeeCoefficient: S.Number,
-  minFeeReferenceScripts: S.Struct({
-    base: S.Number,
-    range: S.Number,
-    multiplier: S.Number
+export const ProtocolParametersSchema = Schema.Struct({
+  minFeeCoefficient: Schema.Number,
+  minFeeReferenceScripts: Schema.Struct({
+    base: Schema.Number,
+    range: Schema.Number,
+    multiplier: Schema.Number
   }),
-  maxReferenceScriptsSize: S.Struct({
-    bytes: S.Number
+  maxReferenceScriptsSize: Schema.Struct({
+    bytes: Schema.Number
   }),
-  stakePoolVotingThresholds: S.Struct({
+  stakePoolVotingThresholds: Schema.Struct({
     noConfidence: TupleNumberFromString,
-    constitutionalCommittee: S.Struct({
+    constitutionalCommittee: Schema.Struct({
       default: TupleNumberFromString,
       stateOfNoConfidence: TupleNumberFromString
     }),
     hardForkInitiation: TupleNumberFromString,
-    protocolParametersUpdate: S.Struct({
+    protocolParametersUpdate: Schema.Struct({
       security: TupleNumberFromString
     })
   }),
-  delegateRepresentativeVotingThresholds: S.Struct({
+  delegateRepresentativeVotingThresholds: Schema.Struct({
     noConfidence: TupleNumberFromString,
-    constitutionalCommittee: S.Struct({
+    constitutionalCommittee: Schema.Struct({
       default: TupleNumberFromString,
       stateOfNoConfidence: TupleNumberFromString
     }),
     constitution: TupleNumberFromString,
     hardForkInitiation: TupleNumberFromString,
-    protocolParametersUpdate: S.Struct({
+    protocolParametersUpdate: Schema.Struct({
       network: TupleNumberFromString,
       economic: TupleNumberFromString,
       technical: TupleNumberFromString,
@@ -54,59 +57,59 @@ export const ProtocolParametersSchema = S.Struct({
     }),
     treasuryWithdrawals: TupleNumberFromString
   }),
-  constitutionalCommitteeMinSize: S.optional(S.Number),
-  constitutionalCommitteeMaxTermLength: S.Number,
-  governanceActionLifetime: S.Number,
-  governanceActionDeposit: S.Struct({
+  constitutionalCommitteeMinSize: Schema.optional(Schema.Number),
+  constitutionalCommitteeMaxTermLength: Schema.Number,
+  governanceActionLifetime: Schema.Number,
+  governanceActionDeposit: Schema.Struct({
     ada: LovelaceAsset
   }),
-  delegateRepresentativeDeposit: S.Struct({
+  delegateRepresentativeDeposit: Schema.Struct({
     ada: LovelaceAsset
   }),
-  delegateRepresentativeMaxIdleTime: S.Number,
-  minFeeConstant: S.Struct({ ada: LovelaceAsset }),
-  maxBlockBodySize: S.Struct({ bytes: S.Number }),
-  maxBlockHeaderSize: S.Struct({ bytes: S.Number }),
-  maxTransactionSize: S.Struct({ bytes: S.Number }),
-  stakeCredentialDeposit: S.Struct({ ada: LovelaceAsset }),
-  stakePoolDeposit: S.Struct({ ada: LovelaceAsset }),
-  stakePoolRetirementEpochBound: S.Number,
-  desiredNumberOfStakePools: S.Number,
+  delegateRepresentativeMaxIdleTime: Schema.Number,
+  minFeeConstant: Schema.Struct({ ada: LovelaceAsset }),
+  maxBlockBodySize: Schema.Struct({ bytes: Schema.Number }),
+  maxBlockHeaderSize: Schema.Struct({ bytes: Schema.Number }),
+  maxTransactionSize: Schema.Struct({ bytes: Schema.Number }),
+  stakeCredentialDeposit: Schema.Struct({ ada: LovelaceAsset }),
+  stakePoolDeposit: Schema.Struct({ ada: LovelaceAsset }),
+  stakePoolRetirementEpochBound: Schema.Number,
+  desiredNumberOfStakePools: Schema.Number,
   stakePoolPledgeInfluence: TupleNumberFromString,
   monetaryExpansion: TupleNumberFromString,
   treasuryExpansion: TupleNumberFromString,
-  minStakePoolCost: S.Struct({ ada: LovelaceAsset }),
-  minUtxoDepositConstant: S.Struct({ ada: LovelaceAsset }),
-  minUtxoDepositCoefficient: S.Number,
-  plutusCostModels: S.Struct({
-    "plutus:v1": S.Array(S.Number),
-    "plutus:v2": S.Array(S.Number),
-    "plutus:v3": S.Array(S.Number)
+  minStakePoolCost: Schema.Struct({ ada: LovelaceAsset }),
+  minUtxoDepositConstant: Schema.Struct({ ada: LovelaceAsset }),
+  minUtxoDepositCoefficient: Schema.Number,
+  plutusCostModels: Schema.Struct({
+    "plutus:v1": Schema.Array(Schema.Number),
+    "plutus:v2": Schema.Array(Schema.Number),
+    "plutus:v3": Schema.Array(Schema.Number)
   }),
-  scriptExecutionPrices: S.Struct({
+  scriptExecutionPrices: Schema.Struct({
     memory: TupleNumberFromString,
     cpu: TupleNumberFromString
   }),
-  maxExecutionUnitsPerTransaction: S.Struct({
-    memory: S.Number,
-    cpu: S.Number
+  maxExecutionUnitsPerTransaction: Schema.Struct({
+    memory: Schema.Number,
+    cpu: Schema.Number
   }),
-  maxExecutionUnitsPerBlock: S.Struct({ memory: S.Number, cpu: S.Number }),
-  maxValueSize: S.Struct({ bytes: S.Number }),
-  collateralPercentage: S.Number,
-  maxCollateralInputs: S.Number,
-  version: S.Struct({ major: S.Number, minor: S.Number })
+  maxExecutionUnitsPerBlock: Schema.Struct({ memory: Schema.Number, cpu: Schema.Number }),
+  maxValueSize: Schema.Struct({ bytes: Schema.Number }),
+  collateralPercentage: Schema.Number,
+  maxCollateralInputs: Schema.Number,
+  version: Schema.Struct({ major: Schema.Number, minor: Schema.Number })
 }).annotations({ identifier: "ProtocolParametersSchema" })
 
-export interface ProtocolParameters extends S.Schema.Type<typeof ProtocolParametersSchema> {}
+export interface ProtocolParameters extends Schema.Schema.Type<typeof ProtocolParametersSchema> {}
 
-export const Delegation = S.NullOr(
-  S.Record({
-    key: S.String,
-    value: S.Struct({
-      delegate: S.Struct({ id: S.String }),
-      rewards: S.Struct({ ada: S.Struct({ lovelace: S.Number }) }),
-      deposit: S.Struct({ ada: S.Struct({ lovelace: S.Number }) })
+export const Delegation = Schema.NullOr(
+  Schema.Record({
+    key: Schema.String,
+    value: Schema.Struct({
+      delegate: Schema.Struct({ id: Schema.String }),
+      rewards: Schema.Struct({ ada: Schema.Struct({ lovelace: Schema.Number }) }),
+      deposit: Schema.Struct({ ada: Schema.Struct({ lovelace: Schema.Number }) })
     })
   })
 )
@@ -116,67 +119,67 @@ type Script = {
   cbor: string
 }
 
-export type Assets = Record<string, Record<string, number>>
+export type OgmiosAssets = Record<string, Record<string, number>>
 
 export type Value = {
   ada: { lovelace: number }
-} & Assets
+} & OgmiosAssets
 
-export type UTxO = {
+export type OgmiosUTxO = {
   transaction: { id: string }
   index: number
   address: string
   value: Value
-  datumHash?: string | null
-  datum?: string | null
-  script?: Script | null
+  datumHash?: string | undefined
+  datum?: string | undefined
+  script?: Script | undefined
 }
 
-export const RedeemerSchema = S.Struct({
-  validator: S.Struct({
-    purpose: S.Literal("spend", "mint", "publish", "withdraw", "vote", "propose"),
-    index: S.Int
+export const RedeemerSchema = Schema.Struct({
+  validator: Schema.Struct({
+    purpose: Schema.Literal("spend", "mint", "publish", "withdraw", "vote", "propose"),
+    index: Schema.Int
   }),
-  budget: S.Struct({
-    memory: S.Int,
-    cpu: S.Int
+  budget: Schema.Struct({
+    memory: Schema.Int,
+    cpu: Schema.Int
   })
 }).annotations({ identifier: "RedeemerSchema" })
 
-export const toOgmiosUTxOs = (utxos: Array<CoreType.UTxO> | undefined): Array<UTxO> => {
+export const toOgmiosUTxOs = (utxos: Array<UTxO.UTxO> | undefined): Array<OgmiosUTxO> => {
   // NOTE: Ogmios only works with single encoding, not double encoding.
   // You will get the following error:
   // "Invalid request: couldn't decode Plutus script."
   // TODO: Ensure the CBOR script is sent with single encoding.
-  const toOgmiosScript = (scriptRef: CoreType.UTxO["scriptRef"]): UTxO["script"] | null => {
+  const toOgmiosScript = (scriptRef: UTxO.UTxO["scriptRef"]): OgmiosUTxO["script"] | undefined => {
     if (scriptRef) {
       switch (scriptRef.type) {
         case "PlutusV1":
           return {
             language: "plutus:v1",
-            cbor: applySingleCborEncoding(scriptRef.script)
+            cbor: Script.applySingleCborEncoding(scriptRef.script)
           }
         case "PlutusV2":
           return {
             language: "plutus:v2",
-            cbor: applySingleCborEncoding(scriptRef.script)
+            cbor: Script.applySingleCborEncoding(scriptRef.script)
           }
         case "PlutusV3":
           return {
             language: "plutus:v3",
-            cbor: applySingleCborEncoding(scriptRef.script)
+            cbor: Script.applySingleCborEncoding(scriptRef.script)
           }
         default:
-          return null
+          return undefined
       }
     }
   }
 
-  const toOgmiosAssets = (assets: CoreType.Assets) => {
-    const newAssets: Assets = {}
+  const toOgmiosAssets = (assets: Assets.Assets) => {
+    const newAssets: OgmiosAssets = {}
     Object.entries(assets).forEach(([unit, amount]) => {
       if (unit == "lovelace") return
-      const { assetName, policyId } = fromUnit(unit)
+      const { assetName, policyId } = Unit.fromUnit(unit)
       if (!newAssets[policyId]) {
         newAssets[policyId] = {}
       }
@@ -186,7 +189,7 @@ export const toOgmiosUTxOs = (utxos: Array<CoreType.UTxO> | undefined): Array<UT
   }
 
   return (utxos || []).map(
-    (utxo): UTxO => ({
+    (utxo): OgmiosUTxO => ({
       transaction: {
         id: utxo.txHash
       },
@@ -196,8 +199,8 @@ export const toOgmiosUTxOs = (utxos: Array<CoreType.UTxO> | undefined): Array<UT
         ada: { lovelace: Number(utxo.assets["lovelace"]) },
         ...toOgmiosAssets(utxo.assets)
       },
-      datumHash: utxo.datumHash,
-      datum: utxo.datum,
+      datumHash: utxo.datumOption.type === "datumHash" ? utxo.datumOption.hash : undefined,
+      datum: utxo.datumOption?.type === "inlineDatum" ? utxo.datumOption.inline : undefined,
       script: toOgmiosScript(utxo.scriptRef)
     })
   )

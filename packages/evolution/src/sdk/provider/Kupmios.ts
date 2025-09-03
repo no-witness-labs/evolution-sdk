@@ -1,16 +1,11 @@
 import { FetchHttpClient } from "@effect/platform"
 import { Effect, Layer, pipe, Schedule, Schema } from "effect"
 
-import type * as Address from "../../core/AddressEras.js"
-import type * as BaseAddress from "../../core/BaseAddress.js"
-import { fromHex } from "../../core/Bytes.js"
-import type * as Credential from "../../core/Credential.js"
-import * as Data from "../../core/Data.js"
-import * as DatumOption from "../../core/DatumOption.js"
-import type * as EnterpriseAddress from "../../core/EnterpriseAddress.js"
-import type { TransactionHash } from "../../core/TransactionHash.js"
 import type * as Assets from "../../sdk/Assets.js"
+import * as Script from "../../sdk/Script.js"
 import type * as UTxO from "../../sdk/UTxO.js"
+import type * as Address from "../Address.js"
+import type * as Credential from "../Credential.js"
 import * as HttpUtils from "./internal/HttpUtils.js"
 import * as Kupo from "./internal/Kupo.js"
 import * as Ogmios from "./internal/Ogmios.js"
@@ -57,34 +52,34 @@ export const toProtocolParameters = (result: Ogmios.ProtocolParameters): Protoco
   }
 }
 
-const getDatumEffect = (
-  kupoUrl: string,
-  datum_type: Kupo.UTxO["datum_type"],
-  datum_hash: Kupo.UTxO["datum_hash"],
-  kupoHeader?: Record<string, string>
-) =>
-  Effect.gen(function* () {
-    if (datum_type === "inline" && datum_hash) {
-      const pattern = `${kupoUrl}/datums/${datum_hash}`
-      const schema = Kupo.DatumSchema
-      return yield* pipe(
-        HttpUtils.get(pattern, schema, kupoHeader),
-        Effect.flatMap(Effect.fromNullable),
-        Effect.map(
-          (result) =>
-            ({
-              inline: result.datum
-            }) as UTxO.Datum
-        ),
-        Effect.retry(Schedule.compose(Schedule.exponential(50), Schedule.recurs(5))),
-        Effect.timeout(5_000)
-      )
-    } else if (datum_type === "hash" && datum_hash) {
-      return { hash: datum_hash } as UTxO.Datum
-    }
+const getDatumEffect =
+  (kupoUrl: string, kupoHeader?: Record<string, string>) =>
+  (datum_type: Kupo.UTxO["datum_type"], datum_hash: Kupo.UTxO["datum_hash"]) =>
+    Effect.gen(function* () {
+      if (datum_type === "inline" && datum_hash) {
+        const pattern = `${kupoUrl}/datums/${datum_hash}`
+        const schema = Kupo.DatumSchema
+        return yield* pipe(
+          HttpUtils.get(pattern, schema, kupoHeader),
+          Effect.flatMap(Effect.fromNullable),
+          Effect.map(
+            (result) =>
+              ({
+                type: "inlineDatum",
+                inline: result.datum
+              }) as const
+          ),
+          Effect.retry(Schedule.compose(Schedule.exponential(50), Schedule.recurs(5))),
+          Effect.timeout(5_000)
+        )
+      } else if (datum_type === "hash" && datum_hash) {
+        return { type: "datumHash", hash: datum_hash } as const
+      }
 
-    return undefined
-  })
+      return {
+        type: "noDatum"
+      } as const
+    })
 
 const toAssets = (value: Kupo.UTxO["value"]): Assets.Assets => {
   const assets: Assets.Assets = { lovelace: BigInt(value.coins) }
@@ -94,15 +89,14 @@ const toAssets = (value: Kupo.UTxO["value"]): Assets.Assets => {
   return assets
 }
 
-const kupmiosUtxosToUtxos = (kupoURL: string, utxos: ReadonlyArray<Kupo.UTxO>, kupoHeader?: Record<string, string>) =>
-  Effect.forEach(
+const kupmiosUtxosToUtxos = (kupoURL: string, utxos: ReadonlyArray<Kupo.UTxO>, kupoHeader?: Record<string, string>) => {
+  const getDatum = getDatumEffect(kupoURL, kupoHeader)
+  const getScript = getScriptEffect(kupoURL, kupoHeader)
+  return Effect.forEach(
     utxos,
     (utxo) => {
       return pipe(
-        Effect.all([
-          getDatumEffect(kupoURL, utxo.datum_type, utxo.datum_hash, kupoHeader),
-          getScriptEffect(kupoURL, utxo.script_hash, kupoHeader)
-        ]),
+        Effect.all([getDatum(utxo.datum_type, utxo.datum_hash), getScript(utxo.script_hash)]),
         Effect.map(
           ([datum, script]): UTxO.UTxO => ({
             address: utxo.address,
@@ -117,44 +111,46 @@ const kupmiosUtxosToUtxos = (kupoURL: string, utxos: ReadonlyArray<Kupo.UTxO>, k
     },
     { concurrency: "unbounded" }
   )
+}
 
-const getScriptEffect = (kupoUrl: string, script_hash: Kupo.UTxO["script_hash"], kupoHeader?: Record<string, string>) =>
-  Effect.gen(function* () {
-    if (script_hash) {
-      const pattern = `${kupoUrl}/scripts/${script_hash}`
-      const schema = Kupo.ScriptSchema
-      return yield* pipe(
-        HttpUtils.get(pattern, schema, kupoHeader),
-        Effect.flatMap(Effect.fromNullable),
-        Effect.retry(Schedule.compose(Schedule.exponential(50), Schedule.recurs(5))),
-        Effect.timeout(5_000),
-        Effect.map(({ language, script }) => {
-          switch (language) {
-            case "native":
-              return {
-                type: "Native",
-                script
-              } satisfies Script
-            case "plutus:v1":
-              return {
-                type: "PlutusV1",
-                script: applyDoubleCborEncoding(script)
-              } satisfies Script
-            case "plutus:v2":
-              return {
-                type: "PlutusV2",
-                script: applyDoubleCborEncoding(script)
-              } satisfies Script
-            case "plutus:v3":
-              return {
-                type: "PlutusV3",
-                script: applyDoubleCborEncoding(script)
-              } satisfies Script
-          }
-        })
-      )
-    } else return undefined
-  })
+const getScriptEffect =
+  (kupoUrl: string, kupoHeader?: Record<string, string>) => (script_hash: Kupo.UTxO["script_hash"]) =>
+    Effect.gen(function* () {
+      if (script_hash) {
+        const pattern = `${kupoUrl}/scripts/${script_hash}`
+        const schema = Kupo.ScriptSchema
+        return yield* pipe(
+          HttpUtils.get(pattern, schema, kupoHeader),
+          Effect.flatMap(Effect.fromNullable),
+          Effect.retry(Schedule.compose(Schedule.exponential(50), Schedule.recurs(5))),
+          Effect.timeout(5_000),
+          Effect.map(({ language, script }) => {
+            switch (language) {
+              case "native":
+                return {
+                  type: "Native",
+                  script
+                } satisfies Script.Native
+              case "plutus:v1":
+                return {
+                  type: "PlutusV1",
+                  script: Script.applyDoubleCborEncoding(script)
+                } satisfies Script.PlutusV1
+              case "plutus:v2":
+                return {
+                  type: "PlutusV2",
+                  script: Script.applyDoubleCborEncoding(script)
+                } satisfies Script.PlutusV2
+              case "plutus:v3":
+                return {
+                  type: "PlutusV3",
+                  script: Script.applyDoubleCborEncoding(script)
+                } satisfies Script.PlutusV3
+            }
+          })
+        )
+      } else return undefined
+    })
 
 export const getProtocolParametersEffect = Effect.fn("getProtocolParameters")(function* (
   ogmiosUrl: string,
@@ -177,66 +173,54 @@ export const getProtocolParametersEffect = Effect.fn("getProtocolParameters")(fu
   return toProtocolParameters(result)
 })
 
-// async getUtxos(addressOrCredential: Address | Credential): Promise<UTxO[]> {
-//     const isAddress = typeof addressOrCredential === "string";
-//     const queryPredicate = isAddress
-//       ? addressOrCredential
-//       : addressOrCredential.hash;
-//     const pattern = `${this.kupoUrl}/matches/${queryPredicate}${isAddress ? "" : "/*"}?unspent`;
-//     const schema = S.Array(Kupo.UTxOSchema);
-//     const utxos = await pipe(
-//       HttpUtils.makeGet(pattern, schema, this.headers?.kupoHeader),
-//       Effect.flatMap((u) => kupmiosUtxosToUtxos(this.kupoUrl, u)),
-//       Effect.timeout(10_000),
-//       Effect.catchAll((cause) => new KupmiosError({ cause })),
-//       Effect.provide(FetchHttpClient.layer),
-//       Effect.runPromise,
-//     );
-//     return utxos;
-//   }
-export const getUtxos = (kupoUrl: string, headers?: { [key: string]: string }) =>
-  Effect.fn("getUtxos")(function* (
-    addressOrCredential: EnterpriseAddress.EnterpriseAddress | BaseAddress.BaseAddress | Credential.Credential
-  ) {
-    let pattern: string
-    switch (addressOrCredential._tag) {
-      case "EnterpriseAddress":
-        pattern = `${kupoUrl}/matches/${addressOrCredential.toString()}?unspent`
-        break
-      case "BaseAddress":
-        pattern = `${kupoUrl}/matches/${addressOrCredential.toString()}?unspent`
-        break
-      case "KeyHash":
-        pattern = `${kupoUrl}/matches/${addressOrCredential.toString()}/*?unspent`
-        break
-      case "ScriptHash":
-        pattern = `${kupoUrl}/matches/${addressOrCredential.toString()}/*?unspent`
-        break
-    }
-    const schema = Schema.Array(Kupo.UTxOSchema)
-    const utxos = yield* pipe(
-      HttpUtils.get(pattern, schema, headers),
-      Effect.flatMap((u) => kupmiosUtxosToUtxos(kupoUrl, u)),
-      Effect.timeout(10_000),
-      Effect.catchAll((cause) => new KupmiosError({ cause })),
+export const submitTxEffect = (ogmiosUrl: string, headers?: { ogmiosHeader?: Record<string, string> }) =>
+  Effect.fn("submitTx")(function* (tx: string) {
+    const data = {
+      jsonrpc: "2.0",
+      method: "submitTransaction",
+      params: {
+        transaction: { cbor: tx }
+      },
+      id: null
+    } as const
+
+    const schema = Ogmios.JSONRPCSchema(
+      Schema.Struct({
+        transaction: Schema.Struct({
+          id: Schema.String
+        })
+      })
+    )
+
+    const { result } = yield* pipe(
+      HttpUtils.postJson(ogmiosUrl, data, schema, headers?.ogmiosHeader),
+      Effect.timeout(TIMEOUT),
+      Effect.catchAll((cause) => new ProviderError({ cause, message: "Failed to submit transaction" })),
       Effect.provide(FetchHttpClient.layer)
     )
 
-    // const isAddress = typeof addressOrCredential === "string";
-    // const queryPredicate = isAddress
-    //   ? addressOrCredential
-    //   : addressOrCredential.hash;
-    // const pattern = `${this.kupoUrl}/matches/${queryPredicate}${isAddress ? "" : "/*"}?unspent`;
-    // const schema = S.Array(Kupo.UTxOSchema);
-    // const utxos = await pipe(
-    //   HttpUtils.makeGet(pattern, schema, this.headers?.kupoHeader),
-    //   Effect.flatMap((u) => kupmiosUtxosToUtxos(this.kupoUrl, u)),
-    //   Effect.timeout(10_000),
-    //   Effect.catchAll((cause) => new KupmiosError({ cause })),
-    //   Effect.provide(FetchHttpClient.layer),
-    //   Effect.runPromise,
-    // );
-    // return utxos;
+    // Return the transaction ID as a string
+    return result.transaction.id
+  })
+
+export const getUtxosEffect = (kupoUrl: string, headers?: { kupoHeader?: Record<string, string> }) =>
+  Effect.fn("getUtxos")(function* (addressOrCredential: Address.Address | Credential.Credential) {
+    let pattern: string
+    if (typeof addressOrCredential === "string") {
+      pattern = `${kupoUrl}/matches/${addressOrCredential}?unspent`
+    } else {
+      pattern = `${kupoUrl}/matches/${addressOrCredential.hash}/*?unspent`
+    }
+
+    const schema = Schema.Array(Kupo.UTxOSchema)
+    const utxos = yield* pipe(
+      HttpUtils.get(pattern, schema, headers?.kupoHeader),
+      Effect.flatMap((u) => kupmiosUtxosToUtxos(kupoUrl, u, headers?.kupoHeader)),
+      Effect.timeout(TIMEOUT),
+      Effect.catchAll((cause) => new ProviderError({ cause, message: "Failed to get UTxOs" })),
+      Effect.provide(FetchHttpClient.layer)
+    )
+    return utxos
   })
 
 /**
@@ -294,14 +278,12 @@ export class KupmiosProvider implements Provider {
     return Effect.runPromise(getProtocolParametersEffect(this.ogmiosUrl, this.headers))
   }
 
-  async getUtxos(_address: Address): Promise<Array<UTxO>> {
-    // TODO: Implement UTxO fetching from Kupo
-    throw new Error("getUtxos not implemented yet")
+  async getUtxos(address: Address.Address): Promise<Array<UTxO.UTxO>> {
+    return Effect.runPromise(getUtxosEffect(this.kupoUrl, this.headers)(address))
   }
 
-  async submitTx(_tx: string): Promise<TransactionHash> {
-    // TODO: Implement transaction submission to Ogmios
-    throw new Error("submitTx not implemented yet")
+  async submitTx(tx: string): Promise<string> {
+    return Effect.runPromise(submitTxEffect(this.ogmiosUrl, this.headers)(tx))
   }
 }
 
@@ -315,18 +297,6 @@ export const makeKupmiosLayer = (
 ) =>
   Layer.succeed(ProviderService, {
     getProtocolParameters: getProtocolParametersEffect(ogmiosUrl, headers),
-    getUtxos: (_address: Address) =>
-      Effect.fail(
-        new ProviderError({
-          cause: "Not implemented",
-          message: "getUtxos not implemented yet"
-        })
-      ),
-    submitTx: (_tx: string) =>
-      Effect.fail(
-        new ProviderError({
-          cause: "Not implemented",
-          message: "submitTx not implemented yet"
-        })
-      )
+    getUtxos: getUtxosEffect(kupoUrl, headers),
+    submitTx: submitTxEffect(ogmiosUrl, headers)
   })

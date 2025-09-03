@@ -1,7 +1,7 @@
 import { mnemonicToEntropy } from "@scure/bip39"
 import { wordlist as English } from "@scure/bip39/wordlists/english"
 
-import * as Address from "../../core/Address.js"
+import * as Address from "../../core/AddressEras.js"
 import * as BaseAddress from "../../core/BaseAddress.js"
 import * as Bip32PrivateKey from "../../core/Bip32PrivateKey.js"
 import * as EnterpriseAddress from "../../core/EnterpriseAddress.js"
@@ -12,9 +12,9 @@ import * as RewardAccount from "../../core/RewardAccount.js"
 
 export type FromSeed = {
   address: string
-  rewardAddress: string | null
+  rewardAddress: string | undefined
   paymentKey: string
-  stakeKey: string | null
+  stakeKey: string | undefined
 }
 
 export function walletFromSeed(
@@ -72,12 +72,12 @@ export function walletFromSeed(
             stakeCredential: stakeKeyHash
           })
         )
-      : null
+      : undefined
 
   return {
     address,
     rewardAddress,
     paymentKey: PrivateKey.toBech32(paymentKey),
-    stakeKey: addressType === "Base" ? PrivateKey.toBech32(stakeKey) : null
+    stakeKey: addressType === "Base" ? PrivateKey.toBech32(stakeKey) : undefined
   }
 }

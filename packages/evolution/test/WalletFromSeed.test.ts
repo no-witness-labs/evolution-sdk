@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 
-import { walletFromSeed } from "../src/sdk/wallet/utils.js"
+import { walletFromSeed } from "../src/sdk/wallet/Wallet.js"
 
 const seedPhrase =
   "zebra short room flavor rival capital fortune hip profit trust melody office depend adapt visa cycle february link tornado whisper physical kiwi film voyage"

@@ -6,10 +6,10 @@ import { fromHex } from "../core/Bytes.js"
  */
 function crc8(data: Uint8Array): number {
   let crc = 0
-  
+
   for (let i = 0; i < data.length; i++) {
     crc ^= data[i]
-    
+
     for (let j = 0; j < 8; j++) {
       if (crc & 0x80) {
         crc = (crc << 1) ^ 0x07
@@ -18,8 +18,8 @@ function crc8(data: Uint8Array): number {
       }
     }
   }
-  
-  return crc & 0xFF
+
+  return crc & 0xff
 }
 
 /**
@@ -35,9 +35,7 @@ function checksum(num: string): string {
  */
 export function toLabel(num: number): string {
   if (num < 0 || num > 65535) {
-    throw new Error(
-      `Label ${num} out of range: min label 1 - max label 65535.`
-    )
+    throw new Error(`Label ${num} out of range: min label 1 - max label 65535.`)
   }
   const numHex = num.toString(16).padStart(4, "0")
   return "0" + numHex + checksum(numHex) + "0"

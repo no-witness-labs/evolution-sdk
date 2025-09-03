@@ -27,13 +27,9 @@ export class Bytes29Error extends Data.TaggedError("Bytes29Error")<{
  */
 export const BYTES_LENGTH = 29
 
-export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
-  Bytes.bytesLengthEquals(BYTES_LENGTH)
-)
+export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(Bytes.bytesLengthEquals(BYTES_LENGTH))
 
-export const HexSchema = Bytes.HexSchema.pipe(
-  Bytes.hexLengthEquals(BYTES_LENGTH)
-)
+export const HexSchema = Bytes.HexSchema.pipe(Bytes.hexLengthEquals(BYTES_LENGTH))
 
 /**
  * Schema transformation for fixed-length bytes
@@ -49,9 +45,7 @@ export const FromHex = Bytes.makeBytesTransformation({
   encode: Bytes.toHexUnsafe
 })
 
-export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(
-  Bytes.bytesLengthBetween(0, BYTES_LENGTH)
-)
+export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(Bytes.bytesLengthBetween(0, BYTES_LENGTH))
 
 /**
  * Schema transformation for variable-length bytes (0..BYTES_LENGTH).
@@ -61,9 +55,7 @@ export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(
  */
 export const VariableBytesFromHex = Bytes.makeBytesTransformation({
   id: `Bytes${BYTES_LENGTH}.VariableBytes${BYTES_LENGTH}FromHex`,
-  stringSchema: Bytes.HexLenientSchema.pipe(
-    Bytes.hexLengthBetween(0, BYTES_LENGTH)
-  ),
+  stringSchema: Bytes.HexLenientSchema.pipe(Bytes.hexLengthBetween(0, BYTES_LENGTH)),
   uint8ArraySchema: VariableBytes,
   decode: Bytes.fromHexLenient,
   encode: Bytes.toHexLenientUnsafe

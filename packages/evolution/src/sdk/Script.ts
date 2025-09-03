@@ -113,7 +113,6 @@ export const scriptEquals = (a: Script, b: Script): boolean => a.type === b.type
  */
 export const mintingPolicyToId = (script: Script): Credential.ScriptHash => toScriptHash(script)
 
-
 export const applyDoubleCborEncoding = (script: string): string => {
   // Convert hex string to bytes, then encode as CBOR bytes, then back to hex
   const bytes = fromHex(script)

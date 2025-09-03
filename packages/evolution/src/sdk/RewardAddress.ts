@@ -29,17 +29,17 @@ export const fromCoreRewardAccount = (account: CoreRewardAccount.RewardAccount):
 /**
  * Create a reward address from a stake credential.
  * A reward address is used for staking rewards and has only a stake credential.
- * 
+ *
  * @param stakeCredential - The stake credential (key hash or script hash)
  * @param network - Target network (defaults to "Mainnet")
  * @returns Bech32 reward address string
- * 
+ *
  * @example
  * ```typescript
  * const credential = { type: "Key", hash: "abcd1234..." }
  * const rewardAddr = fromStakeCredential(credential, "Mainnet")
  * // Returns: "stake1u9rlm65wjfkctdlyxl5cw87h9..."
- * 
+ *
  * const scriptCredential = { type: "Script", hash: "def5678..." }
  * const testnetAddr = fromStakeCredential(scriptCredential, "Testnet")
  * // Returns: "stake_test1ur9rlm65wjfkctdlyxl5cw87h9..."

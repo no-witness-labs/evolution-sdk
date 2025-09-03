@@ -30,7 +30,7 @@ export const withCredentials = ({
 /**
  * Create an enterprise address (payment only) from a payment credential.
  * An enterprise address has only a payment credential and no staking credential.
- * 
+ *
  * @example
  * ```typescript
  * const credential = { type: "Key", hash: "abcd1234..." }

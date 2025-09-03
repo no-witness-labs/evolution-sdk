@@ -59,9 +59,11 @@ export const makeOutRef = (txHash: string, outputIndex: number): OutRef => ({
 })
 
 // Datum type guards and utilities
-export const isDatumHash = (datum: Datum): datum is { type: "datumHash"; hash: string } => datum !== undefined && "hash" in datum
+export const isDatumHash = (datum: Datum): datum is { type: "datumHash"; hash: string } =>
+  datum !== undefined && "hash" in datum
 
-export const isInlineDatum = (datum: Datum): datum is { type: "inlineDatum"; inline: string } => datum !== undefined && "inline" in datum
+export const isInlineDatum = (datum: Datum): datum is { type: "inlineDatum"; inline: string } =>
+  datum !== undefined && "inline" in datum
 
 export const getDatumHash = (utxo: UTxO): string | undefined =>
   isDatumHash(utxo.datumOption) ? utxo.datumOption.hash : undefined

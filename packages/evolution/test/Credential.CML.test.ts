@@ -2,7 +2,7 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as Credential from "../src/Credential.js"
+import * as Credential from "../src/core/Credential.js"
 
 describe("Credential CML Compatibility", () => {
   it("property: Evolution Credential CBOR is parseable by CML and roundtrips CBOR", () => {

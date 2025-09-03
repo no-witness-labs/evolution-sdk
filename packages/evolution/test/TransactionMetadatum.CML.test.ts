@@ -1,7 +1,7 @@
 import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { describe, expect, it } from "vitest"
 
-import * as TransactionMetadatum from "../src/TransactionMetadatum.js"
+import * as TransactionMetadatum from "../src/core/TransactionMetadatum.js"
 
 describe("TransactionMetadatum CML Compatibility", () => {
   it("validates text metadatum compatibility", () => {

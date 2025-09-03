@@ -1,8 +1,8 @@
 import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { describe, expect, it } from "vitest"
 
-import * as PrivateKey from "../src/PrivateKey"
-import * as VKey from "../src/VKey"
+import * as PrivateKey from "../src/core/PrivateKey"
+import * as VKey from "../src/core/VKey"
 
 // Test compatibility with CML (Cardano Multiplatform Library)
 describe("PrivateKey CML Compatibility", () => {

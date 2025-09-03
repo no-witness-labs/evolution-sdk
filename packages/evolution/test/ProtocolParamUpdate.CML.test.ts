@@ -2,7 +2,7 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as ProtocolParamUpdate from "../src/ProtocolParamUpdate.js"
+import * as ProtocolParamUpdate from "../src/core/ProtocolParamUpdate.js"
 
 describe("ProtocolParamUpdate CML Compatibility", () => {
   it("Empty ProtocolParamUpdate works with CML", () => {

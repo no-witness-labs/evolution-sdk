@@ -45,6 +45,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@effect/platform": "^0.90.6",
     "@effect/platform-node": "^0.96.0",
     "@noble/hashes": "^1.8.0",
     "@scure/base": "^1.2.6",

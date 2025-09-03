@@ -2,7 +2,7 @@ import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { FastCheck } from "effect"
 import { describe, expect, it } from "vitest"
 
-import * as AuxiliaryData from "../src/AuxiliaryData.js"
+import * as AuxiliaryData from "../src/core/AuxiliaryData.js"
 
 /**
  * CML compatibility test for AuxiliaryData CBOR serialization.

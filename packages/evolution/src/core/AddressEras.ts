@@ -62,7 +62,7 @@ export class AddressError extends Data.TaggedError("AddressError")<{
  * @since 2.0.0
  * @category model
  */
-export const Address = Schema.Union(
+export const AddressEras = Schema.Union(
   BaseAddress.BaseAddress,
   EnterpriseAddress.EnterpriseAddress,
   PointerAddress.PointerAddress,
@@ -70,13 +70,15 @@ export const Address = Schema.Union(
   ByronAddress.ByronAddress
 )
 
+export const isAddress = Schema.is(AddressEras)
+
 /**
  * Type representing an address.
  *
  * @since 2.0.0
  * @category model
  */
-export type Address = typeof Address.Type
+export type AddressEras = typeof AddressEras.Type
 
 /**
  * Schema for encoding/decoding addresses as bytes.
@@ -84,7 +86,7 @@ export type Address = typeof Address.Type
  * @since 2.0.0
  * @category schema
  */
-export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Address, {
+export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, AddressEras, {
   strict: true,
   encode: (_, __, ___, toA) => {
     switch (toA._tag) {
@@ -154,7 +156,7 @@ export const FromHex = Schema.compose(Bytes.FromHex, FromBytes)
  * @since 2.0.0
  * @category schema
  */
-export const FromBech32 = Schema.transformOrFail(Schema.String, Address, {
+export const FromBech32 = Schema.transformOrFail(Schema.String, AddressEras, {
   strict: true,
   encode: (_, __, ast, toA) =>
     Eff.gen(function* () {
@@ -206,7 +208,7 @@ export const FromBech32 = Schema.transformOrFail(Schema.String, Address, {
  * @since 2.0.0
  * @category utils
  */
-export const equals = (a: Address, b: Address): boolean => {
+export const equals = (a: AddressEras, b: AddressEras): boolean => {
   if (a._tag !== b._tag) {
     return false
   }

@@ -1,5 +1,5 @@
 /**
- * Bytes96 module provides utilities for handling fixed-length and variable-length byte arrays.
+ * Bytes448 module provides utilities for handling fixed-length and variable-length byte arrays.
  *
  * @since 2.0.0
  */
@@ -14,7 +14,7 @@ import * as Function from "./Function.js"
  * @since 2.0.0
  * @category errors
  */
-export class Bytes96Error extends Data.TaggedError("Bytes96Error")<{
+export class Bytes448Error extends Data.TaggedError("Bytes448Error")<{
   message?: string
   cause?: unknown
 }> {}
@@ -25,14 +25,14 @@ export class Bytes96Error extends Data.TaggedError("Bytes96Error")<{
  * @since 2.0.0
  * @category constants
  */
-export const BYTES_LENGTH = 96
+export const BYTES_LENGTH = 448
 
 export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(
-  Bytes.bytesLengthEquals(BYTES_LENGTH, `Bytes${BYTES_LENGTH}.Bytes${BYTES_LENGTH}`)
+  Bytes.bytesLengthEquals(BYTES_LENGTH)
 )
 
 export const HexSchema = Bytes.HexSchema.pipe(
-  Bytes.hexLengthEquals(BYTES_LENGTH, `Bytes${BYTES_LENGTH}.Hex${BYTES_LENGTH}`)
+  Bytes.hexLengthEquals(BYTES_LENGTH)
 )
 
 /**
@@ -50,7 +50,7 @@ export const FromHex = Bytes.makeBytesTransformation({
 })
 
 export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(
-  Bytes.bytesLengthBetween(0, BYTES_LENGTH, `Bytes${BYTES_LENGTH}.VariableBytes${BYTES_LENGTH}`)
+  Bytes.bytesLengthBetween(0, BYTES_LENGTH)
 )
 
 /**
@@ -62,7 +62,7 @@ export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(
 export const VariableBytesFromHex = Bytes.makeBytesTransformation({
   id: `Bytes${BYTES_LENGTH}.VariableBytes${BYTES_LENGTH}FromHex`,
   stringSchema: Bytes.HexLenientSchema.pipe(
-    Bytes.hexLengthBetween(0, BYTES_LENGTH, `Bytes${BYTES_LENGTH}.VariableHex${BYTES_LENGTH}`)
+    Bytes.hexLengthBetween(0, BYTES_LENGTH)
   ),
   uint8ArraySchema: VariableBytes,
   decode: Bytes.fromHexLenient,
@@ -81,7 +81,7 @@ export const equals = Bytes.equals
  * @since 2.0.0
  * @category decoding
  */
-export const fromHex = Function.makeDecodeSync(FromHex, Bytes96Error, "Bytes96.fromHex")
+export const fromHex = Function.makeDecodeSync(FromHex, Bytes448Error, "Bytes448.fromHex")
 
 /**
  * Encode fixed-length bytes to hex.
@@ -89,7 +89,7 @@ export const fromHex = Function.makeDecodeSync(FromHex, Bytes96Error, "Bytes96.f
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = Function.makeEncodeSync(FromHex, Bytes96Error, "Bytes96.toHex96")
+export const toHex = Function.makeEncodeSync(FromHex, Bytes448Error, "Bytes448.toHex448")
 
 /**
  * Decode variable-length hex (0..BYTES_LENGTH) into bytes.
@@ -97,7 +97,11 @@ export const toHex = Function.makeEncodeSync(FromHex, Bytes96Error, "Bytes96.toH
  * @since 2.0.0
  * @category decoding
  */
-export const fromVariableHex = Function.makeDecodeSync(VariableBytesFromHex, Bytes96Error, "Bytes96.fromVariableHex96")
+export const fromVariableHex = Function.makeDecodeSync(
+  VariableBytesFromHex,
+  Bytes448Error,
+  "Bytes448.fromVariableHex448"
+)
 
 /**
  * Encode variable-length bytes (0..BYTES_LENGTH) to hex.
@@ -105,7 +109,7 @@ export const fromVariableHex = Function.makeDecodeSync(VariableBytesFromHex, Byt
  * @since 2.0.0
  * @category encoding
  */
-export const toVariableHex = Function.makeEncodeSync(VariableBytesFromHex, Bytes96Error, "Bytes96.toVariableHex96")
+export const toVariableHex = Function.makeEncodeSync(VariableBytesFromHex, Bytes448Error, "Bytes448.toVariableHex448")
 
 // =============================================================================
 // Either (safe) API
@@ -117,23 +121,23 @@ export namespace Either {
    * @since 2.0.0
    * @category decoding
    */
-  export const fromHex = Function.makeDecodeEither(FromHex, Bytes96Error)
+  export const fromHex = Function.makeDecodeEither(FromHex, Bytes448Error)
   /**
    * Safely encode fixed-length bytes to hex.
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = Function.makeEncodeEither(FromHex, Bytes96Error)
+  export const toHex = Function.makeEncodeEither(FromHex, Bytes448Error)
   /**
    * Safely decode variable-length hex (0..BYTES_LENGTH) into bytes.
    * @since 2.0.0
    * @category decoding
    */
-  export const fromVariableHex = Function.makeDecodeEither(VariableBytesFromHex, Bytes96Error)
+  export const fromVariableHex = Function.makeDecodeEither(VariableBytesFromHex, Bytes448Error)
   /**
    * Safely encode variable-length bytes (0..BYTES_LENGTH) to hex.
    * @since 2.0.0
    * @category encoding
    */
-  export const toVariableHex = Function.makeDecodeEither(VariableBytesFromHex, Bytes96Error)
+  export const toVariableHex = Function.makeDecodeEither(VariableBytesFromHex, Bytes448Error)
 }

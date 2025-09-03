@@ -1,8 +1,8 @@
 import * as CML from "@dcspark/cardano-multiplatform-lib-nodejs"
 import { describe, expect, it } from "vitest"
 
-import * as AuxiliaryData from "../src/AuxiliaryData.js"
-import * as TransactionMetadatum from "../src/TransactionMetadatum.js"
+import * as AuxiliaryData from "../src/core/AuxiliaryData.js"
+import * as TransactionMetadatum from "../src/core/TransactionMetadatum.js"
 
 describe("Metadata CML Compatibility", () => {
   it("validates metadata CBOR parity when embedded in Conway AuxiliaryData", () => {

@@ -1,8 +1,11 @@
+import { blake2b } from "@noble/hashes/blake2"
 import { Data, FastCheck, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as Function from "./Function.js"
 import * as Hash28 from "./Hash28.js"
+import * as NativeScripts from "./NativeScripts.js"
+import type * as Script from "./Script.js"
 
 /**
  * Error class for ScriptHash related operations.
@@ -134,6 +137,55 @@ export const toBytes = (scriptHash: ScriptHash): Uint8Array => new Uint8Array(sc
  * @category encoding
  */
 export const toHex = (scriptHash: ScriptHash): string => Bytes.toHex(scriptHash.hash)
+
+// ============================================================================
+// Script Hash Computation
+// ============================================================================
+
+/**
+ * Compute a script hash (policy id) from any Script variant.
+ *
+ * Conway-era rule: prepend a 1-byte language tag to the script bytes, then hash with blake2b-224.
+ * - 0x00: native/multisig (hash over CBOR of native_script)
+ * - 0x01: Plutus V1 (hash over raw script bytes)
+ * - 0x02: Plutus V2 (hash over raw script bytes)
+ * - 0x03: Plutus V3 (hash over raw script bytes)
+ *
+ * @since 2.0.0
+ * @category computation
+ */
+export const fromScript = (script: Script.Script): ScriptHash => {
+  // Native scripts use CBOR of native_script as body with 0x00 tag
+  if (!("_tag" in script)) {
+    const body = NativeScripts.toCBORBytes(script)
+    const prefixed = new Uint8Array(1 + body.length)
+    prefixed[0] = 0x00
+    prefixed.set(body, 1)
+    const hashBytes = blake2b(prefixed, { dkLen: 28 })
+    return make({ hash: new Uint8Array(hashBytes) }, { disableValidation: true })
+  }
+
+  // Plutus scripts use raw bytes with language-specific tag
+  let tag: number
+  let body: Uint8Array
+  if (script._tag === "PlutusV1") {
+    tag = 0x01
+    body = script.bytes
+  } else if (script._tag === "PlutusV2") {
+    tag = 0x02
+    body = script.bytes
+  } else {
+    // Remaining case is PlutusV3
+    tag = 0x03
+    body = script.bytes
+  }
+
+  const prefixed = new Uint8Array(1 + body.length)
+  prefixed[0] = tag
+  prefixed.set(body, 1)
+  const hashBytes = blake2b(prefixed, { dkLen: 28 })
+  return make({ hash: new Uint8Array(hashBytes) }, { disableValidation: true })
+}
 
 // ============================================================================
 // Either Namespace - Either-based Error Handling

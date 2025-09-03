@@ -1,6 +1,7 @@
 import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as CBOR from "./CBOR.js"
+import * as Function from "./Function.js"
 import * as NativeScripts from "./NativeScripts.js"
 import * as PlutusV1 from "./PlutusV1.js"
 import * as PlutusV2 from "./PlutusV2.js"
@@ -171,3 +172,8 @@ export const arbitrary: FastCheck.Arbitrary<Script> = FastCheck.oneof(
   PlutusV2.arbitrary,
   PlutusV3.arbitrary
 )
+
+export const fromCBOR = Function.makeCBORDecodeSync(FromCDDL, ScriptError, "Script.fromCBOR")
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, ScriptError, "Script.fromCBORHex")
+export const toCBOR = Function.makeCBOREncodeSync(FromCDDL, ScriptError, "Script.toCBOR")
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, ScriptError, "Script.toCBORHex")

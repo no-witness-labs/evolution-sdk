@@ -1,16 +1,16 @@
 import { blake2b } from "@noble/hashes/blake2"
 import { Schema } from "effect"
 
-import * as AuxiliaryData from "../AuxiliaryData.js"
-import * as AuxiliaryDataHash from "../AuxiliaryDataHash.js"
-import * as CBOR from "../CBOR.js"
-import * as CostModel from "../CostModel.js"
-import * as Data from "../Data.js"
-import * as DatumOption from "../DatumOption.js"
-import * as Redeemer from "../Redeemer.js"
-import * as ScriptDataHash from "../ScriptDataHash.js"
-import * as TransactionBody from "../TransactionBody.js"
-import * as TransactionHash from "../TransactionHash.js"
+import * as AuxiliaryData from "../core/AuxiliaryData.js"
+import * as AuxiliaryDataHash from "../core/AuxiliaryDataHash.js"
+import * as CBOR from "../core/CBOR.js"
+import * as CostModel from "../core/CostModel.js"
+import * as Data from "../core/Data.js"
+import * as DatumOption from "../core/DatumOption.js"
+import * as Redeemer from "../core/Redeemer.js"
+import * as ScriptDataHash from "../core/ScriptDataHash.js"
+import * as TransactionBody from "../core/TransactionBody.js"
+import * as TransactionHash from "../core/TransactionHash.js"
 
 /**
  * Compute the transaction body hash (blake2b-256 over CBOR of body).

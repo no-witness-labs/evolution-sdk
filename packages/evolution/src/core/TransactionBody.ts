@@ -463,7 +463,7 @@ export const isTransactionBody = Schema.is(TransactionBody)
 export const fromCBORBytes = Function.makeCBORDecodeSync(
   FromCDDL,
   TransactionBodyError,
-  "TransactionBody.fromCBORBytes",
+  "TransactionBody.fromCBORBytes"
 )
 
 /**
@@ -473,11 +473,7 @@ export const fromCBORBytes = Function.makeCBORDecodeSync(
  * @since 2.0.0
  * @category parsing
  */
-export const fromCBORHex = Function.makeCBORDecodeHexSync(
-  FromCDDL,
-  TransactionBodyError,
-  "TransactionBody.fromCBORHex",
-)
+export const fromCBORHex = Function.makeCBORDecodeHexSync(FromCDDL, TransactionBodyError, "TransactionBody.fromCBORHex")
 
 // ============================================================================
 // Encoding Functions
@@ -490,11 +486,7 @@ export const fromCBORHex = Function.makeCBORDecodeHexSync(
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORBytes = Function.makeCBOREncodeSync(
-  FromCDDL,
-  TransactionBodyError,
-  "TransactionBody.toCBORBytes",
-)
+export const toCBORBytes = Function.makeCBOREncodeSync(FromCDDL, TransactionBodyError, "TransactionBody.toCBORBytes")
 
 /**
  * Convert a TransactionBody to CBOR hex string.
@@ -503,11 +495,7 @@ export const toCBORBytes = Function.makeCBOREncodeSync(
  * @since 2.0.0
  * @category encoding
  */
-export const toCBORHex = Function.makeCBOREncodeHexSync(
-  FromCDDL,
-  TransactionBodyError,
-  "TransactionBody.toCBORHex",
-)
+export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, TransactionBodyError, "TransactionBody.toCBORHex")
 
 // ============================================================================
 // Either Namespace - Either-based Error Handling

@@ -28,7 +28,7 @@ import * as fs from "fs"
 import * as path from "path"
 import { fileURLToPath } from "url"
 
-import * as Data from "../src/Data.js"
+import * as Data from "../src/core/Data.js"
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url)

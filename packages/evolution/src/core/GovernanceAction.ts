@@ -72,22 +72,28 @@ export const GovActionIdCDDL = Schema.Tuple(
  * @since 2.0.0
  * @category schemas
  */
-export const GovActionIdFromCDDL = Schema.transformOrFail(GovActionIdCDDL, GovActionId, {
+export const GovActionIdFromCDDL = Schema.transformOrFail(GovActionIdCDDL, Schema.typeSchema(GovActionId), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Eff.gen(function* () {
       // Convert domain types to CBOR types
-      const transactionIdBytes = yield* ParseResult.encode(TransactionHash.FromBytes)(toA.transactionId)
+      const transactionIdBytes = toA.transactionId.hash
       const indexNumber = yield* ParseResult.encode(TransactionIndex.TransactionIndex)(toA.govActionIndex)
       return [transactionIdBytes, BigInt(indexNumber)] as const
     }),
   decode: (fromA) =>
     Eff.gen(function* () {
-      const [transactionIdBytes, govActionIndexNumber] = fromA
+      const [transactionIdBytes, govActionIndex] = fromA
       // Convert CBOR types to domain types
-      const transactionId = yield* ParseResult.decode(TransactionHash.FromBytes)(transactionIdBytes)
-      const govActionIndex = yield* ParseResult.decode(TransactionIndex.TransactionIndex)(govActionIndexNumber)
-      return new GovActionId({ transactionId, govActionIndex })
+      const govActionId = yield* ParseResult.decode(Schema.typeSchema(GovActionId))({
+        _tag: "GovActionId",
+        transactionId: yield* ParseResult.decode(Schema.typeSchema(TransactionHash.TransactionHash))({
+          _tag: "TransactionHash",
+          hash: transactionIdBytes
+        }),
+        govActionIndex: yield* ParseResult.decode(Schema.typeSchema(TransactionIndex.TransactionIndex))(govActionIndex)
+      })
+      return govActionId
     })
 })
 

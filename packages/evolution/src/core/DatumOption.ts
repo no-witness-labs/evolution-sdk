@@ -25,22 +25,18 @@ export class DatumOptionError extends Data.TaggedError("DatumOptionError")<{
  * @category schemas
  */
 export class DatumHash extends Schema.TaggedClass<DatumHash>()("DatumHash", {
-  hash: Bytes32.BytesSchema
-}) {
-  toString(): string {
-    return `DatumHash { hash: ${this.hash} }`
-  }
+  hash: Bytes32.BytesFromHex
+}) {}
 
-  [Symbol.for("nodejs.util.inspect.custom")](): string {
-    return this.toString()
+export const DatumHashFromBytes = Schema.transform(
+  Schema.typeSchema(Bytes32.BytesFromHex),
+  Schema.typeSchema(DatumHash),
+  {
+    strict: true,
+    decode: (bytes) => new DatumHash({ hash: bytes }, { disableValidation: true }),
+    encode: (dh) => dh.hash
   }
-}
-
-export const DatumHashFromBytes = Schema.transform(Bytes32.BytesSchema, DatumHash, {
-  strict: true,
-  decode: (bytes) => new DatumHash({ hash: bytes }, { disableValidation: true }),
-  encode: (dh) => dh.hash
-}).annotations({
+).annotations({
   identifier: "DatumOption.DatumHashFromBytes"
 })
 

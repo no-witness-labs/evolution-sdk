@@ -22,15 +22,8 @@ export class AssetNameError extends Data.TaggedError("AssetNameError")<{
  * @category model
  */
 export class AssetName extends Schema.TaggedClass<AssetName>()("AssetName", {
-  bytes: Bytes32.VariableBytes
-}) {
-  toJSON(): string {
-    return toHex(this)
-  }
-  toString(): string {
-    return toHex(this)
-  }
-}
+  bytes: Bytes32.VariableBytesFromHex
+}) {}
 
 /**
  * Schema for encoding/decoding AssetName as bytes.
@@ -38,7 +31,7 @@ export class AssetName extends Schema.TaggedClass<AssetName>()("AssetName", {
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes32.VariableBytes, AssetName, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.VariableBytesFromHex), Schema.typeSchema(AssetName), {
   strict: true,
   decode: (bytes) => new AssetName({ bytes }, { disableValidation: true }),
   encode: (assetName) => assetName.bytes

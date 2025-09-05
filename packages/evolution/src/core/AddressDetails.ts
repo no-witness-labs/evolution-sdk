@@ -31,7 +31,7 @@ export class AddressDetails extends Schema.Class<AddressDetails>("AddressDetails
   hex: Bytes.HexSchema
 }) {}
 
-export const FromBech32 = Schema.transformOrFail(Schema.String, AddressDetails, {
+export const FromBech32 = Schema.transformOrFail(Schema.String, Schema.typeSchema(AddressDetails), {
   strict: true,
   encode: (_, __, ___, toA) => ParseResult.succeed(toA.bech32),
   decode: (_, __, ___, fromA) =>
@@ -48,7 +48,7 @@ export const FromBech32 = Schema.transformOrFail(Schema.String, AddressDetails, 
     })
 })
 
-export const FromHex = Schema.transformOrFail(Bytes.HexSchema, AddressDetails, {
+export const FromHex = Schema.transformOrFail(Bytes.HexSchema, Schema.typeSchema(AddressDetails), {
   strict: true,
   encode: (_, __, ___, toA) => ParseResult.succeed(toA.hex),
   decode: (_, __, ___, fromA) =>

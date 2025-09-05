@@ -24,10 +24,10 @@ export class VrfVkeyError extends Data.TaggedError("VrfVkeyError")<{
  * @category schemas
  */
 export class VrfVkey extends Schema.TaggedClass<VrfVkey>()("VrfVkey", {
-  bytes: Bytes32.BytesSchema
+  bytes: Bytes32.BytesFromHex
 }) {}
 
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, VrfVkey, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(VrfVkey), {
   strict: true,
   decode: (bytes) => new VrfVkey({ bytes }),
   encode: (vrfVkey) => vrfVkey.bytes
@@ -36,7 +36,7 @@ export const FromBytes = Schema.transform(Bytes32.BytesSchema, VrfVkey, {
 })
 
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
+  Bytes32.BytesFromHex, // string -> Bytes32
   FromBytes // Bytes32 -> VrfVkey
 ).annotations({
   identifier: "VrfVkey.FromHex"

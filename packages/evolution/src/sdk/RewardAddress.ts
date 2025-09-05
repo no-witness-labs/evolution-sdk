@@ -45,13 +45,13 @@ export const fromCoreRewardAccount = (account: CoreRewardAccount.RewardAccount):
  * // Returns: "stake_test1ur9rlm65wjfkctdlyxl5cw87h9..."
  * ```
  */
-export const fromStakeCredential = (
-  stakeCredential: Credential.Credential,
-  network: Credential.Network = "Mainnet"
-): RewardAddress => {
-  const coreRewardAccount = new CoreRewardAccount.RewardAccount({
-    networkId: network === "Mainnet" ? 1 : 0,
-    stakeCredential: Credential.toCoreCredential(stakeCredential)
-  })
-  return CoreAddressEras.toBech32(coreRewardAccount)
-}
+// export const fromStakeCredential = (
+//   stakeCredential: Credential.Credential,
+//   network: Credential.Network = "Mainnet"
+// ): RewardAddress => {
+//   const coreRewardAccount = new CoreRewardAccount.RewardAccount({
+//     networkId: network === "Mainnet" ? 1 : 0,
+//     stakeCredential: Credential.toCoreCredential(stakeCredential)
+//   })
+//   return CoreAddressEras.toBech32(coreRewardAccount)
+// }

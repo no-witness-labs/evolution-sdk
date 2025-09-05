@@ -86,7 +86,7 @@ export type AddressEras = typeof AddressEras.Type
  * @since 2.0.0
  * @category schema
  */
-export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, AddressEras, {
+export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Schema.typeSchema(AddressEras), {
   strict: true,
   encode: (_, __, ___, toA) => {
     switch (toA._tag) {
@@ -156,7 +156,7 @@ export const FromHex = Schema.compose(Bytes.FromHex, FromBytes)
  * @since 2.0.0
  * @category schema
  */
-export const FromBech32 = Schema.transformOrFail(Schema.String, AddressEras, {
+export const FromBech32 = Schema.transformOrFail(Schema.String, Schema.typeSchema(AddressEras), {
   strict: true,
   encode: (_, __, ast, toA) =>
     Eff.gen(function* () {

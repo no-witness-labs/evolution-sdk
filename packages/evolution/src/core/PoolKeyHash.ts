@@ -22,7 +22,7 @@ export class PoolKeyHashError extends Data.TaggedError("PoolKeyHashError")<{
  * @category model
  */
 export class PoolKeyHash extends Schema.TaggedClass<PoolKeyHash>()("PoolKeyHash", {
-  hash: Hash28.BytesSchema
+  hash: Hash28.BytesFromHex
 }) {
   toJSON(): string {
     return toHex(this)
@@ -39,7 +39,7 @@ export class PoolKeyHash extends Schema.TaggedClass<PoolKeyHash>()("PoolKeyHash"
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Hash28.BytesSchema, PoolKeyHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Hash28.BytesFromHex), Schema.typeSchema(PoolKeyHash), {
   strict: true,
   decode: (hash) => new PoolKeyHash({ hash }, { disableValidation: true }),
   encode: (poolKeyHash) => poolKeyHash.hash
@@ -51,7 +51,7 @@ export const FromBytes = Schema.transform(Hash28.BytesSchema, PoolKeyHash, {
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = Schema.compose(Hash28.FromHex, FromBytes).annotations({
+export const FromHex = Schema.compose(Hash28.BytesFromHex, FromBytes).annotations({
   identifier: "PoolKeyHash.FromHex"
 })
 

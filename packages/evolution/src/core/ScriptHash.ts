@@ -31,7 +31,7 @@ export class ScriptHashError extends Data.TaggedError("ScriptHashError")<{
  * @category schemas
  */
 export class ScriptHash extends Schema.TaggedClass<ScriptHash>()("ScriptHash", {
-  hash: Hash28.BytesSchema
+  hash: Hash28.BytesFromHex
 }) {
   toJSON(): string {
     return toHex(this)
@@ -48,7 +48,7 @@ export class ScriptHash extends Schema.TaggedClass<ScriptHash>()("ScriptHash", {
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Hash28.BytesSchema, ScriptHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Hash28.BytesFromHex), Schema.typeSchema(ScriptHash), {
   strict: true,
   decode: (bytes) => new ScriptHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Hash28
   encode: (scriptHash) => scriptHash.hash
@@ -63,7 +63,7 @@ export const FromBytes = Schema.transform(Hash28.BytesSchema, ScriptHash, {
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes.FromHex, // string -> Uint8Array
+  Hash28.BytesFromHex,
   FromBytes
 ).annotations({
   identifier: "ScriptHash.FromHex"

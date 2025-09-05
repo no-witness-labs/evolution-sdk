@@ -29,7 +29,7 @@ export class Bip32PublicKeyError extends Data.TaggedError("Bip32PublicKeyError")
  * @category schemas
  */
 export class Bip32PublicKey extends Schema.TaggedClass<Bip32PublicKey>()("Bip32PublicKey", {
-  bytes: Bytes64.BytesSchema
+  bytes: Bytes64.BytesFromHex
 }) {
   toJSON(): string {
     return toHex(this)
@@ -46,7 +46,7 @@ export class Bip32PublicKey extends Schema.TaggedClass<Bip32PublicKey>()("Bip32P
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes64.BytesSchema, Bip32PublicKey, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes64.BytesFromHex), Schema.typeSchema(Bip32PublicKey), {
   strict: true,
   decode: (bytes) => new Bip32PublicKey({ bytes }, { disableValidation: true }),
   encode: (bip32PublicKey) => bip32PublicKey.bytes
@@ -61,7 +61,7 @@ export const FromBytes = Schema.transform(Bytes64.BytesSchema, Bip32PublicKey, {
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes64.FromHex, // string -> Bytes64
+  Bytes64.BytesFromHex, // string -> Bytes64
   FromBytes // Bytes64 -> Bip32PublicKey
 ).annotations({
   identifier: "Bip32PublicKey.FromHex"

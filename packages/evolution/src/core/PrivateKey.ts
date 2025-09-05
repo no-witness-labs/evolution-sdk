@@ -32,22 +32,10 @@ export class PrivateKeyError extends Data.TaggedError("PrivateKeyError")<{
  * @category schemas
  */
 export class PrivateKey extends Schema.TaggedClass<PrivateKey>()("PrivateKey", {
-  key: Schema.Union(Bytes64.BytesSchema, Bytes32.BytesSchema)
-}) {
-  toJSON(): string {
-    return toHex(this)
-  }
+  key: Schema.Union(Bytes64.BytesFromHex, Bytes32.BytesFromHex)
+}) {}
 
-  toString(): string {
-    return toHex(this)
-  }
-
-  [Symbol.for("nodejs.util.inspect.custom")](): string {
-    return `PrivateKey(${toHex(this)})`
-  }
-}
-
-export const FromBytes = Schema.transform(Schema.Union(Bytes64.BytesSchema, Bytes32.BytesSchema), PrivateKey, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Schema.Union(Bytes64.BytesFromHex, Bytes32.BytesFromHex)), Schema.typeSchema(PrivateKey), {
   strict: true,
   decode: (bytes) => new PrivateKey({ key: bytes }),
   encode: (privateKey) => privateKey.key
@@ -62,7 +50,7 @@ export const FromHex = Schema.compose(
   identifier: "PrivateKey.FromHex"
 })
 
-export const FromBech32 = Schema.transformOrFail(Schema.String, PrivateKey, {
+export const FromBech32 = Schema.transformOrFail(Schema.String, Schema.typeSchema(PrivateKey), {
   strict: true,
   encode: (_, __, ___, toA) =>
     E.gen(function* () {

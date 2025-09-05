@@ -86,7 +86,7 @@ export const CDDLSchema = CBOR.tag(30, Schema.Tuple(CBOR.Integer, CBOR.Integer))
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(CDDLSchema, UnitInterval, {
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(UnitInterval), {
   strict: true,
   encode: (_, __, ___, unitInterval) =>
     Effect.succeed({
@@ -113,10 +113,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, UnitInterval, {
       const [numerator, denominator] = tupleValue
 
       // Create and validate UnitInterval using the validated schema
-      return yield* ParseResult.decode(UnitInterval)({
-        numerator,
-        denominator
-      })
+      return UnitInterval.make({ numerator, denominator })
     })
 }).annotations({
   identifier: "UnitInterval.CDDL"

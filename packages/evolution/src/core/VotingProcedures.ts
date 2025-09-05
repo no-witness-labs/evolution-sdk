@@ -99,20 +99,16 @@ export const VoterFromCDDL = Schema.transformOrFail(VoterCDDL, Schema.typeSchema
       switch (voter._tag) {
         case "ConstitutionalCommitteeVoter": {
           if (voter.credential._tag === "KeyHash") {
-            const keyHashBytes = yield* ParseResult.encode(KeyHash.FromBytes)(voter.credential)
-            return [0n, keyHashBytes] as const
+            return [0n, voter.credential.hash] as const
           } else {
-            const scriptHashBytes = yield* ParseResult.encode(ScriptHash.FromBytes)(voter.credential)
-            return [1n, scriptHashBytes] as const
+            return [1n, voter.credential.hash] as const
           }
         }
         case "DRepVoter": {
           if (voter.drep._tag === "KeyHashDRep") {
-            const keyHashBytes = yield* ParseResult.encode(KeyHash.FromBytes)(voter.drep.keyHash)
-            return [2n, keyHashBytes] as const
+            return [2n, voter.drep.keyHash.hash] as const
           } else if (voter.drep._tag === "ScriptHashDRep") {
-            const scriptHashBytes = yield* ParseResult.encode(ScriptHash.FromBytes)(voter.drep.scriptHash)
-            return [3n, scriptHashBytes] as const
+            return [3n, voter.drep.scriptHash.hash] as const
           } else {
             return yield* ParseResult.fail(
               new ParseResult.Type(VoterCDDL.ast, voter, "Always* DRep variants are not valid Voter identifiers")
@@ -120,8 +116,7 @@ export const VoterFromCDDL = Schema.transformOrFail(VoterCDDL, Schema.typeSchema
           }
         }
         case "StakePoolVoter": {
-          const poolKeyHashBytes = yield* ParseResult.encode(PoolKeyHash.FromBytes)(voter.poolKeyHash)
-          return [4n, poolKeyHashBytes] as const
+          return [4n, voter.poolKeyHash.hash] as const
         }
       }
     }),
@@ -668,12 +663,12 @@ export const arbitrary = FastCheck.array(
       FastCheck.tuple(
         // Create GovActionId instances using proper branded types
         FastCheck.tuple(
-          FastCheck.hexaString({ minLength: 64, maxLength: 64 }),
+          FastCheck.uint8Array({ minLength: 32, maxLength: 32 }),
           FastCheck.bigInt({ min: 0n, max: 65535n })
         ).map(
           ([transactionId, govActionIndex]) =>
             new GovernanceAction.GovActionId({
-              transactionId: TransactionHash.fromHex(transactionId),
+              transactionId: TransactionHash.make({ hash: transactionId }),
               govActionIndex: TransactionIndex.make(govActionIndex)
             })
         ),

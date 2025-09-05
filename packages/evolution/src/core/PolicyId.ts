@@ -26,7 +26,7 @@ export class PolicyIdError extends Data.TaggedError("PolicyIdError")<{
  * @category model
  */
 export class PolicyId extends Schema.TaggedClass<PolicyId>()("PolicyId", {
-  hash: Hash28.BytesSchema
+  hash: Hash28.BytesFromHex
 }) {
   toJSON(): string {
     return toHex(this)
@@ -43,7 +43,7 @@ export class PolicyId extends Schema.TaggedClass<PolicyId>()("PolicyId", {
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Hash28.BytesSchema, PolicyId, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Hash28.BytesFromHex), Schema.typeSchema(PolicyId), {
   strict: true,
   decode: (hash) => new PolicyId({ hash }, { disableValidation: true }),
   encode: (policyId) => policyId.hash
@@ -55,7 +55,7 @@ export const FromBytes = Schema.transform(Hash28.BytesSchema, PolicyId, {
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = Schema.compose(Hash28.FromHex, FromBytes).annotations({
+export const FromHex = Schema.compose(Hash28.BytesFromHex, FromBytes).annotations({
   identifier: "PolicyId.FromHex"
 })
 

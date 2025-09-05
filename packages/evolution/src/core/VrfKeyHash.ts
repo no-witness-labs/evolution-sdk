@@ -22,7 +22,7 @@ export class VrfKeyHashError extends Data.TaggedError("VrfKeyHashError")<{
  * @category schemas
  */
 export class VrfKeyHash extends Schema.TaggedClass<VrfKeyHash>()("VrfKeyHash", {
-  hash: Bytes32.BytesSchema
+  hash: Bytes32.BytesFromHex
 }) {
   toJSON(): string {
     return Bytes32.toHex(this.hash)
@@ -33,7 +33,7 @@ export class VrfKeyHash extends Schema.TaggedClass<VrfKeyHash>()("VrfKeyHash", {
   }
 }
 
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, VrfKeyHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(VrfKeyHash), {
   strict: true,
   decode: (bytes) => new VrfKeyHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
   encode: (vrfKeyHash) => vrfKeyHash.hash
@@ -42,7 +42,7 @@ export const FromBytes = Schema.transform(Bytes32.BytesSchema, VrfKeyHash, {
 })
 
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> hex string
+  Bytes32.BytesFromHex, // string -> hex string
   FromBytes // hex string -> VrfKeyHash
 ).annotations({
   identifier: "VrfKeyHash.FromHex"

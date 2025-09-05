@@ -32,7 +32,7 @@ export class EnterpriseAddress extends Schema.TaggedClass<EnterpriseAddress>("En
   }
 }
 
-export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseAddress, {
+export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, Schema.typeSchema(EnterpriseAddress), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Eff.gen(function* () {
@@ -64,8 +64,7 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseA
         : new ScriptHash.ScriptHash({
             hash: fromA.slice(1, 29)
           })
-      return yield* ParseResult.decode(EnterpriseAddress)({
-        _tag: "EnterpriseAddress",
+      return EnterpriseAddress.make({
         networkId,
         paymentCredential
       })

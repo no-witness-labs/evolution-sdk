@@ -27,39 +27,10 @@ export class Bytes32Error extends Data.TaggedError("Bytes32Error")<{
  */
 export const BYTES_LENGTH = 32
 
-export const BytesSchema = Schema.Uint8ArrayFromSelf.pipe(Bytes.bytesLengthEquals(BYTES_LENGTH))
+export const BytesFromHex = Schema.Uint8ArrayFromHex.pipe(Bytes.bytesLengthEquals(BYTES_LENGTH))
 
-export const HexSchema = Bytes.HexSchema.pipe(Bytes.hexLengthEquals(BYTES_LENGTH))
+export const VariableBytesFromHex = Schema.Uint8ArrayFromHex.pipe(Bytes.bytesLengthBetween(0, BYTES_LENGTH))
 
-/**
- * Schema transformation for fixed-length bytes
- *
- * @since 2.0.0
- * @category schemas
- */
-export const FromHex = Bytes.makeBytesTransformation({
-  id: `Bytes${BYTES_LENGTH}.Bytes${BYTES_LENGTH}FromHex`,
-  stringSchema: HexSchema,
-  uint8ArraySchema: BytesSchema,
-  decode: Bytes.fromHexUnsafe,
-  encode: Bytes.toHexUnsafe
-})
-
-export const VariableBytes = Schema.Uint8ArrayFromSelf.pipe(Bytes.bytesLengthBetween(0, BYTES_LENGTH))
-
-/**
- * Schema transformation for variable-length bytes (0..BYTES_LENGTH).
- *
- * @since 2.0.0
- * @category schemas
- */
-export const VariableBytesFromHex = Bytes.makeBytesTransformation({
-  id: `Bytes${BYTES_LENGTH}.VariableBytes${BYTES_LENGTH}FromHex`,
-  stringSchema: Bytes.HexLenientSchema.pipe(Bytes.hexLengthBetween(0, BYTES_LENGTH)),
-  uint8ArraySchema: VariableBytes,
-  decode: Bytes.fromHexLenient,
-  encode: Bytes.toHexLenientUnsafe
-})
 
 export const equals = Bytes.equals
 
@@ -73,7 +44,7 @@ export const equals = Bytes.equals
  * @since 2.0.0
  * @category decoding
  */
-export const fromHex = Function.makeDecodeSync(FromHex, Bytes32Error, "Bytes32.fromHex")
+export const fromHex = Function.makeDecodeSync(BytesFromHex, Bytes32Error, "Bytes32.fromHex")
 
 /**
  * Encode fixed-length bytes to hex.
@@ -81,7 +52,7 @@ export const fromHex = Function.makeDecodeSync(FromHex, Bytes32Error, "Bytes32.f
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = Function.makeEncodeSync(FromHex, Bytes32Error, "Bytes32.toHex32")
+export const toHex = Function.makeEncodeSync(BytesFromHex, Bytes32Error, "Bytes32.toHex32")
 
 /**
  * Decode variable-length hex (0..BYTES_LENGTH) into bytes.
@@ -98,7 +69,6 @@ export const fromVariableHex = Function.makeDecodeSync(VariableBytesFromHex, Byt
  * @category encoding
  */
 export const toVariableHex = Function.makeEncodeSync(VariableBytesFromHex, Bytes32Error, "Bytes32.toVariableHex32")
-
 // =============================================================================
 // Either (safe) API
 // =============================================================================
@@ -109,13 +79,13 @@ export namespace Either {
    * @since 2.0.0
    * @category decoding
    */
-  export const fromHex = Function.makeDecodeEither(FromHex, Bytes32Error)
+  export const fromHex = Function.makeDecodeEither(BytesFromHex, Bytes32Error)
   /**
    * Safely encode fixed-length bytes to hex.
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = Function.makeEncodeEither(FromHex, Bytes32Error)
+  export const toHex = Function.makeEncodeEither(BytesFromHex, Bytes32Error)
   /**
    * Safely decode variable-length hex (0..BYTES_LENGTH) into bytes.
    * @since 2.0.0
@@ -127,5 +97,5 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toVariableHex = Function.makeDecodeEither(VariableBytesFromHex, Bytes32Error)
+  export const toVariableHex = Function.makeEncodeEither(VariableBytesFromHex, Bytes32Error)
 }

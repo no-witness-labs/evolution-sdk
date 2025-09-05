@@ -47,7 +47,7 @@ export class AddressStructure extends Schema.Class<AddressStructure>("AddressStr
  */
 export const FromBytes = Schema.transformOrFail(
   Schema.Union(Bytes57.BytesSchema, Bytes29.BytesSchema),
-  AddressStructure,
+  Schema.typeSchema(AddressStructure),
   {
     strict: true,
     encode: (_, __, ___, toA) =>
@@ -93,7 +93,7 @@ export const FromBytes = Schema.transformOrFail(
             ? new KeyHash.KeyHash({ hash: fromA.slice(29, 57) })
             : new ScriptHash.ScriptHash({ hash: fromA.slice(29, 57) })
 
-          return yield* ParseResult.decode(AddressStructure)({
+          return AddressStructure.make({
             networkId,
             paymentCredential,
             stakingCredential
@@ -105,7 +105,7 @@ export const FromBytes = Schema.transformOrFail(
             ? new KeyHash.KeyHash({ hash: fromA.slice(1, 29) })
             : new ScriptHash.ScriptHash({ hash: fromA.slice(1, 29) })
 
-          return yield* ParseResult.decode(AddressStructure)({
+          return AddressStructure.make({
             networkId,
             paymentCredential,
             stakingCredential: undefined
@@ -135,7 +135,7 @@ export const FromHex = Schema.compose(Bytes.FromHex, FromBytes).annotations({
  * @since 1.0.0
  * @category Transformations
  */
-export const FromBech32 = Schema.transformOrFail(Schema.String, AddressStructure, {
+export const FromBech32 = Schema.transformOrFail(Schema.String, Schema.typeSchema(AddressStructure), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Eff.gen(function* () {

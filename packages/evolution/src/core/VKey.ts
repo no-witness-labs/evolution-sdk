@@ -26,10 +26,10 @@ export class VKeyError extends Data.TaggedError("VKeyError")<{
  * @category schemas
  */
 export class VKey extends Schema.TaggedClass<VKey>()("VKey", {
-  bytes: Bytes32.BytesSchema
+  bytes: Bytes32.BytesFromHex
 }) {}
 
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, VKey, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(VKey), {
   strict: true,
   decode: (bytes) => new VKey({ bytes }),
   encode: (vkey) => vkey.bytes
@@ -38,7 +38,7 @@ export const FromBytes = Schema.transform(Bytes32.BytesSchema, VKey, {
 })
 
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
+  Bytes32.BytesFromHex, // string -> Bytes32
   FromBytes // Bytes32 -> VKey
 ).annotations({
   identifier: "VKey.FromHex"

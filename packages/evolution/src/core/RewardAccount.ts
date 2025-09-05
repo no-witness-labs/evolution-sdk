@@ -32,7 +32,7 @@ export class RewardAccount extends Schema.TaggedClass<RewardAccount>("RewardAcco
   }
 }
 
-export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, RewardAccount, {
+export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, Schema.typeSchema(RewardAccount), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Eff.gen(function* () {
@@ -60,8 +60,7 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, RewardAccou
         : new ScriptHash.ScriptHash({
             hash: fromA.slice(1, 29)
           })
-      return yield* ParseResult.decode(RewardAccount)({
-        _tag: "RewardAccount",
+      return RewardAccount.make({
         networkId,
         stakeCredential
       })

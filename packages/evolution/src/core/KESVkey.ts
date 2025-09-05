@@ -23,7 +23,7 @@ export class KESVkeyError extends Data.TaggedError("KESVkeyError")<{
  * @category model
  */
 export class KESVkey extends Schema.TaggedClass<KESVkey>()("KESVkey", {
-  bytes: Bytes32.BytesSchema
+  bytes: Bytes32.BytesFromHex
 }) {}
 
 /**
@@ -32,7 +32,7 @@ export class KESVkey extends Schema.TaggedClass<KESVkey>()("KESVkey", {
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, KESVkey, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(KESVkey), {
   strict: true,
   decode: (bytes) => new KESVkey({ bytes }, { disableValidation: true }),
   encode: (k) => k.bytes
@@ -47,7 +47,7 @@ export const FromBytes = Schema.transform(Bytes32.BytesSchema, KESVkey, {
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
+  Bytes32.BytesFromHex, // string -> Bytes32
   FromBytes // Bytes32 -> KESVkey
 ).annotations({
   identifier: "KESVkey.FromHex"

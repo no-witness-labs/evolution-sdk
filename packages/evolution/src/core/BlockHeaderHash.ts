@@ -23,7 +23,7 @@ export class BlockHeaderHashError extends Data.TaggedError("BlockHeaderHashError
  * @category model
  */
 export class BlockHeaderHash extends Schema.TaggedClass<BlockHeaderHash>()("BlockHeaderHash", {
-  bytes: Bytes32.BytesSchema
+  bytes: Bytes32.BytesFromHex
 }) {}
 
 /**
@@ -32,7 +32,7 @@ export class BlockHeaderHash extends Schema.TaggedClass<BlockHeaderHash>()("Bloc
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, BlockHeaderHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(BlockHeaderHash), {
   strict: true,
   decode: (bytes) => new BlockHeaderHash({ bytes }, { disableValidation: true }),
   encode: (bhh) => bhh.bytes
@@ -47,7 +47,7 @@ export const FromBytes = Schema.transform(Bytes32.BytesSchema, BlockHeaderHash, 
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
+  Bytes32.BytesFromHex, // string -> Bytes32
   FromBytes // Bytes32 -> BlockHeaderHash
 ).annotations({
   identifier: "BlockHeaderHash.FromHex"

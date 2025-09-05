@@ -55,8 +55,8 @@ export type AssetMap = typeof AssetMap.Type
  * @category schemas
  */
 export const MultiAsset = Schema.MapFromSelf({
-  key: PolicyId.PolicyId,
-  value: AssetMap
+  key: Schema.typeSchema(PolicyId.PolicyId),
+  value: Schema.typeSchema(AssetMap)
 })
   .pipe(Schema.filter((map) => map.size > 0))
   .pipe(Schema.brand("MultiAsset"))

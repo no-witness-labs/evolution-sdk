@@ -20,7 +20,7 @@ export class CostModelError extends Data.TaggedError("CostModelError")<{
  * ```
  */
 export class CostModel extends Schema.Class<CostModel>("CostModel")({
-  costs: Schema.Array(Schema.BigIntFromSelf)
+  costs: Schema.Array(Schema.BigInt)
 }) {}
 
 /**

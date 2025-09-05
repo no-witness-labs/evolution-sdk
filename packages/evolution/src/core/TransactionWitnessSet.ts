@@ -311,7 +311,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         witnessSet.plutusV3Scripts = plutusV3Scripts
       }
 
-      return yield* ParseResult.decode(TransactionWitnessSet)(witnessSet)
+      return yield* ParseResult.decode(Schema.typeSchema(TransactionWitnessSet))(witnessSet)
     })
 })
 

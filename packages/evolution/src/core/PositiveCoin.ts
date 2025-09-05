@@ -36,7 +36,7 @@ export const MAX_POSITIVE_COIN_VALUE = Coin.MAX_COIN_VALUE
  * @since 2.0.0
  * @category schemas
  */
-export const PositiveCoinSchema = Schema.BigIntFromSelf.pipe(
+export const PositiveCoinSchema = Schema.BigInt.pipe(
   Schema.filter((value) => value >= MIN_POSITIVE_COIN_VALUE && value <= MAX_POSITIVE_COIN_VALUE)
 ).annotations({
   message: (issue) =>

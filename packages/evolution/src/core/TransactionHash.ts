@@ -22,12 +22,8 @@ export class TransactionHashError extends Data.TaggedError("TransactionHashError
  * @category schemas
  */
 export class TransactionHash extends Schema.TaggedClass<TransactionHash>()("TransactionHash", {
-  hash: Bytes32.BytesSchema
+  hash: Bytes32.BytesFromHex
 }) {
-  toJSON(): string {
-    return toHex(this)
-  }
-
   toString(): string {
     return `TransactionHash { hash: ${this.hash} }`
   }
@@ -43,25 +39,12 @@ export class TransactionHash extends Schema.TaggedClass<TransactionHash>()("Tran
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, TransactionHash, {
+export const FromBytes = Schema.transform(Bytes32.BytesFromHex, Schema.typeSchema(TransactionHash), {
   strict: true,
   decode: (bytes) => new TransactionHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
   encode: (txHash) => txHash.hash
 }).annotations({
   identifier: "TransactionHash.FromBytes"
-})
-
-/**
- * Schema for transforming between hex string and TransactionHash.
- *
- * @since 2.0.0
- * @category schemas
- */
-export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
-  FromBytes // Bytes32 -> TransactionHash
-).annotations({
-  identifier: "TransactionHash.FromHex"
 })
 
 /**
@@ -112,14 +95,6 @@ export const arbitrary = FastCheck.uint8Array({
 export const fromBytes = Function.makeDecodeSync(FromBytes, TransactionHashError, "TransactionHash.fromBytes")
 
 /**
- * Parse TransactionHash from hex string.
- *
- * @since 2.0.0
- * @category parsing
- */
-export const fromHex = Function.makeDecodeSync(FromHex, TransactionHashError, "TransactionHash.fromHex")
-
-/**
  * Encode TransactionHash to bytes.
  *
  * @since 2.0.0
@@ -133,7 +108,7 @@ export const toBytes = Function.makeEncodeSync(FromBytes, TransactionHashError, 
  * @since 2.0.0
  * @category encoding
  */
-export const toHex = Function.makeEncodeSync(FromHex, TransactionHashError, "TransactionHash.toHex")
+export const toHex = Function.makeEncodeSync(TransactionHash, TransactionHashError, "TransactionHash.toHex")
 
 // ============================================================================
 // Effect Namespace
@@ -160,7 +135,7 @@ export namespace Either {
    * @since 2.0.0
    * @category parsing
    */
-  export const fromHex = Function.makeDecodeEither(FromHex, TransactionHashError)
+  export const fromHex = Function.makeDecodeEither(TransactionHash, TransactionHashError)
 
   /**
    * Encode TransactionHash to bytes with Effect error handling.
@@ -176,5 +151,5 @@ export namespace Either {
    * @since 2.0.0
    * @category encoding
    */
-  export const toHex = Function.makeEncodeEither(FromHex, TransactionHashError)
+  export const toHex = Function.makeEncodeEither(TransactionHash, TransactionHashError)
 }

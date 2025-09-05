@@ -255,7 +255,7 @@ export const isBytes = Schema.is(ByteArray)
  * @since 2.0.0
  * @category constructors
  */
-export const constr = (index: bigint, fields: Array<Data>): Constr => Schema.decodeSync(Constr)({ index, fields })
+export const constr = (index: bigint, fields: Array<Data>): Constr => Constr.make({ index, fields })
 
 // new Constr({
 //   index: Numeric.Uint64Make(index),

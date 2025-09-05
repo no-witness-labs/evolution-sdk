@@ -25,7 +25,7 @@ export class VrfCertError extends Data.TaggedError("VrfCertError")<{
  * @category schemas
  */
 export class VRFOutput extends Schema.TaggedClass<VRFOutput>()("VrfOutput", {
-  bytes: Bytes32.BytesSchema
+  bytes: Bytes32.BytesFromHex
 }) {}
 
 /**
@@ -35,7 +35,7 @@ export class VRFOutput extends Schema.TaggedClass<VRFOutput>()("VrfOutput", {
  * @since 2.0.0
  * @category schemas
  */
-export const VRFOutputFromBytes = Schema.transform(Bytes32.BytesSchema, VRFOutput, {
+export const VRFOutputFromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(VRFOutput), {
   strict: true,
   decode: (bytes) => new VRFOutput({ bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
   encode: (vrfOutput) => vrfOutput.bytes
@@ -51,7 +51,7 @@ export const VRFOutputFromBytes = Schema.transform(Bytes32.BytesSchema, VRFOutpu
  * @category schemas
  */
 export const VRFOutputHexSchema = Schema.compose(
-  Bytes32.FromHex, // string -> hex string
+  Bytes32.BytesFromHex, // string -> hex string
   VRFOutputFromBytes // hex string -> VRFOutput
 ).annotations({
   identifier: "VrfOutput.Hex"

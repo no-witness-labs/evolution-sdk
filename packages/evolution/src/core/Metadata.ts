@@ -213,7 +213,7 @@ export const toCBORHex = Function.makeCBOREncodeHexSync(FromCDDL, MetadataError,
  * @category constructors
  */
 export const fromEntries = (entries: Array<[MetadataLabel, TransactionMetadatum.TransactionMetadatum]>): Metadata =>
-  Schema.decodeSync(Metadata)(new Map(entries))
+  (new Map(entries))
 
 /**
  * Create an empty Metadata map.

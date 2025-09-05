@@ -79,8 +79,7 @@ export const FromCDDL = Schema.transformOrFail(
       Effect.gen(function* () {
         const headerBody = yield* ParseResult.decode(HeaderBody.FromCDDL)(headerBodyCddl)
         const bodySignature = yield* ParseResult.decode(KesSignature.FromBytes)(bodySignatureBytes)
-        return yield* ParseResult.decode(Header)({
-          _tag: "Header",
+        return new Header({
           headerBody,
           bodySignature
         })

@@ -113,7 +113,7 @@ export const decodeVariableLength: (
   }
 })
 
-export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, PointerAddress, {
+export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Schema.typeSchema(PointerAddress), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Eff.gen(function* () {
@@ -180,8 +180,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
         return yield* ParseResult.fail(new ParseResult.Type(ast, fromA, "PointerAddress: unexpected trailing bytes"))
       }
 
-      return yield* ParseResult.decode(PointerAddress)({
-        _tag: "PointerAddress",
+      return PointerAddress.make({
         networkId,
         paymentCredential,
         pointer: new Pointer.Pointer({ slot, txIndex, certIndex }, { disableValidation: true })

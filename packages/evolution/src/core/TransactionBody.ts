@@ -57,11 +57,11 @@ export class TransactionBody extends Schema.TaggedClass<TransactionBody>()("Tran
   inputs: Schema.Array(TransactionInput.TransactionInput), // 0
   outputs: Schema.Array(TransactionOutput.TransactionOutput), // 1
   fee: Coin.Coin, // 2
-  ttl: Schema.optional(Schema.BigIntFromSelf), // 3 - slot_no
+  ttl: Schema.optional(Schema.BigInt), // 3 - slot_no
   certificates: Schema.optional(Schema.NonEmptyArray(Certificate.Certificate)), // 4
   withdrawals: Schema.optional(Withdrawals.Withdrawals), // 5
   auxiliaryDataHash: Schema.optional(AuxiliaryDataHash.AuxiliaryDataHash), // 7
-  validityIntervalStart: Schema.optional(Schema.BigIntFromSelf), // 8 - slot_no
+  validityIntervalStart: Schema.optional(Schema.BigInt), // 8 - slot_no
   mint: Schema.optional(Mint.Mint), // 9
   scriptDataHash: Schema.optional(ScriptDataHash.ScriptDataHash), // 11
   collateralInputs: Schema.optional(Schema.NonEmptyArray(TransactionInput.TransactionInput)), // 13
@@ -104,8 +104,8 @@ const encodeProposalProcedure = ParseResult.encodeEither(ProposalProcedure.FromC
 const decodeProposalProcedure = ParseResult.decodeEither(ProposalProcedure.FromCDDL)
 const encodeRewardAccountBytes = ParseResult.encodeEither(RewardAccount.FromBytes)
 const decodeRewardAccountBytes = ParseResult.decodeEither(RewardAccount.FromBytes)
-const decodeAuxiliaryDataHash = ParseResult.decodeEither(Schema.typeSchema(AuxiliaryDataHash.AuxiliaryDataHash))
-const decodeScriptDataHash = ParseResult.decodeEither(Schema.typeSchema(ScriptDataHash.ScriptDataHash))
+const decodeAuxiliaryDataHash = ParseResult.decodeEither(AuxiliaryDataHash.FromBytes)
+const decodeScriptDataHash = ParseResult.decodeEither(ScriptDataHash.FromBytes)
 const decodeKeyHash = ParseResult.decodeEither(KeyHash.FromBytes)
 
 const decodeInputs = ParseResult.decodeUnknownEither(CBOR.tag(258, Schema.Array(TransactionInput.FromCDDL)))
@@ -188,10 +188,12 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       }
 
       if (toA.requiredSigners) {
-        record.set(
-          14n,
-          toA.requiredSigners.map((signer) => signer.hash)
-        )
+        const len = toA.requiredSigners.length
+        const arr = new Array(len)
+        for (let i = 0; i < len; i++) {
+          arr[i] = toA.requiredSigners[i].hash
+        }
+        record.set(14n, CBOR.Tag.make({ tag: 258, value: arr }, { disableValidation: true }))
       }
 
       if (toA.networkId !== undefined) record.set(15n, BigInt(toA.networkId))
@@ -278,15 +280,13 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
 
       const auxiliaryDataHashBytes = fromA.get(7n) as Uint8Array | undefined
       const auxiliaryDataHash = auxiliaryDataHashBytes
-        ? yield* decodeAuxiliaryDataHash({ _tag: "AuxiliaryDataHash", bytes: auxiliaryDataHashBytes })
+        ? yield* decodeAuxiliaryDataHash(auxiliaryDataHashBytes)
         : undefined
       const validityIntervalStart = fromA.get(8n) as bigint | undefined
       const mintData = fromA.get(9n) as typeof Mint.CDDLSchema.Type | undefined
       const mint = mintData ? yield* decodeMint(mintData) : undefined
       const scriptDataHashBytes = fromA.get(11n) as Uint8Array | undefined
-      const scriptDataHash = scriptDataHashBytes
-        ? yield* decodeScriptDataHash({ _tag: "ScriptDataHash", hash: scriptDataHashBytes })
-        : undefined
+      const scriptDataHash = scriptDataHashBytes ? yield* decodeScriptDataHash(scriptDataHashBytes) : undefined
 
       const collateralInputsTag = fromA.get(13n) as
         | {
@@ -306,7 +306,14 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
         collateralInputs = arr as NonEmptyArray<TransactionInput.TransactionInput>
       }
 
-      const requiredSignersArray = fromA.get(14n) as ReadonlyArray<Uint8Array> | undefined
+      const requiredSignersTag = fromA.get(14n) as
+        | {
+            _tag: "Tag"
+            tag: 258
+            value: ReadonlyArray<Uint8Array>
+          }
+        | undefined
+      const requiredSignersArray = requiredSignersTag ? requiredSignersTag.value : undefined
       let requiredSigners: NonEmptyArray<KeyHash.KeyHash> | undefined
       if (requiredSignersArray) {
         const len = requiredSignersArray.length

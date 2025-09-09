@@ -212,13 +212,9 @@ describe("TransactionWitnessSet CML Compatibility", () => {
   it("validates encoding native scripts", () => {
     // Create test data for native script (simple pubkey script)
     const publicKeyHashBytes = new Uint8Array(28).fill(25)
-    const publicKeyHashHex = Array.from(publicKeyHashBytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
 
     // Create Evolution SDK witness set with native script
-    const evolutionNativeScript = NativeScripts.make({
-      type: "sig",
-      keyHash: publicKeyHashHex
-    })
+    const evolutionNativeScript = NativeScripts.makeScriptPubKey(publicKeyHashBytes)
 
     const evolutionWitnessSet = new TransactionWitnessSet.TransactionWitnessSet({
       nativeScripts: [evolutionNativeScript]

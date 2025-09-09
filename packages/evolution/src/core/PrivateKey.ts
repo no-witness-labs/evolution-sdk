@@ -35,11 +35,15 @@ export class PrivateKey extends Schema.TaggedClass<PrivateKey>()("PrivateKey", {
   key: Schema.Union(Bytes64.BytesFromHex, Bytes32.BytesFromHex)
 }) {}
 
-export const FromBytes = Schema.transform(Schema.typeSchema(Schema.Union(Bytes64.BytesFromHex, Bytes32.BytesFromHex)), Schema.typeSchema(PrivateKey), {
-  strict: true,
-  decode: (bytes) => new PrivateKey({ key: bytes }),
-  encode: (privateKey) => privateKey.key
-}).annotations({
+export const FromBytes = Schema.transform(
+  Schema.typeSchema(Schema.Union(Bytes64.BytesFromHex, Bytes32.BytesFromHex)),
+  Schema.typeSchema(PrivateKey),
+  {
+    strict: true,
+    decode: (bytes) => new PrivateKey({ key: bytes }),
+    encode: (privateKey) => privateKey.key
+  }
+).annotations({
   identifier: "PrivateKey.FromBytes"
 })
 

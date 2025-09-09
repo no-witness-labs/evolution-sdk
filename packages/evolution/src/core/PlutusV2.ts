@@ -20,7 +20,7 @@ export class PlutusV2Error extends Data.TaggedError("PlutusV2Error")<{
  * @category model
  */
 export class PlutusV2 extends Schema.TaggedClass<PlutusV2>("PlutusV2")("PlutusV2", {
-  bytes: Schema.Uint8ArrayFromSelf
+  bytes: Schema.Uint8ArrayFromHex
 }) {}
 
 /**
@@ -37,7 +37,7 @@ export const CDDLSchema = CBOR.ByteArray
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transform(CDDLSchema, PlutusV2, {
+export const FromCDDL = Schema.transform(CDDLSchema, Schema.typeSchema(PlutusV2), {
   strict: true,
   encode: (toI) => toI.bytes,
   decode: (fromA) => new PlutusV2({ bytes: fromA })

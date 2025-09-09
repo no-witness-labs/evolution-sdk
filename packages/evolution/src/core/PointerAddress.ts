@@ -28,7 +28,7 @@ export class PointerAddressError extends Data.TaggedError("PointerAddressError")
  */
 export class PointerAddress extends Schema.TaggedClass<PointerAddress>("PointerAddress")("PointerAddress", {
   networkId: NetworkId.NetworkId,
-  paymentCredential: Credential.Credential,
+  paymentCredential: Credential.CredentialSchema,
   pointer: Pointer.Pointer
 }) {
   toString(): string {
@@ -163,7 +163,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Schem
 
       // payment credential kind
       const isPaymentKey = (addressType & 0b0001) === 0
-      const paymentCredential: Credential.Credential = isPaymentKey
+      const paymentCredential: Credential.CredentialSchema = isPaymentKey
         ? new KeyHash.KeyHash({ hash: fromA.slice(1, 29) })
         : new ScriptHash.ScriptHash({ hash: fromA.slice(1, 29) })
 
@@ -207,7 +207,7 @@ export const FromHex = Schema.compose(
  */
 export const make = (props: {
   networkId: NetworkId.NetworkId
-  paymentCredential: Credential.Credential
+  paymentCredential: Credential.CredentialSchema
   pointer: Pointer.Pointer
 }): PointerAddress => new PointerAddress(props)
 

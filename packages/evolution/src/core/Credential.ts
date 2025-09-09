@@ -26,7 +26,7 @@ export class CredentialError extends Data.TaggedError("CredentialError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const Credential = Schema.Union(KeyHash.KeyHash, ScriptHash.ScriptHash)
+export const CredentialSchema = Schema.Union(KeyHash.KeyHash, ScriptHash.ScriptHash)
 
 /**
  * Type representing a credential that can be either a key hash or script hash
@@ -35,7 +35,11 @@ export const Credential = Schema.Union(KeyHash.KeyHash, ScriptHash.ScriptHash)
  * @since 2.0.0
  * @category model
  */
-export type Credential = typeof Credential.Type
+export type CredentialSchema = typeof CredentialSchema.Type
+export type Credential = typeof CredentialSchema.Encoded
+
+export const makeKeyHash = (hash: Uint8Array): CredentialSchema => KeyHash.make({ hash })
+export const makeScriptHash = (hash: Uint8Array): CredentialSchema => ScriptHash.make({ hash })
 
 /**
  * Check if the given value is a valid Credential
@@ -43,7 +47,7 @@ export type Credential = typeof Credential.Type
  * @since 2.0.0
  * @category predicates
  */
-export const is = Schema.is(Credential)
+export const is = Schema.is(CredentialSchema)
 
 export const CDDLSchema = Schema.Tuple(
   Schema.Literal(0n, 1n),
@@ -57,7 +61,7 @@ export const CDDLSchema = Schema.Tuple(
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Credential), {
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(CredentialSchema), {
   strict: true,
   encode: (toI) =>
     Eff.gen(function* () {
@@ -103,7 +107,7 @@ export const FromCBORHex = (options: CBOR.CodecOptions = CBOR.CML_DEFAULT_OPTION
  * @since 2.0.0
  * @category equality
  */
-export const equals = (a: Credential, b: Credential): boolean => {
+export const equals = (a: CredentialSchema, b: CredentialSchema): boolean => {
   return a._tag === b._tag && Bytes.equals(a.hash, b.hash)
 }
 

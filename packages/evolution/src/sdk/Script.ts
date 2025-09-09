@@ -1,10 +1,5 @@
-import { pipe } from "effect"
-
 import { fromHex } from "../core/Bytes.js"
 import * as CBOR from "../core/CBOR.js"
-import * as CoreScript from "../core/Script.js"
-import * as CoreScriptHash from "../core/ScriptHash.js"
-import type * as Credential from "./Credential.js"
 
 export type Native = {
   type: "Native"

@@ -28,8 +28,8 @@ export class WithdrawalsError extends Data.TaggedError("WithdrawalsError")<{
  * @category model
  */
 export class Withdrawals extends Schema.TaggedClass<Withdrawals>()("Withdrawals", {
-  withdrawals: Schema.MapFromSelf({
-    key: RewardAccount.RewardAccount,
+  withdrawals: Schema.Map({
+    key: RewardAccount.FromBech32,
     value: Coin.Coin
   })
 }) {}

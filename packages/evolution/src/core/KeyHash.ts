@@ -61,10 +61,7 @@ export const FromBytes = Schema.transform(Schema.typeSchema(Hash28.BytesFromHex)
  * @since 2.0.0
  * @category transformer
  */
-export const FromHex = Schema.compose(
-  Hash28.BytesFromHex,
-  FromBytes
-).annotations({
+export const FromHex = Schema.compose(Hash28.BytesFromHex, FromBytes).annotations({
   identifier: "KeyHash.FromHex"
 })
 

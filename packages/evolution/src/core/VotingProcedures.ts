@@ -43,7 +43,7 @@ export class VotingProceduresError extends Data.TaggedError("VotingProceduresErr
 export class ConstitutionalCommitteeVoter extends Schema.TaggedClass<ConstitutionalCommitteeVoter>()(
   "ConstitutionalCommitteeVoter",
   {
-    credential: Credential.Credential
+    credential: Credential.CredentialSchema
   }
 ) {}
 
@@ -411,7 +411,7 @@ export const makeProcedure = (vote: Vote, anchor?: Anchor.Anchor | null): Voting
  * @since 2.0.0
  * @category constructors
  */
-export const makeCommitteeVoter = (credential: Credential.Credential): Voter =>
+export const makeCommitteeVoter = (credential: Credential.CredentialSchema): Voter =>
   new ConstitutionalCommitteeVoter({ credential })
 
 /**
@@ -522,7 +522,7 @@ export const isAbstainVote = (vote: Vote): vote is Schema.Schema.Type<typeof Abs
  */
 export const matchVoter =
   <R>(patterns: {
-    ConstitutionalCommitteeVoter: (credential: Credential.Credential) => R
+    ConstitutionalCommitteeVoter: (credential: Credential.CredentialSchema) => R
     DRepVoter: (drep: DRep.DRep) => R
     StakePoolVoter: (poolKeyHash: PoolKeyHash.PoolKeyHash) => R
   }) =>

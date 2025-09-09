@@ -35,11 +35,15 @@ export class VRFOutput extends Schema.TaggedClass<VRFOutput>()("VrfOutput", {
  * @since 2.0.0
  * @category schemas
  */
-export const VRFOutputFromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(VRFOutput), {
-  strict: true,
-  decode: (bytes) => new VRFOutput({ bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
-  encode: (vrfOutput) => vrfOutput.bytes
-}).annotations({
+export const VRFOutputFromBytes = Schema.transform(
+  Schema.typeSchema(Bytes32.BytesFromHex),
+  Schema.typeSchema(VRFOutput),
+  {
+    strict: true,
+    decode: (bytes) => new VRFOutput({ bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
+    encode: (vrfOutput) => vrfOutput.bytes
+  }
+).annotations({
   identifier: "VrfOutput.Bytes"
 })
 

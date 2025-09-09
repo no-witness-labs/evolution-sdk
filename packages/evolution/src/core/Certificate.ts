@@ -26,18 +26,18 @@ export class CertificateError extends Data.TaggedError("CertificateError")<{
 }> {}
 
 export class StakeRegistration extends Schema.TaggedClass<StakeRegistration>("StakeRegistration")("StakeRegistration", {
-  stakeCredential: Credential.Credential
+  stakeCredential: Credential.CredentialSchema
 }) {}
 
 export class StakeDeregistration extends Schema.TaggedClass<StakeDeregistration>("StakeDeregistration")(
   "StakeDeregistration",
   {
-    stakeCredential: Credential.Credential
+    stakeCredential: Credential.CredentialSchema
   }
 ) {}
 
 export class StakeDelegation extends Schema.TaggedClass<StakeDelegation>("StakeDelegation")("StakeDelegation", {
-  stakeCredential: Credential.Credential,
+  stakeCredential: Credential.CredentialSchema,
   poolKeyHash: PoolKeyHash.PoolKeyHash
 }) {}
 
@@ -51,37 +51,37 @@ export class PoolRetirement extends Schema.TaggedClass<PoolRetirement>("PoolReti
 }) {}
 
 export class RegCert extends Schema.TaggedClass<RegCert>("RegCert")("RegCert", {
-  stakeCredential: Credential.Credential,
+  stakeCredential: Credential.CredentialSchema,
   coin: Coin.Coin
 }) {}
 
 export class UnregCert extends Schema.TaggedClass<UnregCert>("UnregCert")("UnregCert", {
-  stakeCredential: Credential.Credential,
+  stakeCredential: Credential.CredentialSchema,
   coin: Coin.Coin
 }) {}
 
 export class VoteDelegCert extends Schema.TaggedClass<VoteDelegCert>("VoteDelegCert")("VoteDelegCert", {
-  stakeCredential: Credential.Credential,
+  stakeCredential: Credential.CredentialSchema,
   drep: DRep.DRep
 }) {}
 
 export class StakeVoteDelegCert extends Schema.TaggedClass<StakeVoteDelegCert>("StakeVoteDelegCert")(
   "StakeVoteDelegCert",
   {
-    stakeCredential: Credential.Credential,
+    stakeCredential: Credential.CredentialSchema,
     poolKeyHash: PoolKeyHash.PoolKeyHash,
     drep: DRep.DRep
   }
 ) {}
 
 export class StakeRegDelegCert extends Schema.TaggedClass<StakeRegDelegCert>("StakeRegDelegCert")("StakeRegDelegCert", {
-  stakeCredential: Credential.Credential,
+  stakeCredential: Credential.CredentialSchema,
   poolKeyHash: PoolKeyHash.PoolKeyHash,
   coin: Coin.Coin
 }) {}
 
 export class VoteRegDelegCert extends Schema.TaggedClass<VoteRegDelegCert>("VoteRegDelegCert")("VoteRegDelegCert", {
-  stakeCredential: Credential.Credential,
+  stakeCredential: Credential.CredentialSchema,
   drep: DRep.DRep,
   coin: Coin.Coin
 }) {}
@@ -89,7 +89,7 @@ export class VoteRegDelegCert extends Schema.TaggedClass<VoteRegDelegCert>("Vote
 export class StakeVoteRegDelegCert extends Schema.TaggedClass<StakeVoteRegDelegCert>("StakeVoteRegDelegCert")(
   "StakeVoteRegDelegCert",
   {
-    stakeCredential: Credential.Credential,
+    stakeCredential: Credential.CredentialSchema,
     poolKeyHash: PoolKeyHash.PoolKeyHash,
     drep: DRep.DRep,
     coin: Coin.Coin
@@ -99,32 +99,32 @@ export class StakeVoteRegDelegCert extends Schema.TaggedClass<StakeVoteRegDelegC
 export class AuthCommitteeHotCert extends Schema.TaggedClass<AuthCommitteeHotCert>("AuthCommitteeHotCert")(
   "AuthCommitteeHotCert",
   {
-    committeeColdCredential: Credential.Credential,
-    committeeHotCredential: Credential.Credential
+    committeeColdCredential: Credential.CredentialSchema,
+    committeeHotCredential: Credential.CredentialSchema
   }
 ) {}
 
 export class ResignCommitteeColdCert extends Schema.TaggedClass<ResignCommitteeColdCert>("ResignCommitteeColdCert")(
   "ResignCommitteeColdCert",
   {
-    committeeColdCredential: Credential.Credential,
+    committeeColdCredential: Credential.CredentialSchema,
     anchor: Schema.NullishOr(Anchor.Anchor)
   }
 ) {}
 
 export class RegDrepCert extends Schema.TaggedClass<RegDrepCert>("RegDrepCert")("RegDrepCert", {
-  drepCredential: Credential.Credential,
+  drepCredential: Credential.CredentialSchema,
   coin: Coin.Coin,
   anchor: Schema.NullishOr(Anchor.Anchor)
 }) {}
 
 export class UnregDrepCert extends Schema.TaggedClass<UnregDrepCert>("UnregDrepCert")("UnregDrepCert", {
-  drepCredential: Credential.Credential,
+  drepCredential: Credential.CredentialSchema,
   coin: Coin.Coin
 }) {}
 
 export class UpdateDrepCert extends Schema.TaggedClass<UpdateDrepCert>("UpdateDrepCert")("UpdateDrepCert", {
-  drepCredential: Credential.Credential,
+  drepCredential: Credential.CredentialSchema,
   anchor: Schema.NullishOr(Anchor.Anchor)
 }) {}
 

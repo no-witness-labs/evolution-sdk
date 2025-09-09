@@ -1,5 +1,6 @@
 import { Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
+import * as Bytes32 from "./Bytes32.js"
 import * as CBOR from "./CBOR.js"
 import * as Ed25519Signature from "./Ed25519Signature.js"
 import * as Function from "./Function.js"
@@ -21,12 +22,8 @@ import * as VKey from "./VKey.js"
 export class BootstrapWitness extends Schema.Class<BootstrapWitness>("BootstrapWitness")({
   publicKey: VKey.VKey,
   signature: Ed25519Signature.Ed25519Signature,
-  chainCode: Schema.Uint8ArrayFromSelf.pipe(
-    Schema.filter((bytes) => bytes.length === 32, {
-      message: () => "Chain code must be exactly 32 bytes"
-    })
-  ),
-  attributes: Schema.Uint8ArrayFromSelf
+  chainCode: Bytes32.BytesFromHex,
+  attributes: Schema.Uint8ArrayFromHex
 }) {}
 
 // Tuple schema as per CDDL

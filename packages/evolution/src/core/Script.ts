@@ -34,7 +34,7 @@ export class ScriptError extends Data.TaggedError("ScriptError")<{
  * @category model
  */
 export const Script = Schema.Union(
-  NativeScripts.Native,
+  NativeScripts.NativeScript,
   PlutusV1.PlutusV1,
   PlutusV2.PlutusV2,
   PlutusV3.PlutusV3
@@ -69,55 +69,51 @@ export type ScriptCDDL = typeof ScriptCDDL.Type
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(ScriptCDDL, Script, {
+export const FromCDDL = Schema.transformOrFail(ScriptCDDL, Schema.typeSchema(Script), {
   strict: true,
-  encode: (value, _, ast) => {
-    // Handle native scripts (no _tag property, has type property)
-    if ("type" in value) {
-      return NativeScripts.internalEncodeCDDL(value).pipe(
-        Eff.map((nativeCDDL) => [0n, nativeCDDL] as const),
-        Eff.mapError((cause) => new ParseResult.Type(ast, value, `Failed to encode native script: ${cause}`))
-      )
-    }
-
-    // Handle Plutus scripts (with _tag property)
-    if ("_tag" in value) {
-      const plutusScript = value as PlutusV1.PlutusV1 | PlutusV2.PlutusV2 | PlutusV3.PlutusV3
-      switch (plutusScript._tag) {
+  encode: (script) =>
+    Eff.gen(function* () {
+      switch (script._tag) {
+        // Plutus script cases
         case "PlutusV1":
-          return Eff.succeed([1n, plutusScript.bytes] as const)
-        case "PlutusV2":
-          return Eff.succeed([2n, plutusScript.bytes] as const)
-        case "PlutusV3":
-          return Eff.succeed([3n, plutusScript.bytes] as const)
-        default:
-          return Eff.fail(new ParseResult.Type(ast, value, `Unknown Plutus script type: ${(plutusScript as any)._tag}`))
-      }
-    }
+          return [1n, script.bytes] as const
 
-    return Eff.fail(new ParseResult.Type(ast, value, "Invalid script structure"))
-  },
-  decode: (tuple, _, ast) => {
-    const [tag, bytes] = tuple
-    switch (tag) {
-      case 0n:
-        // Native script
-        return NativeScripts.internalDecodeCDDL(bytes).pipe(
-          Eff.mapError((cause) => new ParseResult.Type(ast, tuple, `Failed to decode native script: ${cause}`))
-        )
-      case 1n:
-        // PlutusV1
-        return Eff.succeed(new PlutusV1.PlutusV1({ bytes }))
-      case 2n:
-        // PlutusV2
-        return Eff.succeed(new PlutusV2.PlutusV2({ bytes }))
-      case 3n:
-        // PlutusV3
-        return Eff.succeed(new PlutusV3.PlutusV3({ bytes }))
-      default:
-        return Eff.fail(new ParseResult.Type(ast, tuple, `Unknown script tag: ${tag}`))
-    }
-  }
+        case "PlutusV2":
+          return [2n, script.bytes] as const
+
+        case "PlutusV3":
+          return [3n, script.bytes] as const
+
+        // Native script case (TaggedClass)
+        case "NativeScript": {
+          const nativeCDDL = yield* ParseResult.encode(NativeScripts.FromCDDL)(script)
+          return [0n, nativeCDDL] as const
+        }
+
+        default:
+          return yield* Eff.fail(
+            new ParseResult.Type(Schema.typeSchema(Script).ast, script, `Unknown script type: ${(script as any)._tag}`)
+          )
+      }
+    }),
+  decode: (tuple) =>
+    Eff.gen(function* () {
+      const [tag, data] = tuple
+      switch (tag) {
+        case 0n:
+          // Native script
+          return yield* ParseResult.decode(NativeScripts.FromCDDL)(data)
+        case 1n:
+          // PlutusV1
+          return new PlutusV1.PlutusV1({ bytes: data })
+        case 2n:
+          // PlutusV2
+          return new PlutusV2.PlutusV2({ bytes: data })
+        case 3n:
+          // PlutusV3
+          return new PlutusV3.PlutusV3({ bytes: data })
+      }
+    })
 }).annotations({
   identifier: "Script.FromCDDL",
   title: "Script from CDDL",
@@ -131,32 +127,20 @@ export const FromCDDL = Schema.transformOrFail(ScriptCDDL, Script, {
  * @category equality
  */
 export const equals = (a: Script, b: Script): boolean => {
-  // Handle native scripts (no _tag property, has type property)
-  if ("type" in a && "type" in b) {
-    // Compare native scripts by type and basic properties
-    if (a.type !== b.type) return false
-    // For now, assume objects with same type and structure are equal
-    // TODO: Implement proper structural comparison for native scripts
-    return true
+  if (a._tag !== b._tag) return false
+
+  switch (a._tag) {
+    case "NativeScript":
+      return NativeScripts.equals(a, b as NativeScripts.NativeScript)
+    case "PlutusV1":
+      return PlutusV1.equals(a, b as PlutusV1.PlutusV1)
+    case "PlutusV2":
+      return PlutusV2.equals(a, b as PlutusV2.PlutusV2)
+    case "PlutusV3":
+      return PlutusV3.equals(a, b as PlutusV3.PlutusV3)
+    default:
+      return false
   }
-
-  // Handle Plutus scripts (with _tag property)
-  if ("_tag" in a && "_tag" in b) {
-    if (a._tag !== b._tag) return false
-
-    switch (a._tag) {
-      case "PlutusV1":
-        return PlutusV1.equals(a, b as PlutusV1.PlutusV1)
-      case "PlutusV2":
-        return PlutusV2.equals(a, b as PlutusV2.PlutusV2)
-      case "PlutusV3":
-        return PlutusV3.equals(a, b as PlutusV3.PlutusV3)
-      default:
-        return a === b
-    }
-  }
-
-  return false
 }
 
 /**

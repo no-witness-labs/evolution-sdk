@@ -31,7 +31,6 @@ export const BytesFromHex = Schema.Uint8ArrayFromHex.pipe(Bytes.bytesLengthEqual
 
 export const VariableBytesFromHex = Schema.Uint8ArrayFromHex.pipe(Bytes.bytesLengthBetween(0, BYTES_LENGTH))
 
-
 export const equals = Bytes.equals
 
 // =============================================================================

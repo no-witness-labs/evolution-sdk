@@ -1,4 +1,4 @@
-import { Data, Effect, Either as E, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect, FastCheck, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
@@ -149,10 +149,8 @@ export const arbitrary = FastCheck.uint8Array({
 }).chain(() =>
   // Generate a valid Script first, then CBOR-encode it and wrap in tag(24) bytes
   Script.arbitrary.map((script) => {
-    // Encode Script -> CDDL tuple
-    const cddl = E.getOrThrow(ParseResult.encodeEither(Script.FromCDDL)(script))
     // Encode CDDL (CBOR value) -> bytes using canonical options compatible with CML
-    const bytes = E.getOrThrow(ParseResult.encodeEither(CBOR.FromBytes(CBOR.CML_DEFAULT_OPTIONS))(cddl))
+    const bytes = Script.toCBOR(script)
     return new ScriptRef({ bytes }, { disableValidation: true })
   })
 )

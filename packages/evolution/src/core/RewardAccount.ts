@@ -1,3 +1,4 @@
+import { bech32 } from "@scure/base"
 import { Data, Effect as Eff, FastCheck, ParseResult, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
@@ -21,7 +22,7 @@ export class RewardAccountError extends Data.TaggedError("RewardAccountError")<{
  */
 export class RewardAccount extends Schema.TaggedClass<RewardAccount>("RewardAccount")("RewardAccount", {
   networkId: NetworkId.NetworkId,
-  stakeCredential: Credential.Credential
+  stakeCredential: Credential.CredentialSchema
 }) {
   toString(): string {
     return `RewardAccount { networkId: ${this.networkId}, stakeCredential: ${this.stakeCredential} }`
@@ -53,7 +54,7 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, Schema.type
       const addressType = header >> 4
 
       const isStakeKey = (addressType & 0b0001) === 0
-      const stakeCredential: Credential.Credential = isStakeKey
+      const stakeCredential: Credential.CredentialSchema = isStakeKey
         ? new KeyHash.KeyHash({
             hash: fromA.slice(1, 29)
           })
@@ -78,6 +79,32 @@ export const FromHex = Schema.compose(
   description: "Transforms raw hex string to RewardAccount"
 })
 
+export const FromBech32 = Schema.transformOrFail(Schema.String, Schema.typeSchema(RewardAccount), {
+  strict: true,
+  encode: (_, __, ___, toA) =>
+    Eff.gen(function* () {
+      const prefix = toA.networkId === 0 ? "stake_test" : "stake"
+      const bytes = yield* ParseResult.encode(FromBytes)(toA)
+      const words = bech32.toWords(bytes)
+      return bech32.encode(prefix, words, false)
+    }),
+  decode: (fromA, _, ast) =>
+    Eff.gen(function* () {
+      const result = yield* Eff.try({
+        try: () => {
+          const decoded = bech32.decode(fromA as any, false)
+          const bytes = bech32.fromWords(decoded.words)
+          return new Uint8Array(bytes)
+        },
+        catch: () => new ParseResult.Type(ast, fromA, `Failed to decode Bech32: ${fromA}`)
+      })
+      return yield* ParseResult.decode(FromBytes)(result)
+    })
+}).annotations({
+  identifier: "RewardAccount.FromBech32",
+  description: "Transforms Bech32 string to RewardAccount"
+})
+
 /**
  * Smart constructor for creating RewardAccount instances
  *
@@ -86,7 +113,7 @@ export const FromHex = Schema.compose(
  */
 export const make = (props: {
   networkId: NetworkId.NetworkId
-  stakeCredential: Credential.Credential
+  stakeCredential: Credential.CredentialSchema
 }): RewardAccount => new RewardAccount(props)
 
 /**
@@ -133,6 +160,14 @@ export const fromBytes = Function.makeDecodeSync(FromBytes, RewardAccountError, 
  */
 export const fromHex = Function.makeDecodeSync(FromHex, RewardAccountError, "RewardAccount.fromHex")
 
+/**
+ * Parse a RewardAccount from Bech32 string.
+ *
+ * @since 2.0.0
+ * @category parsing
+ */
+export const fromBech32 = Function.makeDecodeSync(FromBech32, RewardAccountError, "RewardAccount.fromBech32")
+
 // ============================================================================
 // Encoding Functions
 // ============================================================================
@@ -152,6 +187,14 @@ export const toBytes = Function.makeEncodeSync(FromBytes, RewardAccountError, "R
  * @category encoding
  */
 export const toHex = Function.makeEncodeSync(FromHex, RewardAccountError, "RewardAccount.toHex")
+
+/**
+ * Convert a RewardAccount to Bech32 string.
+ *
+ * @since 2.0.0
+ * @category encoding
+ */
+export const toBech32 = Function.makeEncodeSync(FromBech32, RewardAccountError, "RewardAccount.toBech32")
 
 // ============================================================================
 // Either Namespace - Either-based Error Handling
@@ -181,6 +224,14 @@ export namespace Either {
   export const fromHex = Function.makeDecodeEither(FromHex, RewardAccountError)
 
   /**
+   * Parse a RewardAccount from Bech32 string.
+   *
+   * @since 2.0.0
+   * @category parsing
+   */
+  export const fromBech32 = Function.makeDecodeEither(FromBech32, RewardAccountError)
+
+  /**
    * Convert a RewardAccount to bytes.
    *
    * @since 2.0.0
@@ -195,4 +246,12 @@ export namespace Either {
    * @category encoding
    */
   export const toHex = Function.makeEncodeEither(FromHex, RewardAccountError)
+
+  /**
+   * Convert a RewardAccount to Bech32 string.
+   *
+   * @since 2.0.0
+   * @category encoding
+   */
+  export const toBech32 = Function.makeEncodeEither(FromBech32, RewardAccountError)
 }

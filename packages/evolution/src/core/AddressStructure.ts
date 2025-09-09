@@ -25,8 +25,8 @@ export class AddressStructureError extends Data.TaggedError("AddressStructureErr
  */
 export class AddressStructure extends Schema.Class<AddressStructure>("AddressStructure")({
   networkId: NetworkId.NetworkId,
-  paymentCredential: Credential.Credential,
-  stakingCredential: Schema.optional(Credential.Credential)
+  paymentCredential: Credential.CredentialSchema,
+  stakingCredential: Schema.optional(Credential.CredentialSchema)
 }) {
   toString(): string {
     const staking = this.stakingCredential ? `, stakingCredential: ${this.stakingCredential}` : ""
@@ -84,12 +84,12 @@ export const FromBytes = Schema.transformOrFail(
         if (fromA.length === 57) {
           // BaseAddress (with staking credential)
           const isPaymentKey = (addressTypeBits & 0b0001) === 0
-          const paymentCredential: Credential.Credential = isPaymentKey
+          const paymentCredential: Credential.CredentialSchema = isPaymentKey
             ? new KeyHash.KeyHash({ hash: fromA.slice(1, 29) })
             : new ScriptHash.ScriptHash({ hash: fromA.slice(1, 29) })
 
           const isStakeKey = (addressTypeBits & 0b0010) === 0
-          const stakingCredential: Credential.Credential = isStakeKey
+          const stakingCredential: Credential.CredentialSchema = isStakeKey
             ? new KeyHash.KeyHash({ hash: fromA.slice(29, 57) })
             : new ScriptHash.ScriptHash({ hash: fromA.slice(29, 57) })
 
@@ -101,7 +101,7 @@ export const FromBytes = Schema.transformOrFail(
         } else if (fromA.length === 29) {
           // EnterpriseAddress (no staking credential)
           const isPaymentKey = (addressTypeBits & 0b0001) === 0
-          const paymentCredential: Credential.Credential = isPaymentKey
+          const paymentCredential: Credential.CredentialSchema = isPaymentKey
             ? new KeyHash.KeyHash({ hash: fromA.slice(1, 29) })
             : new ScriptHash.ScriptHash({ hash: fromA.slice(1, 29) })
 

@@ -4,6 +4,12 @@ import type { NonEmptyReadonlyArray } from "effect/Array"
 
 import * as Data from "./Data.js"
 
+export interface ByteArray
+  extends Schema.transform<
+    Schema.SchemaClass<Uint8Array<ArrayBufferLike>, Uint8Array<ArrayBufferLike>, never>,
+    typeof Schema.String
+  > {}
+
 /**
  * Schema transformations between TypeScript types and Plutus Data
  *
@@ -13,20 +19,67 @@ import * as Data from "./Data.js"
  */
 
 /**
- * ByteArray schema (hex string) directly re-exported from Data layer.
+ * ByteArray schema that transforms hex string to Data.ByteArray for PlutusData.
+ * This enables withSchema compatibility by transforming from hex string to Uint8Array.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const ByteArray = Data.ByteArray
+export const ByteArray: ByteArray = Schema.transform(Schema.typeSchema(Data.ByteArray), Schema.String, {
+  strict: true,
+  encode: (hex: string) => {
+    // Convert hex string to Uint8Array
+    if (hex.length % 2 !== 0) {
+      throw new Error("Invalid hex string length")
+    }
+    const bytes = new Uint8Array(hex.length / 2)
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16)
+    }
+    return bytes
+  },
+  decode: (bytes: Uint8Array) => {
+    // Convert Uint8Array to hex string
+    return globalThis.Array.from(bytes, (byte: number) => byte.toString(16).padStart(2, "0")).join("")
+  }
+})
 
 /**
- * Integer schema (bigint) directly re-exported from Data layer.
+ * HexString schema that transforms hex string to ByteArray for PlutusData.
+ * This transforms from hex string to Uint8Array (runtime Data type) and back.
  *
  * @since 2.0.0
  * @category schemas
  */
-export const Integer = Data.IntSchema
+export const HexString = Schema.transform(Schema.Uint8ArrayFromSelf, Schema.String, {
+  strict: true,
+  encode: (hex: string) => {
+    // Convert hex string to Uint8Array
+    if (hex.length % 2 !== 0) {
+      throw new Error("Invalid hex string length")
+    }
+    const bytes = new Uint8Array(hex.length / 2)
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16)
+    }
+    return bytes
+  },
+  decode: (bytes: Uint8Array) => {
+    // Convert Uint8Array to hex string
+    return globalThis.Array.from(bytes, (byte: number) => byte.toString(16).padStart(2, "0")).join("")
+  }
+})
+
+export interface Integer extends Schema.SchemaClass<bigint, bigint, never> {}
+
+/**
+ * Integer schema that represents Data.Int for PlutusData.
+ * This enables withSchema compatibility by using the Data type schema directly.
+ *
+ * @since 2.0.0
+ * @category schemas
+ */
+export const Integer: Integer = Schema.typeSchema(Data.IntSchema)
 
 interface Literal<Literals extends NonEmptyReadonlyArray<SchemaAST.LiteralValue>>
   extends Schema.transform<Schema.SchemaClass<Data.Constr, Data.Constr, never>, Schema.Literal<[...Literals]>> {}
@@ -59,19 +112,14 @@ export const OneLiteral = <Single extends Exclude<SchemaAST.LiteralValue, null |
     decode: (_value) => self
   })
 
-interface Array<S extends Schema.Schema.Any> extends Schema.transform<typeof Data.ListSchema, Schema.Array$<S>> {}
+interface Array<S extends Schema.Schema.Any> extends Schema.Array$<S> {}
 
 /**
- * Creates a schema for arrays with Plutus list type annotation
+ * Creates a schema for arrays - just passes through to Schema.Array directly
  *
  * @since 1.0.0
  */
-export const Array = <S extends Schema.Schema.Any>(items: S): Array<S> =>
-  Schema.transform(Data.ListSchema, Schema.Array(items), {
-    strict: false,
-    encode: (value) => Data.list([...value] as globalThis.Array<Data.Data>),
-    decode: (value) => [...value]
-  })
+export const Array = <S extends Schema.Schema.Any>(items: S): Array<S> => Schema.Array(items)
 
 interface Map<K extends Schema.Schema.Any, V extends Schema.Schema.Any>
   extends Schema.transform<
@@ -312,26 +360,16 @@ export const Union = <Members extends ReadonlyArray<Schema.Schema.Any>>(...membe
   })
 }
 
-interface Tuple<Elements extends Schema.TupleType.Elements>
-  extends Schema.transform<typeof Data.ListSchema, Schema.Tuple<Elements>> {}
+interface Tuple<Elements extends Schema.TupleType.Elements> extends Schema.Tuple<Elements> {}
 /**
- * Creates a schema for tuple types using Plutus Data List transformation
- * Tuples are represented as a constructor with index 0 and fields as an array
+ * Creates a schema for tuple types - just passes through to Schema.Tuple directly
  *
  * @since 2.0.0
  */
 export const Tuple = <Elements extends Schema.TupleType.Elements>(element: [...Elements]): Tuple<Elements> =>
-  Schema.transform(
-    Data.ListSchema,
-    Schema.Tuple(...element).annotations({
-      identifier: "Tuple"
-    }),
-    {
-      strict: false,
-      encode: (value) => Data.list([...value] as globalThis.Array<Data.Data>),
-      decode: (value) => [...value] as any
-    }
-  )
+  Schema.Tuple(...element).annotations({
+    identifier: "Tuple"
+  }) as Tuple<Elements>
 
 export const compose = Schema.compose
 

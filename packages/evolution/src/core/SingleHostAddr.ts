@@ -139,7 +139,7 @@ export const FromCDDL = Schema.transformOrFail(
         const ipv4 =
           ipv4Value === null || ipv4Value === undefined
             ? Option.none()
-            : Option.some(yield* ParseResult.decode(Schema.typeSchema(IPv4.IPv4))({ _tag: "IPv4", bytes: ipv4Value }))
+            : Option.some(yield* ParseResult.decode(IPv4.FromBytes)(ipv4Value))
 
         const ipv6 =
           ipv6Value === null || ipv6Value === undefined

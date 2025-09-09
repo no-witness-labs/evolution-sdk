@@ -38,7 +38,7 @@ export class ProposalProcedureError extends Data.TaggedError("ProposalProcedureE
  */
 export class ProposalProcedure extends Schema.Class<ProposalProcedure>("ProposalProcedure")({
   deposit: Coin.Coin,
-  rewardAccount: RewardAccount.RewardAccount,
+  rewardAccount: RewardAccount.FromBech32,
   governanceAction: GovernanceAction.GovernanceAction,
   anchor: Schema.NullOr(Anchor.Anchor)
 }) {}

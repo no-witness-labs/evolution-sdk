@@ -34,11 +34,15 @@ export class AuxiliaryDataHash extends Schema.TaggedClass<AuxiliaryDataHash>()("
   bytes: Bytes32.BytesFromHex
 }) {}
 
-export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(AuxiliaryDataHash), {
-  strict: true,
-  decode: (bytes) => new AuxiliaryDataHash({ bytes }, { disableValidation: true }),
-  encode: (a) => a.bytes
-}).annotations({
+export const FromBytes = Schema.transform(
+  Schema.typeSchema(Bytes32.BytesFromHex),
+  Schema.typeSchema(AuxiliaryDataHash),
+  {
+    strict: true,
+    decode: (bytes) => new AuxiliaryDataHash({ bytes }, { disableValidation: true }),
+    encode: (a) => a.bytes
+  }
+).annotations({
   identifier: "AuxiliaryDataHash.FromBytes"
 })
 

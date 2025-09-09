@@ -28,7 +28,7 @@ export class MintError extends Data.TaggedError("MintError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const AssetMap = Schema.MapFromSelf({
+export const AssetMap = Schema.Map({
   key: AssetName.AssetName,
   value: NonZeroInt64.NonZeroInt64
 }).annotations({
@@ -50,7 +50,7 @@ export type AssetMap = typeof AssetMap.Type
  * @since 2.0.0
  * @category schemas
  */
-export const Mint = Schema.MapFromSelf({
+export const Mint = Schema.Map({
   key: PolicyId.PolicyId,
   value: AssetMap
 })
@@ -304,7 +304,7 @@ export const FromCDDL = Schema.transformOrFail(Schema.encodedSchema(CDDLSchema),
         const assetMap = new Map<AssetName.AssetName, NonZeroInt64.NonZeroInt64>()
         for (const [assetNameBytes, amount] of assetMapCddl.entries()) {
           const assetName = yield* ParseResult.decode(AssetName.FromBytes)(assetNameBytes)
-          const nonZeroAmount = yield* ParseResult.decode(NonZeroInt64.NonZeroInt64)(amount)
+          const nonZeroAmount = yield* ParseResult.decode(Schema.typeSchema(NonZeroInt64.NonZeroInt64))(amount)
 
           assetMap.set(assetName, nonZeroAmount)
         }
@@ -371,7 +371,7 @@ export const arbitrary: FastCheck.Arbitrary<Mint> = FastCheck.oneof(
         maxLength: 5,
         selector: (a) => Bytes.toHexUnsafe(a.bytes)
       }).chain((names) =>
-        FastCheck.array(NonZeroInt64.arbitrary.map(NonZeroInt64.make), {
+        FastCheck.array(NonZeroInt64.arbitrary, {
           minLength: names.length,
           maxLength: names.length
         }).map((amounts) => names.map((n, i) => [n, amounts[i]] as const))

@@ -31,11 +31,15 @@ export class AssetName extends Schema.TaggedClass<AssetName>()("AssetName", {
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.VariableBytesFromHex), Schema.typeSchema(AssetName), {
-  strict: true,
-  decode: (bytes) => new AssetName({ bytes }, { disableValidation: true }),
-  encode: (assetName) => assetName.bytes
-}).annotations({
+export const FromBytes = Schema.transform(
+  Schema.typeSchema(Bytes32.VariableBytesFromHex),
+  Schema.typeSchema(AssetName),
+  {
+    strict: true,
+    decode: (bytes) => new AssetName({ bytes }, { disableValidation: true }),
+    encode: (assetName) => assetName.bytes
+  }
+).annotations({
   identifier: "AssetName.FromBytes"
 })
 

@@ -94,25 +94,16 @@ export type PlutusScript = typeof PlutusScript.Type
  */
 export class TransactionWitnessSet extends Schema.Class<TransactionWitnessSet>("TransactionWitnessSet")({
   vkeyWitnesses: Schema.optional(Schema.Array(VKeyWitness)),
-  nativeScripts: Schema.optional(Schema.Array(NativeScripts.Native)),
+  nativeScripts: Schema.optional(Schema.Array(NativeScripts.NativeScript)),
   bootstrapWitnesses: Schema.optional(Schema.Array(Bootstrap.BootstrapWitness)),
   plutusV1Scripts: Schema.optional(Schema.Array(PlutusV1.PlutusV1)),
   plutusData: Schema.optional(Schema.Array(PlutusData.DataSchema)),
-  redeemers: Schema.optional(Schema.Array(Schema.typeSchema(Redeemer.Redeemer))),
+  redeemers: Schema.optional(Schema.Array(Redeemer.Redeemer)),
   plutusV2Scripts: Schema.optional(Schema.Array(PlutusV2.PlutusV2)),
   plutusV3Scripts: Schema.optional(Schema.Array(PlutusV3.PlutusV3))
 }) {}
 
-/**
- * CDDL schema for VKeyWitness.
- *
- * @since 2.0.0
- * @category schemas
- */
-const VKeyWitnessCDDL = Schema.Tuple(
-  CBOR.ByteArray, // vkey as bytes
-  CBOR.ByteArray // signature as bytes
-)
+// Note: Individual tuple encodings are handled inline during encode/decode.
 
 /**
  * CDDL schema for BootstrapWitness.
@@ -123,22 +114,25 @@ const VKeyWitnessCDDL = Schema.Tuple(
 // BootstrapWitness CDDL schema provided by ./BootstrapWitness.ts
 
 /**
- * CDDL schema for TransactionWitnessSet as struct/record structure.
- * Supports both tagged (CBOR tag 258) and untagged arrays for nonempty_set.
- * Uses number keys to leverage CBOR Record encoding with proper integer key handling.
+ * CDDL schema for TransactionWitnessSet encoded as a CBOR map with integer keys.
+ * Keys and values follow Conway-era CDDL:
+ *   0: nonempty_set<vkeywitness>
+ *   1: nonempty_set<native_script>
+ *   2: nonempty_set<bootstrap_witness>
+ *   3: nonempty_set<plutus_v1_script>
+ *   4: nonempty_set<plutus_data>
+ *   5: redeemers (array of [tag, index, data, ex_units])
+ *   6: nonempty_set<plutus_v2_script>
+ *   7: nonempty_set<plutus_v3_script>
+ *
+ * nonempty_set<a0> = #6.258([+ a0]) / [+ a0]
  *
  * @since 2.0.0
  * @category schemas
  */
-export const CDDLSchema = Schema.Struct({
-  0: Schema.optional(CBOR.tag(258, Schema.Array(VKeyWitnessCDDL))), // 0: tagged nonempty_set<vkeywitness>
-  1: Schema.optional(CBOR.tag(258, Schema.Array(NativeScripts.CDDLSchema))), // 1: tagged nonempty_set<native_script>
-  2: Schema.optional(CBOR.tag(258, Schema.Array(Bootstrap.CDDLSchema))), // 2: tagged nonempty_set<bootstrap_witness>
-  3: Schema.optional(CBOR.tag(258, Schema.Array(PlutusV1.CDDLSchema))), // 3: tagged nonempty_set<plutus_v1_script>
-  4: Schema.optional(CBOR.tag(258, Schema.Array(PlutusData.CDDLSchema))), // 4: tagged nonempty_set<plutus_data>
-  5: Schema.optional(Schema.Array(Redeemer.CDDLSchema)), // 5: redeemers
-  6: Schema.optional(CBOR.tag(258, Schema.Array(PlutusV2.CDDLSchema))), // 6: tagged nonempty_set<plutus_v2_script>
-  7: Schema.optional(CBOR.tag(258, Schema.Array(PlutusV3.CDDLSchema))) // 7: tagged nonempty_set<plutus_v3_script>
+export const CDDLSchema = Schema.MapFromSelf({
+  key: CBOR.Integer,
+  value: CBOR.CBORSchema
 })
 
 /**
@@ -151,7 +145,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
   strict: true,
   encode: (toA) =>
     Eff.gen(function* () {
-      const record: { [key: number]: any } = {}
+      const record = new Map<bigint, CBOR.CBOR>()
 
       // 0: vkeywitnesses
       if (toA.vkeyWitnesses && toA.vkeyWitnesses.length > 0) {
@@ -165,7 +159,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
           )
         )
         // Use CBOR tag 258 for nonempty_set as per CDDL spec
-        record[0] = CBOR.Tag.make({ tag: 258, value: vkeyWitnesses })
+        record.set(0n, CBOR.Tag.make({ tag: 258, value: vkeyWitnesses }))
       }
 
       // 1: native_scripts
@@ -174,7 +168,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
           toA.nativeScripts.map((script) => ParseResult.encode(NativeScripts.FromCDDL)(script))
         )
         // Use CBOR tag 258 for nonempty_set as per CDDL spec
-        record[1] = CBOR.Tag.make({ tag: 258, value: nativeScripts })
+        record.set(1n, CBOR.Tag.make({ tag: 258, value: nativeScripts }))
       }
 
       // 2: bootstrap_witnesses
@@ -183,14 +177,14 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
           toA.bootstrapWitnesses.map((witness) => ParseResult.encode(Bootstrap.FromCDDL)(witness))
         )
         // Use CBOR tag 258 for nonempty_set as per CDDL spec
-        record[2] = CBOR.Tag.make({ tag: 258, value: bootstrapWitnesses })
+        record.set(2n, CBOR.Tag.make({ tag: 258, value: bootstrapWitnesses }))
       }
 
       // 3: plutus_v1_scripts
       if (toA.plutusV1Scripts && toA.plutusV1Scripts.length > 0) {
         const plutusV1Scripts = toA.plutusV1Scripts.map((script) => script.bytes)
         // Use CBOR tag 258 for nonempty_set as per CDDL spec
-        record[3] = CBOR.Tag.make({ tag: 258, value: plutusV1Scripts })
+        record.set(3n, CBOR.Tag.make({ tag: 258, value: plutusV1Scripts }))
       }
 
       // 4: plutus_data
@@ -199,7 +193,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
           toA.plutusData.map((data) => ParseResult.encode(PlutusData.FromCDDL)(data))
         )
         // Use CBOR tag 258 for nonempty_set as per CDDL spec
-        record[4] = CBOR.Tag.make({ tag: 258, value: plutusDataCBOR })
+        record.set(4n, CBOR.Tag.make({ tag: 258, value: plutusDataCBOR }))
       }
 
       // 5: redeemers
@@ -213,21 +207,21 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
             })
           )
         )
-        record[5] = redeemers
+        record.set(5n, redeemers)
       }
 
       // 6: plutus_v2_scripts
       if (toA.plutusV2Scripts && toA.plutusV2Scripts.length > 0) {
         const plutusV2Scripts = toA.plutusV2Scripts.map((script) => script.bytes)
         // Use CBOR tag 258 for nonempty_set as per CDDL spec
-        record[6] = CBOR.Tag.make({ tag: 258, value: plutusV2Scripts })
+        record.set(6n, CBOR.Tag.make({ tag: 258, value: plutusV2Scripts }))
       }
 
       // 7: plutus_v3_scripts
       if (toA.plutusV3Scripts && toA.plutusV3Scripts.length > 0) {
         const plutusV3Scripts = toA.plutusV3Scripts.map((script) => script.bytes)
         // Use CBOR tag 258 for nonempty_set as per CDDL spec
-        record[7] = CBOR.Tag.make({ tag: 258, value: plutusV3Scripts })
+        record.set(7n, CBOR.Tag.make({ tag: 258, value: plutusV3Scripts }))
       }
 
       return record
@@ -236,7 +230,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
     Eff.gen(function* () {
       const witnessSet: {
         vkeyWitnesses?: Array<VKeyWitness>
-        nativeScripts?: Array<NativeScripts.Native>
+        nativeScripts?: Array<NativeScripts.NativeScript>
         bootstrapWitnesses?: Array<Bootstrap.BootstrapWitness>
         plutusV1Scripts?: Array<PlutusV1.PlutusV1>
         plutusData?: Array<PlutusData.Data>
@@ -246,10 +240,26 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       } = {}
 
       // Parse each field from the record
+      // Helper to accept nonempty_set<a0> in both forms:
+      // - Tagged: #6.258([+ a0])
+      // - Untagged: [+ a0]
+      const asNonEmptyArray = <T>(value: unknown): ReadonlyArray<T> | undefined => {
+        if (value === undefined) return undefined
+        if (CBOR.isTag(value)) {
+          const tag = value as { _tag: "Tag"; tag: number; value: unknown }
+          if (tag.tag !== 258) return undefined
+          if (Array.isArray(tag.value)) return tag.value as ReadonlyArray<T>
+          return undefined
+        }
+        if (Array.isArray(value)) return value as ReadonlyArray<T>
+        return undefined
+      }
+
       // 0: vkeywitnesses
-      if (fromA[0] !== undefined) {
+      const vkeysArr = asNonEmptyArray<readonly [Uint8Array, Uint8Array]>(fromA.get(0n))
+      if (vkeysArr !== undefined) {
         const vkeyWitnesses: Array<VKeyWitness> = []
-        for (const [vkeyBytes, signatureBytes] of fromA[0].value) {
+        for (const [vkeyBytes, signatureBytes] of vkeysArr) {
           const vkey = yield* ParseResult.decode(VKey.FromBytes)(vkeyBytes)
           const signature = yield* ParseResult.decode(Ed25519Signature.FromBytes)(signatureBytes)
           vkeyWitnesses.push(new VKeyWitness({ vkey, signature }))
@@ -258,17 +268,19 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       }
 
       // 1: native_scripts
-      if (fromA[1] !== undefined) {
+      const nativeArr = asNonEmptyArray<typeof NativeScripts.CDDLSchema.Type>(fromA.get(1n))
+      if (nativeArr !== undefined) {
         const nativeScripts = yield* Eff.all(
-          fromA[1].value.map((scriptCBOR) => ParseResult.decode(NativeScripts.FromCDDL)(scriptCBOR))
+          nativeArr.map((scriptCBOR) => ParseResult.decode(NativeScripts.FromCDDL)(scriptCBOR))
         )
         witnessSet.nativeScripts = nativeScripts
       }
 
       // 2: bootstrap_witnesses
-      if (fromA[2] !== undefined) {
+      const bootstrapArr = asNonEmptyArray<typeof Bootstrap.CDDLSchema.Type>(fromA.get(2n))
+      if (bootstrapArr !== undefined) {
         const bootstrapWitnesses: Array<Bootstrap.BootstrapWitness> = []
-        for (const tuple of fromA[2].value) {
+        for (const tuple of bootstrapArr) {
           const bw = yield* ParseResult.decode(Bootstrap.FromCDDL)(tuple)
           bootstrapWitnesses.push(bw)
         }
@@ -276,42 +288,78 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Tra
       }
 
       // 3: plutus_v1_scripts
-      if (fromA[3] !== undefined) {
-        const plutusV1Scripts = fromA[3].value.map((script) => new PlutusV1.PlutusV1({ bytes: script }))
+      const p1Arr = asNonEmptyArray<Uint8Array>(fromA.get(3n))
+      if (p1Arr !== undefined) {
+        const plutusV1Scripts = p1Arr.map((script) => new PlutusV1.PlutusV1({ bytes: script }))
         witnessSet.plutusV1Scripts = plutusV1Scripts
       }
 
       // 4: plutus_data
-      if (fromA[4] !== undefined) {
+      const pdataArr = asNonEmptyArray<typeof PlutusData.CDDLSchema.Type>(fromA.get(4n))
+      if (pdataArr !== undefined) {
+        // Some real-world CBOR producers may include the simple value `undefined` inside this set.
+        // Filter out such entries before decoding to strict PlutusData.
+        const isDefined = <T>(x: T | undefined): x is T => x !== undefined
+        const sanitized = pdataArr.filter(isDefined)
         const plutusData = yield* Eff.all(
-          fromA[4].value.map((dataCBOR) => ParseResult.decode(PlutusData.FromCDDL)(dataCBOR))
+          sanitized.map((dataCBOR) => ParseResult.decode(PlutusData.FromCDDL)(dataCBOR))
         )
         witnessSet.plutusData = plutusData
       }
 
-      // 5: redeemers
-      if (fromA[5] !== undefined) {
+      // 5: redeemers (note: some producers may wrap this in nonempty_set tag 258 even though CDDL doesn't require it)
+      const asRedeemersArray = (
+        value: unknown
+      ):
+        | ReadonlyArray<readonly [bigint, bigint, typeof PlutusData.CDDLSchema.Type, readonly [bigint, bigint]]>
+        | undefined => {
+        if (value === undefined) return undefined
+        if (CBOR.isTag(value)) {
+          const tag = value as { _tag: "Tag"; tag: number; value: unknown }
+          if (tag.tag !== 258) return undefined
+          if (Array.isArray(tag.value))
+            return tag.value as ReadonlyArray<
+              readonly [bigint, bigint, typeof PlutusData.CDDLSchema.Type, readonly [bigint, bigint]]
+            >
+          return undefined
+        }
+        if (Array.isArray(value))
+          return value as ReadonlyArray<
+            readonly [bigint, bigint, typeof PlutusData.CDDLSchema.Type, readonly [bigint, bigint]]
+          >
+        return undefined
+      }
+
+      const redeemersArray = asRedeemersArray(fromA.get(5n))
+      if (redeemersArray !== undefined) {
         const redeemers: Array<Redeemer.Redeemer> = []
-        for (const [tag, index, dataCBOR, exUnits] of fromA[5]) {
-          const data = yield* ParseResult.decode(PlutusData.FromCDDL)(dataCBOR)
+        for (const [tag, index, dataCBOR, exUnits] of redeemersArray) {
+          // Guard against unexpected CBOR simple `undefined` in datum position by substituting empty bytes
+          const safeDataCBOR = (
+            dataCBOR === undefined ? new Uint8Array(0) : dataCBOR
+          ) as typeof PlutusData.CDDLSchema.Type
+          const data = yield* ParseResult.decode(PlutusData.FromCDDL)(safeDataCBOR)
           redeemers.push(new Redeemer.Redeemer({ tag: Redeemer.integerToTag(tag), index, data, exUnits }))
         }
         witnessSet.redeemers = redeemers
       }
 
       // 6: plutus_v2_scripts
-      if (fromA[6] !== undefined) {
-        const plutusV2Scripts = fromA[6].value.map((bytes) => new PlutusV2.PlutusV2({ bytes }))
+      const p2Arr = asNonEmptyArray<Uint8Array>(fromA.get(6n))
+      if (p2Arr !== undefined) {
+        const plutusV2Scripts = p2Arr.map((bytes) => new PlutusV2.PlutusV2({ bytes }))
         witnessSet.plutusV2Scripts = plutusV2Scripts
       }
 
       // 7: plutus_v3_scripts
-      if (fromA[7] !== undefined) {
-        const plutusV3Scripts = fromA[7].value.map((bytes) => new PlutusV3.PlutusV3({ bytes }))
+      const p3Arr = asNonEmptyArray<Uint8Array>(fromA.get(7n))
+      if (p3Arr !== undefined) {
+        const plutusV3Scripts = p3Arr.map((bytes) => new PlutusV3.PlutusV3({ bytes }))
         witnessSet.plutusV3Scripts = plutusV3Scripts
       }
 
-      return yield* ParseResult.decode(Schema.typeSchema(TransactionWitnessSet))(witnessSet)
+      // Build the class instance directly to allow fully empty witness sets
+      return new TransactionWitnessSet(witnessSet, { disableValidation: true })
     })
 })
 
@@ -495,7 +543,7 @@ export const fromVKeyWitnesses = (witnesses: Array<VKeyWitness>): TransactionWit
  * @since 2.0.0
  * @category constructors
  */
-export const fromNativeScripts = (scripts: Array<NativeScripts.Native>): TransactionWitnessSet =>
+export const fromNativeScripts = (scripts: Array<NativeScripts.NativeScript>): TransactionWitnessSet =>
   TransactionWitnessSet.make({ nativeScripts: scripts })
 
 // ============================================================================

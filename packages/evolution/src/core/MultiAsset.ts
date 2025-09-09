@@ -25,7 +25,7 @@ export class MultiAssetError extends Data.TaggedError("MultiAssetError")<{
  * @since 2.0.0
  * @category schemas
  */
-export const AssetMap = Schema.MapFromSelf({
+export const AssetMap = Schema.Map({
   key: AssetName.AssetName,
   value: PositiveCoin.PositiveCoinSchema
 })
@@ -54,7 +54,7 @@ export type AssetMap = typeof AssetMap.Type
  * @since 2.0.0
  * @category schemas
  */
-export const MultiAsset = Schema.MapFromSelf({
+export const MultiAsset = Schema.Map({
   key: PolicyId.PolicyId,
   value: AssetMap
 })
@@ -76,14 +76,7 @@ export const MultiAsset = Schema.MapFromSelf({
  * @category model
  */
 export interface MultiAsset extends Schema.Schema.Type<typeof MultiAsset> {}
-
-/**
- * Smart constructor for MultiAsset that validates and applies branding.
- *
- * @since 2.0.0
- * @category constructors
- */
-export const make = Schema.decodeSync(MultiAsset)
+// export type MultiAsset = typeof MultiAsset.Type
 
 /**
  * Create an empty Map for building MultiAssets (note: empty maps will fail validation).
@@ -106,7 +99,9 @@ export const singleton = (
   amount: PositiveCoin.PositiveCoin
 ): MultiAsset => {
   const assetMap = new Map([[assetName, amount]])
-  return make(new Map([[policyId, assetMap]]))
+
+  const multiAsset = new Map([[policyId, assetMap]])
+  return multiAsset as MultiAsset
 }
 
 /**
@@ -132,12 +127,12 @@ export const addAsset = (
 
     const result = new Map(multiAsset)
     result.set(policyId, updatedAssetMap)
-    return make(result)
+    return result as MultiAsset
   } else {
     const newAssetMap = new Map([[assetName, amount]])
     const result = new Map(multiAsset)
     result.set(policyId, newAssetMap)
-    return make(result)
+    return result as MultiAsset
   }
 }
 
@@ -264,7 +259,7 @@ export const arbitrary: FastCheck.Arbitrary<MultiAsset> = FastCheck.uniqueArray(
         result.set(policy, assetMap as Map<AssetName.AssetName, PositiveCoin.PositiveCoin>)
       }
 
-      return make(result)
+      return result as MultiAsset
     }
   )
 })
@@ -327,7 +322,7 @@ export const FromCDDL = Schema.transformOrFail(
           result.set(policyId, assetMap)
         }
 
-        return yield* ParseResult.decode(MultiAsset)(result)
+        return result as MultiAsset
       })
   }
 )
@@ -475,7 +470,7 @@ export const subtract = (a: MultiAsset, b: MultiAsset): MultiAsset => {
     })
   }
 
-  return make(result)
+  return result as MultiAsset
 }
 
 // ============================================================================

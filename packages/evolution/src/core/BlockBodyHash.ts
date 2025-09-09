@@ -23,7 +23,7 @@ export class BlockBodyHashError extends Data.TaggedError("BlockBodyHashError")<{
  * @category model
  */
 export class BlockBodyHash extends Schema.TaggedClass<BlockBodyHash>()("BlockBodyHash", {
-  bytes: Bytes32.BytesSchema
+  bytes: Bytes32.BytesFromHex
 }) {}
 
 /**
@@ -32,7 +32,7 @@ export class BlockBodyHash extends Schema.TaggedClass<BlockBodyHash>()("BlockBod
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, BlockBodyHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(BlockBodyHash), {
   strict: true,
   decode: (bytes) => new BlockBodyHash({ bytes }, { disableValidation: true }),
   encode: (bbh) => bbh.bytes
@@ -47,7 +47,7 @@ export const FromBytes = Schema.transform(Bytes32.BytesSchema, BlockBodyHash, {
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
+  Bytes32.BytesFromHex, // string -> Bytes32
   FromBytes // Bytes32 -> BlockBodyHash
 ).annotations({
   identifier: "BlockBodyHash.FromHex"

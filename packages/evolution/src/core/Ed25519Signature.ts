@@ -13,7 +13,7 @@ import * as Function from "./Function.js"
  * @category model
  */
 export class Ed25519Signature extends Schema.Class<Ed25519Signature>("Ed25519Signature")({
-  bytes: Bytes64.BytesSchema
+  bytes: Bytes64.BytesFromHex
 }) {
   toJSON(): string {
     return toHex(this)
@@ -34,15 +34,19 @@ export class Ed25519Signature extends Schema.Class<Ed25519Signature>("Ed25519Sig
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes64.BytesSchema, Ed25519Signature, {
-  strict: true,
-  decode: (bytes) =>
-    make(
-      { bytes },
-      { disableValidation: true } // Disable validation since we already check length in Bytes64
-    ),
-  encode: (signature) => new Uint8Array(signature.bytes)
-}).annotations({
+export const FromBytes = Schema.transform(
+  Schema.typeSchema(Bytes64.BytesFromHex),
+  Schema.typeSchema(Ed25519Signature),
+  {
+    strict: true,
+    decode: (bytes) =>
+      make(
+        { bytes },
+        { disableValidation: true } // Disable validation since we already check length in Bytes64
+      ),
+    encode: (signature) => new Uint8Array(signature.bytes)
+  }
+).annotations({
   identifier: "Ed25519Signature.FromBytes"
 })
 
@@ -53,7 +57,7 @@ export const FromBytes = Schema.transform(Bytes64.BytesSchema, Ed25519Signature,
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes64.FromHex, // string -> Bytes64
+  Bytes64.BytesFromHex, // string -> Bytes64
   FromBytes
 ).annotations({
   identifier: "Ed25519Signature.FromHex"

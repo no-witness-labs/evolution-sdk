@@ -3,44 +3,59 @@ import { Either, Schema } from "effect"
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
 
+type ErrorCtor<E extends Error> = new (props: { message?: string; cause?: unknown }) => E
+
 /**
  * Creates a named function with proper stack traces using dynamic object property
  */
-export const makeDecodeSync = <T, A>(
+export const makeDecodeSync = <T, A, E extends Error>(
   schemaTransformer: Schema.Schema<T, A>,
-  ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
+  ErrorClass: ErrorCtor<E>,
   functionName: string
 ): ((input: A) => T) => {
   // Pre-create decoder once to avoid per-call allocation/closure overhead
-  const decode = Schema.decodeSync(schemaTransformer)
+  const decode = Schema.decodeEither(schemaTransformer)
+  // Create a named function using object property syntax
   const fn = {
-    [functionName]: (input: A): T => {
-      try {
-        return decode(input)
-      } catch (e) {
-        // Keep error creation cheap; avoid stringifying potentially large inputs
-        throw new ErrorClass({ message: `Failed to decode in ${functionName}`, cause: (e as Error).message })
+    [functionName](input: A): T {
+      const result = decode(input)
+      if (result._tag === "Left") {
+        const error = new ErrorClass({
+          message: `Failed to decode in ${functionName}`,
+          cause: result.left
+        })
+        if (Error.captureStackTrace) {
+          Error.captureStackTrace(error, fn[functionName])
+        }
+        throw error
       }
+      return result.right
     }
   }
   return fn[functionName]
 }
 
-export const makeEncodeSync = <T, A>(
+export const makeEncodeSync = <T, A, E extends Error>(
   schemaTransformer: Schema.Schema<T, A>,
-  ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
+  ErrorClass: ErrorCtor<E>,
   functionName: string
 ): ((input: T) => A) => {
   // Pre-create encoder once to avoid per-call allocation/closure overhead
-  const encode = Schema.encodeSync(schemaTransformer)
+  const encode = Schema.encodeEither(schemaTransformer)
   const fn = {
     [functionName]: (input: T): A => {
-      try {
-        return encode(input)
-      } catch (e) {
-        // Keep error creation cheap; avoid stringifying potentially large inputs
-        throw new ErrorClass({ message: `Failed to encode in ${functionName}`, cause: (e as Error).message })
+      const result = encode(input)
+      if (result._tag === "Left") {
+        const error = new ErrorClass({
+          message: `Failed to encode in ${functionName}`,
+          cause: result.left
+        })
+        if (Error.captureStackTrace) {
+          Error.captureStackTrace(error, fn[functionName])
+        }
+        throw error
       }
+      return result.right
     }
   }
   return fn[functionName]
@@ -53,9 +68,9 @@ export const makeEncodeSync = <T, A>(
  * @since 2.0.0
  * @category constructors
  */
-export const makeCBOREncodeSync = <A, T extends CBOR.CBOR>(
+export const makeCBOREncodeSync = <A, T extends CBOR.CBOR, E extends Error>(
   schemaTransformer: Schema.Schema<A, T>,
-  ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
+  ErrorClass: ErrorCtor<E>,
   functionName: string,
   defaultOptions?: CBOR.CodecOptions
 ): ((input: A, options?: CBOR.CodecOptions) => Uint8Array) => {
@@ -67,29 +82,27 @@ export const makeCBOREncodeSync = <A, T extends CBOR.CBOR>(
         const cborValue = encode(input)
         return CBOR.internalEncodeSync(cborValue, options || defaultOptions)
       } catch (e) {
-        // Keep error creation cheap; avoid stringifying potentially large inputs
-        throw new ErrorClass({ message: `Failed to encode in ${functionName}`, cause: (e as Error).message })
+        const error = new ErrorClass({ message: `Failed to encode in ${functionName}`, cause: e })
+        if (Error.captureStackTrace) {
+          Error.captureStackTrace(error, wrapped)
+        }
+        throw error
       }
     }
   }
-  return fn[functionName]
+  const wrapped = fn[functionName]
+  return wrapped
 }
 
 export const makeDecodeEither =
-  <T, A, TError extends Error>(
-    schema: Schema.Schema<T, A>,
-    ErrorClass: new (props: { message?: string; cause?: unknown }) => TError
-  ) =>
+  <T, A, E extends Error>(schema: Schema.Schema<T, A>, ErrorClass: ErrorCtor<E>) =>
   (input: A) =>
     Schema.decodeEither(schema)(input).pipe(
       Either.mapLeft((e) => new ErrorClass({ message: "Failed to decode input", cause: e }))
     )
 
 export const makeEncodeEither =
-  <T, A, TError extends Error>(
-    schema: Schema.Schema<T, A>,
-    ErrorClass: new (props: { message?: string; cause?: unknown }) => TError
-  ) =>
+  <T, A, E extends Error>(schema: Schema.Schema<T, A>, ErrorClass: ErrorCtor<E>) =>
   (input: T) =>
     Schema.encodeEither(schema)(input).pipe(
       Either.mapLeft((e) => new ErrorClass({ message: "Failed to encode input", cause: e }))
@@ -102,9 +115,9 @@ export const makeEncodeEither =
  * @since 2.0.0
  * @category constructors
  */
-export const makeCBORDecodeSync = <A, T extends CBOR.CBOR>(
+export const makeCBORDecodeSync = <A, T extends CBOR.CBOR, E extends Error>(
   schemaTransformer: Schema.Schema<A, T>,
-  ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
+  ErrorClass: ErrorCtor<E>,
   functionName: string,
   defaultOptions?: CBOR.CodecOptions
 ): ((bytes: Uint8Array, options?: CBOR.CodecOptions) => A) => {
@@ -116,20 +129,25 @@ export const makeCBORDecodeSync = <A, T extends CBOR.CBOR>(
         const cborValue = CBOR.internalDecodeSync(bytes, options || defaultOptions)
         return decode(cborValue as T)
       } catch (e) {
-        throw new ErrorClass({ message: `Failed to decode in ${functionName}`, cause: (e as Error).message })
+        const error = new ErrorClass({ message: `Failed to decode in ${functionName}`, cause: e })
+        if (Error.captureStackTrace) {
+          Error.captureStackTrace(error, wrapped)
+        }
+        throw error
       }
     }
   }
-  return fn[functionName]
+  const wrapped = fn[functionName]
+  return wrapped
 }
 
 /**
  * Creates a synchronous function that encodes a value to CBOR hex string.
  * Uses a schema to encode T -> A then serializes to hex.
  */
-export const makeCBOREncodeHexSync = <A, T extends CBOR.CBOR>(
+export const makeCBOREncodeHexSync = <A, T extends CBOR.CBOR, E extends Error>(
   schemaTransformer: Schema.Schema<A, T>,
-  ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
+  ErrorClass: ErrorCtor<E>,
   functionName: string,
   defaultOptions?: CBOR.CodecOptions
 ): ((input: A, options?: CBOR.CodecOptions) => string) => {
@@ -141,19 +159,24 @@ export const makeCBOREncodeHexSync = <A, T extends CBOR.CBOR>(
         const bytes = CBOR.internalEncodeSync(cborValue, options || defaultOptions)
         return Bytes.toHexUnsafe(bytes)
       } catch (e) {
-        throw new ErrorClass({ message: `Failed to encode hex in ${functionName}`, cause: (e as Error).message })
+        const error = new ErrorClass({ message: `Failed to encode hex in ${functionName}`, cause: e })
+        if (Error.captureStackTrace) {
+          Error.captureStackTrace(error, wrapped)
+        }
+        throw error
       }
     }
   }
-  return fn[functionName]
+  const wrapped = fn[functionName]
+  return wrapped
 }
 
 /**
  * Creates a synchronous function that decodes a CBOR hex string into a value using a schema.
  */
-export const makeCBORDecodeHexSync = <A, T extends CBOR.CBOR>(
+export const makeCBORDecodeHexSync = <A, T extends CBOR.CBOR, E extends Error>(
   schemaTransformer: Schema.Schema<A, T>,
-  ErrorClass: new (props: { message?: string; cause?: unknown }) => Error,
+  ErrorClass: ErrorCtor<E>,
   functionName: string,
   defaultOptions?: CBOR.CodecOptions
 ): ((hex: string, options?: CBOR.CodecOptions) => A) => {
@@ -165,20 +188,25 @@ export const makeCBORDecodeHexSync = <A, T extends CBOR.CBOR>(
         const cborValue = CBOR.internalDecodeSync(bytes, options || defaultOptions)
         return decode(cborValue as T)
       } catch (e) {
-        throw new ErrorClass({ message: `Failed to decode hex in ${functionName}`, cause: (e as Error).message })
+        const error = new ErrorClass({ message: `Failed to decode hex in ${functionName}`, cause: e })
+        if (Error.captureStackTrace) {
+          Error.captureStackTrace(error, wrapped)
+        }
+        throw error
       }
     }
   }
-  return fn[functionName]
+  const wrapped = fn[functionName]
+  return wrapped
 }
 
 /**
  * Creates a function that decodes CBOR bytes into a value using a schema, returning Either.
  */
 export const makeCBORDecodeEither =
-  <A, T extends CBOR.CBOR, TError extends Error>(
+  <A, T extends CBOR.CBOR, E extends Error>(
     schemaTransformer: Schema.Schema<A, T>,
-    ErrorClass: new (props: { message?: string; cause?: unknown }) => TError,
+    ErrorClass: ErrorCtor<E>,
     defaultOptions?: CBOR.CodecOptions
   ) =>
   (bytes: Uint8Array, options?: CBOR.CodecOptions) =>
@@ -191,9 +219,9 @@ export const makeCBORDecodeEither =
  * Creates a function that decodes CBOR hex string into a value using a schema, returning Either.
  */
 export const makeCBORDecodeHexEither =
-  <A, T extends CBOR.CBOR, TError extends Error>(
+  <A, T extends CBOR.CBOR, E extends Error>(
     schemaTransformer: Schema.Schema<A, T>,
-    ErrorClass: new (props: { message?: string; cause?: unknown }) => TError,
+    ErrorClass: ErrorCtor<E>,
     defaultOptions?: CBOR.CodecOptions
   ) =>
   (hex: string, options?: CBOR.CodecOptions) =>
@@ -207,9 +235,9 @@ export const makeCBORDecodeHexEither =
  * Creates a function that encodes a value to CBOR bytes using a schema, returning Either.
  */
 export const makeCBOREncodeEither =
-  <A, T extends CBOR.CBOR, TError extends Error>(
+  <A, T extends CBOR.CBOR, E extends Error>(
     schemaTransformer: Schema.Schema<A, T>,
-    ErrorClass: new (props: { message?: string; cause?: unknown }) => TError,
+    ErrorClass: ErrorCtor<E>,
     defaultOptions?: CBOR.CodecOptions
   ) =>
   (input: A, options?: CBOR.CodecOptions) =>
@@ -222,9 +250,9 @@ export const makeCBOREncodeEither =
  * Creates a function that encodes a value to CBOR hex string using a schema, returning Either.
  */
 export const makeCBOREncodeHexEither =
-  <A, T extends CBOR.CBOR, TError extends Error>(
+  <A, T extends CBOR.CBOR, E extends Error>(
     schemaTransformer: Schema.Schema<A, T>,
-    ErrorClass: new (props: { message?: string; cause?: unknown }) => TError,
+    ErrorClass: ErrorCtor<E>,
     defaultOptions?: CBOR.CodecOptions
   ) =>
   (input: A, options?: CBOR.CodecOptions) =>

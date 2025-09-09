@@ -46,7 +46,8 @@ const decScriptRef = ParseResult.decodeUnknownEither(ScriptRef.FromCDDL)
 export class ShelleyTransactionOutput extends Schema.TaggedClass<ShelleyTransactionOutput>()(
   "ShelleyTransactionOutput",
   {
-    address: Schema.Union(BaseAddress.BaseAddress, EnterpriseAddress.EnterpriseAddress),
+    address: AddressEras.FromBech32,
+    // Schema.Union(BaseAddress.BaseAddress, EnterpriseAddress.EnterpriseAddress),
     amount: Value.Value,
     datumHash: Schema.optional(DatumOption.DatumHash)
   }
@@ -77,7 +78,7 @@ export class ShelleyTransactionOutput extends Schema.TaggedClass<ShelleyTransact
 export class BabbageTransactionOutput extends Schema.TaggedClass<BabbageTransactionOutput>()(
   "BabbageTransactionOutput",
   {
-    address: Schema.Union(BaseAddress.BaseAddress, EnterpriseAddress.EnterpriseAddress),
+    address: AddressEras.FromBech32,
     amount: Value.Value, // 1
     datumOption: Schema.optional(DatumOption.DatumOptionSchema), // 2
     scriptRef: Schema.optional(ScriptRef.ScriptRef) // 3
@@ -322,23 +323,22 @@ export const makeBabbage = (...args: ConstructorParameters<typeof BabbageTransac
  * @since 2.0.0
  * @category arbitrary
  */
-export const arbitrary = (): FastCheck.Arbitrary<TransactionOutput> =>
-  FastCheck.oneof(
-    // Shelley TransactionOutput
-    FastCheck.record({
-      address: FastCheck.oneof(BaseAddress.arbitrary, EnterpriseAddress.arbitrary),
-      amount: Value.arbitrary,
-      datumHash: FastCheck.option(DatumOption.datumHashArbitrary, { nil: undefined })
-    }).map((props) => new ShelleyTransactionOutput(props)),
+export const arbitrary = FastCheck.oneof(
+  // Shelley TransactionOutput
+  FastCheck.record({
+    address: FastCheck.oneof(BaseAddress.arbitrary, EnterpriseAddress.arbitrary),
+    amount: Value.arbitrary,
+    datumHash: FastCheck.option(DatumOption.datumHashArbitrary, { nil: undefined })
+  }).map((props) => new ShelleyTransactionOutput(props)),
 
-    // Babbage TransactionOutput
-    FastCheck.record({
-      address: FastCheck.oneof(BaseAddress.arbitrary, EnterpriseAddress.arbitrary),
-      amount: Value.arbitrary,
-      datumOption: FastCheck.option(DatumOption.arbitrary, { nil: undefined }),
-      scriptRef: FastCheck.option(ScriptRef.arbitrary, { nil: undefined })
-    }).map((props) => new BabbageTransactionOutput(props))
-  )
+  // Babbage TransactionOutput
+  FastCheck.record({
+    address: FastCheck.oneof(BaseAddress.arbitrary, EnterpriseAddress.arbitrary),
+    amount: Value.arbitrary,
+    datumOption: FastCheck.option(DatumOption.arbitrary, { nil: undefined }),
+    scriptRef: FastCheck.option(ScriptRef.arbitrary, { nil: undefined })
+  }).map((props) => new BabbageTransactionOutput(props))
+)
 
 /**
  * Convert TransactionOutput to CBOR bytes (unsafe).

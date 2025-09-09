@@ -31,19 +31,23 @@ export class AuxiliaryDataHashError extends Data.TaggedError("AuxiliaryDataHashE
  * @category model
  */
 export class AuxiliaryDataHash extends Schema.TaggedClass<AuxiliaryDataHash>()("AuxiliaryDataHash", {
-  bytes: Bytes32.BytesSchema
+  bytes: Bytes32.BytesFromHex
 }) {}
 
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, AuxiliaryDataHash, {
-  strict: true,
-  decode: (bytes) => new AuxiliaryDataHash({ bytes }, { disableValidation: true }),
-  encode: (a) => a.bytes
-}).annotations({
+export const FromBytes = Schema.transform(
+  Schema.typeSchema(Bytes32.BytesFromHex),
+  Schema.typeSchema(AuxiliaryDataHash),
+  {
+    strict: true,
+    decode: (bytes) => new AuxiliaryDataHash({ bytes }, { disableValidation: true }),
+    encode: (a) => a.bytes
+  }
+).annotations({
   identifier: "AuxiliaryDataHash.FromBytes"
 })
 
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
+  Bytes32.BytesFromHex, // string -> Bytes32
   FromBytes // Bytes32 -> AuxiliaryDataHash
 ).annotations({
   identifier: "AuxiliaryDataHash.FromHex"

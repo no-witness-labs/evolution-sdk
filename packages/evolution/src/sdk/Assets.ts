@@ -254,7 +254,7 @@ export const assetsToValue = (assets: Assets): CoreValue.Value => {
   }
 
   // Create the MultiAsset using the make function
-  const multiAsset = MultiAsset.make(multiAssetMap)
+  const multiAsset = multiAssetMap as MultiAsset.MultiAsset
 
   return CoreValue.withAssets(coin, multiAsset)
 }

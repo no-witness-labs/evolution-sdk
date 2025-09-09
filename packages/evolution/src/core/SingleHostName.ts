@@ -147,14 +147,11 @@ export const FromCDDL = Schema.transformOrFail(
       }),
     decode: ([, portValue, dnsNameValue]) =>
       Effect.gen(function* () {
-        const port =
-          portValue === null || portValue === undefined
-            ? Option.none()
-            : Option.some(yield* ParseResult.decode(Port.PortSchema)(portValue))
+        const port = portValue === null || portValue === undefined ? Option.none() : Option.some(Port.make(portValue))
 
         const dnsName = yield* ParseResult.decode(DnsName.DnsName)(dnsNameValue)
 
-        return yield* Effect.succeed(new SingleHostName({ port, dnsName }))
+        return new SingleHostName({ port, dnsName })
       })
   }
 )

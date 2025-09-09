@@ -21,7 +21,7 @@ export class EnterpriseAddressError extends Data.TaggedError("EnterpriseAddressE
  */
 export class EnterpriseAddress extends Schema.TaggedClass<EnterpriseAddress>("EnterpriseAddress")("EnterpriseAddress", {
   networkId: NetworkId.NetworkId,
-  paymentCredential: Credential.Credential
+  paymentCredential: Credential.CredentialSchema
 }) {
   toString(): string {
     return `EnterpriseAddress { networkId: ${this.networkId}, paymentCredential: ${this.paymentCredential} }`
@@ -32,7 +32,7 @@ export class EnterpriseAddress extends Schema.TaggedClass<EnterpriseAddress>("En
   }
 }
 
-export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseAddress, {
+export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, Schema.typeSchema(EnterpriseAddress), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Eff.gen(function* () {
@@ -57,15 +57,14 @@ export const FromBytes = Schema.transformOrFail(Bytes29.BytesSchema, EnterpriseA
 
       // Script payment
       const isPaymentKey = (addressType & 0b0001) === 0
-      const paymentCredential: Credential.Credential = isPaymentKey
+      const paymentCredential: Credential.CredentialSchema = isPaymentKey
         ? new KeyHash.KeyHash({
             hash: fromA.slice(1, 29)
           })
         : new ScriptHash.ScriptHash({
             hash: fromA.slice(1, 29)
           })
-      return yield* ParseResult.decode(EnterpriseAddress)({
-        _tag: "EnterpriseAddress",
+      return EnterpriseAddress.make({
         networkId,
         paymentCredential
       })

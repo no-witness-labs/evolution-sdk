@@ -1,10 +1,5 @@
-import { pipe } from "effect"
-
 import { fromHex } from "../core/Bytes.js"
 import * as CBOR from "../core/CBOR.js"
-import * as CoreScript from "../core/Script.js"
-import * as CoreScriptHash from "../core/ScriptHash.js"
-import type * as Credential from "./Credential.js"
 
 export type Native = {
   type: "Native"
@@ -34,36 +29,36 @@ export type SpendingValidator = Script
 export type MintingPolicy = Script
 export type PolicyId = string // hex string
 
-/**
- * Convert user-facing Script to strict Script type for hash computation.
- */
-const toCoreScript = (script: Script): CoreScript.Script => {
-  const strict = CoreScript.fromCBORHex(script.script)
+// /**
+//  * Convert user-facing Script to strict Script type for hash computation.
+//  */
+// const toCoreScript = (script: Script): CoreScript.Script => {
+//   const strict = CoreScript.fromCBORHex(script.script)
 
-  switch (script.type) {
-    case "Native": {
-      // Native scripts are the union members without a `_tag` property
-      if ("_tag" in strict) {
-        throw new Error("Script type mismatch: expected Native")
-      }
-      return strict
-    }
-    case "PlutusV1": {
-      if ("_tag" in strict && strict._tag === "PlutusV1") return strict
-      break
-    }
-    case "PlutusV2": {
-      if ("_tag" in strict && strict._tag === "PlutusV2") return strict
-      break
-    }
-    case "PlutusV3": {
-      if ("_tag" in strict && strict._tag === "PlutusV3") return strict
-      break
-    }
-  }
+//   switch (script.type) {
+//     case "Native": {
+//       // Native scripts are the union members without a `_tag` property
+//       if ("_tag" in strict) {
+//         throw new Error("Script type mismatch: expected Native")
+//       }
+//       return strict
+//     }
+//     case "PlutusV1": {
+//       if ("_tag" in strict && strict._tag === "PlutusV1") return strict
+//       break
+//     }
+//     case "PlutusV2": {
+//       if ("_tag" in strict && strict._tag === "PlutusV2") return strict
+//       break
+//     }
+//     case "PlutusV3": {
+//       if ("_tag" in strict && strict._tag === "PlutusV3") return strict
+//       break
+//     }
+//   }
 
-  throw new Error(`Script type mismatch: expected ${script.type}`)
-}
+//   throw new Error(`Script type mismatch: expected ${script.type}`)
+// }
 
 /**
  * Compute the hash of a script.
@@ -74,11 +69,11 @@ const toCoreScript = (script: Script): CoreScript.Script => {
  * - PlutusV2 scripts: tag 2
  * - PlutusV3 scripts: tag 3
  */
-export const toScriptHash = (script: Script): Credential.ScriptHash =>
-  pipe(toCoreScript(script), CoreScriptHash.fromScript, CoreScriptHash.toHex, (hash) => ({
-    type: "Script",
-    hash
-  }))
+// export const toScriptHash = (script: Script): Credential.ScriptHash =>
+//   pipe(toCoreScript(script), CoreScriptHash.fromScript, CoreScriptHash.toHex, (hash) => ({
+//     type: "Script",
+//     hash
+//   }))
 
 // Constructor Functions
 export const makeNativeScript = (cbor: string): Native => ({
@@ -111,7 +106,7 @@ export const scriptEquals = (a: Script, b: Script): boolean => a.type === b.type
  * Compute the policy ID for a minting policy script.
  * The policy ID is identical to the script hash.
  */
-export const mintingPolicyToId = (script: Script): Credential.ScriptHash => toScriptHash(script)
+// export const mintingPolicyToId = (script: Script): Credential.ScriptHash => toScriptHash(script)
 
 export const applyDoubleCborEncoding = (script: string): string => {
   // Convert hex string to bytes, then encode as CBOR bytes, then back to hex

@@ -72,13 +72,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Ope
     Eff.gen(function* () {
       const hotVkey = yield* ParseResult.decode(KESVkey.FromBytes)(hotVkeyBytes)
       const sigma = yield* ParseResult.decode(Ed25519Signature.FromBytes)(sigmaBytes)
-      return yield* ParseResult.decode(OperationalCert)({
-        _tag: "OperationalCert",
-        hotVkey,
-        sequenceNumber,
-        kesPeriod,
-        sigma
-      })
+      return new OperationalCert({ hotVkey, sequenceNumber, kesPeriod, sigma })
     })
 })
 

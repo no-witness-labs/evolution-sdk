@@ -43,7 +43,7 @@ export class ConwayAuxiliaryData extends Schema.TaggedClass<ConwayAuxiliaryData>
   "ConwayAuxiliaryData",
   {
     metadata: Schema.optional(Metadata.Metadata),
-    nativeScripts: Schema.optional(Schema.Array(NativeScripts.Native)),
+    nativeScripts: Schema.optional(Schema.Array(NativeScripts.NativeScript)),
     plutusV1Scripts: Schema.optional(Schema.Array(PlutusV1.PlutusV1)),
     plutusV2Scripts: Schema.optional(Schema.Array(PlutusV2.PlutusV2)),
     plutusV3Scripts: Schema.optional(Schema.Array(PlutusV3.PlutusV3))
@@ -65,7 +65,7 @@ export class ShelleyMAAuxiliaryData extends Schema.TaggedClass<ShelleyMAAuxiliar
   "ShelleyMAAuxiliaryData",
   {
     metadata: Schema.optional(Metadata.Metadata),
-    nativeScripts: Schema.optional(Schema.Array(NativeScripts.Native))
+    nativeScripts: Schema.optional(Schema.Array(NativeScripts.NativeScript))
   }
 ) {}
 
@@ -240,7 +240,7 @@ export const FromCDDL = Schema.transformOrFail(AnyEraCDDL, Schema.typeSchema(Aux
       if (Array.isArray(input)) {
         const arr = input
         let metadata: Metadata.Metadata | undefined
-        let nativeScripts: Array<NativeScripts.Native> | undefined
+        let nativeScripts: Array<NativeScripts.NativeScript> | undefined
 
         if (arr.length >= 1 && arr[0] !== undefined) {
           const m = yield* ParseResult.decodeEither(Metadata.FromCDDL)(arr[0])
@@ -325,7 +325,7 @@ export const empty = (): AuxiliaryData => new ConwayAuxiliaryData({})
  */
 export const conway = (input: {
   metadata?: Metadata.Metadata
-  nativeScripts?: Array<NativeScripts.Native>
+  nativeScripts?: Array<NativeScripts.NativeScript>
   plutusV1Scripts?: Array<PlutusV1.PlutusV1>
   plutusV2Scripts?: Array<PlutusV2.PlutusV2>
   plutusV3Scripts?: Array<PlutusV3.PlutusV3>
@@ -339,7 +339,7 @@ export const conway = (input: {
  */
 export const shelleyMA = (input: {
   metadata?: Metadata.Metadata
-  nativeScripts?: Array<NativeScripts.Native>
+  nativeScripts?: Array<NativeScripts.NativeScript>
 }): AuxiliaryData => new ShelleyMAAuxiliaryData({ ...input })
 
 /**

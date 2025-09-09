@@ -30,7 +30,7 @@ export class KeyHashError extends Data.TaggedError("KeyHashError")<{
  * @category model
  */
 export class KeyHash extends Schema.TaggedClass<KeyHash>()("KeyHash", {
-  hash: Hash28.BytesSchema
+  hash: Hash28.BytesFromHex
 }) {
   toJSON(): string {
     return toHex(this)
@@ -47,7 +47,7 @@ export class KeyHash extends Schema.TaggedClass<KeyHash>()("KeyHash", {
  * @since 2.0.0
  * @category transformer
  */
-export const FromBytes = Schema.transform(Hash28.BytesSchema, KeyHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Hash28.BytesFromHex), Schema.typeSchema(KeyHash), {
   strict: true,
   decode: (bytes) => new KeyHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Hash28
   encode: (keyHash) => keyHash.hash
@@ -61,10 +61,7 @@ export const FromBytes = Schema.transform(Hash28.BytesSchema, KeyHash, {
  * @since 2.0.0
  * @category transformer
  */
-export const FromHex = Schema.compose(
-  Bytes.FromHex, // string -> Uint8Array
-  FromBytes
-).annotations({
+export const FromHex = Schema.compose(Hash28.BytesFromHex, FromBytes).annotations({
   identifier: "KeyHash.FromHex"
 })
 

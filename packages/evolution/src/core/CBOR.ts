@@ -392,7 +392,7 @@ export const CBORSchema: Schema.Schema<CBOR> = Schema.Union(
   Tag,
   Simple,
   Float
-)
+).annotations({ identifier: "CBOR", description: "CBOR value schema" })
 
 /**
  * Schema for encoding/decoding CBOR bytes using internal functions

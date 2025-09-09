@@ -22,18 +22,11 @@ export class IPv4Error extends Data.TaggedError("IPv4Error")<{
  * @category schemas
  */
 export class IPv4 extends Schema.TaggedClass<IPv4>()("IPv4", {
-  bytes: Bytes4.BytesSchema
-}) {
-  toJSON(): string {
-    return toHex(this)
-  }
-  toString(): string {
-    return toHex(this)
-  }
-}
+  bytes: Bytes4.BytesFromHex
+}) {}
 
 // Transform between raw bytes (Uint8Array length 4) and IPv4
-export const FromBytes = Schema.transform(Bytes4.BytesSchema, IPv4, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes4.BytesFromHex), Schema.typeSchema(IPv4), {
   strict: true,
   decode: (bytes) => new IPv4({ bytes }, { disableValidation: true }),
   encode: (ipv4) => ipv4.bytes
@@ -42,7 +35,7 @@ export const FromBytes = Schema.transform(Bytes4.BytesSchema, IPv4, {
 })
 
 export const FromHex = Schema.compose(
-  Bytes4.FromHex, // string -> Uint8Array(4)
+  Bytes4.BytesFromHex, // string -> Uint8Array(4)
   FromBytes // bytes -> IPv4
 ).annotations({
   identifier: "IPv4.FromHex"

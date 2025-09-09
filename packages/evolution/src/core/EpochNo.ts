@@ -1,4 +1,4 @@
-import { Data, ParseResult, Schema } from "effect"
+import { Data, Schema } from "effect"
 
 import * as CBOR from "./CBOR.js"
 import * as Numeric from "./Numeric.js"
@@ -87,10 +87,10 @@ export const generator = Numeric.Uint64Arbitrary
  */
 export const CDDLSchema = CBOR.Integer
 
-export const FromCDDL = Schema.transformOrFail(CDDLSchema, EpochNoSchema, {
+export const FromCDDL = Schema.transform(CDDLSchema, Schema.typeSchema(EpochNoSchema), {
   strict: true,
-  encode: (epoch) => ParseResult.succeed(epoch as unknown as bigint),
-  decode: (n) => ParseResult.decode(EpochNoSchema)(n as unknown as bigint)
+  encode: (epoch) => epoch,
+  decode: (n) => EpochNoSchema.make(n)
 }).annotations({ identifier: "EpochNo.CDDL" })
 
 export const arbitrary = Numeric.Uint64Arbitrary

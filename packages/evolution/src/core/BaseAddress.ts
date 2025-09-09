@@ -21,8 +21,8 @@ export class BaseAddressError extends Data.TaggedError("BaseAddressError")<{
  */
 export class BaseAddress extends Schema.TaggedClass<BaseAddress>("BaseAddress")("BaseAddress", {
   networkId: NetworkId.NetworkId,
-  paymentCredential: Credential.Credential,
-  stakeCredential: Credential.Credential
+  paymentCredential: Credential.CredentialSchema,
+  stakeCredential: Credential.CredentialSchema
 }) {
   toString(): string {
     return `BaseAddress { networkId: ${this.networkId}, paymentCredential: ${this.paymentCredential}, stakeCredential: ${this.stakeCredential} }`
@@ -33,7 +33,7 @@ export class BaseAddress extends Schema.TaggedClass<BaseAddress>("BaseAddress")(
   }
 }
 
-export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, BaseAddress, {
+export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, Schema.typeSchema(BaseAddress), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Eff.gen(function* () {
@@ -57,7 +57,7 @@ export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, BaseAddress
       const addressType = header >> 4
       // Script payment, Script stake
       const isPaymentKey = (addressType & 0b0001) === 0
-      const paymentCredential: Credential.Credential = isPaymentKey
+      const paymentCredential: Credential.CredentialSchema = isPaymentKey
         ? new KeyHash.KeyHash({
             hash: fromA.slice(1, 29)
           })
@@ -65,15 +65,14 @@ export const FromBytes = Schema.transformOrFail(Bytes57.BytesSchema, BaseAddress
             hash: fromA.slice(1, 29)
           })
       const isStakeKey = (addressType & 0b0010) === 0
-      const stakeCredential: Credential.Credential = isStakeKey
+      const stakeCredential: Credential.CredentialSchema = isStakeKey
         ? new KeyHash.KeyHash({
             hash: fromA.slice(29, 57)
           })
         : new ScriptHash.ScriptHash({
             hash: fromA.slice(29, 57)
           })
-      return yield* ParseResult.decode(BaseAddress)({
-        _tag: "BaseAddress",
+      return BaseAddress.make({
         networkId,
         paymentCredential,
         stakeCredential

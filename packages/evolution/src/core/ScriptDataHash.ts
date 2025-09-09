@@ -30,7 +30,7 @@ export class ScriptDataHashError extends Data.TaggedError("ScriptDataHashError")
  * @category model
  */
 export class ScriptDataHash extends Schema.TaggedClass<ScriptDataHash>()("ScriptDataHash", {
-  hash: Bytes32.BytesSchema
+  hash: Bytes32.BytesFromHex
 }) {}
 
 /**
@@ -39,7 +39,7 @@ export class ScriptDataHash extends Schema.TaggedClass<ScriptDataHash>()("Script
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, ScriptDataHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(ScriptDataHash), {
   strict: true,
   decode: (bytes) => new ScriptDataHash({ hash: bytes }, { disableValidation: true }),
   encode: (s) => s.hash
@@ -54,7 +54,7 @@ export const FromBytes = Schema.transform(Bytes32.BytesSchema, ScriptDataHash, {
  * @category schemas
  */
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
+  Bytes32.BytesFromHex, // string -> Bytes32
   FromBytes // Bytes32 -> ScriptDataHash
 ).annotations({
   identifier: "ScriptDataHash.FromHex"

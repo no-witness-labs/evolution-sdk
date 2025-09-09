@@ -1,4 +1,4 @@
-import { Data, Effect, Either as E, FastCheck, ParseResult, Schema } from "effect"
+import { Data, Effect, FastCheck, Schema } from "effect"
 
 import * as Bytes from "./Bytes.js"
 import * as CBOR from "./CBOR.js"
@@ -30,7 +30,7 @@ export class ScriptRefError extends Data.TaggedError("ScriptRefError")<{
  * @category schemas
  */
 export class ScriptRef extends Schema.TaggedClass<ScriptRef>()("ScriptRef", {
-  bytes: Schema.Uint8ArrayFromSelf
+  bytes: Schema.Uint8ArrayFromHex.pipe(Schema.filter((b) => b.length > 0))
 }) {
   toJSON(): string {
     return toHex(this)
@@ -47,7 +47,7 @@ export class ScriptRef extends Schema.TaggedClass<ScriptRef>()("ScriptRef", {
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Schema.Uint8ArrayFromSelf, ScriptRef, {
+export const FromBytes = Schema.transform(Schema.Uint8ArrayFromSelf, Schema.typeSchema(ScriptRef), {
   strict: true,
   decode: (bytes) => new ScriptRef({ bytes }, { disableValidation: true }),
   encode: (s) => s.bytes
@@ -82,7 +82,7 @@ export const CDDLSchema = CBOR.tag(24, Schema.Uint8ArrayFromSelf)
  * @since 2.0.0
  * @category schemas
  */
-export const FromCDDL = Schema.transformOrFail(CDDLSchema, ScriptRef, {
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(ScriptRef), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Effect.succeed({
@@ -149,10 +149,8 @@ export const arbitrary = FastCheck.uint8Array({
 }).chain(() =>
   // Generate a valid Script first, then CBOR-encode it and wrap in tag(24) bytes
   Script.arbitrary.map((script) => {
-    // Encode Script -> CDDL tuple
-    const cddl = E.getOrThrow(ParseResult.encodeEither(Script.FromCDDL)(script))
     // Encode CDDL (CBOR value) -> bytes using canonical options compatible with CML
-    const bytes = E.getOrThrow(ParseResult.encodeEither(CBOR.FromBytes(CBOR.CML_DEFAULT_OPTIONS))(cddl))
+    const bytes = Script.toCBOR(script)
     return new ScriptRef({ bytes }, { disableValidation: true })
   })
 )

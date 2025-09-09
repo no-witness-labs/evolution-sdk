@@ -202,12 +202,12 @@ export const FromCDDL = Schema.transformOrFail(
       [protocolMajor, protocolMinor]
     ]) =>
       Eff.gen(function* () {
-        const blockNumber = yield* ParseResult.decode(Numeric.Uint64Schema)(rawBlockNumber)
-        const slot = yield* ParseResult.decode(Numeric.Uint64Schema)(rawSlotNumber)
+        const blockNumber = yield* ParseResult.decode(Schema.typeSchema(Numeric.Uint64Schema))(rawBlockNumber)
+        const slot = yield* ParseResult.decode(Schema.typeSchema(Numeric.Uint64Schema))(rawSlotNumber)
         const prevHash = prevHashBytes ? yield* ParseResult.decode(BlockHeaderHash.FromBytes)(prevHashBytes) : null
         const issuerVkey = yield* ParseResult.decode(VKey.FromBytes)(issuerVkeyBytes)
         const vrfVkey = yield* ParseResult.decode(VrfVkey.FromBytes)(vrfVkeyBytes)
-        const blockBodySize = yield* ParseResult.decode(Numeric.Uint64Schema)(rawBlockBodySize)
+        const blockBodySize = yield* ParseResult.decode(Schema.typeSchema(Numeric.Uint64Schema))(rawBlockBodySize)
         const blockBodyHash = yield* ParseResult.decode(BlockBodyHash.FromBytes)(blockBodyHashBytes)
         const vrfResult = yield* ParseResult.decode(VrfCert.FromCDDL)([vrfOutputBytes, vrfProofBytes])
         const operationalCert = yield* ParseResult.decode(OperationalCert.FromCDDL)([

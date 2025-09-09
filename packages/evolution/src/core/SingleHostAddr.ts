@@ -126,7 +126,7 @@ export const FromCDDL = Schema.transformOrFail(
       Eff.gen(function* () {
         const port = Option.isSome(toA.port) ? BigInt(toA.port.value) : null
 
-        const ipv4 = Option.isSome(toA.ipv4) ? yield* ParseResult.encode(IPv4.FromBytes)(toA.ipv4.value) : null
+        const ipv4 = Option.isSome(toA.ipv4) ? toA.ipv4.value.bytes : null
 
         const ipv6 = Option.isSome(toA.ipv6) ? yield* ParseResult.encode(IPv6.FromBytes)(toA.ipv6.value) : null
 
@@ -146,7 +146,7 @@ export const FromCDDL = Schema.transformOrFail(
             ? Option.none()
             : Option.some(yield* ParseResult.decode(IPv6.FromBytes)(ipv6Value))
 
-        return yield* Eff.succeed(new SingleHostAddr({ port, ipv4, ipv6 }))
+        return new SingleHostAddr({ port, ipv4, ipv6 }, { disableValidation: true })
       })
   }
 ).annotations({

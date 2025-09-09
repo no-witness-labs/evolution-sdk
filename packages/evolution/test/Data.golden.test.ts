@@ -639,6 +639,17 @@ const normalizeDecodedData = (data: unknown): unknown => {
     }
   }
 
+  if (data instanceof Uint8Array) {
+    // Convert Uint8Array to hex string for comparison
+    const hexString = Array.from(data)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")
+    return {
+      _tag: "ByteArray",
+      bytearray: hexString
+    }
+  }
+
   if (data === null || data === undefined) {
     return data
   }

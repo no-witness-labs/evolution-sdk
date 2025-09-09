@@ -28,7 +28,7 @@ export class PointerAddressError extends Data.TaggedError("PointerAddressError")
  */
 export class PointerAddress extends Schema.TaggedClass<PointerAddress>("PointerAddress")("PointerAddress", {
   networkId: NetworkId.NetworkId,
-  paymentCredential: Credential.Credential,
+  paymentCredential: Credential.CredentialSchema,
   pointer: Pointer.Pointer
 }) {
   toString(): string {
@@ -113,7 +113,7 @@ export const decodeVariableLength: (
   }
 })
 
-export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, PointerAddress, {
+export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Schema.typeSchema(PointerAddress), {
   strict: true,
   encode: (_, __, ___, toA) =>
     Eff.gen(function* () {
@@ -163,7 +163,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
 
       // payment credential kind
       const isPaymentKey = (addressType & 0b0001) === 0
-      const paymentCredential: Credential.Credential = isPaymentKey
+      const paymentCredential: Credential.CredentialSchema = isPaymentKey
         ? new KeyHash.KeyHash({ hash: fromA.slice(1, 29) })
         : new ScriptHash.ScriptHash({ hash: fromA.slice(1, 29) })
 
@@ -180,8 +180,7 @@ export const FromBytes = Schema.transformOrFail(Schema.Uint8ArrayFromSelf, Point
         return yield* ParseResult.fail(new ParseResult.Type(ast, fromA, "PointerAddress: unexpected trailing bytes"))
       }
 
-      return yield* ParseResult.decode(PointerAddress)({
-        _tag: "PointerAddress",
+      return PointerAddress.make({
         networkId,
         paymentCredential,
         pointer: new Pointer.Pointer({ slot, txIndex, certIndex }, { disableValidation: true })
@@ -208,7 +207,7 @@ export const FromHex = Schema.compose(
  */
 export const make = (props: {
   networkId: NetworkId.NetworkId
-  paymentCredential: Credential.Credential
+  paymentCredential: Credential.CredentialSchema
   pointer: Pointer.Pointer
 }): PointerAddress => new PointerAddress(props)
 

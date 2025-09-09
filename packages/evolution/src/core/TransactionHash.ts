@@ -22,12 +22,8 @@ export class TransactionHashError extends Data.TaggedError("TransactionHashError
  * @category schemas
  */
 export class TransactionHash extends Schema.TaggedClass<TransactionHash>()("TransactionHash", {
-  hash: Bytes32.BytesSchema
+  hash: Bytes32.BytesFromHex
 }) {
-  toJSON(): string {
-    return toHex(this)
-  }
-
   toString(): string {
     return `TransactionHash { hash: ${this.hash} }`
   }
@@ -43,7 +39,7 @@ export class TransactionHash extends Schema.TaggedClass<TransactionHash>()("Tran
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Bytes32.BytesSchema, TransactionHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Bytes32.BytesFromHex), Schema.typeSchema(TransactionHash), {
   strict: true,
   decode: (bytes) => new TransactionHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Bytes32
   encode: (txHash) => txHash.hash
@@ -51,14 +47,8 @@ export const FromBytes = Schema.transform(Bytes32.BytesSchema, TransactionHash, 
   identifier: "TransactionHash.FromBytes"
 })
 
-/**
- * Schema for transforming between hex string and TransactionHash.
- *
- * @since 2.0.0
- * @category schemas
- */
 export const FromHex = Schema.compose(
-  Bytes32.FromHex, // string -> Bytes32
+  Bytes32.BytesFromHex, // string -> Bytes32
   FromBytes // Bytes32 -> TransactionHash
 ).annotations({
   identifier: "TransactionHash.FromHex"

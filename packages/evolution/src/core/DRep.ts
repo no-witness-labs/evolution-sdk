@@ -83,26 +83,20 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(DRe
       switch (tag) {
         case 0n: {
           const keyHash = yield* ParseResult.decode(KeyHash.FromBytes)(rest[0] as Uint8Array)
-          return yield* ParseResult.decode(DRep)({
-            _tag: "KeyHashDRep",
+          return DRep.members[0].make({
             keyHash
           })
         }
         case 1n: {
           const scriptHash = yield* ParseResult.decode(ScriptHash.FromBytes)(rest[0] as Uint8Array)
-          return yield* ParseResult.decode(DRep)({
-            _tag: "ScriptHashDRep",
+          return DRep.members[1].make({
             scriptHash
           })
         }
         case 2n:
-          return yield* ParseResult.decode(DRep)({
-            _tag: "AlwaysAbstainDRep"
-          })
+          return DRep.members[2].make({})
         case 3n:
-          return yield* ParseResult.decode(DRep)({
-            _tag: "AlwaysNoConfidenceDRep"
-          })
+          return DRep.members[3].make({})
         default:
           return yield* ParseResult.fail(
             new ParseResult.Type(Schema.typeSchema(DRep).ast, fromA, `Invalid DRep tag: ${tag}`)

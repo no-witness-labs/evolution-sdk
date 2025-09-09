@@ -296,7 +296,7 @@ export const bytesLengthEquals =
  */
 export const bytesLengthBetween =
   (minBytes: number, maxBytes: number) =>
-  <S extends Schema.Schema<any, Uint8Array>>(baseSchema: S) =>
+  <S extends Schema.Schema<any, any>>(baseSchema: S) =>
     baseSchema.pipe(
       Schema.filter((bytes: Uint8Array) => bytes.length >= minBytes && bytes.length <= maxBytes, {
         message: () => `Must be between ${minBytes} and ${maxBytes} bytes`

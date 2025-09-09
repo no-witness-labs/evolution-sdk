@@ -31,7 +31,7 @@ export class ScriptHashError extends Data.TaggedError("ScriptHashError")<{
  * @category schemas
  */
 export class ScriptHash extends Schema.TaggedClass<ScriptHash>()("ScriptHash", {
-  hash: Hash28.BytesSchema
+  hash: Hash28.BytesFromHex
 }) {
   toJSON(): string {
     return toHex(this)
@@ -48,7 +48,7 @@ export class ScriptHash extends Schema.TaggedClass<ScriptHash>()("ScriptHash", {
  * @since 2.0.0
  * @category schemas
  */
-export const FromBytes = Schema.transform(Hash28.BytesSchema, ScriptHash, {
+export const FromBytes = Schema.transform(Schema.typeSchema(Hash28.BytesFromHex), Schema.typeSchema(ScriptHash), {
   strict: true,
   decode: (bytes) => new ScriptHash({ hash: bytes }, { disableValidation: true }), // Disable validation since we already check length in Hash28
   encode: (scriptHash) => scriptHash.hash
@@ -62,10 +62,7 @@ export const FromBytes = Schema.transform(Hash28.BytesSchema, ScriptHash, {
  * @since 2.0.0
  * @category schemas
  */
-export const FromHex = Schema.compose(
-  Bytes.FromHex, // string -> Uint8Array
-  FromBytes
-).annotations({
+export const FromHex = Schema.compose(Hash28.BytesFromHex, FromBytes).annotations({
   identifier: "ScriptHash.FromHex"
 })
 
@@ -155,29 +152,34 @@ export const toHex = (scriptHash: ScriptHash): string => Bytes.toHex(scriptHash.
  * @category computation
  */
 export const fromScript = (script: Script.Script): ScriptHash => {
-  // Native scripts use CBOR of native_script as body with 0x00 tag
-  if (!("_tag" in script)) {
-    const body = NativeScripts.toCBORBytes(script)
-    const prefixed = new Uint8Array(1 + body.length)
-    prefixed[0] = 0x00
-    prefixed.set(body, 1)
-    const hashBytes = blake2b(prefixed, { dkLen: 28 })
-    return make({ hash: new Uint8Array(hashBytes) }, { disableValidation: true })
-  }
-
-  // Plutus scripts use raw bytes with language-specific tag
   let tag: number
   let body: Uint8Array
-  if (script._tag === "PlutusV1") {
-    tag = 0x01
-    body = script.bytes
-  } else if (script._tag === "PlutusV2") {
-    tag = 0x02
-    body = script.bytes
-  } else {
-    // Remaining case is PlutusV3
-    tag = 0x03
-    body = script.bytes
+
+  switch (script._tag) {
+    // Plutus script cases
+    case "PlutusV1":
+      tag = 0x01
+      body = script.bytes
+      break
+
+    case "PlutusV2":
+      tag = 0x02
+      body = script.bytes
+      break
+
+    case "PlutusV3":
+      tag = 0x03
+      body = script.bytes
+      break
+
+    // Native script case (TaggedClass)
+    case "NativeScript":
+      tag = 0x00
+      body = NativeScripts.toCBORBytes(script)
+      break
+
+    default:
+      throw new Error(`Unknown script type: ${(script as any)._tag}`)
   }
 
   const prefixed = new Uint8Array(1 + body.length)

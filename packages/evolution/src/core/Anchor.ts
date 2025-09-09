@@ -28,7 +28,7 @@ export class AnchorError extends Data.TaggedError("AnchorError")<{
  */
 export class Anchor extends Schema.Class<Anchor>("Anchor")({
   anchorUrl: Url.Url,
-  anchorDataHash: Bytes32.BytesSchema
+  anchorDataHash: Bytes32.BytesFromHex
 }) {}
 
 export const CDDLSchema = Schema.Tuple(

@@ -9,7 +9,7 @@ import * as Pointer from "./Pointer.js"
  * @since 2.0.0
  * @category schemas
  */
-export const StakeReference = Schema.UndefinedOr(Schema.Union(Credential.Credential, Pointer.Pointer))
+export const StakeReference = Schema.UndefinedOr(Schema.Union(Credential.CredentialSchema, Pointer.Pointer))
 
 /**
  * Type representing a reference to staking information

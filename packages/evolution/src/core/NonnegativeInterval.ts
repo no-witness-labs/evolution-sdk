@@ -41,7 +41,7 @@ export const CDDLSchema = CBOR.tag(30, Schema.Tuple(CBOR.Integer, CBOR.Integer))
 /**
  * Transform between tag(30) tuple and NonnegativeInterval model.
  */
-export const FromCDDL = Schema.transformOrFail(CDDLSchema, NonnegativeInterval, {
+export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(NonnegativeInterval), {
   strict: true,
   encode: (_, __, ___, interval) =>
     Effect.succeed({
@@ -59,7 +59,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, NonnegativeInterval, 
       const [numerator, denominator] = yield* ParseResult.decodeUnknown(Schema.Tuple(CBOR.Integer, CBOR.Integer))(
         taggedValue.value
       )
-      return yield* ParseResult.decode(NonnegativeInterval)({ numerator, denominator })
+      return NonnegativeInterval.make({ numerator, denominator })
     })
 }).annotations({ identifier: "NonnegativeInterval.CDDL" })
 

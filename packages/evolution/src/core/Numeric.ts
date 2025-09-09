@@ -20,7 +20,7 @@ export const UINT8_MAX = 255n
  * @since 2.0.0
  * @category schemas
  */
-export const Uint8Schema = Schema.BigIntFromSelf.pipe(
+export const Uint8Schema = Schema.BigInt.pipe(
   Schema.filter((value) => value >= UINT8_MIN && value <= UINT8_MAX),
   Schema.annotations({
     identifier: "Uint8",
@@ -59,7 +59,7 @@ export const Uint8Generator = FastCheck.bigInt({
 export const UINT16_MIN = 0n
 export const UINT16_MAX = 65535n
 
-export const Uint16Schema = Schema.BigIntFromSelf.pipe(
+export const Uint16Schema = Schema.BigInt.pipe(
   Schema.filter((value) => value >= UINT16_MIN && value <= UINT16_MAX),
   Schema.annotations({
     identifier: "Uint16",
@@ -86,7 +86,7 @@ export const Uint16Arbitrary = FastCheck.bigInt({
 export const UINT32_MIN = 0n
 export const UINT32_MAX = 4294967295n
 
-export const Uint32Schema = Schema.BigIntFromSelf.pipe(
+export const Uint32Schema = Schema.BigInt.pipe(
   Schema.filter((value) => value >= UINT32_MIN && value <= UINT32_MAX),
   Schema.annotations({
     identifier: "Uint32",
@@ -112,7 +112,7 @@ export const Uint32Arbitrary = FastCheck.bigInt({
 
 export const UINT64_MIN = 0n
 export const UINT64_MAX = 18446744073709551615n
-export const Uint64Schema = Schema.BigIntFromSelf.pipe(
+export const Uint64Schema = Schema.BigInt.pipe(
   Schema.filter((bigint) => bigint >= UINT64_MIN && bigint <= UINT64_MAX),
   Schema.annotations({
     identifier: "Uint64",
@@ -138,7 +138,7 @@ export const Uint64Arbitrary = FastCheck.bigInt({
 export const INT8_MIN = -128n
 export const INT8_MAX = 127n
 
-export const Int8 = Schema.BigIntFromSelf.pipe(
+export const Int8 = Schema.BigInt.pipe(
   Schema.filter((value) => value >= INT8_MIN && value <= INT8_MAX),
   Schema.annotations({
     identifier: "Int8",
@@ -165,7 +165,7 @@ export const Int8Generator = FastCheck.bigInt({
 export const INT16_MIN = -32768n
 export const INT16_MAX = 32767n
 
-export const Int16 = Schema.BigIntFromSelf.pipe(
+export const Int16 = Schema.BigInt.pipe(
   Schema.filter((value) => value >= INT16_MIN && value <= INT16_MAX),
   Schema.annotations({
     identifier: "Int16",
@@ -192,7 +192,7 @@ export const Int16Generator = FastCheck.bigInt({
 export const INT32_MIN = -2147483648n
 export const INT32_MAX = 2147483647n
 
-export const Int32 = Schema.BigIntFromSelf.pipe(
+export const Int32 = Schema.BigInt.pipe(
   Schema.filter((value) => value >= INT32_MIN && value <= INT32_MAX),
   Schema.annotations({
     identifier: "Int32",
@@ -219,7 +219,7 @@ export const Int32Generator = FastCheck.bigInt({
 export const INT64_MIN = -9223372036854775808n
 export const INT64_MAX = 9223372036854775807n
 
-export const Int64 = Schema.BigIntFromSelf.pipe(
+export const Int64 = Schema.BigInt.pipe(
   Schema.filter((bigint) => bigint >= INT64_MIN && bigint <= INT64_MAX),
   Schema.annotations({
     identifier: "Int64",

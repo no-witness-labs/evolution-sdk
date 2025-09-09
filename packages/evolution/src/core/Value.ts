@@ -328,7 +328,7 @@ export const FromCDDL = Schema.transformOrFail(CDDLSchema, Schema.typeSchema(Val
 
         return new WithAssets({
           coin: Coin.make(coinAmount),
-          assets: MultiAsset.make(result)
+          assets: result as MultiAsset.MultiAsset
         })
       }
     })

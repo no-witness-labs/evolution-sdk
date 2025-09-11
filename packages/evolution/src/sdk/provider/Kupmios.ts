@@ -88,7 +88,7 @@ export class KupmiosProvider implements Provider {
   }
 
   async getDelegation(rewardAddress: RewardAddress.RewardAddress): Promise<Delegation.Delegation> {
-    return Effect.runPromise(KupmiosService.getDelegationEffect(this.kupoUrl, this.headers?.kupoHeader)(rewardAddress))
+    return Effect.runPromise(KupmiosService.getDelegationEffect(this.ogmiosUrl, this.headers?.ogmiosHeader)(rewardAddress))
   }
 
   async getDatum(datumHash: string): Promise<string> {

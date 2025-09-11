@@ -199,7 +199,7 @@ export const toOgmiosUTxOs = (utxos: Array<UTxO.UTxO> | undefined): Array<Ogmios
         ada: { lovelace: Number(utxo.assets["lovelace"]) },
         ...toOgmiosAssets(utxo.assets)
       },
-      datumHash: utxo.datumOption.type === "datumHash" ? utxo.datumOption.hash : undefined,
+      datumHash: utxo.datumOption?.type === "datumHash" ? utxo.datumOption.hash : undefined,
       datum: utxo.datumOption?.type === "inlineDatum" ? utxo.datumOption.inline : undefined,
       script: toOgmiosScript(utxo.scriptRef)
     })

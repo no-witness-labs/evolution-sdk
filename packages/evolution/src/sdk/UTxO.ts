@@ -1,30 +1,14 @@
 import * as Assets from "./Assets.js"
+import * as Datum from "./Datum.js"
+import * as OutRef from "./OutRef.js"
 import type * as Script from "./Script.js"
-
-export type Datum =
-  | {
-      type: "datumHash"
-      hash: string
-    }
-  | {
-      type: "inlineDatum"
-      inline: string
-    }
-  | {
-      type: "noDatum"
-    }
-
-export interface OutRef {
-  txHash: string
-  outputIndex: number
-}
 
 export interface UTxO {
   txHash: string
   outputIndex: number
   address: string
   assets: Assets.Assets
-  datumOption: Datum
+  datumOption?: Datum.Datum
   scriptRef?: Script.Script
 }
 
@@ -44,32 +28,17 @@ export const hasDatum = (utxo: UTxO): boolean => utxo.datumOption !== undefined
 export const hasScript = (utxo: UTxO): boolean => utxo.scriptRef !== undefined
 
 // OutRef operations
-export const getOutRef = (utxo: UTxO): OutRef => ({
+export const getOutRef = (utxo: UTxO): OutRef.OutRef => ({
   txHash: utxo.txHash,
   outputIndex: utxo.outputIndex
 })
 
-export const outRefEquals = (a: OutRef, b: OutRef): boolean => a.txHash === b.txHash && a.outputIndex === b.outputIndex
-
-export const outRefToString = (outRef: OutRef): string => `${outRef.txHash}#${outRef.outputIndex}`
-
-export const makeOutRef = (txHash: string, outputIndex: number): OutRef => ({
-  txHash,
-  outputIndex
-})
-
 // Datum type guards and utilities
-export const isDatumHash = (datum: Datum): datum is { type: "datumHash"; hash: string } =>
-  datum !== undefined && "hash" in datum
-
-export const isInlineDatum = (datum: Datum): datum is { type: "inlineDatum"; inline: string } =>
-  datum !== undefined && "inline" in datum
-
 export const getDatumHash = (utxo: UTxO): string | undefined =>
-  isDatumHash(utxo.datumOption) ? utxo.datumOption.hash : undefined
+  Datum.isDatumHash(utxo.datumOption) ? utxo.datumOption.hash : undefined
 
 export const getInlineDatum = (utxo: UTxO): string | undefined =>
-  isInlineDatum(utxo.datumOption) ? utxo.datumOption.inline : undefined
+  Datum.isInlineDatum(utxo.datumOption) ? utxo.datumOption.inline : undefined
 
 // Value operations
 export const getValue = (utxo: UTxO): Assets.Assets => utxo.assets
@@ -85,16 +54,14 @@ export const subtractAssets = (utxo: UTxO, assets: Assets.Assets): UTxO =>
   withAssets(utxo, Assets.subtract(utxo.assets, assets))
 
 // Datum operations
-export const withDatum = (utxo: UTxO, datumOption: Datum): UTxO => ({
+export const withDatum = (utxo: UTxO, datumOption: Datum.Datum): UTxO => ({
   ...utxo,
   datumOption
 })
 
 export const withoutDatum = (utxo: UTxO): UTxO => ({
   ...utxo,
-  datumOption: {
-    type: "noDatum"
-  }
+  datumOption: undefined
 })
 
 // Script operations
@@ -140,11 +107,11 @@ export const getTotalAssets = (utxoSet: UTxOSet): Assets.Assets =>
 export const getTotalLovelace = (utxoSet: UTxOSet): bigint =>
   utxoSet.reduce((total, utxo) => total + getLovelace(utxo), 0n)
 
-export const findByOutRef = (utxoSet: UTxOSet, outRef: OutRef): UTxO | undefined =>
-  utxoSet.find((utxo) => outRefEquals(getOutRef(utxo), outRef))
+export const findByOutRef = (utxoSet: UTxOSet, outRef: OutRef.OutRef): UTxO | undefined =>
+  utxoSet.find((utxo) => OutRef.equals(getOutRef(utxo), outRef))
 
-export const removeByOutRef = (utxoSet: UTxOSet, outRef: OutRef): UTxOSet =>
-  utxoSet.filter((utxo) => !outRefEquals(getOutRef(utxo), outRef))
+export const removeByOutRef = (utxoSet: UTxOSet, outRef: OutRef.OutRef): UTxOSet =>
+  utxoSet.filter((utxo) => !OutRef.equals(getOutRef(utxo), outRef))
 
 export const isEmpty = (utxoSet: UTxOSet): boolean => utxoSet.length === 0
 
@@ -188,4 +155,4 @@ export const findWithMinLovelace = (utxos: UTxOSet, minLovelace: bigint): UTxOSe
   filter(utxos, (utxo) => getLovelace(utxo) >= minLovelace)
 
 // Equals utility
-export const equals = (a: UTxO, b: UTxO): boolean => outRefEquals(getOutRef(a), getOutRef(b))
+export const equals = (a: UTxO, b: UTxO): boolean => OutRef.equals(getOutRef(a), getOutRef(b))

@@ -1,4 +1,4 @@
-import { HttpClient, HttpClientRequest } from "@effect/platform"
+import { FetchHttpClient, HttpClient, HttpClientRequest } from "@effect/platform"
 import { Effect, Schema } from "effect"
 
 /**
@@ -7,16 +7,17 @@ import { Effect, Schema } from "effect"
 export const get = <A, I, R>(url: string, schema: Schema.Schema<A, I, R>, headers?: Record<string, string>) =>
   HttpClient.get(url, headers ? { headers } : undefined).pipe(
     Effect.flatMap((response) => response.json),
-    Effect.flatMap(Schema.decodeUnknown(schema))
+    Effect.flatMap(Schema.decodeUnknown(schema)),
+    Effect.provide(FetchHttpClient.layer)
   )
 
 /**
  * Performs a POST request with JSON body and decodes the response using the provided schema
  */
-export const postJson = <A, I, R>(
+export const postJson = <A, I>(
   url: string,
   body: unknown,
-  schema: Schema.Schema<A, I, R>,
+  schema: Schema.Schema<A, I>,
   headers?: Record<string, string>
 ) =>
   Effect.gen(function* () {
@@ -30,4 +31,4 @@ export const postJson = <A, I, R>(
     const response = yield* HttpClient.execute(request)
     const json = yield* response.json
     return yield* Schema.decodeUnknown(schema)(json)
-  })
+  }).pipe(Effect.provide(FetchHttpClient.layer))

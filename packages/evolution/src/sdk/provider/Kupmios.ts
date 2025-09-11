@@ -108,6 +108,6 @@ export class KupmiosProvider implements Provider {
   }
 
   async submitTx(tx: string): Promise<string> {
-    return Effect.runPromise(KupmiosService.submitTxEffect(this.kupoUrl, this.headers?.kupoHeader)(tx))
+    return Effect.runPromise(KupmiosService.submitTxEffect(this.ogmiosUrl, this.headers?.ogmiosHeader)(tx))
   }
 }

@@ -103,7 +103,7 @@ export class KupmiosProvider implements Provider {
 
   async evaluateTx(tx: string, additionalUTxOs?: Array<UTxO.UTxO>): Promise<Array<EvalRedeemer>> {
     return Effect.runPromise(
-      KupmiosService.evaluateTxEffect(this.kupoUrl, this.headers?.kupoHeader)(tx, additionalUTxOs)
+      KupmiosService.evaluateTxEffect(this.ogmiosUrl, this.headers?.ogmiosHeader)(tx, additionalUTxOs)
     )
   }
 

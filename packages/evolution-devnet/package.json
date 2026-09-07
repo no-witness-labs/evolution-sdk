@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/dockerode": "^3.3.43",
     "tsx": "^4.20.4",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "@noble/hashes": "^2.2.0",

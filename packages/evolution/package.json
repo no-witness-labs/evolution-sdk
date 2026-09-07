@@ -50,8 +50,8 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@effect/platform": "^0.96.0",
-    "@effect/platform-node": "^0.106.0",
+    "@effect/platform": "^0.97.1",
+    "@effect/platform-node": "^0.108.1",
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^2.2.0",
     "@scure/base": "^2.0.0",

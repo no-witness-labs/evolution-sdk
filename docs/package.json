@@ -32,7 +32,7 @@
     "@shikijs/twoslash": "^3.14.0",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/mdx": "^2.0.13",
-    "@types/node": "25.9.4",
+    "@types/node": "26.2.0",
     "@types/react": "^19.1.11",
     "@types/react-dom": "^19.1.7",
     "baseline-browser-mapping": "^2.9.8",

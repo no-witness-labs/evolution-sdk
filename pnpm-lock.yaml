@@ -335,8 +335,8 @@ importers:
         specifier: ^3.21.1
         version: 3.21.2
       scalus:
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.18.1
+        version: 0.18.1
     devDependencies:
       typescript:
         specifier: ^6.0.3
@@ -5918,8 +5918,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  scalus@0.17.0:
-    resolution: {integrity: sha512-74mD4wL1vw4GVh2ECemQhoB3q5Smwj5S8W7OG1j7OWuLkwJ0Mvz4LFhZPA9rZjpNvanZoKiDqc3S/qGD65uRYg==}
+  scalus@0.18.1:
+    resolution: {integrity: sha512-E48QqNO/c/XT11Gl7TesUtcTEGFxSDKTG4IUIPv3eiYBpcfpcjtaKVKgEl8pbOs7ETfj5rtKbEPMmVjmf6fYbw==}
 
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
@@ -12835,7 +12835,7 @@ snapshots:
       commander: 12.1.0
       enhanced-resolve: 5.24.3
 
-  scalus@0.17.0: {}
+  scalus@0.18.1: {}
 
   scheduler@0.27.0: {}
 

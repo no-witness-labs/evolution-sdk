@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "effect": "^3.21.1",
-    "scalus": "^0.17.0"
+    "scalus": "^0.18.1"
   },
   "peerDependencies": {
     "@evolution-sdk/evolution": "workspace:*"
